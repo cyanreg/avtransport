@@ -88,12 +88,7 @@ The layout of the data is as follows:
 | Tu(32)              | `init_length`     |             | Indicates the length of the initialization data in bytes. May be zero.    |
 | Tb(`init_length`*8) | `init_data`       |             | Actual codec-specific initialization data.                                |
 
-For more information on the layout of the specific data, consult the codec-specific encapsulation addenda:
-
- - [Opus](#opus-encapsulation)
- - [AV1](#av1-encapsulation)
- - [Raw audio](#raw-audio-encapsulation)
- - [Raw video](#raw-video-encapsulation)
+For more information on the layout of the specific data, consult the codec-specific encapsulation [addenda](#addendum).
 
 However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
 An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control-data).
@@ -121,12 +116,7 @@ The data packets are laid out as follows:
 | Tb(32)             | `data_length`     |             | The size of the packet.                                                                                                                    |
 | b(`data_length`*8) | `packet_data`     |             | The packet data itself.                                                                                                                    |
 
-For more information on the layout of the specific codec-specific packet data, consult the codec-specific encapsulation addenda:
-
- - [Opus](#opus-encapsulation)
- - [AV1](#av1-encapsulation)
- - [Raw audio](#raw-audio-encapsulation)
- - [Raw video](#raw-video-encapsulation)
+For information on the layout of the specific codec-specific packet data, consult the codec-specific encapsulation [addenda](#addendum).
 
 The final timestamp in nanoseconds is given by the following formula: `epoch + timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
 
@@ -297,6 +287,14 @@ The `init_data` field MUST be laid out as follows order:
 The `packet_data` MUST contain regular Opus packets with their front uncompressed header intact.
 
 In case of multiple channels, the packets MUST contain the concatenated contents in coding order of all channels' packets.
+
+AAC encapsulation
+-----------------
+For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41414300 (`AAC\0`).
+
+The `init_data` MUST be the codec's `AudioSpecificConfig`, as defined in MPEG-4.
+
+The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is explicitly unsupported.
 
 AV1 encapsulation
 -----------------
