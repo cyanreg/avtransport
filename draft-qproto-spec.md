@@ -243,12 +243,18 @@ The receiver can use this type to return errors and more to the sender in a one-
 | Tb(32)              | `ctrl_descriptor`  |   0xffff0009 | Indicates this is a control data packet.                                                 |
 | Tb(8)               | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data. |
 | Tu(32)              | `error`            |              | Indicates an error code, if not equal to `0x0`.                                          |
-| Tb(8)               | `resend_init`      |              | Asks the producer to resend all `init_data` packets.                                     |
+| Tb(8)               | `resend_init`      |              | If nonzero, asks the producer to resend all `fid`, `time_sync` and `init_data` packets.  |
+| Tb(128)             | `uplink_ip`        |              | Reports the upstream address to stream to.                                               |
+| Tb(16)              | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                               |
+
+If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port` do not match, the sender **MUST** cease this connection, reopen a new connection
+with the given `uplink_ip`, and resend all `fid`, `time_sync` and `init_data` packets to the destination.
 
 The following error values are allowed:
-| Value | Description  |
-|------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x1 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters.
+| Value | Description                                                                                                                                                                                                                                                                      |
+|------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x1 | Generic error.                                                                                                                                                                                                                                                                   |
+|   0x2 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
 Statistics
 ----------
