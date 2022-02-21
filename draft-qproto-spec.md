@@ -27,6 +27,8 @@ A special notation is used to describe sequences of bits:
  - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
  - `Tu(bits)`, `Ti(bits)`, `Tb(bits), Tr(bits)`: same as above, but error corrected with [turbo codes](https://en.wikipedia.org/wiki/Turbo_code).
 
+All floating point samples and pixels are always **normalized** to fit within the interval `[-1.0, 1.0]`.
+
 Protocol overview
 -----------------
 On a high-level, Qproto is a thin wrapper around codec or metadata packets that provides
@@ -91,6 +93,7 @@ For more information on the layout of the specific data, consult the codec-speci
  - [Opus](#opus-encapsulation)
  - [AV1](#av1-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
+ - [Raw video](#raw-video-encapsulation)
 
 However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
 An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control data).
@@ -123,6 +126,7 @@ For more information on the layout of the specific codec-specific packet data, c
  - [Opus](#opus-encapsulation)
  - [AV1](#av1-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
+ - [Raw video](#raw-video-encapsulation)
 
 The final timestamp in nanoseconds is given by the following formula: `epoch + timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
 
@@ -300,15 +304,15 @@ For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets)
 
 The `init_data` field MUST be laid out as follows order:
 
-| Data                | Name              | Fixed value                     | Description                                                                            |
-|---------------------|-------------------|--------------------------------:|----------------------------------------------------------------------------------------|
-| b(16)               | `raw_channels`    |                                 | The number of channels contained OR ambisonics data if `raw_ambi == 0x1`.              |
-| b(8)                | `raw_ambi`        |                                 | Boolean flag indicating that samples are ambisonics (`0x1`) or plain channels (`0x0`). |
-| b(8)                | `raw_bits`        |                                 | The number of bits for each sample.                                                    |
-| b(8)                | `raw_float`       |                                 | The data contained is floats (`0x1`) or integers (`0x0`).                              |
-| b(`raw_channels`*8) | `raw_pos`         |                                 | The coding position for each channel.                                                  |
+| Data               | Name             | Fixed value                     | Description                                                                            |
+|--------------------|------------------|--------------------------------:|----------------------------------------------------------------------------------------|
+| b(16)              | `ra_channels`    |                                 | The number of channels contained OR ambisonics data if `ra_ambi == 0x1`.               |
+| b(8)               | `ra_ambi`        |                                 | Boolean flag indicating that samples are ambisonics (`0x1`) or plain channels (`0x0`). |
+| b(8)               | `ra_bits`        |                                 | The number of bits for each sample.                                                    |
+| b(8)               | `ra_float`       |                                 | The data contained is floats (`0x1`) or integers (`0x0`).                              |
+| b(`ra_channels`*8) | `ra_pos`         |                                 | The coding position for each channel.                                                  |
 
-The position for each channel is determined by the value of the integers `raw_order`, and may be interpreted as:
+The position for each channel is determined by the value of the integers `ra_pos`, and may be interpreted as:
 | Value | Position    |
 |-------|-------------|
 | 0x0   | Left        |
@@ -327,7 +331,46 @@ Multiple channels with the same lable MAY be present, and it's up to users to in
 
 The `packet_data` MUST contain the concatenated stream of **interleaved** samples for all channels.
 
-The samples MUST be normalized between **[-1.0, 1.0]** if they're float, and *signed* if they're integers.
+The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and full-range *signed* if they're integers.
 
-The size of each sample MUST be `raw_bits`, and MUST be aligned to the nearest **power of two**, with the padding in the **least significant bits**. That means that 24 bit samples are coded as 32 bits,
+The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest **power of two**, with the padding in the **least significant bits**. That means that 24 bit samples are coded as 32 bits,
 with the data contained in the topmost 24 bits.
+
+Raw video encapsulation
+-----------------------
+For raw video encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52415656 (`RAVV`).
+
+The `init_data` field MUST be laid out as follows order:
+
+| Data                  | Name               | Fixed value                     | Description                                                                                                                             |
+|-----------------------|--------------------|--------------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------|
+| b(32)                 | `rv_width`         |                                 | The number of horizontal pixels the video stream contains.                                                                              |
+| b(32)                 | `rv_height`        |                                 | The number of vertical pixels the video stream contains.                                                                                |
+| b(8)                  | `rv_components`    |                                 | The number of components the video stream contains.                                                                                     |
+| b(8)                  | `rv_planes`        |                                 | The number of planes the video components are placed in.                                                                                |
+| b(8)                  | `rv_bpp`           |                                 | The number of bits for each **individual** component pixel.                                                                             |
+| b(8)                  | `rv_ver_subsample` |                                 | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
+| b(8)                  | `rv_hor_subsample` |                                 | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
+| b(32)                 | `rv_flags`         |                                 | Flags for the video stream.                                                                                                             |
+| b(`rv_components`*8)  | `rc_plane`         |                                 | Specifies the plane index that the component belongs in.                                                                                |
+| b(`rv_components`*8)  | `rc_stride`        |                                 | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
+| b(`rv_components`*8)  | `rc_offset`        |                                 | Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.                                    |
+| b(`rv_components`*8)  | `rc_shift`         |                                 | Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.                           |
+| b(`rv_components`*8)  | `rc_bits`          |                                 | Specifies the total number of bits the component's value will contain.                                                                  |
+|                       |                    |                                 | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
+| i(`rv_components`*32) | `rc_range_low`     |                                 | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
+| i(`rv_components`*32) | `rc_range_high`    |                                 | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
+
+The purpose of the `rc_offset` field is to allow differentiation between different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
+
+The flags field MUST be interpreted in the following way:
+
+| Bit position set | Description                                                                                                  |
+|-----------------:|--------------------------------------------------------------------------------------------------------------|
+|              0x1 | Video is RGB                                                                                                 |
+|              0x2 | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
+|              0x3 | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
+|              0x4 | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
+|              0x5 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
+|              0x6 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
+|              0x7 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
