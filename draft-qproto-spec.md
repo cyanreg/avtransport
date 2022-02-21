@@ -170,7 +170,7 @@ The user-specific data packet is laid out as follows:
 |--------------------------|--------------------|-------------:|---------------------------------------------------------------------------------------|
 | Tb(32)                   | `user_descriptor`  |          0x6 | Indicates this is an opaque user-specific data.                                       |
 | Tu(32)                   | `user_data_length` |              | The length of the user data.                                                          |
-| Tb(`user_data_length`*8) | `fec_data`         |              | The user data itself.                                                                 |
+| Tb(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
 
 Padding
 -------
@@ -261,7 +261,7 @@ Reverse user data
 |--------------------------|--------------------|-------------:|---------------------------------------------------------------------------------------|
 | Tb(32)                   | `user_descriptor`  |   0xffff0006 | Indicates this is an opaque user-specific data.                                       |
 | Tu(32)                   | `user_data_length` |              | The length of the user data.                                                          |
-| Tb(`user_data_length`*8) | `fec_data`         |              | The user data itself.                                                                 |
+| Tb(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
 
 This is identical to the [user data packets](#user-data-packets), but with a different ID.
 
