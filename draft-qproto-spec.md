@@ -39,7 +39,7 @@ The structure of data, when saved as a file, is:
 
 | Data   | Name              | Fixed value       | Description                                                                                                                          |
 |--------|-------------------|------------------:|--------------------------------------------------------------------------------------------------------------------------------------|
-| Tb(32) | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                       |
+| b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                       |
 | Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                        |
 |        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                           |
 |        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                   |
