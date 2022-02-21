@@ -96,7 +96,7 @@ For more information on the layout of the specific data, consult the codec-speci
  - [Raw video](#raw-video-encapsulation)
 
 However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
-An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control data).
+An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control-data).
 If this packet is sent for an already-initialized stream AND its byte-wise contents do not match the old contents, implementations MUST flush and reinitialize the decoder before attempting to decoder more `data_packet`s.
 Otherwise, implementations may expose this as an alternative stream the user may choose to switch to.
 
