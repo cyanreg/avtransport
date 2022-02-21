@@ -382,8 +382,8 @@ The flags field MUST be interpreted in the following way:
 |-----------------:|--------------------------------------------------------------------------------------------------------------|
 |              0x1 | Video is RGB                                                                                                 |
 |              0x2 | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
-|              0x3 | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
-|              0x4 | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
-|              0x5 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
-|              0x6 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
-|              0x7 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+|              0x4 | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
+|              0x8 | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
+|             0x16 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
+|             0x32 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
+|             0x64 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
