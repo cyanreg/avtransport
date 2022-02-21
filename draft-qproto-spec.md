@@ -228,17 +228,24 @@ Control data
 ------------
 The receiver can use this type to return errors and more to the sender in a one-to-one transmission. The following syntax is used:
 
-| Data                | Name               | Fixed value  | Description                                                                              |
-|---------------------|--------------------|-------------:|------------------------------------------------------------------------------------------|
-| Tb(32)              | `ctrl_descriptor`  |   0xffff0009 | Indicates this is a control data packet.                                                 |
-| Tb(8)               | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data. |
-| Tu(32)              | `error`            |              | Indicates an error code, if not equal to `0x0`.                                          |
-| Tb(8)               | `resend_init`      |              | If nonzero, asks the producer to resend all `fid`, `time_sync` and `init_data` packets.  |
-| Tb(128)             | `uplink_ip`        |              | Reports the upstream address to stream to.                                               |
-| Tb(16)              | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                               |
+| Data                | Name               | Fixed value  | Description                                                                                              |
+|---------------------|--------------------|-------------:|----------------------------------------------------------------------------------------------------------|
+| Tb(32)              | `ctrl_descriptor`  |   0xffff0009 | Indicates this is a control data packet.                                                                 |
+| Tb(8)               | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
+| Tu(32)              | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
+| Tb(8)               | `resend_init`      |              | If nonzero, asks the producer to resend all `fid`, `time_sync` and `init_data` packets.                  |
+| Tb(128)             | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
+| Tb(16)              | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
+| Ti(64)              | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
 
 If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port` do not match, the sender **MUST** cease this connection, reopen a new connection
 with the given `uplink_ip`, and resend all `fid`, `time_sync` and `init_data` packets to the destination.
+
+The `seek` request asks the sender to resend old data that's still available. The sender MAY not comply if that data suddently becomes unavailable.
+If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply and start sending the newest data.
+
+If operating over [QUIC/HTTP3](#quichttp3), then any old data **MUST** be served over a *reliable* stream, as latency isn't critical. If the receiver asks again
+for the newsest available data, that data's payload is once again sent over an *unreliable* stream.
 
 The following error values are allowed:
 | Value | Description                                                                                                                                                                                                                                                                      |
