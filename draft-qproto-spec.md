@@ -97,7 +97,7 @@ For more information on the layout of the specific data, consult the codec-speci
 
 However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
 An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control data).
-If this packet is sent for an already-initialized stream, implementations MUST flush and reinitialize the decoder before attempting to decoder more `data_packet`s.
+If this packet is sent for an already-initialized stream AND its byte-wise contents do not match the old contents, implementations MUST flush and reinitialize the decoder before attempting to decoder more `data_packet`s.
 Otherwise, implementations may expose this as an alternative stream the user may choose to switch to.
 
 The `stream_disp` field may be interpreted as such:
@@ -216,8 +216,9 @@ Streaming
 
 UDP
 ---
-To adapt Qproto for streaming over UDP is trivial - simply supply the data as-is specified for a file, with no changes required. The implementation
-SHOULD sent the `fid` field often enough to allow for clients which did not catch the start of the stream to begin demuxing.
+To adapt Qproto for streaming over UDP is trivial - simply supply the data as-is specified for a file, with no changes required. The sender implementation
+SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most as often as the stream with the lowest frequency of `keyframe`s in order
+to permit for implementations that didn't catch on the start of the stream begin decoding.
 UDP mode is unidirectional, but the implementations are free to use the [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
 
 QUIC/HTTP3
@@ -241,21 +242,22 @@ The receiver can use this type to return errors and more to the sender in a one-
 |---------------------|--------------------|-------------:|------------------------------------------------------------------------------------------|
 | Tb(32)              | `ctrl_descriptor`  |   0xffff0009 | Indicates this is a control data packet.                                                 |
 | Tb(8)               | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data. |
-| Tu(32)              | `value`            |              | Indicates the error code, if not equal to `0x0`.                                         |
+| Tu(32)              | `error`            |              | Indicates an error code, if not equal to `0x0`.                                          |
+| Tb(8)               | `resend_init`      |              | Asks the producer to resend all `init_data` packets.                                     |
 
 The following error values are allowed:
 | Value | Description  |
-|-------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |   0x1 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters.
 
 Statistics
 ----------
 The following packet MAY be sent from the receiver to the sender.
 
-| Data                | Name               | Fixed value  | Description                                                                                                                                                   |
-|---------------------|--------------------|-------------:|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Tb(32)              | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                        |
-| Tu(32)              | `missed_packets`   |              | Indicates the total number of missed packets. A missed packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
+| Data                | Name               | Fixed value  | Description                                                                                                                                                     |
+|---------------------|--------------------|-------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Tb(32)              | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                          |
+| Tu(32)              | `dropped_packets`  |              | Indicates the total number of dropped packets. A dropped packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
 
 Reverse user data
 -----------------
