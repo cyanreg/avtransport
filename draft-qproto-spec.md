@@ -109,7 +109,7 @@ The data packets are laid out as follows:
 |--------------------|-------------------|------------:|--------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)             | `data_descriptor` |         0x2 | Indicates this is a data packet.                                                                                                           |
 | Tb(32)             | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
-| Tb(8)              | `keyframe`        |             | Indicates the data is decodable as-is, without context, OR that it's decodable with gracefully handled codec-side correction (*S-frames*). |
+| Tb(8)              | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
 | Ti(64)             | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
 | Ti(64)             | `dts`             |             | The time, which when combined with the `epoch` field that indicates when a frame should be input into a synchronous 1-in-1-out decoder.    |
 | Ti(64)             | `duration`        |             | The duration of this packet.                                                                                                               |
@@ -123,6 +123,13 @@ The final timestamp in nanoseconds is given by the following formula: `epoch + t
 The same formula is also valid for the `dts` field.
 
 Implementations MUST feed the packets to the decoder in an incrementing order according to the `dts` field.
+
+The `pkt_flags` field MUST be interpreted in the following way:
+
+| Bit position set | Description                                                                                                                                                                                                  |
+|-----------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|              0x1 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
+|              0x2 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 
 FEC packets
 -----------
