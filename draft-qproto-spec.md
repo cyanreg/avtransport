@@ -75,18 +75,21 @@ users to allow for synchronized presentation. Otherwise, in a stream, decoders M
 
 Init packets
 ------------
+This packet is used to signal stream registration.
+
 Initializing a decoder requires additional one-off data, usually referred as `extradata`. This is codec-specific, and implementation-specific.
 The layout of the data is as follows:
 
-| Data                | Name              | Fixed value | Description                                                               |
-|---------------------|-------------------|------------:|---------------------------------------------------------------------------|
-| Tb(32)              | `init_descriptor` |         0x1 | Indicates this is an initialization packet.                               |
-| Tb(32)              | `stream_id`       |             | Indicates the stream ID for which to attach this.                         |
-| Tb(32)              | `stream_disp`     |             | Flags to signal what sort of a stream this is.                            |
-| Tb(32)              | `codec_id`        |             | Signals the codec ID for the data packets in this stream.                 |
-| Tr(32)              | `timebase`        |             | Signals the timebase of the timestamps present in data packets.           |
-| Tu(32)              | `init_length`     |             | Indicates the length of the initialization data in bytes. May be zero.    |
-| Tb(`init_length`*8) | `init_data`       |             | Actual codec-specific initialization data.                                |
+| Data                | Name                | Fixed value | Description                                                               |
+|---------------------|---------------------|------------:|---------------------------------------------------------------------------|
+| Tb(32)              | `init_descriptor`   |         0x1 | Indicates this is an initialization packet.                               |
+| Tb(32)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
+| Tb(32)              | `derived_stream_id` |             | Indicates the stream ID for which this stream is be derived from.         |
+| Tb(32)              | `stream_disp`       |             | Flags to signal what sort of a stream this is.                            |
+| Tb(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
+| Tr(32)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
+| Tu(32)              | `init_length`       |             | Indicates the length of the initialization data in bytes. May be zero.    |
+| Tb(`init_length`*8) | `init_data`         |             | Actual codec-specific initialization data.                                |
 
 For more information on the layout of the specific data, consult the codec-specific encapsulation [addenda](#addendum).
 
@@ -100,6 +103,9 @@ The `stream_disp` field may be interpreted as such:
 | Bit set | Description                                                             |
 |---------|-------------------------------------------------------------------------|
 |     0x1 | Indicates stream is a still picture and no further packets will arrive. |
+
+The `derived_stream_id` denotes the stream ID of which this stream is a variant of. It MAY be used to signal streams which carry the same content, but with a different codec or resolution.
+If the stream is standalone, or it's meant to be the default variant, `derived_stream_id` MUST match `stream_id`.
 
 Data packets
 ------------
