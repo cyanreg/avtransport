@@ -38,7 +38,7 @@ clients.
 The structure of data, when saved as a file, is:
 
 | Data   | Name              | Fixed value       | Description                                                                                                                          |
-|--------|-------------------|------------------:|--------------------------------------------------------------------------------------------------------------------------------------|
+|:-------|:------------------|------------------:|:-------------------------------------------------------------------------------------------------------------------------------------|
 | b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                       |
 | Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                        |
 |        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                           |
@@ -54,7 +54,7 @@ All fields are implicitly padded to the nearest byte. The padding SHOULD be all 
 
 The order in which the fields may appear **first** in a stream is as follows:
 | Field             | Order                                                                                                                         |
-|-------------------|-------------------------------------------------------------------------------------------------------------------------------|
+|:------------------|:------------------------------------------------------------------------------------------------------------------------------|
 | `fid`             | MUST always be first. MAY be present multiple times, as long as it's before `eos` with a `stream_id` of `0xffffffff`.         |
 | `time_sync`       | MUST be present before any and all `data_packet`s, `index_packet`s and `metadata_packet`s.                                    |
 | `init_data`       | MUST be present before any and all `data_packet`s.                                                                            |
@@ -81,7 +81,7 @@ Initializing a decoder requires additional one-off data, usually referred as `ex
 The layout of the data is as follows:
 
 | Data                | Name                | Fixed value | Description                                                               |
-|---------------------|---------------------|------------:|---------------------------------------------------------------------------|
+|:--------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
 | Tb(32)              | `init_descriptor`   |         0x1 | Indicates this is an initialization packet.                               |
 | Tb(32)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
 | Tb(32)              | `derived_stream_id` |             | Indicates the stream ID for which this stream is be derived from.         |
@@ -112,7 +112,7 @@ Data packets
 The data packets are laid out as follows:
 
 | Data               | Name              | Fixed value | Description                                                                                                                                |
-|--------------------|-------------------|------------:|--------------------------------------------------------------------------------------------------------------------------------------------|
+|:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)             | `data_descriptor` |         0x2 | Indicates this is a data packet.                                                                                                           |
 | Tb(32)             | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
 | Tb(8)              | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
@@ -133,7 +133,7 @@ Implementations MUST feed the packets to the decoder in an incrementing order ac
 The `pkt_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                                                                                                                  |
-|-----------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-----------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |              0x1 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
 |              0x2 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 
@@ -142,7 +142,7 @@ FEC packets
 The data in an FEC packet is laid out as follows:
 
 | Data               | Name             | Fixed value  | Description                                                                           |
-|--------------------|------------------|-------------:|---------------------------------------------------------------------------------------|
+|:-------------------|:-----------------|-------------:|:--------------------------------------------------------------------------------------|
 | Tb(32)             | `fec_descriptor` |          0x3 | Indicates this is an FEC packet for the data previously sent.                         |
 | Tu(32)             | `fec_length`     |              | The length of the FEC data.                                                           |
 | Tb(`fec_length`*8) | `fec_data`       |              | The FEC data that can be used to check or correct the previous data packet's payload. |
@@ -154,7 +154,7 @@ Index packets
 The index packet contains available byte offsets of nearby keyframes and the distance to the next index packet.
 
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                                |
-|---------------------|--------------------|-------------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|:--------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)              | `index_descriptor` |          0x4 | Indicates this is an index packet.                                                                                                                                                         |
 | Tb(32)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffffffff, in which case, it applies to all streams.                                                                                        |
 | Tu(32)              | `prev_idx`         |              | Position of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
@@ -169,7 +169,7 @@ Metadata packets
 The metadata packets can be sent for the overall stream, or for a specific `stream_id` substream. The syntax is as follows:
 
 | Data                 | Name              | Fixed value | Description                                                                                            |
-|----------------------|-------------------|------------:|--------------------------------------------------------------------------------------------------------|
+|:---------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------|
 | Tb(32)               | `meta_descriptor` |         0x5 | Indicates this is a metadata packet.                                                                   |
 | Tb(32)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffffffff, in which case, it applies to all streams. |
 | Tu(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                                |
@@ -180,7 +180,7 @@ User data packets
 The user-specific data packet is laid out as follows:
 
 | Data                     | Name               | Fixed value  | Description                                                                           |
-|--------------------------|--------------------|-------------:|---------------------------------------------------------------------------------------|
+|:-------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------|
 | Tb(32)                   | `user_descriptor`  |          0x6 | Indicates this is an opaque user-specific data.                                       |
 | Tu(32)                   | `user_data_length` |              | The length of the user data.                                                          |
 | Tb(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
@@ -190,7 +190,7 @@ Padding
 The padding packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                           |
-|------------------------|----------------------|-------------:|---------------------------------------------------------------------------------------|
+|:-----------------------|----------------------|-------------:|---------------------------------------------------------------------------------------|
 | Tb(32)                 | `padding_descriptor` |          0x7 | Indicates this is a padding packet.                                                   |
 | Tu(32)                 | `padding_length`     |              | The length of the padding data.                                                       |
 | b(`padding_length`*8)  | `padding_data`       |              | The padding data itself. May be all zeroes or random numbers.                         |
@@ -202,7 +202,7 @@ End of stream
 The EOS packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                                                 |
-|------------------------|----------------------|-------------:|-------------------------------------------------------------------------------------------------------------|
+|:-----------------------|:---------------------|-------------:|:------------------------------------------------------------------------------------------------------------|
 | Tb(32)                 | `eos_descriptor`     |          0x8 | Indicates this is an end-of-stream packet.                                                                  |
 | Tb(32)                 | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffffffff, in which case, it applies to all streams. |
 
@@ -242,7 +242,7 @@ Control data
 The receiver can use this type to return errors and more to the sender in a one-to-one transmission. The following syntax is used:
 
 | Data                | Name               | Fixed value  | Description                                                                                              |
-|---------------------|--------------------|-------------:|----------------------------------------------------------------------------------------------------------|
+|:--------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
 | Tb(32)              | `ctrl_descriptor`  |   0xffff0009 | Indicates this is a control data packet.                                                                 |
 | Tb(8)               | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
 | Tu(32)              | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
@@ -262,7 +262,7 @@ for the newsest available data, that data's payload is once again sent over an *
 
 The following error values are allowed:
 | Value | Description                                                                                                                                                                                                                                                                      |
-|------:|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |   0x1 | Generic error.                                                                                                                                                                                                                                                                   |
 |   0x2 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
@@ -271,14 +271,14 @@ Statistics
 The following packet MAY be sent from the receiver to the sender.
 
 | Data                | Name               | Fixed value  | Description                                                                                                                                                     |
-|---------------------|--------------------|-------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|:--------------------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)              | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                          |
 | Tu(32)              | `dropped_packets`  |              | Indicates the total number of dropped packets. A dropped packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
 
 Reverse user data
 -----------------
 | Data                     | Name               | Fixed value  | Description                                                                           |
-|--------------------------|--------------------|-------------:|---------------------------------------------------------------------------------------|
+|:-------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------|
 | Tb(32)                   | `user_descriptor`  |   0xffff0006 | Indicates this is an opaque user-specific data.                                       |
 | Tu(32)                   | `user_data_length` |              | The length of the user data.                                                          |
 | Tb(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
@@ -295,7 +295,7 @@ For Opus encapsulation, the `codec_id` in the [data packets](#data-packets) MUST
 The `init_data` field MUST be laid out as follows order:
 
 | Data               | Name              | Fixed value                     | Description                                                                           |
-|--------------------|-------------------|--------------------------------:|---------------------------------------------------------------------------------------|
+|:-------------------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
 | b(64)              | `opus_descriptor` | 0x4f70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
 | b(8)               | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
 | b(8)               | `opus_channels`   |                                 | Number of audio channels.                                                             |
@@ -331,7 +331,7 @@ For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets)
 The `init_data` field MUST be laid out as follows order:
 
 | Data               | Name             | Fixed value                     | Description                                                                            |
-|--------------------|------------------|--------------------------------:|----------------------------------------------------------------------------------------|
+|:-------------------|:-----------------|--------------------------------:|:---------------------------------------------------------------------------------------|
 | b(16)              | `ra_channels`    |                                 | The number of channels contained OR ambisonics data if `ra_ambi == 0x1`.               |
 | b(8)               | `ra_ambi`        |                                 | Boolean flag indicating that samples are ambisonics (`0x1`) or plain channels (`0x0`). |
 | b(8)               | `ra_bits`        |                                 | The number of bits for each sample.                                                    |
@@ -340,16 +340,16 @@ The `init_data` field MUST be laid out as follows order:
 
 The position for each channel is determined by the value of the integers `ra_pos`, and may be interpreted as:
 | Value | Position    |
-|-------|-------------|
-| 0x0   | Left        |
-| 0x1   | Right       |
-| 0x2   | Center      |
-| 0x3   | Side left   |
-| 0x4   | Side right  |
-| 0x5   | Rear left   |
-| 0x6   | Rear right  |
-| 0x7   | Rear center |
-| 0x8   | LFE         |
+|------:|:------------|
+|     1 | Left        |
+|     2 | Right       |
+|     3 | Center      |
+|     4 | Side left   |
+|     5 | Side right  |
+|     6 | Rear left   |
+|     7 | Rear right  |
+|     8 | Rear center |
+|     9 | LFE         |
 
 If the integer value is not on this list, assume it's unknown. Users are invited to interpret the channel as they please.
 
@@ -369,7 +369,7 @@ For raw video encapsulation, the `codec_id` in the [data packets](#data-packets)
 The `init_data` field MUST be laid out as follows order:
 
 | Data                  | Name               | Fixed value                     | Description                                                                                                                             |
-|-----------------------|--------------------|--------------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------|
+|:----------------------|:-------------------|--------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------|
 | b(32)                 | `rv_width`         |                                 | The number of horizontal pixels the video stream contains.                                                                              |
 | b(32)                 | `rv_height`        |                                 | The number of vertical pixels the video stream contains.                                                                                |
 | b(8)                  | `rv_components`    |                                 | The number of components the video stream contains.                                                                                     |
@@ -392,7 +392,7 @@ The purpose of the `rc_offset` field is to allow differentiation between differe
 The flags field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                  |
-|-----------------:|--------------------------------------------------------------------------------------------------------------|
+|-----------------:|:-------------------------------------------------------------------------------------------------------------|
 |              0x1 | Video is RGB                                                                                                 |
 |              0x2 | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
 |              0x4 | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
