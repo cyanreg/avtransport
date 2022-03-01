@@ -91,7 +91,7 @@ The layout of the data is as follows:
 | Tu(32)              | `init_length`       |             | Indicates the length of the initialization data in bytes. May be zero.    |
 | Tb(`init_length`*8) | `init_data`         |             | Actual codec-specific initialization data.                                |
 
-For more information on the layout of the specific data, consult the codec-specific encapsulation [addenda](#addendum).
+For more information on the layout of the specific data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
 However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
 An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control-data).
@@ -122,7 +122,7 @@ The data packets are laid out as follows:
 | Tb(32)             | `data_length`     |             | The size of the packet.                                                                                                                    |
 | b(`data_length`*8) | `packet_data`     |             | The packet data itself.                                                                                                                    |
 
-For information on the layout of the specific codec-specific packet data, consult the codec-specific encapsulation [addenda](#addendum).
+For information on the layout of the specific codec-specific packet data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
 The final timestamp in nanoseconds is given by the following formula: `epoch + timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
 
@@ -296,8 +296,18 @@ This is identical to the [user data packets](#user-data-packets), but with a dif
 Addendum
 ========
 
-Opus encapsulation
-------------------
+Codec encapsulation
+-------------------
+The following section lists the supported codecs, along with their encapsulation definitions.
+
+ - [Opus](#opus-encapsulation)
+ - [AAC](#aac-encapsulation)
+ - [AV1](#av1-encapsulation)
+ - [Raw audio](#raw-audio-encapsulation)
+ - [Raw video](#raw-video-encapsulation)
+
+### Opus encapsulation
+
 For Opus encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x4f707573 (`Opus`).
 
 The `init_data` field MUST be laid out as follows order:
@@ -319,24 +329,24 @@ In case of multiple channels, the packets MUST contain the concatenated contents
 In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and any [EDC packets](#edc-packets) sent in
 regards to the stream MUST have an `fec_length` field value of 0.
 
-AAC encapsulation
------------------
+### AAC encapsulation
+
 For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41414300 (`AAC\0`).
 
 The `init_data` MUST be the codec's `AudioSpecificConfig`, as defined in MPEG-4.
 
 The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is explicitly unsupported.
 
-AV1 encapsulation
------------------
+### AV1 encapsulation
+
 For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41563031 (`AV01`).
 
 The `init_data` MUST be the codec's so-called `uncompressed header`. For information on its syntax, consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
 
-Raw audio encapsulation
------------------------
+### Raw audio encapsulation
+
 For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52414141 (`RAAA`).
 
 The `init_data` field MUST be laid out as follows order:
@@ -373,8 +383,8 @@ The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and
 The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest **power of two**, with the padding in the **least significant bits**. That means that 24 bit samples are coded as 32 bits,
 with the data contained in the topmost 24 bits.
 
-Raw video encapsulation
------------------------
+### Raw video encapsulation
+
 For raw video encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52415656 (`RAVV`).
 
 The `init_data` field MUST be laid out as follows order:
