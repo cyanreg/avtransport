@@ -37,18 +37,18 @@ clients.
 
 The structure of data, when saved as a file, is:
 
-| Data   | Name              | Fixed value       | Description                                                                                                                               |
-|:-------|:------------------|------------------:|:------------------------------------------------------------------------------------------------------------------------------------------|
-| b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                            |
-| Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                             |
-|        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                |
-|        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                        |
-|        | `ec_packet`       |                   | Optional. May be used to error-detect/correct the payload of the last `data_packet` or `user_data` packet. See [EC packets](#ec-packets). |
-|        | `index_packet`    |                   | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                                        |
-|        | `metadata_packet` |                   | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                     |
-|        | `user_data`       |                   | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                |
-|        | `padding_packet`  |                   | Padding data. Optional. See [padding](#padding).                                                                                          |
-| Tb(32) | `eos`             |        0xf6270715 | Used to signal end of a stream. See the [end of stream](#end-of-stream) section. Optional.                                                |
+| Data   | Name              | Fixed value       | Description                                                                                                                                 |
+|:-------|:------------------|------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------|
+| b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                              |
+| Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                               |
+|        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                  |
+|        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                          |
+|        | `edc_packet`      |                   | Optional. May be used to error-detect/correct the payload of the last `data_packet` or `user_data` packet. See [EDC packets](#edc-packets). |
+|        | `index_packet`    |                   | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                                          |
+|        | `metadata_packet` |                   | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                       |
+|        | `user_data`       |                   | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                  |
+|        | `padding_packet`  |                   | Padding data. Optional. See [padding](#padding).                                                                                            |
+| Tb(32) | `eos`             |        0xf6270715 | Used to signal end of a stream. See the [end of stream](#end-of-stream) section. Optional.                                                  |
 
 All fields are implicitly padded to the nearest byte. The padding SHOULD be all zeroes.
 
@@ -60,7 +60,7 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `init_data`       | MUST be present before any and all `data_packet`s.                                                                            |
 | `index_packet`    | MAY be present anywhere allowed, but it's recommended for it to be present either at the start, or at the very end in a file. |
 | `metadata_packet` | MUST be present before any `init_data` packets.                                                                               |
-| `ec_packet`       | MUST be present immediately after a `data_packet` to perform error correction.                                                |
+| `edc_packet`      | MUST be present immediately after a `data_packet` to perform error correction.                                               |
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffffffff`, if at all.                                                           |
@@ -137,20 +137,20 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |              0x1 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
 |              0x2 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 
-EC packets
-----------
-The data in an error detection and correction packet is laid out as follows:
+EDC packets
+-----------
+The data in an Error Detection and Correction packet is laid out as follows:
 
 | Data               | Name              | Fixed value  | Description                                                                           |
 |:-------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| Tb(32)             | `ec_descriptor`   |          0x3 | Indicates this is an EC packet for the data previously sent.                          |
+| Tb(32)             | `edc_descriptor`  |          0x3 | Indicates this is an EDC packet for the data previously sent.                         |
 | Tb(32)             | `packet_data_crc` |              | The CRC32 of the packet data.                                                         |
 | Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
 | Tb(`fec_length`*8) | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 The `packet_data_crc` MUST be calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
 
-The `fec_length` field MAY be equal to `0x0`, in which case, the packet only contains error-detecting information.
+The `fec_length` field MAY be equal to `0`, in which case, the packet only contains error-detecting information.
 
 Implementations MAY discard the FEC data, or MAY delay the previous packet's decoding to correct it with this data, or MAY attempt to decode the previous data, and if failed, retry with the corrected data packet.
 
@@ -280,7 +280,7 @@ The following packet MAY be sent from the receiver to the sender.
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                           |
 |:--------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)              | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                                                |
-| Tb(32)              | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where either CRC or FEC in `ec_packets` detected errors, or if such were missing, decoding was impossible or had errors.               |
+| Tb(32)              | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where either CRC or FEC in `edc_packets` detected errors, or if such were missing, decoding was impossible or had errors.              |
 | Tu(32)              | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
 
 Reverse user data
