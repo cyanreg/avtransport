@@ -316,6 +316,9 @@ The `packet_data` MUST contain regular Opus packets with their front uncompresse
 
 In case of multiple channels, the packets MUST contain the concatenated contents in coding order of all channels' packets.
 
+In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and any [EDC packets](#edc-packets) sent in
+regards to the stream MUST have an `fec_length` field value of 0.
+
 AAC encapsulation
 -----------------
 For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41414300 (`AAC\0`).
