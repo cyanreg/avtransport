@@ -338,13 +338,13 @@ For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets)
 
 The `init_data` field MUST be laid out as follows order:
 
-| Data               | Name             | Fixed value                     | Description                                                                            |
-|:-------------------|:-----------------|--------------------------------:|:---------------------------------------------------------------------------------------|
-| b(16)              | `ra_channels`    |                                 | The number of channels contained OR ambisonics data if `ra_ambi == 0x1`.               |
-| b(8)               | `ra_ambi`        |                                 | Boolean flag indicating that samples are ambisonics (`0x1`) or plain channels (`0x0`). |
-| b(8)               | `ra_bits`        |                                 | The number of bits for each sample.                                                    |
-| b(8)               | `ra_float`       |                                 | The data contained is floats (`0x1`) or integers (`0x0`).                              |
-| b(`ra_channels`*8) | `ra_pos`         |                                 | The coding position for each channel.                                                  |
+| Data               | Name             | Fixed value | Description                                                                            |
+|:-------------------|:-----------------|------------:|:---------------------------------------------------------------------------------------|
+| b(16)              | `ra_channels`    |             | The number of channels contained OR ambisonics data if `ra_ambi == 0x1`.               |
+| b(8)               | `ra_ambi`        |             | Boolean flag indicating that samples are ambisonics (`0x1`) or plain channels (`0x0`). |
+| b(8)               | `ra_bits`        |             | The number of bits for each sample.                                                    |
+| b(8)               | `ra_float`       |             | The data contained is floats (`0x1`) or integers (`0x0`).                              |
+| b(`ra_channels`*8) | `ra_pos`         |             | The coding position for each channel.                                                  |
 
 The position for each channel is determined by the value of the integers `ra_pos`, and may be interpreted as:
 | Value | Position    |
@@ -376,24 +376,24 @@ For raw video encapsulation, the `codec_id` in the [data packets](#data-packets)
 
 The `init_data` field MUST be laid out as follows order:
 
-| Data                  | Name               | Fixed value                     | Description                                                                                                                             |
-|:----------------------|:-------------------|--------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------|
-| b(32)                 | `rv_width`         |                                 | The number of horizontal pixels the video stream contains.                                                                              |
-| b(32)                 | `rv_height`        |                                 | The number of vertical pixels the video stream contains.                                                                                |
-| b(8)                  | `rv_components`    |                                 | The number of components the video stream contains.                                                                                     |
-| b(8)                  | `rv_planes`        |                                 | The number of planes the video components are placed in.                                                                                |
-| b(8)                  | `rv_bpp`           |                                 | The number of bits for each **individual** component pixel.                                                                             |
-| b(8)                  | `rv_ver_subsample` |                                 | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
-| b(8)                  | `rv_hor_subsample` |                                 | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
-| b(32)                 | `rv_flags`         |                                 | Flags for the video stream.                                                                                                             |
-| b(`rv_components`*8)  | `rc_plane`         |                                 | Specifies the plane index that the component belongs in.                                                                                |
-| b(`rv_components`*8)  | `rc_stride`        |                                 | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
-| b(`rv_components`*8)  | `rc_offset`        |                                 | Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.                                    |
-| b(`rv_components`*8)  | `rc_shift`         |                                 | Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.                           |
-| b(`rv_components`*8)  | `rc_bits`          |                                 | Specifies the total number of bits the component's value will contain.                                                                  |
-|                       |                    |                                 | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
-| i(`rv_components`*32) | `rc_range_low`     |                                 | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
-| i(`rv_components`*32) | `rc_range_high`    |                                 | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
+| Data                  | Name               | Fixed value | Description                                                                                                                             |
+|:----------------------|:-------------------|------------:|:----------------------------------------------------------------------------------------------------------------------------------------|
+| b(32)                 | `rv_width`         |             | The number of horizontal pixels the video stream contains.                                                                              |
+| b(32)                 | `rv_height`        |             | The number of vertical pixels the video stream contains.                                                                                |
+| b(8)                  | `rv_components`    |             | The number of components the video stream contains.                                                                                     |
+| b(8)                  | `rv_planes`        |             | The number of planes the video components are placed in.                                                                                |
+| b(8)                  | `rv_bpp`           |             | The number of bits for each **individual** component pixel.                                                                             |
+| b(8)                  | `rv_ver_subsample` |             | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
+| b(8)                  | `rv_hor_subsample` |             | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
+| b(32)                 | `rv_flags`         |             | Flags for the video stream.                                                                                                             |
+| b(`rv_components`*8)  | `rc_plane`         |             | Specifies the plane index that the component belongs in.                                                                                |
+| b(`rv_components`*8)  | `rc_stride`        |             | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
+| b(`rv_components`*8)  | `rc_offset`        |             | Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.                                    |
+| b(`rv_components`*8)  | `rc_shift`         |             | Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.                           |
+| b(`rv_components`*8)  | `rc_bits`          |             | Specifies the total number of bits the component's value will contain.                                                                  |
+|                       |                    |             | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
+| i(`rv_components`*32) | `rc_range_low`     |             | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
+| i(`rv_components`*32) | `rc_range_high`    |             | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
 
 The purpose of the `rc_offset` field is to allow differentiation between different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
 
