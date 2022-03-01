@@ -130,6 +130,10 @@ The same formula is also valid for the `dts` field.
 
 Implementations MUST feed the packets to the decoder in an incrementing order according to the `dts` field.
 
+Negative `pts` values ARE allowed, and implementations **MUST** decode such frames, however **MUST NOT** present any such frames unless `pts + duration` is greater than 0, in which case they MUST present the data
+required for that duration.</br>
+In other words, if the data is for an audio stream, implementations MUST start presenting from the given offset.
+
 The `pkt_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                                                                                                                  |
@@ -329,6 +333,8 @@ In case of multiple channels, the packets MUST contain the concatenated contents
 In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and any [EDC packets](#edc-packets) sent in
 regards to the stream MUST have an `fec_length` field value of 0.
 
+Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the first stream packet's `pts` value to a negative value as defined in [data packets](#data-packets) to remove the required number of prepended samples.
+
 ### AAC encapsulation
 
 For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41414300 (`AAC\0`).
@@ -336,6 +342,8 @@ For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST 
 The `init_data` MUST be the codec's `AudioSpecificConfig`, as defined in MPEG-4.
 
 The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is explicitly unsupported.
+
+Implementations **MUST** set the first stream packet's `pts` value to a negative value as defined in [data packets](#data-packets) to remove the required number of prepended samples.
 
 ### AV1 encapsulation
 
