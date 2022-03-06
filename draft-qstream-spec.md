@@ -1,6 +1,6 @@
-Qproto protocol
-===============
-The Qproto protocol is a new standardized mechanism for unidirectional and bidirectional
+Qstream protocol
+================
+The Qstream protocol is a new standardized mechanism for unidirectional and bidirectional
 multimedia transport and storage. This protocol aims to be a simple, reliable and robust
 low-overhead method that borrows design decisions from other protocols and aims to be
 generic, rather than specialized for certain use-cases. With minimal changes, it can be
@@ -12,7 +12,7 @@ inflexible metadata, inconvenient index positions, lack of context, inextensible
 and rigid overseeing organizations.
 
 This specifications provides support for streaming over 2 protocols: [UDP](#udp) and [QUIC/HTTP3](#quichttp3).
-See the [streaming](#streaming) section for information on how to adapt Qproto for such
+See the [streaming](#streaming) section for information on how to adapt Qstream for such
 use-cases.
 
 Specification conventions
@@ -31,15 +31,15 @@ All floating point samples and pixels are always **normalized** to fit within th
 
 Protocol overview
 -----------------
-On a high-level, Qproto is a thin wrapper around codec or metadata packets that provides
-context and error resilience, and defines a standardized way to transmit such data between
-clients.
+On a high-level, Qstream is a thin wrapper around codec, metadata and user packets that
+provides context and error resilience, and defines a standardized way to transmit such
+data between clients.
 
 The structure of data, when saved as a file, is:
 
 | Data   | Name              | Fixed value       | Description                                                                                                                                 |
 |:-------|:------------------|------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------|
-| b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qproto stream.                                                              |
+| b(32)  | `fid`             |        0x5170726f | Unique file identifier that identifiers the following data is a Qstream stream.                                                             |
 | Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                               |
 |        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                  |
 |        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                          |
@@ -221,14 +221,14 @@ The `stream_id` MAY be reused afterwards, but this is not recommended.
 
 If not encountered in a stream, and the connection was cut, then the receiver is allowed to gracefully wait for a reconnection.
 
-If encountered in a file, the implementation MAY regard any data present afterwards as padding and ignore it. Qproto files **MAY NOT** be concatenated.
+If encountered in a file, the implementation MAY regard any data present afterwards as padding and ignore it. Qstream files **MAY NOT** be concatenated.
 
 Streaming
 =========
 
 UDP
 ---
-To adapt Qproto for streaming over UDP is trivial - simply supply the data as-is specified for a file, with no changes required. The sender implementation
+To adapt Qstream for streaming over UDP is trivial - simply supply the data as-is specified for a file, with no changes required. The sender implementation
 SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most as often as the stream with the lowest frequency of `keyframe`s in order
 to permit for implementations that didn't catch on the start of the stream begin decoding.
 UDP mode is unidirectional, but the implementations are free to use the [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
@@ -237,7 +237,7 @@ Implementations MUST reject duplicate packets.
 
 QUIC/HTTP3
 ----------
-Qproto tries to use as much of the modern conveniences of QUIC as possible. As such, it uses both reliable and unreliable streams, as well as bidirectionality
+Qstream tries to use as much of the modern conveniences of QUIC as possible. As such, it uses both reliable and unreliable streams, as well as bidirectionality
 features of the transport mechanism.
 
 Any data marked as error-corrected (`Tu`, `Tb`, etc.) MUST be sent over in a *reliable* stream, as per [draft-schinazi-masque-h3-datagram](https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram),
