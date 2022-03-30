@@ -242,8 +242,6 @@ SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most
 to permit for implementations that didn't catch on the start of the stream begin decoding.
 UDP mode is unidirectional, but the implementations are free to use the [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
 
-Implementations MUST reject duplicate packets.
-
 QUIC/HTTP3
 ----------
 Qstream tries to use as much of the modern conveniences of QUIC as possible. As such, it uses both reliable and unreliable streams, as well as bidirectionality
