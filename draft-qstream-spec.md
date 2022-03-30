@@ -25,7 +25,7 @@ A special notation is used to describe sequences of bits:
  - `i(bits)`: the same, but the data describes a signed integer is signed.
  - `b(bits)`: the data is an opaque string of bits that clients MUST NOT interpret as anything else.
  - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
- - `Tu(bits)`, `Ti(bits)`, `Tb(bits), Tr(bits)`: same as above, but error corrected with [turbo codes](https://en.wikipedia.org/wiki/Turbo_code).
+ - `Tu(bits)`, `Ti(bits)`, `Tb(bits), Tr(bits)`: same as above, but error corrected with RaptorQ (IETF RFC 6330), as described in [Error resilience](#error-resilience).
 
 All floating point samples and pixels are always **normalized** to fit within the interval `[-1.0, 1.0]`.
 
@@ -64,6 +64,14 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffffffff`, if at all.                                                           |
+
+Error resilience
+----------------
+For error resilience, all **contiguous** chunks of bit sequences marked with the `T` prefix, from the start of the 32-bit packet identifier to the end of the
+packet or until the first non-protected bit, are to be encoded via RaptorQ (IETF RFC 6330).
+Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC Object Transmission Information as described in the document are *never* used.
+Instead, the symbol size is fixed to **32 bits**, unless stated otherwise. After writing the encoded data chunk, the stream MUST be padded to the nearest multiple
+of 8 since the start of the header with zero bits, at which point what follows is either unprotected bits or the encoded data of the next packet.
 
 Time synchronization
 --------------------
@@ -150,7 +158,8 @@ The data in an Error Detection and Correction packet is laid out as follows:
 | Tb(32)             | `edc_descriptor`  |          0x3 | Indicates this is an EDC packet for the data previously sent.                         |
 | Tb(32)             | `packet_data_crc` |              | The CRC32 of the packet data.                                                         |
 | Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
-| Tb(`fec_length`*8) | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
+| Tb(32)             | `fec_symbol_size` |              | The symbol size for the following sequence of error correction data.                  |
+| b(`fec_length`*8)  | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 The `packet_data_crc` MUST be calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
 
