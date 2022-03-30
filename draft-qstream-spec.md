@@ -75,11 +75,22 @@ of 8 since the start of the header with zero bits, at which point what follows i
 
 Time synchronization
 --------------------
-In order to make sense of any timestamps present in the stream, the `time_sync` packet is sent through.
+In order to optionally make sense of timestamps present in the stream, or provide a context for synchronization, the `time_sync` packet is sent through.
 This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
-This field MAY be zero, in which case the stream has no real-world time-relative context, and decoders MUST instead use the current time.
-If the stream is a file, decoders SHOULD ignore this, and MAY expose the offset as a metadata `date` field. unless manually overridden by
-users to allow for synchronized presentation. Otherwise, in a stream, decoders MUST interpret all timestamps as a positive offset of the `epoch`.
+
+This field MAY be zero, in which case the stream has no real-world time-relative context.
+
+If this field is non-zero, senders SHOULD ensure the `epoch` value is actual.
+
+If the stream is a file, receivers SHOULD ignore this, but MAY expose the offset as a metadata `date` field.</br>
+Also, when the stream is a file, receivers CAN replace the field by a user-defined value in order to permit synchronized
+presentation between multiple unconnected receivers.
+
+If the stream is live, receivers are permitted to ignore the value and present as soon as new data is received.</br>
+Receivers are also free to trust the field to be valid, and interpret all timestamps as a positive offset of the
+`epoch` value, and present at that time, such that synchronized presentation between unconnected receivers is possible.</br>
+Receivers are also free to consider the field trustworthy, and use its value to estimate the sender start time,
+as well as the end-to-end latency.
 
 Init packets
 ------------
@@ -132,7 +143,7 @@ The data packets are laid out as follows:
 
 For information on the layout of the specific codec-specific packet data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
-The final timestamp in nanoseconds is given by the following formula: `epoch + timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
+The final timestamp in nanoseconds is given by the following formula: `timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
 
 The same formula is also valid for the `dts` field.
 
