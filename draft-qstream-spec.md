@@ -188,6 +188,8 @@ The `stream_id` and `pts` fields MUST match those sent over [data packets](#data
 
 The size of the final assembled packet is the sum of all `data_length` fields.
 
+Data segments and packets may arrive out of order and be duplicated. Implementations SHOULD assemble them into complete packets, but MAY skip segments, packets or even frames due to latency concerns, and MAY try to decode and present incomplete or damaged data.
+
 EDC segments
 ------------
 The data in an Error Detection and Correction packet is laid out as follows:
