@@ -190,6 +190,10 @@ The size of the final assembled packet is the sum of all `data_length` fields.
 
 Data segments and packets may arrive out of order and be duplicated. Implementations SHOULD assemble them into complete packets, but MAY skip segments, packets or even frames due to latency concerns, and MAY try to decode and present incomplete or damaged data.
 
+Implementations MAY send duplicate segments to compensate for packet loss, should bandwidth permit.
+
+Implementations SHOULD discard any packets and segments that arrive after their presentation time. Implementations SHOULD garbage collect any packets and segments that arrive with unrealistically far away presentation times.
+
 EDC segments
 ------------
 The data in an Error Detection and Correction packet is laid out as follows:
@@ -208,11 +212,13 @@ The data in an Error Detection and Correction packet is laid out as follows:
 
 The `stream_id` and `pts` fields MUST match those sent over [data packets](#data-packets).
 
-The `data_crc` MUST be calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
+The `data_crc` MUST be present and calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
 
 The `fec_length` field MAY be equal to `0`, in which case, the packet only contains error-detecting information.
 
 Implementations MAY discard the FEC data, or MAY delay the previous packet's decoding to correct it with this data, or MAY attempt to decode the previous data, and if failed, retry with the corrected data packet.
+
+The same lifetime and duplication rules apply for EDC segments as they do for regular data segments.
 
 Index packets
 -------------
