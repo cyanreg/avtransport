@@ -177,7 +177,7 @@ The syntax to allow for this is as follows:
 
 | Data               | Name              | Fixed value   | Description                                                                                 |
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
-| Tb(32)             | `data_descriptor` | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
+| Tb(32)             | `seg_descriptor`  | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
 | Tb(32)             | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
 | Ti(64)             | `pts`             |               | Indicates the presentation timestamp of the packet that this data segment targets.          |
 | Tb(32)             | `data_length`     |               | The size of the data segment.                                                               |
