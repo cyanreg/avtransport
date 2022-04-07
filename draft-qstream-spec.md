@@ -126,9 +126,9 @@ Otherwise, implementations may expose this as an alternative stream the user may
 
 The `stream_flags` field may be interpreted as such:
 
-| Bit set | Description                                                             |
-|--------:|-------------------------------------------------------------------------|
-|     0x1 | Indicates stream is a still picture and no further packets will arrive. |
+| Bit set | Description                                                                         |
+|--------:|-------------------------------------------------------------------------------------|
+|     0x1 | Indicates stream is a still picture and only a single decodable frame will be sent. |
 
 The `derived_stream_id` denotes the stream ID of which this stream is a variant of. It MAY be used to signal streams which carry the same content, but with a different codec or resolution.
 If the stream is standalone, or it's meant to be the default variant, `derived_stream_id` MUST match `stream_id`.
