@@ -43,7 +43,8 @@ The structure of data, when saved as a file, is:
 | Ti(64) | `time_sync`       |                   | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                               |
 |        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                  |
 |        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                          |
-|        | `edc_packet`      |                   | Optional. May be used to error-detect/correct the payload of the last `data_packet` or `user_data` packet. See [EDC packets](#edc-packets). |
+|        | `data_segment`    |                   | Segment of a fragmented data packet. See the section on [data segmentation](#data-segmentation).                                            |
+|        | `edc_segment`     |                   | Optional. May be used to error-detect/correct the payload. See [EDC segments](#edc-segments).                                               |
 |        | `index_packet`    |                   | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                                          |
 |        | `metadata_packet` |                   | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                       |
 |        | `user_data`       |                   | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                  |
@@ -60,7 +61,7 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `init_data`       | MUST be present before any and all `data_packet`s.                                                                            |
 | `index_packet`    | MAY be present anywhere allowed, but it's recommended for it to be present either at the start, or at the very end in a file. |
 | `metadata_packet` | MUST be present before any `init_data` packets.                                                                               |
-| `edc_packet`      | MUST be present immediately after a `data_packet` to perform error correction.                                               |
+| `edc_segment`     | MAY be present after a `data_packet` or `data_segment` to perform error correction.                                           |
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffffffff`, if at all.                                                           |
@@ -134,17 +135,17 @@ If the stream is standalone, or it's meant to be the default variant, `derived_s
 
 Data packets
 ------------
-The data packets are laid out as follows:
+The data packets indicate the start of a packet, which may be fragmented into more [data segments](#data-segmentation). It is laid out as follows:
 
 | Data               | Name              | Fixed value | Description                                                                                                                                |
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
-| Tb(32)             | `data_descriptor` |         0x2 | Indicates this is a data packet.                                                                                                           |
+| Tb(32)             | `data_descriptor` |        0x10 | Indicates this is a data packet.                                                                                                           |
 | Tb(32)             | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
 | Tb(8)              | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
 | Ti(64)             | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
 | Ti(64)             | `dts`             |             | The time, which when combined with the `epoch` field that indicates when a frame should be input into a synchronous 1-in-1-out decoder.    |
 | Ti(64)             | `duration`        |             | The duration of this packet.                                                                                                               |
-| Tb(32)             | `data_length`     |             | The size of the packet.                                                                                                                    |
+| Tb(32)             | `data_length`     |             | The size of the data in this packet.                                                                                                       |
 | b(`data_length`*8) | `packet_data`     |             | The packet data itself.                                                                                                                    |
 
 For information on the layout of the specific codec-specific packet data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
@@ -163,22 +164,49 @@ The `pkt_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                                                                                                                  |
 |-----------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|              0x1 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
-|              0x2 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
+|              0x1 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
+|              0x2 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
+|              0x3 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 
-EDC packets
------------
+If the `0x1` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x12` MUST be present to terminate the packet.
+
+Data segmentation
+-----------------
+Packets can be split up into separate chunks that may be received out of order and assembled. This allows transmission over switched networks with a limited MTU, or prevents very large packets from one stream interfering with another stream.
+The syntax to allow for this is as follows:
+
+| Data               | Name              | Fixed value   | Description                                                                                 |
+|:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
+| Tb(32)             | `data_descriptor` | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
+| Tb(32)             | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
+| Ti(64)             | `pts`             |               | Indicates the presentation timestamp of the packet that this data segment targets.          |
+| Tb(32)             | `data_length`     |               | The size of the data segment.                                                               |
+| Tb(32)             | `data_offset`     |               | The byte offset for the data segment.                                                       |
+| b(`data_length`*8) | `packet_data`     |               | The data for the segment.                                                                   |
+
+The `stream_id` and `pts` fields MUST match those sent over [data packets](#data-packets).
+
+The size of the final assembled packet is the sum of all `data_length` fields.
+
+EDC segments
+------------
 The data in an Error Detection and Correction packet is laid out as follows:
 
 | Data               | Name              | Fixed value  | Description                                                                           |
 |:-------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| Tb(32)             | `edc_descriptor`  |          0x3 | Indicates this is an EDC packet for the data previously sent.                         |
-| Tb(32)             | `packet_data_crc` |              | The CRC32 of the packet data.                                                         |
-| Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
+| Tb(32)             | `edc_descriptor`  |         0x20 | Indicates this is an EDC packet for data sent.                                        |
+| Tb(32)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
+| Ti(64)             | `pts`             |              | Indicates the presentation timestamp of the packet that this EDC data targets.        |
+| Tb(32)             | `data_offset`     |              | The byte offset for the data this EDC packet protects.                                |
+| Tu(32)             | `data_length`     |              | The length of the data protected by this EDC packet in bytes.                         |
+| Tb(32)             | `data_crc`        |              | The CRC32 of the data.                                                                |
 | Tb(32)             | `fec_symbol_size` |              | The symbol size for the following sequence of error correction data.                  |
+| Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
 | b(`fec_length`*8)  | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
 
-The `packet_data_crc` MUST be calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
+The `stream_id` and `pts` fields MUST match those sent over [data packets](#data-packets).
+
+The `data_crc` MUST be calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
 
 The `fec_length` field MAY be equal to `0`, in which case, the packet only contains error-detecting information.
 
@@ -190,7 +218,7 @@ The index packet contains available byte offsets of nearby keyframes and the dis
 
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                                |
 |:--------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Tb(32)              | `index_descriptor` |          0x4 | Indicates this is an index packet.                                                                                                                                                         |
+| Tb(32)              | `index_descriptor` |         0x30 | Indicates this is an index packet.                                                                                                                                                         |
 | Tb(32)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffffffff, in which case, it applies to all streams.                                                                                        |
 | Tu(32)              | `prev_idx`         |              | Position of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
 | Ti(32)              | `next_idx`         |              | Position of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
@@ -205,7 +233,7 @@ The metadata packets can be sent for the overall stream, or for a specific `stre
 
 | Data                 | Name              | Fixed value | Description                                                                                            |
 |:---------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------|
-| Tb(32)               | `meta_descriptor` |         0x5 | Indicates this is a metadata packet.                                                                   |
+| Tb(32)               | `meta_descriptor` |        0x40 | Indicates this is a metadata packet.                                                                   |
 | Tb(32)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffffffff, in which case, it applies to all streams. |
 | Tu(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                                |
 | Tb(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                              |
@@ -216,7 +244,7 @@ The user-specific data packet is laid out as follows:
 
 | Data                     | Name               | Fixed value  | Description                                                                           |
 |:-------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------|
-| Tb(32)                   | `user_descriptor`  |          0x6 | Indicates this is an opaque user-specific data.                                       |
+| Tb(32)                   | `user_descriptor`  |         0x50 | Indicates this is an opaque user-specific data.                                       |
 | Tu(32)                   | `user_data_length` |              | The length of the user data.                                                          |
 | Tb(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
 
@@ -226,7 +254,7 @@ The padding packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                           |
 |:-----------------------|----------------------|-------------:|---------------------------------------------------------------------------------------|
-| Tb(32)                 | `padding_descriptor` |          0x7 | Indicates this is a padding packet.                                                   |
+| Tb(32)                 | `padding_descriptor` |         0x60 | Indicates this is a padding packet.                                                   |
 | Tu(32)                 | `padding_length`     |              | The length of the padding data.                                                       |
 | b(`padding_length`*8)  | `padding_data`       |              | The padding data itself. May be all zeroes or random numbers.                         |
 
@@ -238,7 +266,7 @@ The EOS packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                                                 |
 |:-----------------------|:---------------------|-------------:|:------------------------------------------------------------------------------------------------------------|
-| Tb(32)                 | `eos_descriptor`     |          0x8 | Indicates this is an end-of-stream packet.                                                                  |
+| Tb(32)                 | `eos_descriptor`     |         0x70 | Indicates this is an end-of-stream packet.                                                                  |
 | Tb(32)                 | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffffffff, in which case, it applies to all streams. |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer receive any packets, and implementations are free to unload decoding and free up any used resources.
@@ -258,6 +286,8 @@ To adapt Qstream for streaming over UDP is trivial - simply supply the data as-i
 SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most as often as the stream with the lowest frequency of `keyframe`s in order
 to permit for implementations that didn't catch on the start of the stream begin decoding.
 UDP mode is unidirectional, but the implementations are free to use the [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
+
+Implementations SHOULD segment the data such that the MTU is never exceeded and no packet splitting occurs.
 
 QUIC/HTTP3
 ----------
