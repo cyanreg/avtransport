@@ -140,6 +140,7 @@ The data packets indicate the start of a packet, which may be fragmented into mo
 | Data               | Name              | Fixed value | Description                                                                                                                                |
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)             | `data_descriptor` |        0x10 | Indicates this is a data packet.                                                                                                           |
+| Tb(32)             | `seq_number`      |             | A per-stream monotonically incrementing number.                                                                                            |
 | Tb(32)             | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
 | Tb(8)              | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
 | Ti(64)             | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
@@ -179,12 +180,12 @@ The syntax to allow for this is as follows:
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
 | Tb(32)             | `seg_descriptor`  | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
 | Tb(32)             | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
-| Ti(64)             | `pts`             |               | Indicates the presentation timestamp of the packet that this data segment targets.          |
+| Ti(32)             | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
 | Tb(32)             | `data_length`     |               | The size of the data segment.                                                               |
 | Tb(32)             | `data_offset`     |               | The byte offset for the data segment.                                                       |
 | b(`data_length`*8) | `packet_data`     |               | The data for the segment.                                                                   |
 
-The `stream_id` and `pts` fields MUST match those sent over [data packets](#data-packets).
+The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
 The size of the final assembled packet is the sum of all `data_length` fields.
 
@@ -202,7 +203,7 @@ The data in an Error Detection and Correction packet is laid out as follows:
 |:-------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
 | Tb(32)             | `edc_descriptor`  |         0x20 | Indicates this is an EDC packet for data sent.                                        |
 | Tb(32)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
-| Ti(64)             | `pts`             |              | Indicates the presentation timestamp of the packet that this EDC data targets.        |
+| Ti(32)             | `seq_number`      |              | Indicates the packet which this EDC data is backing.                                  |
 | Tb(32)             | `data_offset`     |              | The byte offset for the data this EDC packet protects.                                |
 | Tu(32)             | `data_length`     |              | The length of the data protected by this EDC packet in bytes.                         |
 | Tb(32)             | `data_crc`        |              | The CRC32 of the data.                                                                |
@@ -210,7 +211,7 @@ The data in an Error Detection and Correction packet is laid out as follows:
 | Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
 | b(`fec_length`*8)  | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
 
-The `stream_id` and `pts` fields MUST match those sent over [data packets](#data-packets).
+The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
 The `data_crc` MUST be present and calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
 
