@@ -44,7 +44,7 @@ The structure of data, when saved as a file, is:
 |        | `init_data`       |                   | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                  |
 |        | `data_packet`     |                   | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                          |
 |        | `data_segment`    |                   | Segment of a fragmented data packet. See the section on [data segmentation](#data-segmentation).                                            |
-|        | `edc_segment`     |                   | Optional. May be used to error-detect/correct the payload. See [EDC segments](#edc-segments).                                               |
+|        | `fec_segment`     |                   | Optional. May be used to error-detect/correct the payload. See [FEC segments](#fec-segments).                                               |
 |        | `index_packet`    |                   | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                                          |
 |        | `metadata_packet` |                   | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                       |
 |        | `user_data`       |                   | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                  |
@@ -61,7 +61,7 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `init_data`       | MUST be present before any and all `data_packet`s.                                                                            |
 | `index_packet`    | MAY be present anywhere allowed, but it's recommended for it to be present either at the start, or at the very end in a file. |
 | `metadata_packet` | MUST be present before any `init_data` packets.                                                                               |
-| `edc_segment`     | MAY be present after a `data_packet` or `data_segment` to perform error correction.                                           |
+| `fec_segment`     | MAY be present after a `data_packet` or `data_segment` to perform error correction.                                           |
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffffffff`, if at all.                                                           |
@@ -195,31 +195,26 @@ Implementations MAY send duplicate segments to compensate for packet loss, shoul
 
 Implementations SHOULD discard any packets and segments that arrive after their presentation time. Implementations SHOULD garbage collect any packets and segments that arrive with unrealistically far away presentation times.
 
-EDC segments
+FEC segments
 ------------
 The data in an Error Detection and Correction packet is laid out as follows:
 
 | Data               | Name              | Fixed value  | Description                                                                           |
 |:-------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| Tb(32)             | `edc_descriptor`  |         0x20 | Indicates this is an EDC packet for data sent.                                        |
+| Tb(32)             | `fec_descriptor`  |         0x20 | Indicates this is an FEC packet for data sent.                                        |
 | Tb(32)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
-| Ti(32)             | `seq_number`      |              | Indicates the packet which this EDC data is backing.                                  |
-| Tb(32)             | `data_offset`     |              | The byte offset for the data this EDC packet protects.                                |
-| Tu(32)             | `data_length`     |              | The length of the data protected by this EDC packet in bytes.                         |
-| Tb(32)             | `data_crc`        |              | The CRC32 of the data.                                                                |
+| Ti(32)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
+| Tb(32)             | `data_offset`     |              | The byte offset for the data this FEC packet protects.                                |
+| Tu(32)             | `data_length`     |              | The length of the data protected by this FEC packet in bytes.                         |
 | Tb(32)             | `fec_symbol_size` |              | The symbol size for the following sequence of error correction data.                  |
 | Tu(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
 | b(`fec_length`*8)  | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
-The `data_crc` MUST be present and calculated using the polynomial **0x04C11DB7** with a starting value of **0xffffffff**.
-
-The `fec_length` field MAY be equal to `0`, in which case, the packet only contains error-detecting information.
-
 Implementations MAY discard the FEC data, or MAY delay the previous packet's decoding to correct it with this data, or MAY attempt to decode the previous data, and if failed, retry with the corrected data packet.
 
-The same lifetime and duplication rules apply for EDC segments as they do for regular data segments.
+The same lifetime and duplication rules apply for FEC segments as they do for regular data segments.
 
 Index packets
 -------------
@@ -349,7 +344,7 @@ The following packet MAY be sent from the receiver to the sender.
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                           |
 |:--------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Tb(32)              | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                                                |
-| Tb(32)              | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where either CRC or FEC in `edc_packets` detected errors, or if such were missing, decoding was impossible or had errors.              |
+| Tb(32)              | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where either CRC or FEC in `fec_packets` detected errors, or if such were missing, decoding was impossible or had errors.              |
 | Tu(32)              | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
 
 Reverse user data
@@ -395,8 +390,7 @@ The `packet_data` MUST contain regular Opus packets with their front uncompresse
 
 In case of multiple channels, the packets MUST contain the concatenated contents in coding order of all channels' packets.
 
-In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and any [EDC packets](#edc-packets) sent in
-regards to the stream MUST have an `fec_length` field value of 0.
+In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and no [FEC packets](#fec-packets) must be present in regards to this stream.
 
 Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the first stream packet's `pts` value to a negative value as defined in [data packets](#data-packets) to remove the required number of prepended samples.
 
