@@ -453,7 +453,7 @@ with the data contained in the topmost 24 bits.
 
 For raw video encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52415656 (`RAVV`).
 
-The `init_data` field MUST be laid out as follows order:
+The `init_data` field MUST be laid out in the following way:
 
 | Data                  | Name               | Fixed value | Description                                                                                                                             |
 |:----------------------|:-------------------|------------:|:----------------------------------------------------------------------------------------------------------------------------------------|
