@@ -77,6 +77,12 @@ Time synchronization
 --------------------
 In order to optionally make sense of timestamps present in the stream, or provide a context for synchronization, the `time_sync` packet is sent through.
 This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
+The layout of the data in a `time_sync` packet is as follows:
+
+| Data   | Name              | Fixed value  | Description                                      |
+|:-------|:------------------|-------------:|:-------------------------------------------------|
+| Tb(32) | `time_descriptor` |         0x70 | Indicates this is a time synchronization packet. |
+| Tb(64) | `epoch`           |              | Indicates the time epoch.                        |
 
 This field MAY be zero, in which case the stream has no real-world time-relative context.
 
