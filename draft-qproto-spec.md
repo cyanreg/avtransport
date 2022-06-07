@@ -110,7 +110,7 @@ The layout of the data is as follows:
 | b(32)              | `derived_stream_id` |             | Indicates the stream ID for which this stream is be derived from.         |
 | b(32)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
 | b(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
-| r(32)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
+| r(64)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
 | u(32)              | `init_length`       |             | Indicates the length of the initialization data in bytes. May be zero.    |
 | b(`init_length`*8) | `init_data`         |             | Actual codec-specific initialization data.                                |
 
