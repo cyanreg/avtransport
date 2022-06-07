@@ -1,10 +1,10 @@
-Qstream <-> DASH interoperation
+Qproto <-> DASH interoperation
 ===============================
 
-Qstream is capable of being losslessy converted into DASH, and vice versa.
+Qproto is capable of being losslessy converted into DASH, and vice versa.
 This document serves as a specification with which conversion should be done.
 
-DASH to Qstream
+DASH to Qproto
 ===============
 
 DASH manifest
