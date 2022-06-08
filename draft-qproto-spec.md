@@ -366,6 +366,7 @@ The following section lists the supported codecs, along with their encapsulation
  - [AV1](#av1-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
+ - [Custom](#custom-codec-encapsulation)
 
 ### Opus encapsulation
 
@@ -485,3 +486,18 @@ The flags field MUST be interpreted in the following way:
 |             0x16 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
 |             0x32 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
 |             0x64 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+
+### Custom codec encapsulation
+
+A special section is dedicated for custom codec storage. While potentially useful
+for experimentation and for specialized usecases, users of such are invited to submit
+an addenda to this document to formalize such containerization. This field MUST NOT be
+used if the codec being contained already has a formal definition in this spec.
+
+For custom encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x433f*XYZW* (`C?ⁿⁿ`), where *XY* and *ZW* can be any value between
+0x30 and 0x39 (`0` to `9` in ASCII).
+
+The `init_data` field can be any length and contain any sequence of data.
+
+The `packet_data` field can be any length and contain any sequence of data.
