@@ -107,8 +107,8 @@ The layout of the data is as follows:
 |:-------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
 | b(32)              | `init_descriptor`   |         0x1 | Indicates this is an initialization packet.                               |
 | b(32)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
-| b(32)              | `derived_stream_id` |             | Indicates the stream ID for which this stream is be derived from.         |
-| b(32)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
+| b(32)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
+| b(64)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
 | b(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
 | r(64)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
 | u(32)              | `init_length`       |             | Indicates the length of the initialization data in bytes. May be zero.    |
@@ -116,19 +116,33 @@ The layout of the data is as follows:
 
 For more information on the layout of the specific data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
-However, in general, the data follows the same layout as what [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.
-An implementation MAY error out in case it cannot handle the parameters specified in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live scenario, it MUST return an `unsupported` [control data](#control-data).
-If this packet is sent for an already-initialized stream AND its byte-wise contents do not match the old contents, implementations MUST flush and reinitialize the decoder before attempting to decoder more `data_packet`s.
-Otherwise, implementations may expose this as an alternative stream the user may choose to switch to.
+However, in general, the data follows the same layout as what
+[FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.</br>
+An implementation MAY error out in case it cannot handle the parameters specified
+in the `init_data`. If so, when reading a file, it MUST stop, otherwise in a live
+scenario, it MUST send an `unsupported` [control data](#control-data), if such a
+connection is open.
+
+<!--- TODO: fix byte-wise definition to be the error-corrected contents -->
+If this packet is sent for an already-initialized stream AND its byte-wise contents
+do not match the old contents, implementations MUST flush and reinitialize the
+decoder before attempting to decoder more `data_packet`s.
+Otherwise, implementations may expose this as an alternative stream the user may
+choose to switch to.
 
 The `stream_flags` field may be interpreted as such:
 
-| Bit set | Description                                                                         |
-|--------:|-------------------------------------------------------------------------------------|
-|     0x1 | Indicates stream is a still picture and only a single decodable frame will be sent. |
+| Bit set | Description                                                                                      |
+|--------:|--------------------------------------------------------------------------------------------------|
+|     0x1 | Indicates stream is a still picture and only a single decodable frame will be sent.              |
+|     0x2 | Indicates stream is a cover art picture for the stream signalled in `related_stream_id`.         |
+|     0x3 | Indicates that stream is a lower quality version of the stream signalled in `related_stream_id`. |
 
-The `derived_stream_id` denotes the stream ID of which this stream is a variant of. It MAY be used to signal streams which carry the same content, but with a different codec or resolution.
-If the stream is standalone, or it's meant to be the default variant, `derived_stream_id` MUST match `stream_id`.
+If bits `0x2` OR `0x3` are unset, `related_stream_id` MUST match `stream_id`.
+
+If bit `0x3` is signalled, `related_stream_id` MUST point to an existing `stream_id`.</br>
+Several streams can be chained with the `0x3` bit set to indicate progressively lower
+quality/bitrate versions of the same stream.
 
 Data packets
 ------------
