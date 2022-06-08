@@ -55,7 +55,7 @@ All fields are implicitly padded to the nearest byte. The padding SHOULD be all 
 The order in which the fields may appear **first** in a stream is as follows:
 | Field             | Order                                                                                                                         |
 |:------------------|:------------------------------------------------------------------------------------------------------------------------------|
-| `fid`             | MUST always be first. MAY be present multiple times, as long as it's before `eos` with a `stream_id` of `0xffffffff`.         |
+| `fid`             | MUST always be first. MAY be present multiple times, as long as it's before `eos` with a `stream_id` of `0xffff`.             |
 | `time_sync`       | MUST be present before any and all `data_packet`s, `index_packet`s and `metadata_packet`s.                                    |
 | `init_data`       | MUST be present before any and all `data_packet`s.                                                                            |
 | `index_packet`    | MAY be present anywhere allowed, but it's recommended for it to be present either at the start, or at the very end in a file. |
@@ -63,7 +63,7 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `fec_segment`     | MAY be present after a `data_packet` or `data_segment` to perform error correction.                                           |
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
-| `eos`             | MUST be present last if its `stream_id` is `0xffffffff`, if at all.                                                           |
+| `eos`             | MUST be present last if its `stream_id` is `0xffff`, if at all.                                                           |
 
 Error resilience
 ----------------
@@ -106,8 +106,8 @@ The layout of the data is as follows:
 | Data               | Name                | Fixed value | Description                                                               |
 |:-------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
 | b(32)              | `init_descriptor`   |         0x1 | Indicates this is an initialization packet.                               |
-| b(32)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
-| b(32)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
+| b(16)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
+| b(16)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
 | b(64)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
 | b(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
 | r(64)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
@@ -166,18 +166,17 @@ The data packets indicate the start of a packet, which may be fragmented into mo
 | Data               | Name              | Fixed value | Description                                                                                                                                |
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
 | b(32)              | `data_descriptor` |        0x10 | Indicates this is a data packet.                                                                                                           |
-| b(32)              | `seq_number`      |             | A per-stream monotonically incrementing number.                                                                                            |
-| b(32)              | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
+| b(16)              | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
+| u(16)              | `seq_number`      |             | A per-stream monotonically incrementing packet number.                                                                                     |
 | b(8)               | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
 | i(64)              | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
-| i(64)              | `dts`             |             | The time, which when combined with the `epoch` field that indicates when a frame should be input into a synchronous 1-in-1-out decoder.    |
-| i(64)              | `duration`        |             | The duration of this packet.                                                                                                               |
-| b(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                       |
+| u(64)              | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                       |
+| u(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                       |
 | b(`data_length`*8) | `packet_data`     |             | The packet data itself.                                                                                                                    |
 
 For information on the layout of the specific codec-specific packet data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
-The final timestamp in nanoseconds is given by the following formula: `timebase.num*pts*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
+The final timestamp in nanoseconds is given by the following formula: `pts*timebase.num*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
 
 The same formula is also valid for the `dts` field.
 
@@ -205,10 +204,10 @@ The syntax to allow for this is as follows:
 | Data               | Name              | Fixed value   | Description                                                                                 |
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
 | b(32)              | `seg_descriptor`  | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
-| b(32)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
-| i(32)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
-| b(32)              | `data_length`     |               | The size of the data segment.                                                               |
-| b(32)              | `data_offset`     |               | The byte offset for the data segment.                                                       |
+| b(16)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
+| u(16)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
+| u(32)              | `data_length`     |               | The size of the data segment.                                                               |
+| u(32)              | `data_offset`     |               | The byte offset for the data segment.                                                       |
 | b(`data_length`*8) | `packet_data`     |               | The data for the segment.                                                                   |
 
 The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
@@ -228,8 +227,8 @@ The data in an Error Detection and Correction packet is laid out as follows:
 | Data              | Name              | Fixed value  | Description                                                                           |
 |:------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
 | b(32)             | `fec_descriptor`  |         0x20 | Indicates this is an FEC packet for data sent.                                        |
-| b(32)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
-| i(32)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
+| b(16)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
+| u(16)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
 | b(32)             | `data_offset`     |              | The byte offset for the data this FEC packet protects.                                |
 | u(32)             | `data_length`     |              | The length of the data protected by this FEC packet in bytes.                         |
 | b(32)             | `fec_symbol_size` |              | The symbol size for the following sequence of error correction data.                  |
@@ -249,7 +248,7 @@ The index packet contains available byte offsets of nearby keyframes and the dis
 | Data               | Name               | Fixed value  | Description                                                                                                                                                                                |
 |:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | b(32)              | `index_descriptor` |         0x30 | Indicates this is an index packet.                                                                                                                                                         |
-| b(32)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffffffff, in which case, it applies to all streams.                                                                                        |
+| b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffffffff, in which case, it applies to all streams.                                                                                        |
 | u(32)              | `prev_idx`         |              | Position of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
 | i(32)              | `next_idx`         |              | Position of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
 | u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                                        |
@@ -264,7 +263,7 @@ The metadata packets can be sent for the overall stream, or for a specific `stre
 | Data                | Name              | Fixed value | Description                                                                                            |
 |:--------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------|
 | b(32)               | `meta_descriptor` |        0x40 | Indicates this is a metadata packet.                                                                   |
-| b(32)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffffffff, in which case, it applies to all streams. |
+| b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffffffff, in which case, it applies to all streams. |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                                |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                              |
 
@@ -297,7 +296,7 @@ The EOS packet is laid out as follows:
 | Data                   | Name                 | Fixed value  | Description                                                                                                 |
 |:-----------------------|:---------------------|-------------:|:------------------------------------------------------------------------------------------------------------|
 | b(32)                  | `eos_descriptor`     |         0x70 | Indicates this is an end-of-stream packet.                                                                  |
-| b(32)                  | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffffffff, in which case, it applies to all streams. |
+| b(16)                  | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffffffff, in which case, it applies to all streams. |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer receive any packets, and implementations are free to unload decoding and free up any used resources.
 
