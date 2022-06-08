@@ -393,6 +393,7 @@ The following section lists the supported codecs, along with their encapsulation
  - [Opus](#opus-encapsulation)
  - [AAC](#aac-encapsulation)
  - [AV1](#av1-encapsulation)
+ - [ASS](#ass-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
@@ -438,6 +439,36 @@ For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST 
 The `init_data` MUST be the codec's so-called `uncompressed header`. For information on its syntax, consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
+
+### ASS encapsulation
+
+ASS is a popular subtitle format with great presentation capabilities.
+Although it was not designed to be streamed or packetized, doing so is possible
+with the following specifications.
+These match to how Matroska handles [ASS encapsulation](https://matroska.org/technical/subtitles.html#ssaass-subtitles).
+
+ASS contains 3 important sections:
+ - Script information, in `[Script Info]`
+ - Styles, in `[V4 Styles]`
+ - Events, in `[Events]`
+ - All other sections MUST be stripped.
+
+First, all data MUST be converted to UTF-8.</br>
+
+The `init_data` field MUST contain the `[Script Info]` and `[V4 Styles]` sections
+as a string, unmodified.
+
+Events listed in ASS files MUST be modified in the following way:
+ - Start and end timestamps, stored in the `Marked` field, MUST be mapped to the \
+   packet's `pts`, `dts` and `duration` fields, and MUST be ommitted from the data.
+ - All other fields MUST be stored in the `packet_data` field as a string, in the \
+   followin order: `ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text`.
+ - Comments MAY be left as-is after all the fields.
+
+The `ReadOrder` field is a monotonically incrementing field to identify the correct
+order in which to reconstruct the original ASS file.
+
+Multiple packets with the same `pts` and `dts` ARE permitted.
 
 ### Raw audio encapsulation
 
