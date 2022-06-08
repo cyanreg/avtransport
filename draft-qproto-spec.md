@@ -132,17 +132,32 @@ choose to switch to.
 
 The `stream_flags` field may be interpreted as such:
 
-| Bit set | Description                                                                                      |
-|--------:|--------------------------------------------------------------------------------------------------|
-|     0x1 | Indicates stream is a still picture and only a single decodable frame will be sent.              |
-|     0x2 | Indicates stream is a cover art picture for the stream signalled in `related_stream_id`.         |
-|     0x3 | Indicates that stream is a lower quality version of the stream signalled in `related_stream_id`. |
+| Bit set | Description                                                                                                             |
+|--------:|-------------------------------------------------------------------------------------------------------------------------|
+|     0x1 | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
+|     0x2 | Stream is a still picture and only a single decodable frame will be sent.                                               |
+|     0x4 | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
+|     0x8 | Stream is a lower quality version of the stream signalled in `related_stream_id`.                                       |
+|    0x10 | Stream is a dubbed version of the stream signalled in `related_stream_id`.                                              |
+|    0x20 | Stream is a commentary track to the stream signalled in `related_stream_id`.                                            |
+|    0x40 | Stream is a lyrics track to the stream signalled in `related_stream_id`.                                                |
+|    0x80 | Stream is a karaoke track to the stream signalled in `related_stream_id`.                                               |
+|   0x100 | Stream is intended for hearing impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.  |
+|   0x200 | Stream is intended for visually impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in. |
+|   0x400 | Stream contains music and sound effects without voice.                                                                  |
+|   0x800 | Stream contains non-diegetic audio. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.                 |
+|  0x1000 | Stream contains textual or spoken descriptions to the stream signalled in `related_stream_id`.                          |
+|  0x2000 | Stream contains timed metadata and is not inteded to be directly presented to the user.                                 |
+|  0x4000 | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
 
-If bits `0x2` OR `0x3` are unset, `related_stream_id` MUST match `stream_id`.
-
-If bit `0x3` is signalled, `related_stream_id` MUST point to an existing `stream_id`.</br>
 Several streams can be chained with the `0x3` bit set to indicate progressively lower
 quality/bitrate versions of the same stream.
+
+Sparse thumbnail streams MAY exactly match chapters from `related_stream_id`,
+but could be sparser or more frequent.
+
+If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
+`stream_id`, otherwise the stream with a related ID` MUST exist.
 
 Data packets
 ------------
