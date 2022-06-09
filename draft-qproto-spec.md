@@ -23,7 +23,7 @@ Keywords given in all caps are to be interpreted as stated in IETF RFC 2119.
 A special notation is used to describe sequences of bits:
  - `u(bits)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(bits)`: the same, but the data describes a signed integer is signed.
- - `b(bits)`: the data is an opaque string of bits that clients MUST NOT interpret as anything else.
+ - `b(bits)`: the data is an opaque sequence of bits that clients MUST NOT interpret as anything else.
  - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
 
 All floating point samples and pixels are always **normalized** to fit within the interval `[-1.0, 1.0]`.
