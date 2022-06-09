@@ -194,7 +194,7 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x20 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
 |              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
-If the `0x1` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x12` MUST be present to terminate the packet.
+If the `0x40` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x12` MUST be present to terminate the packet.
 
 Data segmentation
 -----------------
