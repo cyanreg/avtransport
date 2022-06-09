@@ -48,7 +48,7 @@ The structure of data, when saved as a file, is:
 |        | `metadata_packet` |                    | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                       |
 |        | `user_data`       |                    | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                  |
 |        | `padding_packet`  |                    | Padding data. Optional. See [padding](#padding).                                                                                            |
-| b(16)  | `eos`             |             0xffff | Used to signal end of all streams. See the [end of stream](#end-of-stream) section. Optional.                                               |
+|        | `eos`             |                    | Used to signal end of stream. See the [end of stream](#end-of-stream) section. Optional, but strongly recommended.                          |
 
 All fields are implicitly padded to the nearest byte. The padding SHOULD be all zeroes.
 
