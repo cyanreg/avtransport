@@ -165,10 +165,9 @@ The data packets indicate the start of a packet, which may be fragmented into mo
 
 | Data               | Name              | Fixed value | Description                                                                                                                                |
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)              | `data_descriptor` |        0x10 | Indicates this is a data packet.                                                                                                           |
+| b(16)              | `data_descriptor` |    0x01*XY* | Indicates this is a data packet. The lower 8 bits are used as the `pkt_flags` field.                                                       |
 | b(16)              | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
 | u(16)              | `seq_number`      |             | A per-stream monotonically incrementing packet number.                                                                                     |
-| b(8)               | `pkt_flags`       |             | Bitmask with flags to specift the packet's properties.                                                                                     |
 | i(64)              | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
 | u(64)              | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                       |
 | u(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                       |
@@ -190,9 +189,10 @@ The `pkt_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                                                                                                                  |
 |-----------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|              0x1 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
-|              0x2 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
-|              0x3 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
+|             0x80 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
+|             0x40 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
+|             0x20 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
+|              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
 If the `0x1` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x12` MUST be present to terminate the packet.
 
