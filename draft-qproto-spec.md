@@ -417,11 +417,11 @@ The `init_data` field MUST be laid out as follows order:
 |:-------------------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
 | b(64)              | `opus_descriptor` | 0x4f70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
 | b(8)               | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
-| b(8)               | `opus_channels`   |                                 | Number of audio channels.                                                             |
-| b(16)              | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
+| u(8)               | `opus_channels`   |                                 | Number of audio channels.                                                             |
+| u(16)              | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
 | b(32)              | `opus_rate`       |                                 | Samplerate of the data. MUST be 48000.                                                |
-| b(16)              | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
-| b(32)              | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
+| i(16)              | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
+| u(32)              | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
 
 The `packet_data` MUST contain regular Opus packets with their front uncompressed header intact.
 
