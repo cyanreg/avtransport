@@ -65,6 +65,27 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffff`, if at all.                                                               |
 
+Each packet, except *fid*, MUST be prefixed with a descriptor. Below is a table
+of how they're allocated.
+
+| Descriptor | Packet type                                   |
+|-----------:|-----------------------------------------------|
+|     0x0001 | [Time synchronization](#time-synchronization) |
+|     0x0002 | [Stream initialization](#init-packets)        |
+|     0x0003 | [Stream index](#index-packets)                |
+|     0x0004 | [Metadata](#metadata-packets)                 |
+|     0x0005 | [Padding](#padding)                           |
+|     0x0009 | [End of stream](#end-of-stream)               |
+|     0x01** | [Stream data](#data-packets)                  |
+|     0x0010 | [Stream data segment](#data-segmentation)     |
+|     0x0011 | [Stream data segment](#data-segmentation)     |
+|     0x0012 | [Stream FEC segment](#fec-segments)           |
+|     0x40** | [User data](#user-data-packets)               |
+|            | **Reverse signalling only**                   |
+|     0x50** | [Reverse user data](#reverse-user-data)       |
+|     0x8001 | [Control data](#control-data)                 |
+|     0x8002 | [Statistics](#statistics)                     |
+
 Error resilience
 ----------------
 Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC Object Transmission Information as described in the document are *never* used.
@@ -79,7 +100,7 @@ The layout of the data in a `time_sync` packet is as follows:
 
 | Data   | Name              | Fixed value  | Description                                      |
 |:-------|:------------------|-------------:|:-------------------------------------------------|
-| b(16)  | `time_descriptor` |         0x70 | Indicates this is a time synchronization packet. |
+| b(16)  | `time_descriptor` |          0x1 | Indicates this is a time synchronization packet. |
 | b(64)  | `epoch`           |              | Indicates the time epoch.                        |
 
 This field MAY be zero, in which case the stream has no real-world time-relative context.
@@ -105,7 +126,7 @@ The layout of the data is as follows:
 
 | Data               | Name                | Fixed value | Description                                                               |
 |:-------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
-| b(16)              | `init_descriptor`   |         0x1 | Indicates this is an initialization packet.                               |
+| b(16)              | `init_descriptor`   |         0x2 | Indicates this is an initialization packet.                               |
 | b(16)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
 | b(16)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
 | b(64)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
@@ -194,7 +215,7 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x20 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
 |              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
-If the `0x40` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x12` MUST be present to terminate the packet.
+If the `0x40` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x11` MUST be present to terminate the packet.
 
 Data segmentation
 -----------------
@@ -203,7 +224,7 @@ The syntax to allow for this is as follows:
 
 | Data               | Name              | Fixed value   | Description                                                                                 |
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
-| b(16)              | `seg_descriptor`  | 0x11 and 0x12 | Indicates this is a data segment packet (0x11) or a data segment terminating packet (0x12). |
+| b(16)              | `seg_descriptor`  | 0x10 and 0x11 | Indicates this is a data segment packet (0x10) or a data segment terminating packet (0x11). |
 | b(16)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
 | u(16)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
 | u(32)              | `data_length`     |               | The size of the data segment.                                                               |
@@ -226,7 +247,7 @@ The data in an Error Detection and Correction packet is laid out as follows:
 
 | Data              | Name              | Fixed value  | Description                                                                           |
 |:------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| b(16)             | `fec_descriptor`  |         0x20 | Indicates this is an FEC packet for data sent.                                        |
+| b(16)             | `fec_descriptor`  |         0x12 | Indicates this is an FEC packet for data sent.                                        |
 | b(16)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
 | u(16)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
 | b(32)             | `data_offset`     |              | The byte offset for the data this FEC packet protects.                                |
@@ -247,7 +268,7 @@ The index packet contains available byte offsets of nearby keyframes and the dis
 
 | Data               | Name               | Fixed value  | Description                                                                                                                                                                                |
 |:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)              | `index_descriptor` |         0x30 | Indicates this is an index packet.                                                                                                                                                         |
+| b(16)              | `index_descriptor` |          0x3 | Indicates this is an index packet.                                                                                                                                                         |
 | b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams.                                                                                            |
 | u(32)              | `prev_idx`         |              | Position of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
 | i(32)              | `next_idx`         |              | Position of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
@@ -262,7 +283,7 @@ The metadata packets can be sent for the overall stream, or for a specific `stre
 
 | Data                | Name              | Fixed value | Description                                                                                        |
 |:--------------------|:------------------|------------:|:---------------------------------------------------------------------------------------------------|
-| b(16)               | `meta_descriptor` |        0x40 | Indicates this is a metadata packet.                                                               |
+| b(16)               | `meta_descriptor` |         0x4 | Indicates this is a metadata packet.                                                               |
 | b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffff, in which case, it applies to all streams. |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                            |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                          |
@@ -271,11 +292,11 @@ User data packets
 -----------------
 The user-specific data packet is laid out as follows:
 
-| Data                    | Name               | Fixed value  | Description                                                                           |
-|:------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------|
-| b(16)                   | `user_descriptor`  |         0x50 | Indicates this is an opaque user-specific data.                                       |
-| u(32)                   | `user_data_length` |              | The length of the user data.                                                          |
-| b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
+| Data                    | Name               | Fixed value  | Description                                                                                  |
+|:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
+| b(16)                   | `user_descriptor`  |     0x40*XY* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
+| u(32)                   | `user_data_length` |              | The length of the user data.                                                                 |
+| b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                        |
 
 Padding
 -------
@@ -283,7 +304,7 @@ The padding packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                           |
 |:-----------------------|----------------------|-------------:|---------------------------------------------------------------------------------------|
-| b(16)                  | `padding_descriptor` |         0x60 | Indicates this is a padding packet.                                                   |
+| b(16)                  | `padding_descriptor` |          0x5 | Indicates this is a padding packet.                                                   |
 | u(32)                  | `padding_length`     |              | The length of the padding data.                                                       |
 | b(`padding_length`*8)  | `padding_data`       |              | The padding data itself. May be all zeroes or random numbers.                         |
 
@@ -295,7 +316,7 @@ The EOS packet is laid out as follows:
 
 | Data                   | Name                 | Fixed value  | Description                                                                                             |
 |:-----------------------|:---------------------|-------------:|:--------------------------------------------------------------------------------------------------------|
-| b(16)                  | `eos_descriptor`     |         0x70 | Indicates this is an end-of-stream packet.                                                              |
+| b(16)                  | `eos_descriptor`     |         0x09 | Indicates this is an end-of-stream packet.                                                              |
 | b(16)                  | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer receive any packets, and implementations are free to unload decoding and free up any used resources.
@@ -345,8 +366,8 @@ Control data
 The receiver can use this type to return errors and more to the sender in a one-to-one transmission. The following syntax is used:
 
 | Data                | Name               | Fixed value  | Description                                                                                              |
-|:--------------------|:-------------------|----------- -:|:---------------------------------------------------------------------------------------------------------|
-| b(16)               | `ctrl_descriptor`  |       0xff09 | Indicates this is a control data packet.                                                                 |
+|:--------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
+| b(16)               | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
 | b(8)                | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
 | u(32)               | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
 | b(8)                | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
@@ -377,17 +398,17 @@ The following packet MAY be sent from the receiver to the sender.
 
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
 |:--------------------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)               | `stats_descriptor` |       0xff01 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
+| b(16)               | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
 | u(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where FEC in `fec_packets` detected errors, or if such were missing, decoding was impossible or had errors.                                                                                          |
 | u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
 
 Reverse user data
 -----------------
-| Data                    | Name               | Fixed value  | Description                                                                           |
-|:------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------|
-| b(16)                   | `user_descriptor`  |       0xff06 | Indicates this is an opaque user-specific data.                                       |
-| u(32)                   | `user_data_length` |              | The length of the user data.                                                          |
-| b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                 |
+| Data                    | Name               | Fixed value  | Description                                                                                  |
+|:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
+| b(16)                   | `user_descriptor`  |     0x50*XY* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
+| u(32)                   | `user_data_length` |              | The length of the user data.                                                                 |
+| b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                        |
 
 This is identical to the [user data packets](#user-data-packets), but with a different ID.
 
