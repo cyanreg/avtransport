@@ -311,12 +311,21 @@ Streaming
 
 UDP
 ---
-To adapt Qproto for streaming over UDP is trivial - simply supply the data as-is specified for a file, with no changes required. The sender implementation
-SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most as often as the stream with the lowest frequency of `keyframe`s in order
-to permit for implementations that didn't catch on the start of the stream begin decoding.
-UDP mode is unidirectional, but the implementations are free to use the [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
+To adapt Qproto for streaming over UDP is trivial - simply send the data packets
+as-is specified, with no changes required. The sender implementation
+SHOULD resend `fid`, `time_sync` and `init_data` packets for all streams at most
+as often as the stream with the lowest frequency of `keyframe`s in order
+to permit for implementations that didn't catch on the start of the stream begin
+decoding.
+UDP mode is unidirectional, but the implementations are free to use the
+[reverse signalling](#reverse-signalling) data if they negotiate it themselves.
 
-Implementations SHOULD segment the data such that the MTU is never exceeded and no packet splitting occurs.
+Implementations SHOULD segment the data such that the MTU is never exceeded and
+no packet splitting occurs.
+
+UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
+available throughout the network.
+<!--- TODO: define checksumming as minimal when EC is added to headers -->
 
 QUIC/HTTP3
 ----------
