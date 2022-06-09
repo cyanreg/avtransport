@@ -150,7 +150,7 @@ The `stream_flags` field may be interpreted as such:
 |  0x2000 | Stream contains timed metadata and is not inteded to be directly presented to the user.                                 |
 |  0x4000 | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
 
-Several streams can be chained with the `0x3` bit set to indicate progressively lower
+Several streams can be chained with the `0x8` bit set to indicate progressively lower
 quality/bitrate versions of the same stream.
 
 Sparse thumbnail streams MAY exactly match chapters from `related_stream_id`,
