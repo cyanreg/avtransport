@@ -349,7 +349,7 @@ The receiver can use this type to return errors and more to the sender in a one-
 | b(16)               | `ctrl_descriptor`  |       0xff09 | Indicates this is a control data packet.                                                                 |
 | b(8)                | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
 | u(32)               | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
-| b(8)                | `resend_init`      |              | If nonzero, asks the sender to resend all `fid`, `time_sync` and `init_data` packets.                    |
+| b(8)                | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
 | b(128)              | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
 | b(16)               | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
 | i(64)               | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
