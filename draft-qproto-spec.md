@@ -375,11 +375,11 @@ Statistics
 ----------
 The following packet MAY be sent from the receiver to the sender.
 
-| Data                | Name               | Fixed value  | Description                                                                                                                                                                           |
-|:--------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| b(32)               | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                                                |
-| b(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where either CRC or FEC in `fec_packets` detected errors, or if such were missing, decoding was impossible or had errors.              |
-| u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when there's a discontinuity in the timestamps of the stream (`pts + duration != next_pts`). |
+| Data                | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
+|:--------------------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| b(32)               | `stats_descriptor` |   0xffff0001 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
+| u(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets, where FEC in `fec_packets` detected errors, or if such were missing, decoding was impossible or had errors.                                                                                          |
+| u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
 
 Reverse user data
 -----------------
