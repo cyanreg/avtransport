@@ -524,26 +524,30 @@ The `init_data` field MUST be laid out in the following way:
 
 | Data                  | Name               | Fixed value | Description                                                                                                                             |
 |:----------------------|:-------------------|------------:|:----------------------------------------------------------------------------------------------------------------------------------------|
-| b(32)                 | `rv_width`         |             | The number of horizontal pixels the video stream contains.                                                                              |
-| b(32)                 | `rv_height`        |             | The number of vertical pixels the video stream contains.                                                                                |
-| b(8)                  | `rv_components`    |             | The number of components the video stream contains.                                                                                     |
-| b(8)                  | `rv_planes`        |             | The number of planes the video components are placed in.                                                                                |
-| b(8)                  | `rv_bpp`           |             | The number of bits for each **individual** component pixel.                                                                             |
-| b(8)                  | `rv_ver_subsample` |             | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
-| b(8)                  | `rv_hor_subsample` |             | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
+| u(32)                 | `rv_width`         |             | The number of horizontal pixels the video stream contains.                                                                              |
+| u(32)                 | `rv_height`        |             | The number of vertical pixels the video stream contains.                                                                                |
+| u(8)                  | `rv_components`    |             | The number of components the video stream contains.                                                                                     |
+| u(8)                  | `rv_planes`        |             | The number of planes the video components are placed in.                                                                                |
+| u(8)                  | `rv_bpp`           |             | The number of bits for each **individual** component pixel.                                                                             |
+| u(8)                  | `rv_ver_subsample` |             | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
+| u(8)                  | `rv_hor_subsample` |             | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
 | b(32)                 | `rv_flags`         |             | Flags for the video stream.                                                                                                             |
-| b(`rv_components`*8)  | `rc_plane`         |             | Specifies the plane index that the component belongs in.                                                                                |
-| b(`rv_components`*8)  | `rc_stride`        |             | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
-| b(`rv_components`*8)  | `rc_offset`        |             | Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.                                    |
-| b(`rv_components`*8)  | `rc_shift`         |             | Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.                           |
-| b(`rv_components`*8)  | `rc_bits`          |             | Specifies the total number of bits the component's value will contain.                                                                  |
+| u(`rc_planes`*32)     | `rv_plane_stride`  |             | For each plane, the total number of bytes **per horizontal line**, including any padding.                                               |
+| u(`rv_components`*8)  | `rc_plane`         |             | Specifies the plane index that the component belongs in.                                                                                |
+| u(`rv_components`*8)  | `rc_stride`        |             | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
+| u(`rv_components`*8)  | `rc_offset`        |             | Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.                                    |
+| i(`rv_components`*8)  | `rc_shift`         |             | Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.                           |
+| u(`rv_components`*8)  | `rc_bits`          |             | Specifies the total number of bits the component's value will contain.                                                                  |
 |                       |                    |             | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
 | i(`rv_components`*32) | `rc_range_low`     |             | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
 | i(`rv_components`*32) | `rc_range_high`    |             | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
 
-The purpose of the `rc_offset` field is to allow differentiation between different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
+The purpose of the `rc_offset` field is to allow differentiation between
+different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will
+be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
+The components MUST be given in the order they appear in the stream.
 
-The flags field MUST be interpreted in the following way:
+The `rv_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                  |
 |-----------------:|:-------------------------------------------------------------------------------------------------------------|
@@ -554,6 +558,14 @@ The flags field MUST be interpreted in the following way:
 |             0x16 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
 |             0x32 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
 |             0x64 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+
+The `packet_data` field MUST contain `rv_planes`, with each plane having
+`rv_plane_stride` bytes per line. The number of horizontal lines being given by
+`rc_height` for plane number 0, and `rc_height >> rv_ver_subsample` for all other
+planes. The actual lines MUST be filled in according to `rc_offset` and `rc_stride`.
+
+This structure is flexible enough to permit zero-copy or one-copy streaming
+of video from most sources.
 
 ### Custom codec encapsulation
 
