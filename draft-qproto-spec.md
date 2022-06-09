@@ -401,6 +401,7 @@ The following section lists the supported codecs, along with their encapsulation
  - [Opus](#opus-encapsulation)
  - [AAC](#aac-encapsulation)
  - [AV1](#av1-encapsulation)
+ - [H.264](#h264-encapsulation)
  - [ASS](#ass-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
@@ -447,6 +448,20 @@ For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST 
 The `init_data` MUST be the codec's so-called `uncompressed header`. For information on its syntax, consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
+
+### H264 encapsulation
+
+For H264 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x48323634 (`H264`).
+
+The `init_data` MUST contain a `AVCDecoderConfigurationRecord` structure, as defined in `ISO 14496-15`.
+
+The `packet_data` MUST contain the following elements in order:
+ - A single `b(64)` element with the `DTS`, the time, which when combined with
+   the `epoch` field that indicates when a frame should be input into a
+   synchronous 1-in-1-out decoder.
+ - Raw `NAL` elements, concatenated.
+
+Using `Annex-B` is explicitly **forbidden**.
 
 ### ASS encapsulation
 
