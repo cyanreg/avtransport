@@ -68,23 +68,25 @@ The order in which the fields may appear **first** in a stream is as follows:
 Each packet, except *fid*, MUST be prefixed with a descriptor. Below is a table
 of how they're allocated.
 
-| Descriptor | Packet type                                   |
-|-----------:|-----------------------------------------------|
-|     0x0001 | [Time synchronization](#time-synchronization) |
-|     0x0002 | [Stream initialization](#init-packets)        |
-|     0x0003 | [Stream index](#index-packets)                |
-|     0x0004 | [Metadata](#metadata-packets)                 |
-|     0x0005 | [Padding](#padding)                           |
-|     0x0009 | [End of stream](#end-of-stream)               |
-|     0x01** | [Stream data](#data-packets)                  |
-|     0x0010 | [Stream data segment](#data-segmentation)     |
-|     0x0011 | [Stream data segment](#data-segmentation)     |
-|     0x0012 | [Stream FEC segment](#fec-segments)           |
-|     0x40** | [User data](#user-data-packets)               |
-|            | **Reverse signalling only**                   |
-|     0x50** | [Reverse user data](#reverse-user-data)       |
-|     0x8001 | [Control data](#control-data)                 |
-|     0x8002 | [Statistics](#statistics)                     |
+| Descriptor | Packet type                                      |
+|-----------:|--------------------------------------------------|
+|                0x0001 | [Time synchronization](#time-synchronization)    |
+|                0x0002 | [Stream initialization](#init-packets)           |
+|                0x0003 | [Stream index](#index-packets)                   |
+|                0x0004 | [Metadata](#metadata-packets)                    |
+|                0x0005 | [Padding](#padding)                              |
+|     0x0006 and 0x0007 | [ICC profile](#icc-profile-packets)              |
+|     0x0008 and 0x0009 | [ICC profile segment](#icc-profile-segmentation) |
+|                0x01** | [Stream data](#data-packets)                     |
+|                0x0010 | [Stream data segment](#data-segmentation)        |
+|                0x0011 | [Stream data segment](#data-segmentation)        |
+|                0x0012 | [Stream FEC segment](#fec-segments)              |
+|                0x40** | [User data](#user-data-packets)                  |
+|                       | **Reverse signalling only**                      |
+|                0x50** | [Reverse user data](#reverse-user-data)          |
+|                0x8001 | [Control data](#control-data)                    |
+|                0x8002 | [Statistics](#statistics)                        |
+|                0xffff | [End of stream](#end-of-stream)                  |
 
 Error resilience
 ----------------
@@ -154,7 +156,7 @@ choose to switch to.
 The `stream_flags` field may be interpreted as such:
 
 | Bit set | Description                                                                                                             |
-|--------:|-------------------------------------------------------------------------------------------------------------------------|
+|--------:|:------------------------------------------------------------------------------------------------------------------------|
 |     0x1 | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
 |     0x2 | Stream is a still picture and only a single decodable frame will be sent.                                               |
 |     0x4 | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
@@ -287,6 +289,46 @@ The metadata packets can be sent for the overall stream, or for a specific `stre
 | b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffff, in which case, it applies to all streams. |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                            |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                          |
+
+ICC profile packets
+-------------------
+Embedding of ICC profiles for accurate color reproduction is supported.
+
+| Data                    | Name              | Fixed value  | Description                                                                                        |
+|:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
+| b(16)                   | `icc_descriptor`  |  0x6 and 0x7 | Indicates this packet contains a complete ICC profile (0x6) or the start of a segmented one (0x7). |
+| u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
+| u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
+| u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
+| b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
+
+Often, ICC profiles may be too large to fit in one MTU, hence they can be segmented
+in the same way as data packets.
+
+If the `icc_descriptor` is 0x7, then at least one 0x9
+[ICC profile segment descriptor](#icc-profile-segmentation) MUST be received.
+
+ICC profile segmentation
+------------------------
+
+| Data                    | Name              | Fixed value  | Description                                                                                        |
+|:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
+| b(16)                   | `icc_descriptor`  |  0x8 and 0x9 | Indicates this packet contains a partial ICC profile segment (0x8) or finalizes it entirely (0x9). |
+| u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
+| u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
+| u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
+| b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
+
+If multiple streams use the same ICC profile, then the profile SHOULD be shared
+amongst them by specifying a different `stream_id` in subsequent segment packets.
+
+If the ICC profile was terminated, `0x9` packets MAY still be sent with an
+`icc_data_length` of **0** to associate an ICC profile with a new stream.
+
+If all streams which use the same ICC profile are terminated, the receiver
+MUST free up the ICC profile used for them, marking its `icc_id` as *unused*.
+Senders MUST NOT send an `0x9` packet with the terminated profile's `icc_id`,
+unless they send an `0x6` or `0x7` packet first to initialize it again.
 
 User data packets
 -----------------
