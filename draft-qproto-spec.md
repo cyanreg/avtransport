@@ -604,6 +604,9 @@ Using `Annex-B` is explicitly **forbidden**.
 
 ### ASS encapsulation
 
+For ASS encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x41535334 (`ASS4`).
+
 ASS is a popular subtitle format with great presentation capabilities.
 Although it was not designed to be streamed or packetized, doing so is possible
 with the following specifications.
