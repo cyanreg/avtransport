@@ -532,7 +532,7 @@ The following section lists the supported codecs, along with their encapsulation
 
 ### Opus encapsulation
 
-For Opus encapsulation, the `codec_id` in the [data packets](#data-packets)
+For Opus encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x4f707573 (`Opus`).
 
 The `init_data` field MUST be laid out as follows order:
@@ -563,7 +563,7 @@ first stream packet's `pts` value to a negative value as defined in
 
 ### AAC encapsulation
 
-For AAC encapsulation, the `codec_id` in the [data packets](#data-packets)
+For AAC encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x41414300 (`AAC\0`).
 
 The `init_data` MUST be the codec's `AudioSpecificConfig`, as defined in MPEG-4.
@@ -577,7 +577,7 @@ of prepended samples.
 
 ### AV1 encapsulation
 
-For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets)
+For AV1 encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x41563031 (`AV01`).
 
 The `init_data` MUST be the codec's so-called `uncompressed header`.
@@ -588,7 +588,7 @@ The `packet_data` MUST contain raw, separated `OBU`s.
 
 ### H264 encapsulation
 
-For H264 encapsulation, the `codec_id` in the [data packets](#data-packets)
+For H264 encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x48323634 (`H264`).
 
 The `init_data` MUST contain a `AVCDecoderConfigurationRecord` structure, as
@@ -604,7 +604,7 @@ Using `Annex-B` is explicitly **forbidden**.
 
 ### ASS encapsulation
 
-For ASS encapsulation, the `codec_id` in the [data packets](#data-packets)
+For ASS encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x41535334 (`ASS4`).
 
 ASS is a popular subtitle format with great presentation capabilities.
@@ -638,7 +638,7 @@ Multiple packets with the same `pts` and `dts` ARE permitted.
 
 ### Raw audio encapsulation
 
-For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets)
+For raw audio encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x52414141 (`RAAA`).
 
 The `init_data` field MUST be laid out as follows order:
@@ -677,7 +677,7 @@ with the data contained in the topmost 24 bits.
 
 ### Raw video encapsulation
 
-For raw video encapsulation, the `codec_id` in the [data packets](#data-packets)
+For raw video encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x52415656 (`RAVV`).
 
 The `init_data` field MUST be laid out in the following way:
@@ -734,7 +734,7 @@ for experimentation and for specialized usecases, users of such are invited to s
 an addenda to this document to formalize such containerization. This field MUST NOT be
 used if the codec being contained already has a formal definition in this spec.
 
-For custom encapsulation, the `codec_id` in the [data packets](#data-packets)
+For custom encapsulation, the `codec_id` in [stream init packets](#init-packets)
 MUST be 0x433f*XYZW* (`C?ⁿⁿ`), where *XY* and *ZW* can be any value between
 0x30 and 0x39 (`0` to `9` in ASCII).
 
