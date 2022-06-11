@@ -78,9 +78,9 @@ of how they're allocated.
 |     0x0006 and 0x0007 | [ICC profile](#icc-profile-packets)              |
 |     0x0008 and 0x0009 | [ICC profile segment](#icc-profile-segmentation) |
 |                0x01** | [Stream data](#data-packets)                     |
-|                0x0010 | [Stream data segment](#data-segmentation)        |
-|                0x0011 | [Stream data segment](#data-segmentation)        |
-|                0x0012 | [Stream FEC segment](#fec-segments)              |
+|                0x00ff | [Stream data segment](#data-segmentation)        |
+|                0x00fe | [Stream data segment](#data-segmentation)        |
+|                0x00fd | [Stream FEC segment](#fec-segments)              |
 |                0x40** | [User data](#user-data-packets)                  |
 |                       | **Reverse signalling only**                      |
 |                0x50** | [Reverse user data](#reverse-user-data)          |
@@ -226,7 +226,7 @@ The syntax to allow for this is as follows:
 
 | Data               | Name              | Fixed value   | Description                                                                                 |
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
-| b(16)              | `seg_descriptor`  | 0x10 and 0x11 | Indicates this is a data segment packet (0x10) or a data segment terminating packet (0x11). |
+| b(16)              | `seg_descriptor`  | 0xff and 0xfe | Indicates this is a data segment packet (0x10) or a data segment terminating packet (0x11). |
 | b(16)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
 | u(16)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
 | u(32)              | `data_length`     |               | The size of the data segment.                                                               |
@@ -249,7 +249,7 @@ The data in an Error Detection and Correction packet is laid out as follows:
 
 | Data              | Name              | Fixed value  | Description                                                                           |
 |:------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| b(16)             | `fec_descriptor`  |         0x12 | Indicates this is an FEC packet for data sent.                                        |
+| b(16)             | `fec_descriptor`  |         0xfd | Indicates this is an FEC packet for data sent.                                        |
 | b(16)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
 | u(16)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
 | b(32)             | `data_offset`     |              | The byte offset for the data this FEC packet protects.                                |
@@ -396,11 +396,11 @@ Qproto tries to use as much of the modern conveniences of QUIC as possible.
 As such, it uses both reliable and unreliable streams, as well as bidirectionality
 features of the transport mechanism.
 
-All data packets EXCEPT those with descriptors `0x01**`, `0x10` and `0x11`
+All data packets EXCEPT those with descriptors `0x01**`, `0xff`, `0xfe`, and `0xfd`
 MUST be sent over in a *reliable* stream, as per
 [draft-schinazi-masque-h3-datagram](https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram).
 
-Packets with descriptors `0x01**`, `0x10` and `0x11` MUST be send over
+Packets with descriptors `0x01**`, `0xff`, `0xfe`, and `0xfd` MUST be send over
 with **no error correction**, but rather as-is, a raw stream of bytes.
 
 Reverse signalling
