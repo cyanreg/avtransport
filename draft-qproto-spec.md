@@ -392,12 +392,16 @@ available throughout the network.
 
 QUIC/HTTP3
 ----------
-Qproto tries to use as much of the modern conveniences of QUIC as possible. As such, it uses both reliable and unreliable streams, as well as bidirectionality
+Qproto tries to use as much of the modern conveniences of QUIC as possible.
+As such, it uses both reliable and unreliable streams, as well as bidirectionality
 features of the transport mechanism.
 
-Any data marked as error-corrected (`Tu`, `Tb`, etc.) MUST be sent over in a *reliable* stream, as per [draft-schinazi-masque-h3-datagram](https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram),
-with **no error correction**, but rather as-is, a raw stream of bits.
-The rest of the data MUST be sent over an *unreliable* stream.
+All data packets EXCEPT those with descriptors `0x01**`, `0x10` and `0x11`
+MUST be sent over in a *reliable* stream, as per
+[draft-schinazi-masque-h3-datagram](https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram).
+
+Packets with descriptors `0x01**`, `0x10` and `0x11` MUST be send over
+with **no error correction**, but rather as-is, a raw stream of bytes.
 
 Reverse signalling
 ==================
