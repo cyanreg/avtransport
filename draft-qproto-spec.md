@@ -17,16 +17,19 @@ use-cases.
 
 Specification conventions
 -------------------------
-Throughout all of this document, bit sequences are always big-endian, and numbers are always two's complement.
+Throughout all of this document, bit sequences are always big-endian, and numbers
+are always two's complement.</br>
 Keywords given in all caps are to be interpreted as stated in IETF RFC 2119.
 
 A special notation is used to describe sequences of bits:
  - `u(bits)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(bits)`: the same, but the data describes a signed integer is signed.
  - `b(bits)`: the data is an opaque sequence of bits that clients MUST NOT interpret as anything else.
- - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
+ - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and
+   following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
 
-All floating point samples and pixels are always **normalized** to fit within the interval `[-1.0, 1.0]`.
+All floating point samples and pixels are always **normalized** to fit within the
+interval `[-1.0, 1.0]`.
 
 Protocol overview
 -----------------
@@ -36,19 +39,19 @@ data between clients.
 
 The structure of data, when saved as a file, is:
 
-| Data   | Name              | Fixed value        | Description                                                                                                                                 |
-|:-------|:------------------|-------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------|
-| b(64)  | `fid`             | 0x5170726f746f4944 | Unique file identifier that identifiers the following data is a Qproto stream ('QprotoID' in hex).                                          |
-|        | `time_sync`       |                    | Time synchronization field, see the section on [time synchronization](#time-synchronization).                                               |
-|        | `init_data`       |                    | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).                                  |
-|        | `data_packet`     |                    | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                                          |
-|        | `data_segment`    |                    | Segment of a fragmented data packet. See the section on [data segmentation](#data-segmentation).                                            |
-|        | `fec_segment`     |                    | Optional. May be used to error-detect/correct the payload. See [FEC segments](#fec-segments).                                               |
-|        | `index_packet`    |                    | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                                          |
-|        | `metadata_packet` |                    | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                                                       |
-|        | `user_data`       |                    | User-specific data. Optional. See [user data packets](#user-data-packets).                                                                  |
-|        | `padding_packet`  |                    | Padding data. Optional. See [padding](#padding).                                                                                            |
-|        | `eos`             |                    | Used to signal end of stream. See the [end of stream](#end-of-stream) section. Optional, but strongly recommended.                          |
+| Data   | Name              | Fixed value        | Description                                                                                                        |
+|:-------|:------------------|-------------------:|:-------------------------------------------------------------------------------------------------------------------|
+| b(64)  | `fid`             | 0x5170726f746f4944 | Unique file identifier that identifiers the following data is a Qproto stream ('QprotoID' in hex).                 |
+|        | `time_sync`       |                    | Time synchronization field, see the section on [time synchronization](#time-synchronization).                      |
+|        | `init_data`       |                    | Special data packet used to initialize a decoder on the receiving side. See [init packets](#init-packets).         |
+|        | `data_packet`     |                    | Stream of concatenated packets of variable size, see the section on [data packets](#data-packets).                 |
+|        | `data_segment`    |                    | Segment of a fragmented data packet. See the section on [data segmentation](#data-segmentation).                   |
+|        | `fec_segment`     |                    | Optional. May be used to error-detect/correct the payload. See [FEC segments](#fec-segments).                      |
+|        | `index_packet`    |                    | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                 |
+|        | `metadata_packet` |                    | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                              |
+|        | `user_data`       |                    | User-specific data. Optional. See [user data packets](#user-data-packets).                                         |
+|        | `padding_packet`  |                    | Padding data. Optional. See [padding](#padding).                                                                   |
+|        | `eos`             |                    | Used to signal end of stream. See the [end of stream](#end-of-stream) section. Optional, but strongly recommended. |
 
 All fields are implicitly padded to the nearest byte. The padding SHOULD be all zeroes.
 
@@ -68,8 +71,8 @@ The order in which the fields may appear **first** in a stream is as follows:
 Each packet, except *fid*, MUST be prefixed with a descriptor. Below is a table
 of how they're allocated.
 
-| Descriptor | Packet type                                      |
-|-----------:|--------------------------------------------------|
+|            Descriptor | Packet type                                      |
+|----------------------:|--------------------------------------------------|
 |                0x0001 | [Time synchronization](#time-synchronization)    |
 |                0x0002 | [Stream initialization](#init-packets)           |
 |                0x0003 | [Stream index](#index-packets)                   |
@@ -90,14 +93,19 @@ of how they're allocated.
 
 Error resilience
 ----------------
-Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC Object Transmission Information as described in the document are *never* used.
-Instead, the symbol size is fixed to **32 bits**, unless stated otherwise. After writing the encoded data chunk, the stream MUST be padded to the nearest multiple
-of 8 since the start of the header with zero bits, at which point what follows is either unprotected bits or the encoded data of the next packet.
+Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC
+Object Transmission Information as described in the document are *never* used.
+Instead, the symbol size is fixed to **32 bits**, unless stated otherwise.
+After writing the encoded data chunk, the stream MUST be padded to the nearest
+multiple of 8 since the start of the header with zero bits, at which point what
+follows is either unprotected bits or the encoded data of the next packet.
 
 Time synchronization
 --------------------
-In order to optionally make sense of timestamps present in the stream, or provide a context for synchronization, the `time_sync` packet is sent through.
-This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
+In order to optionally make sense of timestamps present in the stream, or
+provide a context for synchronization, the `time_sync` packet is sent through.</br>
+This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on
+1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
 The layout of the data in a `time_sync` packet is as follows:
 
 | Data   | Name              | Fixed value  | Description                                      |
@@ -109,15 +117,18 @@ This field MAY be zero, in which case the stream has no real-world time-relative
 
 If this field is non-zero, senders SHOULD ensure the `epoch` value is actual.
 
-If the stream is a file, receivers SHOULD ignore this, but MAY expose the offset as a metadata `date` field.</br>
-Also, when the stream is a file, receivers CAN replace the field by a user-defined value in order to permit synchronized
-presentation between multiple unconnected receivers.
+If the stream is a file, receivers SHOULD ignore this, but MAY expose the offset
+as a metadata `date` field.</br>
+Also, when the stream is a file, receivers CAN replace the field by a user-defined
+value in order to permit synchronized presentation between multiple unconnected receivers.
 
-If the stream is live, receivers are permitted to ignore the value and present as soon as new data is received.</br>
-Receivers are also free to trust the field to be valid, and interpret all timestamps as a positive offset of the
-`epoch` value, and present at that time, such that synchronized presentation between unconnected receivers is possible.</br>
-Receivers are also free to consider the field trustworthy, and use its value to estimate the sender start time,
-as well as the end-to-end latency.
+If the stream is live, receivers are permitted to ignore the value and present
+as soon as new data is received.</br>
+Receivers are also free to trust the field to be valid, and interpret all
+timestamps as a positive offset of the `epoch` value, and present at that time,
+such that synchronized presentation between unconnected receivers is possible.</br>
+Receivers are also free to consider the field trustworthy, and use its value to
+estimate the sender start time, as well as the end-to-end latency.
 
 Init packets
 ------------
@@ -184,7 +195,8 @@ If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
 
 Data packets
 ------------
-The data packets indicate the start of a packet, which may be fragmented into more [data segments](#data-segmentation). It is laid out as follows:
+The data packets indicate the start of a packet, which may be fragmented into
+more [data segments](#data-segmentation). It is laid out as follows:
 
 | Data               | Name              | Fixed value | Description                                                                                                                                |
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
@@ -196,17 +208,24 @@ The data packets indicate the start of a packet, which may be fragmented into mo
 | u(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                       |
 | b(`data_length`*8) | `packet_data`     |             | The packet data itself.                                                                                                                    |
 
-For information on the layout of the specific codec-specific packet data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
+For information on the layout of the specific codec-specific packet data, consult
+the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
-The final timestamp in nanoseconds is given by the following formula: `pts*timebase.num*1000000000/timebase.den`. Users MAY ensure that this overflows gracefully after ~260 years.
+The final timestamp in nanoseconds is given by the following formula:
+`pts*timebase.num*1000000000/timebase.den`.
+Users MAY ensure that this overflows gracefully after ~260 years.
 
-The same formula is also valid for the `dts` field.
+The same formula is also valid for the `dts` field in [H.264](#h264-encapsulation).
 
-Implementations MUST feed the packets to the decoder in an incrementing order according to the `dts` field.
+Implementations MUST feed the packets to the decoder in an incrementing order
+according to the `dts` field.
 
-Negative `pts` values ARE allowed, and implementations **MUST** decode such frames, however **MUST NOT** present any such frames unless `pts + duration` is greater than 0, in which case they MUST present the data
+Negative `pts` values ARE allowed, and implementations **MUST** decode such frames,
+however **MUST NOT** present any such frames unless `pts + duration` is greater than 0,
+in which case they MUST present the data
 required for that duration.</br>
-In other words, if the data is for an audio stream, implementations MUST start presenting from the given offset.
+In other words, if the data is for an audio stream, implementations MUST start
+presenting from the given offset.
 
 The `pkt_flags` field MUST be interpreted in the following way:
 
@@ -217,11 +236,15 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x20 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
 |              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
-If the `0x40` flag is set, then the packet data is incomplete, and at least ONE [data segment](#data-segmentation) packet with an ID of `0x11` MUST be present to terminate the packet.
+If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
+[data segment](#data-segmentation) packet with an ID of `0x11` MUST be present to
+terminate the packet.
 
 Data segmentation
 -----------------
-Packets can be split up into separate chunks that may be received out of order and assembled. This allows transmission over switched networks with a limited MTU, or prevents very large packets from one stream interfering with another stream.
+Packets can be split up into separate chunks that may be received out of order
+and assembled. This allows transmission over switched networks with a limited MTU,
+or prevents very large packets from one stream interfering with another stream.
 The syntax to allow for this is as follows:
 
 | Data               | Name              | Fixed value   | Description                                                                                 |
@@ -237,11 +260,17 @@ The `stream_id` and `seq_number` fields MUST match those sent over [data packets
 
 The size of the final assembled packet is the sum of all `data_length` fields.
 
-Data segments and packets may arrive out of order and be duplicated. Implementations SHOULD assemble them into complete packets, but MAY skip segments, packets or even frames due to latency concerns, and MAY try to decode and present incomplete or damaged data.
+Data segments and packets may arrive out of order and be duplicated.
+Implementations SHOULD assemble them into complete packets, but MAY skip segments,
+packets or even frames due to latency concerns, and MAY try to decode and present
+incomplete or damaged data.
 
-Implementations MAY send duplicate segments to compensate for packet loss, should bandwidth permit.
+Implementations MAY send duplicate segments to compensate for packet loss,
+should bandwidth permit.
 
-Implementations SHOULD discard any packets and segments that arrive after their presentation time. Implementations SHOULD garbage collect any packets and segments that arrive with unrealistically far away presentation times.
+Implementations SHOULD discard any packets and segments that arrive after their
+presentation time. Implementations SHOULD garbage collect any packets and segments
+that arrive with unrealistically far away presentation times.
 
 FEC segments
 ------------
@@ -260,9 +289,12 @@ The data in an Error Detection and Correction packet is laid out as follows:
 
 The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
-Implementations MAY discard the FEC data, or MAY delay the previous packet's decoding to correct it with this data, or MAY attempt to decode the previous data, and if failed, retry with the corrected data packet.
+Implementations MAY discard the FEC data, or MAY delay the previous packet's
+decoding to correct it with this data, or MAY attempt to decode the previous data,
+and if failed, retry with the corrected data packet.
 
-The same lifetime and duplication rules apply for FEC segments as they do for regular data segments.
+The same lifetime and duplication rules apply for FEC segments as they do for
+regular data segments.
 
 Index packets
 -------------
@@ -281,7 +313,8 @@ The index packet contains available byte offsets of nearby keyframes and the dis
 
 Metadata packets
 ----------------
-The metadata packets can be sent for the overall stream, or for a specific `stream_id` substream. The syntax is as follows:
+The metadata packets can be sent for the overall stream, or for a specific
+`stream_id` substream. The syntax is as follows:
 
 | Data                | Name              | Fixed value | Description                                                                                        |
 |:--------------------|:------------------|------------:|:---------------------------------------------------------------------------------------------------|
@@ -289,6 +322,9 @@ The metadata packets can be sent for the overall stream, or for a specific `stre
 | b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffff, in which case, it applies to all streams. |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                            |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                          |
+
+Metadata CAN be added or replaced by subsequent packets with the same `stream_id`.
+Senders MUST ensure that the MTU is not exceeded by splitting the metadata up.
 
 ICC profile packets
 -------------------
@@ -361,13 +397,17 @@ The EOS packet is laid out as follows:
 | b(16)                  | `eos_descriptor`     |         0x09 | Indicates this is an end-of-stream packet.                                                              |
 | b(16)                  | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
 
-The `stream_id` field may be used to indicate that a specific stream will no longer receive any packets, and implementations are free to unload decoding and free up any used resources.
+The `stream_id` field may be used to indicate that a specific stream will no longer
+receive any packets, and implementations are free to unload decoding and free up
+any used resources.
 
 The `stream_id` MAY be reused afterwards, but this is not recommended.
 
-If not encountered in a stream, and the connection was cut, then the receiver is allowed to gracefully wait for a reconnection.
+If not encountered in a stream, and the connection was cut, then the receiver is
+allowed to gracefully wait for a reconnection.
 
-If encountered in a file, the implementation MAY regard any data present afterwards as padding and ignore it. Qproto files **MAY NOT** be concatenated.
+If encountered in a file, the implementation MAY regard any data present afterwards
+as padding and ignore it. Qproto files **MAY NOT** be concatenated.
 
 Streaming
 =========
@@ -405,11 +445,15 @@ with **no error correction**, but rather as-is, a raw stream of bytes.
 
 Reverse signalling
 ==================
-The following section is a specification on how reverse signalling, where receiver(s) communicates with the sender, should be formatted.
+The following section is a specification on how reverse signalling, where
+receiver(s) communicates with the sender, should be formatted.
+
+The same port an method MUST be used for reverse signalling as the sender's.
 
 Control data
 ------------
-The receiver can use this type to return errors and more to the sender in a one-to-one transmission. The following syntax is used:
+The receiver can use this type to return errors and more to the sender in a
+one-to-one transmission. The following syntax is used:
 
 | Data                | Name               | Fixed value  | Description                                                                                              |
 |:--------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
@@ -421,16 +465,23 @@ The receiver can use this type to return errors and more to the sender in a one-
 | b(16)               | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
 | i(64)               | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
 
-If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port` do not match, the sender **MUST** cease this connection, reopen a new connection
-with the given `uplink_ip`, and resend all `fid`, `time_sync` and `init_data` packets to the destination.
+If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
+do not match, the sender **MUST** cease this connection, reopen a new connection
+with the given `uplink_ip`, and resend all `fid`, `time_sync` and `init_data`
+packets to the destination.
 
-The `seek` request asks the sender to resend old data that's still available. The sender MAY not comply if that data suddently becomes unavailable.
-If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply and start sending the newest data.
+The `seek` request asks the sender to resend old data that's still available.
+The sender MAY not comply if that data suddently becomes unavailable.
+If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply
+and start sending the newest data.
 
-If the `resent_init` flag is set to a non-zero value, senders MAY flush all encoders such that the receiver can begin decoding as soon as possible.
+If the `resent_init` flag is set to a non-zero value, senders MAY flush all encoders
+such that the receiver can begin decoding as soon as possible.
 
-If operating over [QUIC/HTTP3](#quichttp3), then any old data **MUST** be served over a *reliable* stream, as latency isn't critical. If the receiver asks again
-for the newsest available data, that data's payload is once again sent over an *unreliable* stream.
+If operating over [QUIC/HTTP3](#quichttp3), then any old data **MUST** be served
+over a *reliable* stream, as latency isn't critical. If the receiver asks again
+for the newsest available data, that data's payload is once again sent over an
+*unreliable* stream.
 
 The following error values are allowed:
 | Value | Description                                                                                                                                                                                                                                                                      |
@@ -481,7 +532,8 @@ The following section lists the supported codecs, along with their encapsulation
 
 ### Opus encapsulation
 
-For Opus encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x4f707573 (`Opus`).
+For Opus encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x4f707573 (`Opus`).
 
 The `init_data` field MUST be laid out as follows order:
 
@@ -495,37 +547,52 @@ The `init_data` field MUST be laid out as follows order:
 | i(16)              | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
 | u(32)              | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
 
-The `packet_data` MUST contain regular Opus packets with their front uncompressed header intact.
+The `packet_data` MUST contain regular Opus packets with their front uncompressed
+header intact.
 
-In case of multiple channels, the packets MUST contain the concatenated contents in coding order of all channels' packets.
+In case of multiple channels, the packets MUST contain the concatenated contents
+in coding order of all channels' packets.
 
-In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be appended to the packet as-is, and no [FEC packets](#fec-packets) must be present in regards to this stream.
+In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be
+appended to the packet as-is, and no [FEC packets](#fec-packets) must be present
+in regards to this stream.
 
-Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the first stream packet's `pts` value to a negative value as defined in [data packets](#data-packets) to remove the required number of prepended samples.
+Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the
+first stream packet's `pts` value to a negative value as defined in
+[data packets](#data-packets) to remove the required number of prepended samples.
 
 ### AAC encapsulation
 
-For AAC encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41414300 (`AAC\0`).
+For AAC encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x41414300 (`AAC\0`).
 
 The `init_data` MUST be the codec's `AudioSpecificConfig`, as defined in MPEG-4.
 
-The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is explicitly unsupported.
+The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is
+explicitly unsupported.
 
-Implementations **MUST** set the first stream packet's `pts` value to a negative value as defined in [data packets](#data-packets) to remove the required number of prepended samples.
+Implementations **MUST** set the first stream packet's `pts` value to a negative
+value as defined in [data packets](#data-packets) to remove the required number
+of prepended samples.
 
 ### AV1 encapsulation
 
-For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x41563031 (`AV01`).
+For AV1 encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x41563031 (`AV01`).
 
-The `init_data` MUST be the codec's so-called `uncompressed header`. For information on its syntax, consult the specifications, section `5.9.2. Uncompressed header syntax`.
+The `init_data` MUST be the codec's so-called `uncompressed header`.
+For information on its syntax, consult the specifications, section
+`5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
 
 ### H264 encapsulation
 
-For H264 encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x48323634 (`H264`).
+For H264 encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x48323634 (`H264`).
 
-The `init_data` MUST contain a `AVCDecoderConfigurationRecord` structure, as defined in `ISO 14496-15`.
+The `init_data` MUST contain a `AVCDecoderConfigurationRecord` structure, as
+defined in `ISO 14496-15`.
 
 The `packet_data` MUST contain the following elements in order:
  - A single `b(64)` element with the `DTS`, the time, which when combined with
@@ -540,7 +607,8 @@ Using `Annex-B` is explicitly **forbidden**.
 ASS is a popular subtitle format with great presentation capabilities.
 Although it was not designed to be streamed or packetized, doing so is possible
 with the following specifications.
-These match to how Matroska handles [ASS encapsulation](https://matroska.org/technical/subtitles.html#ssaass-subtitles).
+These match to how Matroska handles
+[ASS encapsulation](https://matroska.org/technical/subtitles.html#ssaass-subtitles).
 
 ASS contains 3 important sections:
  - Script information, in `[Script Info]`
@@ -554,9 +622,9 @@ The `init_data` field MUST contain the `[Script Info]` and `[V4 Styles]` section
 as a string, unmodified.
 
 Events listed in ASS files MUST be modified in the following way:
- - Start and end timestamps, stored in the `Marked` field, MUST be mapped to the \
+ - Start and end timestamps, stored in the `Marked` field, MUST be mapped to the
    packet's `pts`, `dts` and `duration` fields, and MUST be ommitted from the data.
- - All other fields MUST be stored in the `packet_data` field as a string, in the \
+ - All other fields MUST be stored in the `packet_data` field as a string, in the
    followin order: `ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text`.
  - Comments MAY be left as-is after all the fields.
 
@@ -567,7 +635,8 @@ Multiple packets with the same `pts` and `dts` ARE permitted.
 
 ### Raw audio encapsulation
 
-For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52414141 (`RAAA`).
+For raw audio encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x52414141 (`RAAA`).
 
 The `init_data` field MUST be laid out as follows order:
 
@@ -605,7 +674,8 @@ with the data contained in the topmost 24 bits.
 
 ### Raw video encapsulation
 
-For raw video encapsulation, the `codec_id` in the [data packets](#data-packets) MUST be 0x52415656 (`RAVV`).
+For raw video encapsulation, the `codec_id` in the [data packets](#data-packets)
+MUST be 0x52415656 (`RAVV`).
 
 The `init_data` field MUST be laid out in the following way:
 
