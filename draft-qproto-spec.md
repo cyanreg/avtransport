@@ -786,6 +786,9 @@ The `packet_data` field MUST contain `rv_planes`, with each plane having
 `rc_height` for plane number 0, and `rc_height >> rv_ver_subsample` for all other
 planes. The actual lines MUST be filled in according to `rc_offset` and `rc_stride`.
 
+`rv_flags` MUST NOT signal both `0x4` AND `0x8`. Such a combination of flags is
+unsupported.
+
 This structure is flexible enough to permit zero-copy or one-copy streaming
 of video from most sources.
 
