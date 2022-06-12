@@ -403,8 +403,8 @@ The `colorspace` table is as follows:
 |   0x0 | `MONO`      | Video contains no chroma data.                           |
 |   0x1 | `RGB`       | Video data contains some form of RGB.                    |
 |   0x2 | `YUV`       | Video contains some form of YUV (YCbCr).                 |
-|   0x3 | `YCOCG`     | Video contains some form of YCoCg.                       |
-|   0x4 | `YCGCO`     | Same as YCOCG, with swapped planes.                      |
+|   0x3 | `YCOCGR`    | Video contains a reversible form of YCoCg.               |
+|   0x4 | `YCGCOR`    | Same as `YCOCGR`, with swapped planes.                   |
 |   0x5 | `XYZ`       | Video contains XYZ color data.                           |
 |   0x6 | `ICTCP`     | Video contains ICtCp color data.                         |
 
