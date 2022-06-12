@@ -80,6 +80,7 @@ of how they're allocated.
 |                0x0005 | [Padding](#padding)                              |
 |     0x0006 and 0x0007 | [ICC profile](#icc-profile-packets)              |
 |     0x0008 and 0x0009 | [ICC profile segment](#icc-profile-segmentation) |
+|                0x0010 | [Video information][#video-info-packets)         |
 |                0x01** | [Stream data](#data-packets)                     |
 |                0x00ff | [Stream data segment](#data-segmentation)        |
 |                0x00fe | [Stream data segment](#data-segmentation)        |
@@ -366,6 +367,62 @@ If all streams which use the same ICC profile are terminated, the receiver
 MUST free up the ICC profile used for them, marking its `icc_id` as *unused*.
 Senders MUST NOT send an `0x9` packet with the terminated profile's `icc_id`,
 unless they send an `0x6` or `0x7` packet first to initialize it again.
+
+Video info packets
+------------------
+Video info packets contain everything needed to correctly interpret a video
+stream after decoding.
+
+| Data          | Name                    | Fixed value  | Description                                                                                                                                   |
+|:--------------|:------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| b(16)         | `video_info_descriptor` |  0x10        | Indicates this packet contains video information.                                                                                             |
+| u(16)         | `stream_id`             |              | The stream ID for which to associate the video information with.                                                                              |
+| u(32)         | `width`                 |              | Indicates the presentable video width in pixels.                                                                                              |
+| u(32)         | `height`                |              | Indicates the presentable video height in pixels.                                                                                             |
+| u(8)          | `colorspace`            |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
+| u(8)          | `limited_range`         |              | Indicates the signal range. If `0`, means `full range`. If `1` means `limited range`. Other values are reserved.                              |
+| u(8)          | `chroma_subsampling`    |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
+| u(8)          | `interlaced`            |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
+| r(64)         | `framerate`             |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
+| r(64)         | `gamma`                 |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
+| u(8)          | `primaries`             |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
+| u(8)          | `transfer`              |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
+| u(8)          | `matrix`                |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
+
+Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.</br>
+Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
+`studio swing` and `MPEG range`.
+
+The `colorspace` table is as follows:
+| Value | Name        | Description                                              |
+|------:|:------------|:---------------------------------------------------------|
+|   0x0 | `MONO`      | Video contains no chroma data.                           |
+|   0x1 | `RGB`       | Video data contains some form of RGB.                    |
+|   0x2 | `YUV`       | Video contains some form of YUV (YCbCr).                 |
+|   0x3 | `YCOCG`     | Video contains some form of YCoCg.                       |
+|   0x4 | `YCGCO`     | Same as YCOCG, with swapped planes.                      |
+|   0x5 | `XYZ`       | Video contains XYZ color data.                           |
+|   0x6 | `ICTCP`     | Video contains ICtCp color data.                         |
+
+The `subsampling` table is as follows:
+| Value | Name        | Description                                                                                        |
+|------:|:------------|:---------------------------------------------------------------------------------------------------|
+|   0x0 | `444`       | Chromatic data is not subsampled, or subsampling does not apply.                                   |
+|   0x1 | `420`       | Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data. |
+|   0x2 | `422`       | Chromatic data is subsampled at half the vertical resolution of the luminance data.                |
+
+The `interlacing` table is as follows:
+| Value | Name        | Description                                                                                                                                           |
+|------:|:------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                       |
+|   0x1 | `TFF`       | Video is interlaced. One [data packet](#data-packets) per field. If the data packet's `seq_number` is even, indicates the field is the **top** field. |
+|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with an even `seq_number` contain the **bottom** field.                                      |
+|   0x3 | `TW`        | Video is interlaced. The [data packet](#data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.     |
+|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                        |
+
+The `TFF` and `TW`, as well as the `BFF` and `BW` values MAY be interchanged if
+it's possible to output one or the other, depending on the setting used, if
+the codec supports this.
 
 User data packets
 -----------------
