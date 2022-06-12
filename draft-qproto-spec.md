@@ -387,6 +387,7 @@ stream after decoding.
 | u(8)          | `chroma_subsampling`    |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
 | u(8)          | `interlaced`            |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
 | r(64)         | `framerate`             |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
+| u(8)          | `bit_depth`             |              | Number of bits per pixel value.                                                                                                               |
 | r(64)         | `gamma`                 |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
 | u(8)          | `primaries`             |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
 | u(8)          | `transfer`              |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
