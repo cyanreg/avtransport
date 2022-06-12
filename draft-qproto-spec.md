@@ -142,6 +142,7 @@ The layout of the data is as follows:
 | b(16)              | `init_descriptor`   |         0x2 | Indicates this is an initialization packet.                               |
 | b(16)              | `stream_id`         |             | Indicates the stream ID for which to attach this.                         |
 | b(16)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
+| u(64)              | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
 | b(64)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
 | b(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
 | r(64)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
