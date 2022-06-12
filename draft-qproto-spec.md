@@ -346,6 +346,9 @@ in the same way as data packets.
 If the `icc_descriptor` is 0x7, then at least one 0x9
 [ICC profile segment descriptor](#icc-profile-segmentation) MUST be received.
 
+**NOTE**: ICC profiles MUST take precendence over primaries/transfer/matrix
+values in [video info packets](#video-info-packets).
+
 ICC profile segmentation
 ------------------------
 
