@@ -389,25 +389,28 @@ stream after decoding.
 | u(8)          | `interlaced`            |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
 | r(64)         | `framerate`             |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
 | u(8)          | `bit_depth`             |              | Number of bits per pixel value.                                                                                                               |
+| u(8)          | `chroma_pos`            |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
 | r(64)         | `gamma`                 |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
 | u(8)          | `primaries`             |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
 | u(8)          | `transfer`              |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
 | u(8)          | `matrix`                |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
+| 16*r(64)      | `custom_matrix`         |              | If `matrix` is equal to 0xff, use this custom matrix instead. Top, left, to bottom right, raster order.                                       |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.</br>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
 `studio swing` and `MPEG range`.
 
 The `colorspace` table is as follows:
-| Value | Name        | Description                                              |
-|------:|:------------|:---------------------------------------------------------|
-|   0x0 | `MONO`      | Video contains no chroma data.                           |
-|   0x1 | `RGB`       | Video data contains some form of RGB.                    |
-|   0x2 | `YUV`       | Video contains some form of YUV (YCbCr).                 |
-|   0x3 | `YCOCGR`    | Video contains a reversible form of YCoCg.               |
-|   0x4 | `YCGCOR`    | Same as `YCOCGR`, with swapped planes.                   |
-|   0x5 | `XYZ`       | Video contains XYZ color data.                           |
-|   0x6 | `ICTCP`     | Video contains ICtCp color data.                         |
+| Value | Name        | Description                                                                                                              |
+|------:|:------------|:-------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `MONO`      | Video contains no chroma data.                                                                                           |
+|   0x1 | `RGB`       | Video data contains some form of RGB.                                                                                    |
+|   0x2 | `YUV`       | Video contains some form of YUV (YCbCr).                                                                                 |
+|   0x3 | `YCOCGR`    | Video contains a reversible form of YCoCg.                                                                               |
+|   0x4 | `YCGCOR`    | Same as `YCOCGR`, with swapped planes.                                                                                   |
+|   0x5 | `XYZ`       | Video contains XYZ color data.                                                                                           |
+|   0x6 | `XYB`       | Video contains XYB color data. **NOTE**: `matrix` MUST be equal to 0xff and the matrix in `custom_matrix` MUST be valid. |
+|   0x7 | `ICTCP`     | Video contains ICtCp color data.                                                                                         |
 
 The `subsampling` table is as follows:
 | Value | Name        | Description                                                                                        |
@@ -428,6 +431,24 @@ The `interlacing` table is as follows:
 The `TFF` and `TW`, as well as the `BFF` and `BW` values MAY be interchanged if
 it's possible to output one or the other, depending on the setting used, if
 the codec supports this.
+
+The `chroma_pos_val` table is as follows:
+| Value | Name         | Description                                                                                              |
+|------:|:-------------|----------------------------------------------------------------------------------------------------------|
+|   0x0 | `UNSPEC`     | Chroma position not specified or does not apply.                                                         |
+|   0x1 | `LEFT`       | Chroma position is between 2 luma samples on different lines. (MPEG-2/4 422, H.264 420)                  |
+|   0x2 | `CENTER`     | Chroma position is in the middle between all neighbouring luma samples on 2 lines. (JPEG 420, H.263 420) |
+|   0x3 | `TOPLEFT`    | Chroma position coincides with top left's luma sample position. (MPEG-2 422)                             |
+|   0x4 | `TOP`        | Chroma position is between 2 luma samples on the same top line.                                          |
+|   0x5 | `BOTTOMLEFT` | Chroma position coincides with bottom left's luma sample position.                                       |
+|   0x6 | `BOTTOM`     | Chroma position is between 2 luma samples on the same bottom line.                                       |
+
+To illustrate:
+| Luma line number |     Luma row 1 | No luma |   Luma row 2 |
+|-----------------:|---------------:|--------:|-------------:|
+|                1 | `Luma pixel` 3 |       4 | `Luma pixel` |
+|          No luma |              1 |       2 |        Empty |
+|                2 | `Luma pixel` 5 |       6 | `Luma pixel` |
 
 User data packets
 -----------------
