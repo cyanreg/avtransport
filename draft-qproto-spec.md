@@ -322,6 +322,7 @@ The metadata packets can be sent for the overall stream, or for a specific
 |:--------------------|:------------------|------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)               | `meta_descriptor` |         0x4 | Indicates this is a metadata packet.                                                               |
 | b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffff, in which case, it applies to all streams. |
+| u(16)               | `seq_number`      |             | A per-stream monotonically incrementing packet number.                                             |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                            |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                          |
 
@@ -336,6 +337,7 @@ Embedding of ICC profiles for accurate color reproduction is supported.
 |:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)                   | `icc_descriptor`  |  0x6 and 0x7 | Indicates this packet contains a complete ICC profile (0x6) or the start of a segmented one (0x7). |
 | u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
+| u(16)                   | `seq_number`      |              | A per-stream monotonically incrementing packet number.                                             |
 | u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
 | u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
 | b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
@@ -357,6 +359,7 @@ ICC profile segmentation
 |:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)                   | `icc_descriptor`  |  0x8 and 0x9 | Indicates this packet contains a partial ICC profile segment (0x8) or finalizes it entirely (0x9). |
 | u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
+| u(16)                   | `seq_number`      |              | A per-stream monotonically incrementing packet number.                                             |
 | u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
 | u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
 | b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
@@ -381,6 +384,7 @@ stream after decoding.
 |:--------------|:------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)         | `video_info_descriptor` |  0x10        | Indicates this packet contains video information.                                                                                             |
 | u(16)         | `stream_id`             |              | The stream ID for which to associate the video information with.                                                                              |
+| u(16)         | `seq_number`            |              | A per-stream monotonically incrementing packet number.                                                                                        |
 | u(32)         | `width`                 |              | Indicates the presentable video width in pixels.                                                                                              |
 | u(32)         | `height`                |              | Indicates the presentable video height in pixels.                                                                                             |
 | u(8)          | `colorspace`            |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
