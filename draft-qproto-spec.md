@@ -112,7 +112,7 @@ The layout of the data in a `time_sync` packet is as follows:
 | Data   | Name              | Fixed value  | Description                                      |
 |:-------|:------------------|-------------:|:-------------------------------------------------|
 | b(16)  | `time_descriptor` |          0x1 | Indicates this is a time synchronization packet. |
-| b(64)  | `epoch`           |              | Indicates the time epoch.                        |
+| u(64)  | `epoch`           |              | Indicates the time epoch.                        |
 
 This field MAY be zero, in which case the stream has no real-world time-relative context.
 
@@ -448,11 +448,11 @@ The `chroma_pos_val` table is as follows:
 |   0x6 | `BOTTOM`     | Chroma position is between 2 luma samples on the same bottom line.                                       |
 
 To illustrate:
-| Luma line number |     Luma row 1 | No luma |   Luma row 2 |
-|-----------------:|---------------:|--------:|-------------:|
-|                1 | `Luma pixel` 3 |       4 | `Luma pixel` |
-|          No luma |              1 |       2 |        Empty |
-|                2 | `Luma pixel` 5 |       6 | `Luma pixel` |
+| Luma line number |         Luma row 1 |     No luma |   Luma row 2 |
+|-----------------:|-------------------:|------------:|-------------:|
+|                1 | `Luma pixel` **3** |       **4** | `Luma pixel` |
+|          No luma |              **1** |       **2** |        Empty |
+|                2 | `Luma pixel` **5** |       **6** | `Luma pixel` |
 
 User data packets
 -----------------
