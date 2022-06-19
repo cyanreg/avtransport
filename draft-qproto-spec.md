@@ -82,9 +82,8 @@ of how they're allocated.
 |     0x0008 and 0x0009 | [ICC profile segment](#icc-profile-segmentation) |
 |                0x0010 | [Video information][#video-info-packets)         |
 |                0x01** | [Stream data](#data-packets)                     |
-|                0x00ff | [Stream data segment](#data-segmentation)        |
-|                0x00fe | [Stream data segment](#data-segmentation)        |
-|                0x00fd | [Stream FEC segment](#fec-segments)              |
+|     0x00ff and 0x00fe | [Stream data segment](#data-segmentation)        |
+|     0x00fd and 0x00fc | [Stream FEC segment](#fec-segments)              |
 |                0x40** | [User data](#user-data-packets)                  |
 |                       | **Reverse signalling only**                      |
 |                0x50** | [Reverse user data](#reverse-user-data)          |
