@@ -226,8 +226,9 @@ Negative `pts` values ARE allowed, and implementations **MUST** decode such fram
 however **MUST NOT** present any such frames unless `pts + duration` is greater than 0,
 in which case they MUST present the data
 required for that duration.</br>
-In other words, if the data is for an audio stream, implementations MUST start
-presenting from the given offset.
+This enables removal of extra samples added during audio compression, as well
+as permitting video segments taken out of context from a stream to bundle
+all dependencies (other frames) required for their presentation.
 
 The `pkt_flags` field MUST be interpreted in the following way:
 
