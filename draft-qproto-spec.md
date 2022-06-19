@@ -276,24 +276,30 @@ that arrive with unrealistically far away presentation times.
 
 FEC segments
 ------------
-The data in an Error Detection and Correction packet is laid out as follows:
+The data in an error correction packet is laid out as follows:
 
-| Data              | Name              | Fixed value  | Description                                                                           |
-|:------------------|:------------------|-------------:|:--------------------------------------------------------------------------------------|
-| b(16)             | `fec_descriptor`  |         0xfd | Indicates this is an FEC packet for data sent.                                        |
-| b(16)             | `stream_id`       |              | Indicates the stream ID for whose packets are being backed.                           |
-| u(16)             | `seq_number`      |              | Indicates the packet which this FEC data is backing.                                  |
-| b(32)             | `data_offset`     |              | The byte offset for the data this FEC packet protects.                                |
-| u(32)             | `data_length`     |              | The length of the data protected by this FEC packet in bytes.                         |
-| b(32)             | `fec_symbol_size` |              | The symbol size for the following sequence of error correction data.                  |
-| u(32)             | `fec_length`      |              | The length of the FEC data.                                                           |
-| b(`fec_length`*8) | `fec_data`        |              | The FEC data that can be used to check or correct the previous data packet's payload. |
+| Data                   | Name              |   Fixed value | Description                                                                                 |
+|:-----------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
+| b(16)                  | `fec_descriptor`  | 0xfd and 0xfe | Indicates this is an FEC segment packet (0xfd) or an FEC segment terminating packet (0xfe). |
+| b(16)                  | `stream_id`       |               | Indicates the stream ID for whose packets are being backed.                                 |
+| u(16)                  | `seq_number`      |               | Indicates the packet which this FEC data is backing.                                        |
+| b(32)                  | `fec_data_offset` |               | The byte offset for the FEC data for this FEC packet protects.                              |
+| u(32)                  | `fec_data_length` |               | The length of the FEC data in this packet.                                                  |
+| u(32)                  | `fec_covered`     |               | The total amount of payload bytes covered by this and preceding FEC segments.               |
+| b(`fec_data_length`*8) | `fec_data`        |               | The FEC data that can be used to check or correct the previous data packet's payload.       |
 
 The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
 Implementations MAY discard the FEC data, or MAY delay the previous packet's
 decoding to correct it with this data, or MAY attempt to decode the previous data,
 and if failed, retry with the corrected data packet.
+
+The data in an FEC packet MUST be RaptorQ, as per IETF RFC 6330.</br>
+The symbol size MUST be 32-bits.
+
+The total number of bytes covered by this and previous FEC segments shall be
+set in the `fec_covered` field. This MUST be greater than zero, unless
+`fec_data_length` is also zero.
 
 The same lifetime and duplication rules apply for FEC segments as they do for
 regular data segments.
