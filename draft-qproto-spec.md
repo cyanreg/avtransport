@@ -742,6 +742,7 @@ The `init_data` field MUST be laid out as follows order:
 The position for each channel is determined by the value of the integers `ra_pos`, and may be interpreted as:
 | Value | Position    |
 |------:|:------------|
+|     0 | Unspecified |
 |     1 | Left        |
 |     2 | Right       |
 |     3 | Center      |
