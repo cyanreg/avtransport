@@ -251,7 +251,7 @@ The syntax to allow for this is as follows:
 
 | Data               | Name              | Fixed value   | Description                                                                                 |
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
-| b(16)              | `seg_descriptor`  | 0xff and 0xfe | Indicates this is a data segment packet (0x10) or a data segment terminating packet (0x11). |
+| b(16)              | `seg_descriptor`  | 0xff and 0xfe | Indicates this is a data segment packet (0xff) or a data segment terminating packet (0xfe). |
 | b(16)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
 | u(16)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
 | u(32)              | `data_length`     |               | The size of the data segment.                                                               |
