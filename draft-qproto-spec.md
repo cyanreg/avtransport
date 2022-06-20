@@ -11,7 +11,7 @@ to solve issues with current other containers, like timestamp rounding, lack of 
 inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
 and rigid overseeing organizations.
 
-This specifications provides support for streaming over 2 protocols: [UDP](#udp) and [QUIC/HTTP3](#quichttp3).
+This specifications provides support for streaming over 2 protocols: [UDP](#udp) and [QUIC](#quic).
 See the [streaming](#streaming) section for information on how to adapt Qproto for such
 use-cases.
 
@@ -522,18 +522,16 @@ UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.
 <!--- TODO: define checksumming as minimal when EC is added to headers -->
 
-QUIC/HTTP3
-----------
-Qproto tries to use as much of the modern conveniences of QUIC as possible.
-As such, it uses both reliable and unreliable streams, as well as bidirectionality
-features of the transport mechanism.
+QUIC
+----
+Qproto tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
+as possible. As such, it uses both reliable and unreliable streams, as well
+as bidirectionality features of the transport mechanism.
 
-All data packets EXCEPT those with descriptors `0x01**`, `0xff`, `0xfe`, and `0xfd`
-MUST be sent over in a *reliable* stream, as per
-[draft-schinazi-masque-h3-datagram](https://datatracker.ietf.org/doc/html/draft-ietf-masque-h3-datagram).
-
-Packets with descriptors `0x01**`, `0xff`, `0xfe`, and `0xfd` MUST be send over
-with **no error correction**, but rather as-is, a raw stream of bytes.
+All data packets with descriptors `0x01**`, `0xff`, `0xfe`, `0xfd` and `0xfc`
+MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
+IETF RFC 9221.</br>
+All other packets MUST be sent over a reliable steam.
 
 Reverse signalling
 ==================
@@ -570,7 +568,7 @@ and start sending the newest data.
 If the `resent_init` flag is set to a non-zero value, senders MAY flush all encoders
 such that the receiver can begin decoding as soon as possible.
 
-If operating over [QUIC/HTTP3](#quichttp3), then any old data **MUST** be served
+If operating over [QUIC](#quic), then any old data **MUST** be served
 over a *reliable* stream, as latency isn't critical. If the receiver asks again
 for the newsest available data, that data's payload is once again sent over an
 *unreliable* stream.
