@@ -131,7 +131,8 @@ Init packets
 ------------
 This packet is used to signal stream registration.
 
-Initializing a decoder requires additional one-off data, usually referred as `extradata`. This is codec-specific, and implementation-specific.
+Initializing a decoder requires additional one-off data, usually referred as `extradata`.
+This is codec-specific, and implementation-specific.</br>
 The layout of the data is as follows:
 
 | Data               | Name                | Fixed value | Description                                                               |
@@ -146,7 +147,8 @@ The layout of the data is as follows:
 | u(32)              | `init_length`       |             | Indicates the length of the initialization data in bytes. May be zero.    |
 | b(`init_length`*8) | `init_data`         |             | Actual codec-specific initialization data.                                |
 
-For more information on the layout of the specific data, consult the [codec-specific encapsulation](#codec-encapsulation) addenda.
+For more information on the layout of the specific data, consult the
+[codec-specific encapsulation](#codec-encapsulation) addenda.
 
 However, in general, the data follows the same layout as what
 [FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.</br>
@@ -303,7 +305,8 @@ regular data segments.
 
 Index packets
 -------------
-The index packet contains available byte offsets of nearby keyframes and the distance to the next index packet.
+The index packet contains available byte offsets of nearby keyframes and the
+distance to the next index packet.
 
 | Data               | Name               | Fixed value  | Description                                                                                                                                                                                |
 |:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -608,7 +611,8 @@ Addendum
 
 Codec encapsulation
 -------------------
-The following section lists the supported codecs, along with their encapsulation definitions.
+The following section lists the supported codecs, along with their encapsulation
+definitions.
 
  - [Opus](#opus-encapsulation)
  - [AAC](#aac-encapsulation)
@@ -754,16 +758,21 @@ The position for each channel is determined by the value of the integers `ra_pos
 |     8 | Rear center |
 |     9 | LFE         |
 
-If the integer value is not on this list, assume it's unknown. Users are invited to interpret the channel as they please.
+If the integer value is not on this list, assume it's unknown. Users are invited
+to interpret the channel as they please.
 
-Multiple channels with the same lable MAY be present, and it's up to users to interpret them.
+Multiple channels with the same lable MAY be present, and it's up to users to
+interpret them.
 
-The `packet_data` MUST contain the concatenated stream of **interleaved** samples for all channels.
+The `packet_data` MUST contain the concatenated stream of **interleaved** samples
+for all channels.
 
-The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and full-range *signed* if they're integers.
+The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and
+full-range *signed* if they're integers.
 
-The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest **power of two**, with the padding in the **least significant bits**. That means that 24 bit samples are coded as 32 bits,
-with the data contained in the topmost 24 bits.
+The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest
+**power of two**, with the padding in the **least significant bits**. That means
+that 24 bit samples are coded as 32 bits, with the data contained in the topmost 24 bits.
 
 ### Raw video encapsulation
 
