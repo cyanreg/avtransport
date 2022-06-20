@@ -202,7 +202,7 @@ more [data segments](#data-segmentation). It is laid out as follows:
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)              | `data_descriptor` |    0x01*XY* | Indicates this is a data packet. The lower 8 bits are used as the `pkt_flags` field.                                                       |
 | b(16)              | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                   |
-| u(16)              | `seq_number`      |             | A per-stream monotonically incrementing packet number.                                                                                     |
+| u(32)              | `seq_number`      |             | Per-stream monotonically incrementing packet number.                                                                                       |
 | i(64)              | `pts`             |             | Indicates the presentation timestamp offset that when combined with the `epoch` field signals when this frame SHOULD be presented at.      |
 | u(64)              | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                       |
 | u(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                       |
@@ -235,6 +235,7 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x80 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
 |             0x40 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 |             0x20 | Packet is incomplete and requires extra [data segments](#data-segmentation) to be completed.                                                                                                                 |
+|             0x10 | Packet contains the second field of an interlaced frame. See the `interlacing` table in [ideo information packets][#video-info-packets).                                                                     |
 |              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
@@ -252,12 +253,9 @@ The syntax to allow for this is as follows:
 |:-------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
 | b(16)              | `seg_descriptor`  | 0xff and 0xfe | Indicates this is a data segment packet (0xff) or a data segment terminating packet (0xfe). |
 | b(16)              | `stream_id`       |               | Indicates the stream ID for this packet.                                                    |
-| u(16)              | `seq_number`      |               | Indicates the packet for which this segment is a part of.                                   |
+| u(32)              | `seq_number`      |               | Per-stream monotonically incrementing packet number.                                        |
 | u(32)              | `data_length`     |               | The size of the data segment.                                                               |
-| u(32)              | `data_offset`     |               | The byte offset for the data segment.                                                       |
 | b(`data_length`*8) | `packet_data`     |               | The data for the segment.                                                                   |
-
-The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
 The size of the final assembled packet is the sum of all `data_length` fields.
 
@@ -281,13 +279,11 @@ The data in an error correction packet is laid out as follows:
 |:-----------------------|:------------------|--------------:|:--------------------------------------------------------------------------------------------|
 | b(16)                  | `fec_descriptor`  | 0xfd and 0xfe | Indicates this is an FEC segment packet (0xfd) or an FEC segment terminating packet (0xfe). |
 | b(16)                  | `stream_id`       |               | Indicates the stream ID for whose packets are being backed.                                 |
-| u(16)                  | `seq_number`      |               | Indicates the packet which this FEC data is backing.                                        |
+| u(32)                  | `seq_number`      |               | Per-stream monotonically incrementing packet number.                                        |
 | b(32)                  | `fec_data_offset` |               | The byte offset for the FEC data for this FEC packet protects.                              |
 | u(32)                  | `fec_data_length` |               | The length of the FEC data in this packet.                                                  |
 | u(32)                  | `fec_covered`     |               | The total amount of payload bytes covered by this and preceding FEC segments.               |
 | b(`fec_data_length`*8) | `fec_data`        |               | The FEC data that can be used to check or correct the previous data packet's payload.       |
-
-The `stream_id` and `seq_number` fields MUST match those sent over [data packets](#data-packets).
 
 Implementations MAY discard the FEC data, or MAY delay the previous packet's
 decoding to correct it with this data, or MAY attempt to decode the previous data,
@@ -328,7 +324,7 @@ The metadata packets can be sent for the overall stream, or for a specific
 |:--------------------|:------------------|------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)               | `meta_descriptor` |         0x4 | Indicates this is a metadata packet.                                                               |
 | b(16)               | `stream_id`       |             | Indicates the stream ID for the metadata. May be 0xffff, in which case, it applies to all streams. |
-| u(16)               | `seq_number`      |             | A per-stream monotonically incrementing packet number.                                             |
+| u(32)               | `seq_number`      |             | Per-stream monotonically incrementing packet number.                                               |
 | u(32)               | `metadata_len`    |             | Indicates the metadata length in bytes.                                                            |
 | b(`metadata_len`*8) | `ebml_metadata`   |             | The actual metadata. EBML, as described in IETF RFC 8794.                                          |
 
@@ -343,7 +339,7 @@ Embedding of ICC profiles for accurate color reproduction is supported.
 |:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)                   | `icc_descriptor`  |  0x6 and 0x7 | Indicates this packet contains a complete ICC profile (0x6) or the start of a segmented one (0x7). |
 | u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
-| u(16)                   | `seq_number`      |              | A per-stream monotonically incrementing packet number.                                             |
+| u(32)                   | `seq_number`      |              | Per-stream monotonically incrementing packet number.                                               |
 | u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
 | u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
 | b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
@@ -365,7 +361,7 @@ ICC profile segmentation
 |:------------------------|:------------------|-------------:|:---------------------------------------------------------------------------------------------------|
 | b(16)                   | `icc_descriptor`  |  0x8 and 0x9 | Indicates this packet contains a partial ICC profile segment (0x8) or finalizes it entirely (0x9). |
 | u(16)                   | `stream_id`       |              | The stream ID for which to apply the ICC profile.                                                  |
-| u(16)                   | `seq_number`      |              | A per-stream monotonically incrementing packet number.                                             |
+| u(32)                   | `seq_number`      |              | Per-stream monotonically incrementing packet number.                                               |
 | u(16)                   | `icc_id`          |              | A unique identifier for each ICC profile.                                                          |
 | u(32)                   | `icc_data_length` |              | The length of the ICC profile.                                                                     |
 | b(`user_data_length`*8) | `icc_data`        |              | The ICC profile itself.                                                                            |
@@ -390,7 +386,7 @@ stream after decoding.
 |:--------------|:--------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)         | `video_info_descriptor`   |         0x10 | Indicates this packet contains video information.                                                                                             |
 | u(16)         | `stream_id`               |              | The stream ID for which to associate the video information with.                                                                              |
-| u(16)         | `seq_number`              |              | A per-stream monotonically incrementing packet number.                                                                                        |
+| u(32)         | `seq_number`              |              | Per-stream monotonically incrementing packet number.                                                                                          |
 | u(32)         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | u(32)         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
 | u(8)          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
@@ -436,13 +432,13 @@ The `subsampling` table is as follows:
 |   0x2 | `422`       | Chromatic data is subsampled at half the vertical resolution of the luminance data.                |
 
 The `interlacing` table is as follows:
-| Value | Name        | Description                                                                                                                                           |
-|------:|:------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                       |
-|   0x1 | `TFF`       | Video is interlaced. One [data packet](#data-packets) per field. If the data packet's `seq_number` is even, indicates the field is the **top** field. |
-|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with an even `seq_number` contain the **bottom** field.                                      |
-|   0x3 | `TW`        | Video is interlaced. The [data packet](#data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.     |
-|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                        |
+| Value | Name        | Description                                                                                                                                                                                               |
+|------:|:------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                                                                           |
+|   0x1 | `TFF`       | Video is interlaced. One [data packet](#data-packets) per field. If the data packet's `pkt_flags & 0x20` bit is **unset**, indicates the field contained is the **top** field, otherwise it's the bottom. |
+|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with `pkt_flags & 0x20` bit **set** contain the **top** field, otherwise it's the bottom.                                                        |
+|   0x3 | `TW`        | Video is interlaced. The [data packet](#data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.                                                         |
+|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                                                                            |
 
 The `TFF` and `TW`, as well as the `BFF` and `BW` values MAY be interchanged if
 it's possible to output one or the other, depending on the setting used, if
@@ -484,6 +480,7 @@ The EOS packet is laid out as follows:
 |:-----------------------|:---------------------|-------------:|:--------------------------------------------------------------------------------------------------------|
 | b(16)                  | `eos_descriptor`     |         0x09 | Indicates this is an end-of-stream packet.                                                              |
 | b(16)                  | `stream_id`          |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
+| u(32)                  | `seq_number`         |              | Per-stream monotonically incrementing packet number.                                                    |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer
 receive any packets, and implementations are free to unload decoding and free up
