@@ -50,10 +50,9 @@ The structure of data, when saved as a file, is:
 |        | `index_packet`    |                    | Index packet, used to provide fast seeking support. Optional. See [index packets](#index-packets).                 |
 |        | `metadata_packet` |                    | Metadata packet. Optional. See [metadata packets](#metadata-packets).                                              |
 |        | `user_data`       |                    | User-specific data. Optional. See [user data packets](#user-data-packets).                                         |
-|        | `padding_packet`  |                    | Padding data. Optional. See [padding](#padding).                                                                   |
 |        | `eos`             |                    | Used to signal end of stream. See the [end of stream](#end-of-stream) section. Optional, but strongly recommended. |
 
-All fields are implicitly padded to the nearest byte. The padding SHOULD be all zeroes.
+All fields are implicitly padded to the nearest byte.
 
 The order in which the fields may appear **first** in a stream is as follows:
 | Field             | Order                                                                                                                         |
@@ -65,7 +64,6 @@ The order in which the fields may appear **first** in a stream is as follows:
 | `metadata_packet` | MUST be present before any `init_data` packets.                                                                               |
 | `fec_segment`     | MAY be present after a `data_packet` or `data_segment` to perform error correction.                                           |
 | `user_data`       | MAY be present anywhere otherwise allowed.                                                                                    |
-| `padding_packet`  | MAY be preseny anywhere otherwise allowed.                                                                                    |
 | `eos`             | MUST be present last if its `stream_id` is `0xffff`, if at all.                                                               |
 
 Each packet, except *fid*, MUST be prefixed with a descriptor. Below is a table
@@ -77,7 +75,6 @@ of how they're allocated.
 |                0x0002 | [Stream initialization](#init-packets)           |
 |                0x0003 | [Stream index](#index-packets)                   |
 |                0x0004 | [Metadata](#metadata-packets)                    |
-|                0x0005 | [Padding](#padding)                              |
 |     0x0006 and 0x0007 | [ICC profile](#icc-profile-packets)              |
 |     0x0008 and 0x0009 | [ICC profile segment](#icc-profile-segmentation) |
 |                0x0010 | [Video information][#video-info-packets)         |
@@ -476,18 +473,6 @@ The user-specific data packet is laid out as follows:
 | u(32)                   | `user_data_length` |              | The length of the user data.                                                                 |
 | b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                        |
 
-Padding
--------
-The padding packet is laid out as follows:
-
-| Data                   | Name                 | Fixed value  | Description                                                                           |
-|:-----------------------|----------------------|-------------:|---------------------------------------------------------------------------------------|
-| b(16)                  | `padding_descriptor` |          0x5 | Indicates this is a padding packet.                                                   |
-| u(32)                  | `padding_length`     |              | The length of the padding data.                                                       |
-| b(`padding_length`*8)  | `padding_data`       |              | The padding data itself. May be all zeroes or random numbers.                         |
-
-The purpose of the padding data is to keep a specific exact overall constant bitrate, and to prevent metadata leakage for encrypted contents (the packet length).
-
 End of stream
 -------------
 The EOS packet is laid out as follows:
@@ -525,6 +510,10 @@ UDP mode is unidirectional, but the implementations are free to use the
 
 Implementations SHOULD segment the data such that the MTU is never exceeded and
 no packet splitting occurs.
+
+Data packets MAY be padded by appending random data or zeroes after the `packet_data`
+field up to the maximum MTU size. This permits constant bitrate operation,
+as well as preventing metadata leakage in the form of a packet size.
 
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.
