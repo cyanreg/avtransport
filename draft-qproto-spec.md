@@ -386,25 +386,31 @@ Video info packets
 Video info packets contain everything needed to correctly interpret a video
 stream after decoding.
 
-| Data          | Name                    | Fixed value  | Description                                                                                                                                   |
-|:--------------|:------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)         | `video_info_descriptor` |  0x10        | Indicates this packet contains video information.                                                                                             |
-| u(16)         | `stream_id`             |              | The stream ID for which to associate the video information with.                                                                              |
-| u(16)         | `seq_number`            |              | A per-stream monotonically incrementing packet number.                                                                                        |
-| u(32)         | `width`                 |              | Indicates the presentable video width in pixels.                                                                                              |
-| u(32)         | `height`                |              | Indicates the presentable video height in pixels.                                                                                             |
-| u(8)          | `colorspace`            |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
-| u(8)          | `limited_range`         |              | Indicates the signal range. If `0`, means `full range`. If `1` means `limited range`. Other values are reserved.                              |
-| u(8)          | `chroma_subsampling`    |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
-| u(8)          | `interlaced`            |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
-| r(64)         | `framerate`             |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
-| u(8)          | `bit_depth`             |              | Number of bits per pixel value.                                                                                                               |
-| u(8)          | `chroma_pos`            |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
-| r(64)         | `gamma`                 |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
-| u(8)          | `primaries`             |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
-| u(8)          | `transfer`              |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
-| u(8)          | `matrix`                |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
-| 16*r(64)      | `custom_matrix`         |              | If `matrix` is equal to 0xff, use this custom matrix instead. Top, left, to bottom right, raster order.                                       |
+| Data          | Name                      | Fixed value  | Description                                                                                                                                   |
+|:--------------|:--------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
+| b(16)         | `video_info_descriptor`   |         0x10 | Indicates this packet contains video information.                                                                                             |
+| u(16)         | `stream_id`               |              | The stream ID for which to associate the video information with.                                                                              |
+| u(16)         | `seq_number`              |              | A per-stream monotonically incrementing packet number.                                                                                        |
+| u(32)         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
+| u(32)         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
+| u(8)          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
+| u(8)          | `limited_range`           |              | Indicates the signal range. If `0`, means `full range`. If `1` means `limited range`. Other values are reserved.                              |
+| u(8)          | `chroma_subsampling`      |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
+| u(8)          | `interlaced`              |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
+| r(64)         | `framerate`               |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
+| u(8)          | `bit_depth`               |              | Number of bits per pixel value.                                                                                                               |
+| u(8)          | `chroma_pos`              |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
+| r(64)         | `gamma`                   |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
+| u(8)          | `primaries`               |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
+| u(8)          | `transfer`                |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
+| u(8)          | `matrix`                  |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
+| 16*r(64)      | `custom_matrix`           |              | If `matrix` is equal to 0xff, use this custom matrix instead. Top, left, to bottom right, raster order.                                       |
+| u(8)          | `has_mastering_primaries` |              | If `1`, signals that the following `mastering_primaries` and `mastering_white_point` contain valid data.                                      |
+| 6*r(64)       | `mastering_primaries`     |              | CIE 1931 xy chromacity coordinates of the color primaries, `r`, `g`, `b` order.                                                               |
+| 2*r(64)       | `mastering_white_point`   |              | CIE 1931 xy chromacity coordinates of the white point.                                                                                        |
+| u(8)          | `has_luminance`           |              | If `1`, signals that the following `min_luminance` and `max_luminance` fields contain valid data.                                             |
+| r(64)         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
+| r(64)         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.</br>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
