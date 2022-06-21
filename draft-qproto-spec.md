@@ -85,7 +85,7 @@ of how they're allocated.
 |                       | **Reverse signalling only**                      |
 |                0x50** | [Reverse user data](#reverse-user-data)          |
 |                0x8001 | [Control data](#control-data)                    |
-|                0x8002 | [Statistics](#statistics)                        |
+|                0x8002 | [Feedback](#feedback)                            |
 |                0xffff | [End of stream](#end-of-stream)                  |
 
 Error resilience
@@ -554,15 +554,15 @@ one-to-one transmission. The following syntax is used:
 
 If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
 do not match, the sender **MUST** cease this connection, reopen a new connection
-with the given `uplink_ip`, and resend all `fid`, `time_sync` and `init_data`
-packets to the destination.
+with the given `uplink_ip`, and resend all packets needed to begin decoding
+to the new destination.
 
 The `seek` request asks the sender to resend old data that's still available.
 The sender MAY not comply if that data suddently becomes unavailable.
 If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply
 and start sending the newest data.
 
-If the `resent_init` flag is set to a non-zero value, senders MAY flush all encoders
+If the `resent_init` flag is set to a non-zero value, senders SHOULD flush all encoders
 such that the receiver can begin decoding as soon as possible.
 
 If operating over [QUIC](#quic), then any old data **MUST** be served
@@ -576,8 +576,8 @@ The following error values are allowed:
 |   0x1 | Generic error.                                                                                                                                                                                                                                                                   |
 |   0x2 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
-Statistics
-----------
+Feedback
+--------
 The following packet MAY be sent from the receiver to the sender.
 
 | Data                | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
@@ -588,8 +588,12 @@ The following packet MAY be sent from the receiver to the sender.
 | u(32)               | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct). If FEC is not used, MAY be zero.                                                                                                  |
 | u(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
 | u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
+| u(32)               | `dropped_type`     |              | Indicates the type of packet that was likely dropped. May be `0x0` to indicate unknown or not applicable.                                                                                                                                           |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
+
+If the descriptor of the dropped packed is known, receivers SHOULD set it
+in `dropped_type`, and senders SHOULD resend it as soon as possible.
 
 Reverse user data
 -----------------
