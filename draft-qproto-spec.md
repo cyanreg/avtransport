@@ -729,7 +729,7 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 | b(8)  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
 
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
-all packets necessary to initialize the stream MUST be resend.
+all packets necessary to initialize the stream MUST be resent.
 
 Reverse user data
 -----------------
