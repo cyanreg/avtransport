@@ -86,7 +86,8 @@ of how they're allocated.
 |     0x5000 to 0x50ff | [Reverse user data](#reverse-user-data)               |
 |               0x8001 | [Control data](#control-data)                         |
 |               0x8002 | [Feedback](#feedback)                                 |
-|               0x8003 | [Stream control](#stream-control)                     |
+|               0x8003 | [Resend](#resend)                                     |
+|               0x8004 | [Stream control](#stream-control)                     |
 
 Session start packets
 ---------------------
@@ -711,12 +712,22 @@ The following packet MAY be sent from the receiver to the sender.
 | u(32)               | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
 | u(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
 | u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
-| u(32)               | `dropped_type`     |              | Indicates the type of packet that was likely dropped. May be `0x0` to indicate unknown or not applicable.                                                                                                                                           |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
 
 If the descriptor of the dropped packed is known, receivers SHOULD set it
 in `dropped_type`, and senders SHOULD resend it as soon as possible.
+
+Resend
+------
+The following packet MAY be sent to ask the client to resend a recent packet
+that was likely dropped.
+
+| Data  | Name                | Fixed value  | Description                                                           |
+|:----- |:--------------------|-------------:|:----------------------------------------------------------------------|
+| b(16) | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
+| b(16) | `stream_id`         |              | The stream ID for which this packet applies to. MUST NOT be `0xffff`. |
+| u(32) | `seq_number`        |              | The sequence number of the packet that is missing.                    |
 
 Stream control
 --------------
@@ -724,8 +735,8 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 
 | Data  | Name               | Fixed value  | Description                                                                      |
 |:----- |:-------------------|-------------:|:---------------------------------------------------------------------------------|
-| b(16) | `strm_descriptor`  |       0x8003 | Indicates this is a stream control data packet.                                  |
-| b(16) | `stream_id`        |              | The stream ID for which this packet applies to.                                  |
+| b(16) | `strm_descriptor`  |       0x8004 | Indicates this is a stream control data packet.                                  |
+| b(16) | `stream_id`        |              | The stream ID for which this packet applies to. MUST NOT be `0xffff`.            |
 | b(8)  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
 
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
