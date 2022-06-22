@@ -192,6 +192,9 @@ If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
 Once registered, streams generally need an [init data packet](#init-data-packets),
 unless the `stream_flags & 0x1` bit is set.
 
+Stream registration initializes the `seq_number` used for the stream to `0x0`.<br/>
+The sequence number MUST overflow gracefully back to `0x0`.
+
 Generic data packet structure
 -----------------------------
 To ease parsing, the specification defines a common template for data that
