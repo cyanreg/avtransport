@@ -353,7 +353,7 @@ Senders MAY send duplicate segments to compensate for packet loss,
 but SHOULD use [FEC segments](#fec-segments) instead.
 
 Implementations SHOULD discard any packets and segments that arrive after their
-presentation time. Implementations SHOULD garbage collect any packets and segments
+presentation time. Implementations SHOULD drop any packets and segments
 that arrive with unrealistically far away presentation times.
 
 Stream FEC segments
