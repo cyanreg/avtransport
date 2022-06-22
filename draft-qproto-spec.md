@@ -209,19 +209,19 @@ The following `generic_data_structure` template is used for generic data packets
 | u(32)              | `seq_number` |                | Per-stream monotonically incrementing packet number.                    |
 | u(32)              | `length`     |                | The size of the data in this packet.                                    |
 | C(32)              | `raptor`     |                | Raptor code to correct and verify the previous contents of the packet.  |
-| b(`data_length`*8) | `data`       |                | The packet data itself.                                                 |
+| b(`length`*8)      | `data`       |                | The packet data itself.                                                 |
 
 In case the data needs to be segmented, the following `generic_segment_structure`
 template has to be used for segments that follow the above:
 
-| Data               | Name              |    Fixed value | Description                                                                           |
-|:-------------------|:------------------|---------------:|:------------------------------------------------------------------------------------- |
-| b(16)              | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
-| b(16)              | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
-| u(32)              | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                  |
-| u(32)              | `seg_length`      |                | The size of the data segment.                                                         |
-| C(32)              | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
-| b(`data_length`*8) | `seg_data`        |                | The data for the segment.                                                             |
+| Data              | Name              |    Fixed value | Description                                                                           |
+|:------------------|:------------------|---------------:|:------------------------------------------------------------------------------------- |
+| b(16)             | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
+| b(16)             | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
+| u(32)             | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                  |
+| u(32)             | `seg_length`      |                | The size of the data segment.                                                         |
+| C(32)             | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
+| b(`seg_length`*8) | `seg_data`        |                | The data for the segment.                                                             |
 
 If the data in a `generic_data_structure` is to be segmented, it will have
 a different descriptor. The descriptor in `generic_segment_structure` shall
