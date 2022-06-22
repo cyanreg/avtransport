@@ -594,7 +594,7 @@ If not encountered in a stream, and the connection was cut, then the receiver is
 allowed to gracefully wait for a reconnection.
 
 If encountered in a file, the implementation MAY regard any data present afterwards
-as padding and ignore it. Qproto files **MAY NOT** be concatenated.
+as padding and ignore it. Qproto files MUST NOT be concatenated.
 
 Streaming
 =========
