@@ -11,7 +11,11 @@ to solve issues with current other containers, like timestamp rounding, lack of 
 inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
 and rigid overseeing organizations.
 
-This specifications provides support for streaming over 2 protocols: [UDP](#udp) and [QUIC](#quic).
+This specifications provides support for streaming over different protocols:
+ - [UDP](#udp)
+ - [UDP-Lite](#udp-lite)
+ - [QUIC](#quic)
+
 See the [streaming](#streaming) section for information on how to adapt Qproto for such
 use-cases.
 
@@ -586,6 +590,8 @@ Data packets MAY be padded by appending random data or zeroes after the `packet_
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
 
+UDP-Lite
+--------
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.</br>
 When using UDP-Lite, the **minimum** checksum coverage should be used, where
