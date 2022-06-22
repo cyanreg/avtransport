@@ -585,8 +585,13 @@ decoding.
 UDP mode is unidirectional, but the implementations are free to use the
 [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
 
-Implementations SHOULD segment the data such that the MTU is never exceeded and
-no packet splitting occurs.
+Implementations MUST segment the data such that the network MTU is never
+exceeded and no packet fragmentation occurs.</br>
+The **minimum** network MTU required for the protocol is **384 bytes**,
+as to allow [video information packets](#video-info-packets) or any future large
+packets to be sent without fragmentation.
+
+Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
 
 Data packets MAY be padded by appending random data or zeroes after the `packet_data`
 field up to the maximum MTU size. This permits constant bitrate operation,
@@ -596,8 +601,10 @@ UDP-Lite
 --------
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.</br>
-When using UDP-Lite, the **minimum** checksum coverage should be used, where
-only the header (8 bytes) is checksummed.
+When using UDP-Lite, the same considerations as [UDP](#udp) apply.
+
+As UDP-Lite allows for varoabiel checksum coverage, the **minimum** checksum
+coverage MUST be used, where only the header (8 bytes) is checksummed.
 
 QUIC
 ----
@@ -610,6 +617,14 @@ MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
 IETF RFC 9221.</br>
 All other packets MUST be sent over a reliable steam. FEC data for those packets
 SHOULD NOT be signalled.
+
+Implementations MUST segment the data such that the network MTU is never
+exceeded and no packet fragmentation occurs.</br>
+The **minimum** network MTU required for the protocol is **384 bytes**,
+as to allow [video information packets](#video-info-packets) or any future large
+packets to be sent without fragmentation.
+
+Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
 
 Reverse signalling
 ==================
