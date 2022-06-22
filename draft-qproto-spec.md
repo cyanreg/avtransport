@@ -350,7 +350,7 @@ Implementations MAY try to decode incomplete data packets with missing segments
 due to latency concerns.
 
 Senders MAY send duplicate segments to compensate for packet loss,
-should bandwidth permit, but SHOULD use [FEC segments](#fec-segments) instead.
+but SHOULD use [FEC segments](#fec-segments) instead.
 
 Implementations SHOULD discard any packets and segments that arrive after their
 presentation time. Implementations SHOULD garbage collect any packets and segments
