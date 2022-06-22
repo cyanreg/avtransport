@@ -834,7 +834,7 @@ The `packet_data` MUST contain the following elements in order:
    synchronous 1-in-1-out decoder.
  - Raw `NAL` elements, concatenated.
 
-Using `Annex-B` is explicitly **forbidden**.
+`Annex-B` formatted packets MUST NOT be used.
 
 ### ASS encapsulation
 
