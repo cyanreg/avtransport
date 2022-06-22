@@ -389,9 +389,11 @@ distance to the next index packet.
 | i(32)              | `next_idx`         |              | Position of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
 | u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                                        |
 | C(32)              | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                                                                                                                     |
-| i(`nb_indices`*32) | `idx_pos`          |              | The position of a decodable index relative to the current position in bytes.                                                                                                               |
 | i(`nb_indices`*64) | `idx_pts`          |              | The presentation timestamp of the index.                                                                                                                                                   |
-| u(`nb_indices`*8)  | `idx_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                             |
+| i(`nb_indices`*32) | `idx_pos`          |              | The position of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                                    |                                                                                                               |
+| u(`nb_indices`*16) | `idx_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                             |
+
+When streaming, `idx_pos` MUST be `0`.
 
 Metadata packets
 ----------------
