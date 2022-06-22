@@ -423,14 +423,14 @@ ICC profile packets
 Embedding of ICC profiles for accurate color reproduction is supported.</br>
 The following structure MUST be followed:
 
-| Data                    | Name              |    Fixed value | Description                                                                                          |
-|:------------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------------------|
-| b(16)                   | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
-| u(16)                   | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
-| u(32)                   | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                                 |
-| u(32)                   | `icc_data_length` |                | The length of the ICC profile.                                                                       |
-| C(32)                   | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                               |
-| b(`user_data_length`*8) | `icc_data`        |                | The ICC profile itself.                                                                              |
+| Data                   | Name              |    Fixed value | Description                                                                                          |
+|:-----------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------------------|
+| b(16)                  | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
+| u(16)                  | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
+| u(32)                  | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                                 |
+| u(32)                  | `icc_data_length` |                | The length of the ICC profile.                                                                       |
+| C(32)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                               |
+| b(`icc_data_length`*8) | `icc_data`        |                | The ICC profile itself.                                                                              |
 
 Often, ICC profiles may be too large to fit in one MTU, hence they can be segmented
 in the same way as data packets, as well as be error-corrected. The syntax for
