@@ -30,7 +30,7 @@ A special notation is used to describe sequences of bits:
  - `i(bits)`: the same, but the data describes a signed integer is signed.
  - `b(bits)`: the data is an opaque sequence of bits that clients MUST NOT interpret as anything else.
  - `r(bits)`: the data is a rational number, with a numerator of `u(bits/2)` and
-   following that, a denumerator of `u(bits/2)`. The denumerator MUST be greater than `0`.
+   following that, a denominator of `u(bits/2)`. The denominator MUST be greater than `0`.
  - `C(bits)`: Systematic Raptor code (IETF RFC 5053) with symbol size of 32-bits
    to correct and verify the data from the start of the packet to the start of this code.
    Implementations are allowed to skip checking it.
@@ -161,7 +161,7 @@ The `stream_flags` field may be interpreted as such:
 
 | Bit set | Description                                                                                                             |
 |--------:|:------------------------------------------------------------------------------------------------------------------------|
-|     0x1 | Stream does not require any [init data packets].                                                                        |
+|     0x1 | Stream does not require any [init data packet](#init-data-packets).                                                     |
 |     0x2 | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
 |     0x4 | Stream is a still picture and only a single decodable frame will be sent.                                               |
 |     0x8 | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
@@ -175,7 +175,7 @@ The `stream_flags` field may be interpreted as such:
 |   0x800 | Stream contains music and sound effects without voice.                                                                  |
 |  0x1000 | Stream contains non-diegetic audio. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.                 |
 |  0x2000 | Stream contains textual or spoken descriptions to the stream signalled in `related_stream_id`.                          |
-|  0x4000 | Stream contains timed metadata and is not inteded to be directly presented to the user.                                 |
+|  0x4000 | Stream contains timed metadata and is not intended to be directly presented to the user.                                |
 |  0x8000 | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
 
 Several streams can be chained with the `0x10` bit set to indicate progressively
@@ -187,8 +187,8 @@ but could be sparser or more frequent.
 If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
 `stream_id`, otherwise the stream with a related ID` MUST exist.
 
-Once registered, streams generally need an [init data packet], unless the
-`stream_flags & 0x1` bit is set.
+Once registered, streams generally need an [init data packet](#init-data-packets),
+unless the `stream_flags & 0x1` bit is set.
 
 Generic data packet structure
 -----------------------------
@@ -338,7 +338,7 @@ The size of the final assembled packet is the sum of all `seg_length` fields,
 plus the `data_length` field from the [stream data packet](#stream-data-packets).
 
 Data segments and packets may arrive out of order and be duplicated.
-Implementations MUST reorder them, deduplicate them and assembled them into
+Implementations MUST reorder them, deduplicate them and assemble them into
 complete packets.
 
 Implementations MAY try to decode incomplete data packets with missing segments
@@ -415,8 +415,7 @@ IETF `draft-devault-bare-07`.
 
 ICC profile packets
 -------------------
-Embedding of ICC profiles for accurate color reproduction is supported.
-Embedding of ICC profiles for accurate color reproduction is supported.
+Embedding of ICC profiles for accurate color reproduction is supported.</br>
 The following structure MUST be followed:
 
 | Data                    | Name              |    Fixed value | Description                                                                                          |
@@ -441,7 +440,7 @@ ICC segments and FEC packets is via the following
 
 If the `icc_descriptor` is `0x11`, then at least one `0x13` segment MUST be received.
 
-**NOTE**: ICC profiles MUST take precendence over the primaries and transfer
+**NOTE**: ICC profiles MUST take precedence over the primaries and transfer
 characteristics values in [video info packets](#video-info-packets). The matrix
 coefficients are still required for RGB conversion.
 
@@ -603,7 +602,7 @@ UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.</br>
 When using UDP-Lite, the same considerations as [UDP](#udp) apply.
 
-As UDP-Lite allows for varoabiel checksum coverage, the **minimum** checksum
+As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
 coverage MUST be used, where only the header (8 bytes) is checksummed.
 
 QUIC
@@ -654,7 +653,7 @@ with the given `uplink_ip`, and resend all packets needed to begin decoding
 to the new destination.
 
 The `seek` request asks the sender to resend old data that's still available.
-The sender MAY not comply if that data suddently becomes unavailable.
+The sender MAY not comply if that data suddenly becomes unavailable.
 If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply
 and start sending the newest data.
 
@@ -702,7 +701,7 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 | b(8)  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
 
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
-all packets necessary to initialize the stream MUST be resent.
+all packets necessary to initialize the stream MUST be resend.
 
 Reverse user data
 -----------------
