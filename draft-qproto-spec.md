@@ -1,9 +1,9 @@
 Qproto protocol
 ===============
-The Qproto protocol is a new standardized mechanism for unidirectional and bidirectional
-multimedia transport and storage. This protocol aims to be a simple, reliable and robust
-low-overhead method that borrows design decisions from other protocols and aims to be
-generic, rather than specialized for certain use-cases. With minimal changes, it can be
+The Qproto protocol is a new standardized mechanism for multimedia transport and
+storage. This protocol aims to be a simple, reliable and robust low-overhead method
+that borrows design decisions from other protocols and aims to be generic,
+rather than specialized for certain use-cases. With minimal changes, it can be
 processed as a stream or saved to a file as an intermediate step or for post-processing.
 
 Rather than just being a new container and protocol filling a niche, this also attempts
