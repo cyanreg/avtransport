@@ -304,8 +304,8 @@ The same formula is also valid for the `dts` field in [H.264](#h264-encapsulatio
 Implementations MUST feed the packets to the decoder in an incrementing order
 according to the `dts` field.
 
-Negative `pts` values ARE allowed, and implementations **MUST** decode such frames,
-however **MUST NOT** present any such frames unless `pts + duration` is greater than 0,
+Negative `pts` values ARE allowed, and implementations MUST decode such frames,
+however MUST NOT present any such frames unless `pts + duration` is greater than 0,
 in which case they MUST present the data required for that duration.<br/>
 This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
