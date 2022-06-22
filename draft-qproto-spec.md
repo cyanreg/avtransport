@@ -606,7 +606,8 @@ as bidirectionality features of the transport mechanism.
 All data packets with descriptors `0x01**`, `0xff`, `0xfe`, `0xfd` and `0xfc`
 MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
 IETF RFC 9221.</br>
-All other packets MUST be sent over a reliable steam.
+All other packets MUST be sent over a reliable steam. FEC data for those packets
+SHOULD NOT be signalled.
 
 Reverse signalling
 ==================
