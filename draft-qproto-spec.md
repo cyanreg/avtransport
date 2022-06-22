@@ -21,8 +21,8 @@ use-cases.
 
 Specification conventions
 -------------------------
-Throughout all of this document, bit sequences are always big-endian, and numbers
-are always two's complement.</br>
+Throughout all of this document, bit sequences are always *big-endian*, and numbers
+are always *two's complement*.</br>
 Keywords given in all caps are to be interpreted as stated in IETF RFC 2119.
 
 A special notation is used to describe sequences of bits:
