@@ -96,7 +96,7 @@ as a Qproto session. The syntax is as follows:
 | Data   | Name                 | Fixed value | Description                                                            |
 |:-------|:---------------------|------------:|:-----------------------------------------------------------------------|
 | b(16)  | `session_descriptor` |      0x5170 | Indicates this is a Qproto session (`Qp` in hex).                      |
-| b(16)  | `session_version`    |         0x1 | Indicates the session version. This document describes version `0x0`.  |
+| b(16)  | `session_version`    |         0x0 | Indicates the session version. This document describes version `0x0`.  |
 | C(32)  | `raptor`             |      *TODO* | Raptor code to correct and verify the previous contents of the packet. |
 
 Multiple session packets MAY be present in a session, but MUST remain
