@@ -979,7 +979,7 @@ of video from most sources.
 
 A special section is dedicated for custom codec storage. While potentially useful
 for experimentation and for specialized usecases, users of such are invited to submit
-an addenda to this document to formalize such containerization. This field MUST NOT be
+an addendum to this document to formalize such containerization. This field MUST NOT be
 used if the codec being contained already has a formal definition in this spec.
 
 For custom encapsulation, the `codec_id` in
