@@ -1,5 +1,5 @@
 Qproto protocol
-================
+===============
 The Qproto protocol is a new standardized mechanism for unidirectional and bidirectional
 multimedia transport and storage. This protocol aims to be a simple, reliable and robust
 low-overhead method that borrows design decisions from other protocols and aims to be
@@ -475,7 +475,7 @@ stream after decoding.
 | u(8)          | `has_luminance`           |              | If `1`, signals that the following `min_luminance` and `max_luminance` fields contain valid data.                                             |
 | r(64)         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
 | r(64)         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
-| C(128)        | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
+| C(512)        | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.</br>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
