@@ -248,8 +248,8 @@ Object Transmission Information as described in the document are *never* used.
 The symbol size MUST be 32-bits.
 
 The total number of bytes covered by this and previous FEC segments shall be
-set in the `fec_covered` field. This MUST be greater than zero, unless
-`fec_data_length` is also zero.
+set in the `fec_covered` field.<br/>
+This MUST always be *greater than zero*.
 
 Init data packets
 -----------------
