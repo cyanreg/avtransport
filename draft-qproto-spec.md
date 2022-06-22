@@ -22,7 +22,7 @@ use-cases.
 Specification conventions
 -------------------------
 Throughout all of this document, bit sequences are always *big-endian*, and numbers
-are always *two's complement*.</br>
+are always *two's complement*.<br/>
 Keywords given in all caps are to be interpreted as stated in IETF RFC 2119.
 
 A special notation is used to describe sequences of bits:
@@ -108,7 +108,7 @@ to identify a Qproto session.
 Time synchronization packets
 ----------------------------
 In order to optionally make sense of timestamps present in the stream, or
-provide a context for synchronization, the `time_sync` packet is sent through.</br>
+provide a context for synchronization, the `time_sync` packet is sent through.<br/>
 This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on
 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
 The layout of the data in a `time_sync` packet is as follows:
@@ -124,15 +124,15 @@ This field MAY be zero, in which case the stream has no real-world time-relative
 If this field is non-zero, senders SHOULD ensure the `epoch` value is actual.
 
 If the stream is a file, receivers SHOULD ignore this, but MAY expose the offset
-as a metadata `date` field.</br>
+as a metadata `date` field.<br/>
 Also, when the stream is a file, receivers CAN replace the fields by a user-defined
 value in order to permit synchronized presentation between multiple unconnected receivers.
 
 If the stream is live, receivers are permitted to ignore the value and present
-as soon as new data is received.</br>
+as soon as new data is received.<br/>
 Receivers are also free to trust the field to be valid, and interpret all
 timestamps as a positive offset of the `epoch` value, and present at that time,
-such that synchronized presentation between unconnected receivers is possible.</br>
+such that synchronized presentation between unconnected receivers is possible.<br/>
 Receivers are also free to consider the field trustworthy, and use its value to
 estimate the sender start time, as well as the end-to-end latency.
 
@@ -238,7 +238,7 @@ is to be used:
 | C(32)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
 | b(`fec_data_length`*8) | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
 
-The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.</br>
+The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.<br/>
 Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC
 Object Transmission Information as described in the document are *never* used.
 
@@ -250,7 +250,7 @@ set in the `fec_covered` field. This MUST be greater than zero, unless
 
 Init data packets
 -----------------
-Codecs generally require a one-off special piece of data needed to initialize them.</br>
+Codecs generally require a one-off special piece of data needed to initialize them.<br/>
 To provide this data to receivers, the templates defined in the
 [generic data packet structure](#generic-data-packet-structure) MUST be used,
 with the following descriptors:
@@ -267,7 +267,7 @@ For more information on the layout of the specific data, consult the
 [codec-specific encapsulation](#codec-encapsulation) addenda.
 
 However, in general, the data follows the same layout as what
-[FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.</br>
+[FFmpeg's](https://ffmpeg.org) `libavcodec` produces and requires.<br/>
 An implementation MAY error out in case it cannot handle the data in the payload.
 If so, when reading a file, it MUST stop, otherwise in a live scenario,
 it MUST send an `unsupported` [control data](#control-data), if such a
@@ -303,7 +303,7 @@ according to the `dts` field.
 
 Negative `pts` values ARE allowed, and implementations **MUST** decode such frames,
 however **MUST NOT** present any such frames unless `pts + duration` is greater than 0,
-in which case they MUST present the data required for that duration.</br>
+in which case they MUST present the data required for that duration.<br/>
 This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
 all dependencies (other frames) required for their presentation.
@@ -368,7 +368,7 @@ Implementations MAY discard the FEC data, or MAY delay the previous packet's
 decoding to correct it with the FEC data, or MAY attempt to decode the uncorrected
 packet data, and if failed, retry with the corrected data packet.
 
-The data in an FEC packet MUST be RaptorQ, as per IETF RFC 6330.</br>
+The data in an FEC packet MUST be RaptorQ, as per IETF RFC 6330.<br/>
 The symbol size MUST be 32-bits.
 
 The total number of bytes covered by this and previous FEC segments shall be
@@ -420,7 +420,7 @@ IETF `draft-devault-bare-07`.
 
 ICC profile packets
 -------------------
-Embedding of ICC profiles for accurate color reproduction is supported.</br>
+Embedding of ICC profiles for accurate color reproduction is supported.<br/>
 The following structure MUST be followed:
 
 | Data                   | Name              |    Fixed value | Description                                                                                          |
@@ -481,7 +481,7 @@ stream after decoding.
 | r(64)         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
 | C(512)        | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
 
-Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.</br>
+Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.<br/>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
 `studio swing` and `MPEG range`.
 
@@ -610,7 +610,7 @@ UDP mode is unidirectional, but the implementations are free to use the
 [reverse signalling](#reverse-signalling) data if they negotiate it themselves.
 
 Implementations MUST segment the data such that the network MTU is never
-exceeded and no packet fragmentation occurs.</br>
+exceeded and no packet fragmentation occurs.<br/>
 The **minimum** network MTU required for the protocol is **384 bytes**,
 as to allow [video information packets](#video-info-packets) or any future large
 packets to be sent without fragmentation.
@@ -624,7 +624,7 @@ as well as preventing metadata leakage in the form of a packet size.
 UDP-Lite
 --------
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
-available throughout the network.</br>
+available throughout the network.<br/>
 When using UDP-Lite, the same considerations as [UDP](#udp) apply.
 
 As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
@@ -638,12 +638,12 @@ as bidirectionality features of the transport mechanism.
 
 All data packets with descriptors `0x01**`, `0xff`, `0xfe`, `0xfd` and `0xfc`
 MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
-IETF RFC 9221.</br>
+IETF RFC 9221.<br/>
 All other packets MUST be sent over a reliable steam. FEC data for those packets
 SHOULD NOT be signalled.
 
 Implementations MUST segment the data such that the network MTU is never
-exceeded and no packet fragmentation occurs.</br>
+exceeded and no packet fragmentation occurs.<br/>
 The **minimum** network MTU required for the protocol is **384 bytes**,
 as to allow [video information packets](#video-info-packets) or any future large
 packets to be sent without fragmentation.
@@ -851,7 +851,7 @@ ASS contains 3 important sections:
  - Events, in `[Events]`
  - All other sections MUST be stripped.
 
-First, all data MUST be converted to UTF-8.</br>
+First, all data MUST be converted to UTF-8.<br/>
 
 The [stream initialization data](#init-data-packets) payload MUST contain
 the `[Script Info]` and `[V4 Styles]` sections as a string, unmodified.
