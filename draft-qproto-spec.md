@@ -51,6 +51,7 @@ An overall possible structure of packets in a general Qproto session can be:
 |               [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify a stream of bytes as a Qproto session. |
 | [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                          |
 |   [Stream registration](#stream-registration-packets) | Register a new stream.                                                                              |
+|           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                       |
 |      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                      |
 |              [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                      |
 |                   [ICC profile](#icc-profile-packets) | ICC profile for correct video presentation.                                                         |
@@ -79,6 +80,7 @@ of how they're allocated.
 |         0xfe to 0xff | [Stream data segment](#data-segmentation)             |
 |         0xfc to 0xfd | [Stream FEC segment](#fec-segments)                   |
 |     0x4000 to 0x40ff | [User data](#user-data-packets)                       |
+|               0xf000 | [Stream duration](#stream-duration-packets)           |
 |               0xffff | [End of stream](#end-of-stream)                       |
 |                      | **Reverse signalling only**                           |
 |     0x5000 to 0x50ff | [Reverse user data](#reverse-user-data)               |
@@ -393,6 +395,9 @@ distance to the next index packet.
 | i(`nb_indices`*32) | `idx_pos`          |              | The position of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                                    |                                                                                                               |
 | u(`nb_indices`*16) | `idx_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                             |
 
+If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
+**1 nanosecond**, numerator of `1`, denominator of `1000000000`.
+
 When streaming, `idx_pos` MUST be `0`.
 
 Metadata packets
@@ -544,6 +549,26 @@ The user-specific data packet is laid out as follows:
 
 If the user data needs FEC and segmentation, users SHOULD instead use the
 [custom codec packets](#custom-codec-encapsulation).
+
+Stream duration packets
+-----------------------
+If the session length is well-known, implementations can reserve space up-front
+at the start of files to notify implementations of stream lengths.
+
+| Data         | Name                  |  Fixed value | Description                                                                                     |
+|:-------------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
+| b(16)        | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
+| b(16)        | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
+| i(64)        | `total_duration`      |              | The total duration of the stream(s).                                                            |
+| C(32)        | `raptor`              |              | Raptor code to correct and verify the previous contents of the packet.                          |
+
+If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
+**1 nanosecond**, numerator of `1`, denominator of `1000000000`.
+
+The duration MUST be the total amount of time the screen will be presented.<br/>
+Any negative duration MUST be excluded.
+
+The duration MUST be treated as metadata rather than a hard limit.
 
 End of stream
 -------------
