@@ -610,8 +610,10 @@ all stream registration, initialization and video info packets for all streams
 at most as often as the stream with the lowest frequency of `keyframe`s in order
 to permit for implementations that didn't catch on the start of the stream begin
 decoding.
+
 UDP mode is unidirectional, but the implementations are free to use the
-[reverse signalling](#reverse-signalling) data if they negotiate it themselves.
+[reverse signalling](#reverse-signalling) data if they negotiate it themselves.<br/>
+Reverse signalling MUST NOT be used if the connection is insecure.
 
 Implementations MUST segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.<br/>
