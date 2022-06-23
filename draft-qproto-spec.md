@@ -766,6 +766,7 @@ definitions.
  - [AAC](#aac-encapsulation)
  - [AV1](#av1-encapsulation)
  - [H.264](#h264-encapsulation)
+ - [Dirac/VC-2](#diracvc-2)
  - [ASS](#ass-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
@@ -842,12 +843,24 @@ The [stream initialization data](#init-data-packets) payload MUST contain an
 `AVCDecoderConfigurationRecord` structure, as defined in `ISO 14496-15`.
 
 The `packet_data` MUST contain the following elements in order:
- - A single `b(64)` element with the `DTS`, the time, which when combined with
-   the `epoch` field that indicates when a frame should be input into a
-   synchronous 1-in-1-out decoder.
+ - A single `b(64)` element with the `DTS`, the time, which indicates when a
+   frame should be input into a synchronous 1-in-1-out decoder.
  - Raw `NAL` elements, concatenated.
 
 `Annex-B` formatted packets MUST NOT be used.
+
+### Dirac/VC-2
+
+For Dirac or VC-2 encapsulation, the `codec_id` in
+[stream registration packets](#stream-registration-packets)
+MUST be 0x42424344 (`BBCD`).
+
+Dirac streams require no [stream initialization data](#init-data-packets)
+packets, hence [Stream registration](#stream-registration-packets) `stream_flags`
+MUST have bit `0x1` set.
+
+The `packet_data` MUST contain raw sequences,
+with one sequence being a picture.
 
 ### ASS encapsulation
 
