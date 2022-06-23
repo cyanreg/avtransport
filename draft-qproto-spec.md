@@ -320,7 +320,7 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x40 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
 |             0x20 | Packet is incomplete and requires extra [data segments](#stream-data-segmentation) to be completed.                                                                                                          |
 |             0x10 | Packet contains the second field of an interlaced frame. See the `interlacing` table in [video information packets](#video-info-packets).                                                                    |
-|              0x1 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
+|              0x8 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 [data segment](#stream-data-segmentation) packet with an ID of `0xfe` MUST be present to
