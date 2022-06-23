@@ -509,13 +509,13 @@ The `subsampling` table is as follows:
 |   0x2 | `422`       | Chromatic data is subsampled at half the vertical resolution of the luminance data.                |
 
 The `interlacing` table is as follows:
-| Value | Name        | Description                                                                                                                                                                                               |
-|------:|:------------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                                                                           |
-|   0x1 | `TFF`       | Video is interlaced. One [data packet](#data-packets) per field. If the data packet's `pkt_flags & 0x20` bit is **unset**, indicates the field contained is the **top** field, otherwise it's the bottom. |
-|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with `pkt_flags & 0x20` bit **set** contain the **top** field, otherwise it's the bottom.                                                        |
-|   0x3 | `TW`        | Video is interlaced. The [data packet](#data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.                                                         |
-|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                                                                            |
+| Value | Name        | Description                                                                                                                                                                                                      |
+|------:|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                                                                                  |
+|   0x1 | `TFF`       | Video is interlaced. One [data packet](#stream-data-packets) per field. If the data packet's `pkt_flags & 0x20` bit is **unset**, indicates the field contained is the **top** field, otherwise it's the bottom. |
+|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with `pkt_flags & 0x20` bit **set** contain the **top** field, otherwise it's the bottom.                                                               |
+|   0x3 | `TW`        | Video is interlaced. The [data packet](#stream-data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.                                                         |
+|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                                                                                   |
 
 The `TFF` and `TW`, as well as the `BFF` and `BW` values MAY be interchanged if
 it's possible to output one or the other, depending on the setting used, if
