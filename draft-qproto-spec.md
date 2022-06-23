@@ -533,11 +533,11 @@ The `chroma_pos_val` table is as follows:
 |   0x6 | `BOTTOM`     | Chroma position is between 2 luma samples on the same bottom line.                                       |
 
 To illustrate:
-| Luma line number |         Luma row 1 |     No luma |   Luma row 2 |
-|-----------------:|-------------------:|------------:|-------------:|
-|                1 | `Luma pixel` **3** |       **4** | `Luma pixel` |
-|          No luma |              **1** |       **2** |        Empty |
-|                2 | `Luma pixel` **5** |       **6** | `Luma pixel` |
+| Luma line number |         Luma row 1 | Between rows |   Luma row 2 |
+|-----------------:|-------------------:|-------------:|-------------:|
+|                1 | `Luma pixel` **3** |        **4** | `Luma pixel` |
+|    Between lines |              **1** |        **2** |              |
+|                2 | `Luma pixel` **5** |        **6** | `Luma pixel` |
 
 User data packets
 -----------------
