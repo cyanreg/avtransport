@@ -188,7 +188,7 @@ Sparse thumbnail streams MAY exactly match chapters from `related_stream_id`,
 but could be sparser or more frequent.
 
 If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
-`stream_id`, otherwise the stream with a related ID` MUST exist.
+`stream_id`, otherwise the stream with a related ID MUST exist.
 
 Once registered, streams generally need an [init data packet](#init-data-packets),
 unless the `stream_flags & 0x1` bit is set.
