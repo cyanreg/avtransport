@@ -50,6 +50,7 @@ An overall possible structure of packets in a general Qproto session can be:
 |------------------------------------------------------:|:----------------------------------------------------------------------------------------------------|
 |               [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify a stream of bytes as a Qproto session. |
 | [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                          |
+|                   [Embedded font](#font-data-packets) | Optional embedded font for subtitles.                                                               |
 |   [Stream registration](#stream-registration-packets) | Register a new stream.                                                                              |
 |           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                       |
 |      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                      |
@@ -76,6 +77,7 @@ of how they're allocated.
 |                  0x9 | [Index packets](#index-packets)                       |
 |           0xa to 0xe | [Metadata](#metadata-packets)                         |
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
+|         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
 |     0x0100 to 0x01ff | [Stream data](#data-packets)                          |
 |         0xfe to 0xff | [Stream data segment](#data-segmentation)             |
 |         0xfc to 0xfd | [Stream FEC segment](#fec-segments)                   |
@@ -452,6 +454,48 @@ If the `icc_descriptor` is `0x11`, then at least one `0x13` segment MUST be rece
 **NOTE**: ICC profiles MUST take precedence over the primaries and transfer
 characteristics values in [video info packets](#video-info-packets). The matrix
 coefficients are still required for RGB conversion.
+
+Font data packets
+-----------------
+Subtitles may often require custom fonts. Qproto supports embedding of fonts
+for use by subtitles.<br/>
+The following structure MUST be followed:
+
+| Data                    | Name               |    Fixed value | Description                                                                                   |
+|:------------------------|:-------------------|---------------:|:----------------------------------------------------------------------------------------------|
+| b(16)                   | `font_descriptor`  |  0x20 and 0x21 | Indicates this packet contains a complete font (0x10) or the start of a segmented one (0x11). |
+| u(32)                   | `global_seq`       |                | Global monotonically incrementing sequence number.                                            |
+| u(16)                   | `font_type`        |                | Font type. MUST be interpreted according to the `font_type` table below.                      |
+| u(8)                    | `font_compression` |                | Font compression, MUST be interpreted according to the `font_compression` table below.        |
+| u(8)                    | `font_name_length` |                | The length of the font name.                                                                  |
+| u(32)                   | `font_data_length` |                | The length of the font data.                                                                  |
+| C(32)                   | `raptor`           |                | Raptor code to correct and verify the previous contents of the packet.                        |
+| b(`font_name_length`*8) | `font_name`        |                | The full name of the font file.                                                               |
+| b(`font_data_length`*8) | `font_data`        |                | The font file itself.                                                                         |
+
+The syntax for font segments and FEC packets is via the following
+[generic data packet structure](#generic-data-packet-structure) templates:
+
+| Descriptor |                   Structure | Type                        |
+|-----------:|----------------------------:|:----------------------------|
+|       0x22 | `generic_segment_structure` | Non-final segment for font. |
+|       0x23 | `generic_segment_structure` | Final segment for font.     |
+|       0x24 |     `generic_fec_structure` | FEC segment for the font.   |
+
+If the `font_descriptor` is `0x21`, then at least one `0x23` segment MUST be received.
+
+The `font_type` table is as follows:
+| Value | Name      | Description                                 |
+|------:|:----------|:--------------------------------------------|
+|   0x0 | `OTF`     | Font data is an OpenType font.              |
+|   0x1 | `TTF`     | Font data is a TrueType font.               |
+|   0x2 | `WOFF2`   | Font data contains Web Open Font Format 2.  |
+
+The `font_compression` table is as follows:
+| Value | Name      | Description                                 |
+|------:|:----------|:--------------------------------------------|
+|   0x0 | `NONE`    | Font data is uncompressed.                  |
+|   0x1 | `ZSTD`    | Font data is compressed with Zstandard.     |
 
 Video info packets
 ------------------
