@@ -434,8 +434,13 @@ The following structure MUST be followed:
 | b(16)                  | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
 | u(16)                  | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
 | u(32)                  | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                                 |
+| u(8)                   | `icc_major_ver`   |                | Major version of the ICC profile. MAY be 0 if unknown.                                               |
+| u(8)                   | `icc_minor_ver`   |                | Minor version of the ICC profile.                                                                    |
+| u(8)                   | `icc_compression` |                | ICC profile compression, MUST be interpreted according to the `icc_compression` table below.         |
+| u(8)                   | `icc_name_length` |                | The length of the ICC profile name.                                                                  |
 | u(32)                  | `icc_data_length` |                | The length of the ICC profile.                                                                       |
-| C(32)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                               |
+| C(64)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                               |
+| b(`icc_name_length`*8) | `icc_name`        |                | The full name of the ICC profile.                                                                    |
 | b(`icc_data_length`*8) | `icc_data`        |                | The ICC profile itself.                                                                              |
 
 Often, ICC profiles may be too large to fit in one MTU, hence they can be segmented
@@ -450,6 +455,12 @@ ICC segments and FEC packets is via the following
 |       0x14 |     `generic_fec_structure` |    FEC segment for the ICC Profile |
 
 If the `icc_descriptor` is `0x11`, then at least one `0x13` segment MUST be received.
+
+The `icc_compression` table is as follows:
+| Value | Name   | Description                                |
+|------:|:-------|:-------------------------------------------|
+|   0x0 | `NONE` | ICC data is uncompressed.                  |
+|   0x1 | `ZSTD` | ICC data is compressed with Zstandard.     |
 
 **NOTE**: ICC profiles MUST take precedence over the primaries and transfer
 characteristics values in [video info packets](#video-info-packets). The matrix
