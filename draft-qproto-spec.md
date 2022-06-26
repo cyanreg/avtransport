@@ -119,6 +119,7 @@ The layout of the data in a `time_sync` packet is as follows:
 | Data   | Name              | Fixed value  | Description                                                            |
 |:-------|:------------------|-------------:|:-----------------------------------------------------------------------|
 | b(16)  | `time_descriptor` |          0x1 | Indicates this is a time synchronization packet.                       |
+| u(32)  | `global_seq`      |              | Monotonically incrementing per-packet global sequence number.          |
 | u(64)  | `epoch`           |              | Indicates the time epoch.                                              |
 | C(32)  | `raptor`          |              | Raptor code to correct and verify the previous contents of the packet. |
 
@@ -148,6 +149,7 @@ The layout of the data is as follows:
 | Data               | Name                | Fixed value | Description                                                               |
 |:-------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
 | b(16)              | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
+| u(32)              | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
 | b(16)              | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
 | b(16)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
 | b(16)              | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
@@ -393,6 +395,7 @@ distance to the next index packet.
 |:-------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)              | `index_descriptor` |          0x9 | Indicates this is an index packet.                                                                                                                                                                |
 | b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams.                                                                                                   |
+| u(32)              | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                                                                                                                     |
 | u(32)              | `prev_idx`         |              | Negative offset of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
 | u(32)              | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
 | u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                                               |
@@ -433,6 +436,7 @@ The following structure MUST be followed:
 |:-----------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------------------|
 | b(16)                  | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
 | u(16)                  | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
+| u(32)                  | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                                        |
 | u(32)                  | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                                 |
 | u(8)                   | `icc_major_ver`   |                | Major version of the ICC profile. MAY be 0 if unknown.                                               |
 | u(8)                   | `icc_minor_ver`   |                | Minor version of the ICC profile.                                                                    |
@@ -475,7 +479,8 @@ The following structure MUST be followed:
 | Data                    | Name               |    Fixed value | Description                                                                                   |
 |:------------------------|:-------------------|---------------:|:----------------------------------------------------------------------------------------------|
 | b(16)                   | `font_descriptor`  |  0x20 and 0x21 | Indicates this packet contains a complete font (0x10) or the start of a segmented one (0x11). |
-| b(16)                   | `font_id`          |                | Unique ID to identify the font.                                                               |
+| b(16)                   | `stream_id`        |                | Unique stream ID to identify the font.                                                        |
+| u(32)                   | `global_seq`       |                | Monotonically incrementing per-packet global sequence number.                                 |
 | u(16)                   | `font_type`        |                | Font type. MUST be interpreted according to the `font_type` table below.                      |
 | u(8)                    | `font_compression` |                | Font compression, MUST be interpreted according to the `font_compression` table below.        |
 | u(8)                    | `font_name_length` |                | The length of the font name.                                                                  |
@@ -519,6 +524,7 @@ stream after decoding.
 |:--------------|:--------------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)         | `video_info_descriptor`   |          0x8 | Indicates this packet contains video information.                                                                                             |
 | u(16)         | `stream_id`               |              | The stream ID for which to associate the video information with.                                                                              |
+| u(32)         | `global_seq`              |              | Monotonically incrementing per-packet global sequence number.                                                                                 |
 | u(32)         | `seq_number`              |              | Per-stream monotonically incrementing packet number.                                                                                          |
 | u(32)         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | u(32)         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
@@ -605,6 +611,7 @@ The user-specific data packet is laid out as follows:
 |:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
 | b(16)                   | `user_descriptor`  |     0x40\*\* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
 | b(16)                   | `user_field`       |              | A free to use field for user data.                                                           |
+| u(32)                   | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
 | u(32)                   | `user_data_length` |              | The length of the user data.                                                                 |
 | C(32)                   | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                       |
 | b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                        |
@@ -621,6 +628,7 @@ at the start of files to notify implementations of stream lengths.
 |:-------------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
 | b(16)        | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
 | b(16)        | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
+| u(32)        | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
 | i(64)        | `total_duration`      |              | The total duration of the stream(s).                                                            |
 | C(32)        | `raptor`              |              | Raptor code to correct and verify the previous contents of the packet.                          |
 
@@ -640,6 +648,7 @@ The EOS packet is laid out as follows:
 |:----- |:-----------------|-------------:|:--------------------------------------------------------------------------------------------------------|
 | b(16) | `eos_descriptor` |       0xffff | Indicates this is an end-of-stream packet.                                                              |
 | b(16) | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
+| u(32) | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
 | u(32) | `seq_number`     |              | Per-stream monotonically incrementing packet number.                                                    |
 | C(32) | `raptor`         |              | Raptor code to correct and verify the previous contents of the packet.                                  |
 
