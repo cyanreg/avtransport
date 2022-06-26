@@ -509,6 +509,7 @@ stream after decoding.
 | u(32)         | `seq_number`              |              | Per-stream monotonically incrementing packet number.                                                                                          |
 | u(32)         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | u(32)         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
+| r(64)         | `signal_aspect`           |              | Indicates the signal aspect ratio of the image.                                                                                               |
 | u(8)          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
 | u(16)         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xffff` means `limited range`. Other values are reserved.                       |
 | u(8)          | `chroma_subsampling`      |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
@@ -527,7 +528,7 @@ stream after decoding.
 | u(8)          | `has_luminance`           |              | If `1`, signals that the following `min_luminance` and `max_luminance` fields contain valid data.                                             |
 | r(64)         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
 | r(64)         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
-| C(512)        | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
+| C(1024)       | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.<br/>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
