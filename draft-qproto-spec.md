@@ -475,12 +475,12 @@ The following structure MUST be followed:
 | Data                    | Name               |    Fixed value | Description                                                                                   |
 |:------------------------|:-------------------|---------------:|:----------------------------------------------------------------------------------------------|
 | b(16)                   | `font_descriptor`  |  0x20 and 0x21 | Indicates this packet contains a complete font (0x10) or the start of a segmented one (0x11). |
-| u(32)                   | `global_seq`       |                | Global monotonically incrementing sequence number.                                            |
+| b(16)                   | `font_id`          |                | Unique ID to identify the font.                                                               |
 | u(16)                   | `font_type`        |                | Font type. MUST be interpreted according to the `font_type` table below.                      |
 | u(8)                    | `font_compression` |                | Font compression, MUST be interpreted according to the `font_compression` table below.        |
 | u(8)                    | `font_name_length` |                | The length of the font name.                                                                  |
 | u(32)                   | `font_data_length` |                | The length of the font data.                                                                  |
-| C(32)                   | `raptor`           |                | Raptor code to correct and verify the previous contents of the packet.                        |
+| C(64)                   | `raptor`           |                | Raptor code to correct and verify the previous contents of the packet.                        |
 | b(`font_name_length`*8) | `font_name`        |                | The full name of the font file.                                                               |
 | b(`font_data_length`*8) | `font_data`        |                | The font file itself.                                                                         |
 
@@ -496,17 +496,19 @@ The syntax for font segments and FEC packets is via the following
 If the `font_descriptor` is `0x21`, then at least one `0x23` segment MUST be received.
 
 The `font_type` table is as follows:
-| Value | Name      | Description                                 |
-|------:|:----------|:--------------------------------------------|
-|   0x0 | `OTF`     | Font data is an OpenType font.              |
-|   0x1 | `TTF`     | Font data is a TrueType font.               |
-|   0x2 | `WOFF2`   | Font data contains Web Open Font Format 2.  |
+| Value | Name    | Description                                 |
+|------:|:--------|:--------------------------------------------|
+|   0x0 | `OTF`   | Font data is an OpenType font.              |
+|   0x1 | `TTF`   | Font data is a TrueType font.               |
+|   0x2 | `WOFF2` | Font data contains Web Open Font Format 2.  |
 
 The `font_compression` table is as follows:
-| Value | Name      | Description                                 |
-|------:|:----------|:--------------------------------------------|
-|   0x0 | `NONE`    | Font data is uncompressed.                  |
-|   0x1 | `ZSTD`    | Font data is compressed with Zstandard.     |
+| Value | Name   | Description                                 |
+|------:|:-------|:--------------------------------------------|
+|   0x0 | `NONE` | Font data is uncompressed.                  |
+|   0x1 | `ZSTD` | Font data is compressed with Zstandard.     |
+
+*WOFF2* fonts SHOULD NOT be compressed, as they're already compressed.
 
 Video info packets
 ------------------
