@@ -224,6 +224,7 @@ template has to be used for segments that follow the above:
 | b(16)             | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
 | b(16)             | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
 | u(32)             | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                  |
+| u(32)             | `seg_offset`      |                | The offset since the start of the data where the segment starts.                      |
 | u(32)             | `seg_length`      |                | The size of the data segment.                                                         |
 | C(32)             | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
 | b(`seg_length`*8) | `seg_data`        |                | The data for the segment.                                                             |
@@ -325,10 +326,17 @@ The `pkt_flags` field MUST be interpreted in the following way:
 |             0x20 | Packet is incomplete and requires extra [data segments](#stream-data-segmentation) to be completed.                                                                                                          |
 |             0x10 | Packet contains the second field of an interlaced frame. See the `interlacing` table in [video information packets](#video-info-packets).                                                                    |
 |              0x8 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
+|              0x7 | Bottom 3 bits to be interpreted using the `data_compression` table below.                                                                                                                                    |
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 [data segment](#stream-data-segmentation) packet with an ID of `0xfe` MUST be present to
 terminate the packet.
+
+The `data_compression` table is as follows:
+| Value | Name   | Description                                |
+|------:|:-------|:-------------------------------------------|
+|   0x0 | `NONE` | Packet data is uncompressed.               |
+|   0x1 | `ZSTD` | Packet data is compressed with Zstandard.  |
 
 Stream data segmentation
 ------------------------
