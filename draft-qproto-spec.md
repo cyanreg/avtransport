@@ -245,6 +245,7 @@ is to be used:
 | u(32)                  | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
 | u(32)                  | `fec_covered`     |                | The total amount of payload bytes covered by this and preceding FEC segments.         |
 | C(32)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
+| C(96)                  | `header_raptor_2` |                | Half of a raptor code for the first 192 bits of the starting packet's header.         |
 | b(`fec_data_length`*8) | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.<br/>
@@ -256,6 +257,15 @@ The symbol size MUST be 32-bits.
 The total number of bytes covered by this and previous FEC segments shall be
 set in the `fec_covered` field.<br/>
 This MUST always be *greater than zero*.
+
+The `header_raptor_2` field allows for nearly-certain recovery of the first 192
+bits of the first packet's header when 2 consequtive segments are received.<br/>
+This allows knowledge of the data type, timestamp and duration for stream data
+packets when the very first packet is lost, which when combined with the FEC
+data could fully recover the starting data packet.<br/>
+The raptor code should be of length 192 bits, same as the data's length. Each
+FEC packet with an even `seq_number` MUST contain the top 96 bits of the code,
+and each odd `seq_number` FEC packet MUST contain the bottom 96 bits.
 
 Init data packets
 -----------------
