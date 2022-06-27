@@ -68,7 +68,7 @@ Each packet MUST be prefixed with a descriptor to identify it. Below is a table
 of how they're allocated.
 
 |           Descriptor | Packet type                                           |
-|---------------------:|-------------------------------------------------------|
+|---------------------:|:------------------------------------------------------|
 |               0x5170 | [Session start](#session-start-packets)               |
 |                  0x1 | [Time synchronization](#time-synchronization-packets) |
 |                  0x2 | [Stream registration](#stream-registration-packets)   |
@@ -146,18 +146,18 @@ This packet is used to signal stream registration.
 
 The layout of the data is as follows:
 
-| Data               | Name                | Fixed value | Description                                                               |
-|:-------------------|:--------------------|------------:|:--------------------------------------------------------------------------|
-| b(16)              | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
-| u(32)              | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
-| b(16)              | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
-| b(16)              | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
-| b(16)              | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
-| u(64)              | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
-| b(64)              | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
-| b(32)              | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
-| r(64)              | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
-| C(32)              | `raptor`            |             | Raptor code to correct and verify the previous contents of the packet.    |
+| Data  | Name                | Fixed value | Description                                                               |
+|:------|:--------------------|------------:|:--------------------------------------------------------------------------|
+| b(16) | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
+| u(32) | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
+| b(16) | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
+| b(16) | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
+| b(16) | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
+| u(64) | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
+| b(64) | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
+| b(32) | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
+| r(64) | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
+| C(32) | `raptor`            |             | Raptor code to correct and verify the previous contents of the packet.    |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -642,13 +642,13 @@ Stream duration packets
 If the session length is well-known, implementations can reserve space up-front
 at the start of files to notify implementations of stream lengths.
 
-| Data         | Name                  |  Fixed value | Description                                                                                     |
-|:-------------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
-| b(16)        | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
-| b(16)        | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
-| u(32)        | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
-| i(64)        | `total_duration`      |              | The total duration of the stream(s).                                                            |
-| C(32)        | `raptor`              |              | Raptor code to correct and verify the previous contents of the packet.                          |
+| Data  | Name                  |  Fixed value | Description                                                                                     |
+|:------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
+| b(16) | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
+| b(16) | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
+| u(32) | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
+| i(64) | `total_duration`      |              | The total duration of the stream(s).                                                            |
+| C(32) | `raptor`              |              | Raptor code to correct and verify the previous contents of the packet.                          |
 
 If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
@@ -753,15 +753,15 @@ Control data
 The receiver can use this type to return errors and more to the sender in a
 one-to-one transmission. The following syntax is used:
 
-| Data                | Name               | Fixed value  | Description                                                                                              |
-|:--------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
-| b(16)               | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
-| b(8)                | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
-| u(32)               | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
-| b(8)                | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
-| b(128)              | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
-| b(16)               | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
-| i(64)               | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
+| Data   | Name               | Fixed value  | Description                                                                                              |
+|:-------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
+| b(16)  | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
+| b(8)   | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
+| u(32)  | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
+| b(8)   | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
+| b(128) | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
+| b(16)  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
+| i(64)  | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
 
 If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
 do not match, the sender **MUST** cease this connection, reopen a new connection
@@ -791,15 +791,15 @@ Feedback
 --------
 The following packet MAY be sent from the receiver to the sender.
 
-| Data                | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
-|:--------------------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)               | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
-| b(16)               | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be 0xffff to indicate all streams.                                                                                                                                                |
-| b(64)               | `epoch_offset`     |              | Time since `epoch`. MAY be 0. Can be used to estimate the latency.                                                                                                                                                                                  |
-| b(64)               | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
-| u(32)               | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
-| u(32)               | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
-| u(32)               | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
+| Data  | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
+|:------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| b(16) | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
+| b(16) | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be 0xffff to indicate all streams.                                                                                                                                                |
+| b(64) | `epoch_offset`     |              | Time since `epoch`. MAY be 0. Can be used to estimate the latency.                                                                                                                                                                                  |
+| b(64) | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
+| u(32) | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
+| u(32) | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
+| u(32) | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
 
@@ -868,14 +868,14 @@ The payload in the [stream initialization data](#init-data-packets) MUST be
 laid out in the following way:
 
 | Data               | Name              | Fixed value                     | Description                                                                           |
-|:-------------------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
-| b(64)              | `opus_descriptor` | 0x4f70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
-| b(8)               | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
-| u(8)               | `opus_channels`   |                                 | Number of audio channels.                                                             |
-| u(16)              | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
-| b(32)              | `opus_rate`       |                                 | Samplerate of the data. MUST be 48000.                                                |
-| i(16)              | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
-| u(32)              | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
+|:------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
+| b(64) | `opus_descriptor` | 0x4f70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
+| b(8)  | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
+| u(8)  | `opus_channels`   |                                 | Number of audio channels.                                                             |
+| u(16) | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
+| b(32) | `opus_rate`       |                                 | Samplerate of the data. MUST be 48000.                                                |
+| i(16) | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
+| u(32) | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
 
 The `packet_data` MUST contain regular Opus packets with their front uncompressed
 header intact.
