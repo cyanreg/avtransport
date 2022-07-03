@@ -212,14 +212,16 @@ The `stream_flags` field may be interpreted as such:
 |  0x4000 | Stream contains timed metadata and is not intended to be directly presented to the user.                                |
 |  0x8000 | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
 
-Several streams can be chained with the `0x10` bit set to indicate progressively
-lower quality/bitrate versions of the same stream.
+Several streams can be **chained** with the `0x10` bit set to indicate
+progressively lower quality/bitrate versions of the same stream. The very first
+stream in the chain MUST NOT have bit `0x10` set.
 
 Sparse thumbnail streams MAY exactly match chapters from `related_stream_id`,
 but could be sparser or more frequent.
 
-If all bits in the mask `0x50fc` are unset, `related_stream_id` MUST match
-`stream_id`, otherwise the stream with a related ID MUST exist.
+If bits `0x8`, `0x20`, `0x40`, `0x80`, `0x100`, `0x200` are all unset,
+`related_stream_id` MUST match `stream_id`, otherwise the stream with a related
+*different* ID MUST exist.
 
 Once registered, streams generally need an [init data packet](#init-data-packets),
 unless the `stream_flags & 0x1` bit is set.
