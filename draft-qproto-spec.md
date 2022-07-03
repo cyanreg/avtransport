@@ -75,17 +75,17 @@ of how they're allocated.
 |           0x3 to 0x7 | [Stream initialization data](#init-data-packets)      |
 |                  0x8 | [Video information](#video-info-packets)              |
 |                  0x9 | [Index packets](#index-packets)                       |
-|           0xa to 0xe | [Metadata](#metadata-packets)                         |
+|           0xA to 0xE | [Metadata](#metadata-packets)                         |
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
-|     0x0100 to 0x01ff | [Stream data](#data-packets)                          |
-|         0xfe to 0xff | [Stream data segment](#data-segmentation)             |
-|         0xfc to 0xfd | [Stream FEC segment](#fec-segments)                   |
-|     0x4000 to 0x40ff | [User data](#user-data-packets)                       |
-|               0xf000 | [Stream duration](#stream-duration-packets)           |
-|               0xffff | [End of stream](#end-of-stream)                       |
+|     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
+|         0xFE to 0xFF | [Stream data segment](#data-segmentation)             |
+|         0xFC to 0xFD | [Stream FEC segment](#fec-segments)                   |
+|     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
+|               0xF000 | [Stream duration](#stream-duration-packets)           |
+|               0xFFFF | [End of stream](#end-of-stream)                       |
 |                      | **Reverse signalling only**                           |
-|     0x5000 to 0x50ff | [Reverse user data](#reverse-user-data)               |
+|     0x5000 to 0x50FF | [Reverse user data](#reverse-user-data)               |
 |               0x8001 | [Control data](#control-data)                         |
 |               0x8002 | [Feedback](#feedback)                                 |
 |               0x8003 | [Resend](#resend)                                     |
