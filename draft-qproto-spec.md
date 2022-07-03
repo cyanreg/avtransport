@@ -259,7 +259,7 @@ set in the `fec_covered` field.<br/>
 This MUST always be *greater than zero*.
 
 The `header_raptor_2` field allows for nearly-certain recovery of the first 192
-bits of the first packet's header when 2 consequtive segments are received.<br/>
+bits of the first packet's header when 2 consecutive segments are received.<br/>
 This allows knowledge of the data type, timestamp and duration for stream data
 packets when the very first packet is lost, which when combined with the FEC
 data could fully recover the starting data packet.<br/>
