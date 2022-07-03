@@ -110,36 +110,62 @@ The Raptor code is, like for all packets, allowed to be ignored.
 
 Time synchronization packets
 ----------------------------
-In order to optionally make sense of timestamps present in the stream, or
-provide a context for synchronization, the `time_sync` packet is sent through.<br/>
-This signals the `epoch` of the timestamps, in nanoseconds since 00:00:00 UTC on
-1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
+Time synchronization packets are optional multi-purpose packets which signal
+a context for all timestamps in all streams, using a field called `epoch`,
+which denotes an absolute basis in time.<br/>
+Using these packets, the following can be acheived:
+
+ - If `epoch` is in the future, enables synchronized playback across multiple
+   unconnected devices.
+ - If `epoch` is in the past, the field can be used as metadata to indicate
+   the date at which it was started.
+ - If such a packet is present in a stream, with an `epoch` in the past,
+   permits for latency measurements.
+
+All of these uses **rely** on having devices with accurately synchronized clocks.<br/>
+Users are allowed to ignore time synchronization packets in all cases,
+including if clock synchronization is not guaranteed.
+
+Device clock synchronization is outside of the scope of this document.
+Users can use the Network Time Protocol (NTP), specified in IETF RFC 5905,
+or any other protocol to synchronize clocks, or simply assume they are already
+synchronized.
+
 The layout of the data in a `time_sync` packet is as follows:
 
-| Data   | Name              | Fixed value  | Description                                                            |
-|:-------|:------------------|-------------:|:-----------------------------------------------------------------------|
-| b(16)  | `time_descriptor` |          0x1 | Indicates this is a time synchronization packet.                       |
-| b(16)  | `padding`         |              | Padding, reserved for future use. MUST be 0x0.                         |
-| u(32)  | `global_seq`      |              | Monotonically incrementing per-packet global sequence number.          |
-| u(64)  | `epoch`           |              | Indicates the time epoch.                                              |
-| C(32)  | `raptor`          |              | Raptor code to correct and verify the previous contents of the packet. |
+| Data   | Name              | Fixed value | Description                                                                                                                           |
+|:-------|:------------------|------------:|:--------------------------------------------------------------------------------------------------------------------------------------|
+| b(16)  | `time_descriptor` |         0x1 | Indicates this is a time synchronization packet.                                                                                      |
+| b(16)  | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
+| u(32)  | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                         |
+| u(64)  | `epoch`           |             | Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).  |
+| C(32)  | `raptor`          |             | Raptor code to correct and verify the previous contents of the packet.                                                                |
 
-This field MAY be zero, in which case the stream has no real-world time-relative context.
+This signals the `epoch`, the absolute starting point, for all timestamps in
+all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970
+([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
 
-If this field is non-zero, senders SHOULD ensure the `epoch` value is actual.
+To use such packets, users SHOULD perform the following:
 
-If the stream is a file, receivers SHOULD ignore this, but MAY expose the offset
-as a metadata `date` field.<br/>
-Also, when the stream is a file, receivers CAN replace the fields by a user-defined
-value in order to permit synchronized presentation between multiple unconnected receivers.
+ - First, convert all stream timestamps (`pts` values from [stream data packets](#data-packets))
+   from the `timebase` given in [stream registration packets](#stream-registration-packets) into
+   a timebase of 1 nanosecond (numerator of `1`, denominator of `1000000000`).
+ - Then, add the value of `epoch` to each of the converted `pts` values.
 
-If the stream is live, receivers are permitted to ignore the value and present
-as soon as new data is received.<br/>
-Receivers are also free to trust the field to be valid, and interpret all
-timestamps as a positive offset of the `epoch` value, and present at that time,
-such that synchronized presentation between unconnected receivers is possible.<br/>
-Receivers are also free to consider the field trustworthy, and use its value to
-estimate the sender start time, as well as the end-to-end latency.
+The new `pts` timestamps now represent an absolute point in time.
+Users can measure the current time, and compare. If the new `pts` values
+are larger than the current time, users CAN wait and delay presentation of the
+content to such a time, if possible.<br/>
+In the context of a real-time stream, the latency between sender and receiver
+is simply the difference between the new `pts` values and the current time.
+
+If the new `pts` values are in the past, then users SHOULD present new
+packets as if no time synchronization packets have been sent, or MAY
+shorten the `duration` field to prevent future packets queueing up.
+
+In all cases, users SHOULD interpret the `epoch` field as `date` metadata,
+indicating when the Qproto session was made, overwriting any existing field
+in [metadata packets](#metadata-packets).
 
 Stream registration packets
 ---------------------------
