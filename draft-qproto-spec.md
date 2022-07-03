@@ -438,23 +438,32 @@ Index packets
 The index packet contains available byte offsets of nearby keyframes and the
 distance to the next index packet.
 
-| Data               | Name               |  Fixed value | Description                                                                                                                                                                                       |
-|:-------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)              | `index_descriptor` |          0x9 | Indicates this is an index packet.                                                                                                                                                                |
-| b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams.                                                                                                   |
-| u(32)              | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                                                                                                                     |
-| u(32)              | `prev_idx`         |              | Negative offset of the previous index packet, if any, in bytes, relative to the current position. Must be exact. If exactly 0xffffffff, indicates no such index is available, or is out of scope. |
-| u(32)              | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.                    |
-| u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                                               |
-| C(32)              | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                                                                                                                            |
-| i(`nb_indices`*64) | `idx_pts`          |              | The presentation timestamp of the index.                                                                                                                                                          |
-| i(`nb_indices`*32) | `idx_pos`          |              | The offset of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                                             |
-| u(`nb_indices`*16) | `idx_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                                    |
+| Data               | Name               |  Fixed value | Description                                                                                                                                                                    |
+|:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| b(16)              | `index_descriptor` |          0x9 | Indicates this is an index packet.                                                                                                                                             |
+| b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams.                                                                                |
+| u(32)              | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                                                                                                  |
+| u(32)              | `prev_idx`         |              | Negative offset of the previous index packet, if any, in bytes, relative to the current position. If exactly 0, indicates no such index is available, or is out of scope.      |
+| u(32)              | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it. |
+| u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                            |
+| C(32)              | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                                                                                                         |
+| i(`nb_indices`*64) | `pkt_pts`          |              | The presentation timestamp of the index.                                                                                                                                       |
+| u(`nb_indices`*32) | `pkt_seq`          |              | The sequence number of the packet pointed to by `pkt_pos`. MUST be ignored if `pkt_pos` is 0.                                                                                  |
+| i(`nb_indices`*32) | `pkt_pos`          |              | The offset of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                          |
+| u(`nb_indices`*16) | `pkt_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                 |
+
+If valid, `prev_idx`, `next_idx` and `pkt_pos` offsets MUST point to the start of
+a packet. In other words, the byte pointed to by the offsets MUST contain the
+first, most significant byte of the descriptor of the pointed packet.
 
 If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
 
-When streaming, `idx_pos` MUST be `0`.
+If a packet starts before the value of `pkt_pts` but has a duration that
+matches or exceeds the PTS, then it MUST be included. This is to permit
+correct subtitle presentation, or long duration still pictures like slideshows.
+
+When streaming, `idx_pos`, `prev_idx` and `next_idx` MUST be `0`.
 
 Metadata packets
 ----------------
@@ -790,17 +799,22 @@ one-to-one transmission. The following syntax is used:
 | b(8)   | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
 | b(128) | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
 | b(16)  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
-| i(64)  | `seek`             |              | Asks the sender to seek to a specific relative byte offset, as given by [index_packets](#index-packets). |
+| b(8)   | `seek`             |              | If `1`, Asks the sender to seek to the position given by `seek_pts` and/or `seek_seq`.                   |
+| i(64)  | `seek_pts`         |              | The PTS value to seek to, as given by [index_packets](#index-packets).                                   |
+| u(32)  | `seek_seq`         |              | The sequence number of the packet to seek to, as given by [index_packets](#index-packets).               |
 
 If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
 do not match, the sender **MUST** cease this connection, reopen a new connection
 with the given `uplink_ip`, and resend all packets needed to begin decoding
 to the new destination.
 
-The `seek` request asks the sender to resend old data that's still available.
-The sender MAY not comply if that data suddenly becomes unavailable.
-If the value of `seek` is equal to `(1 << 63) - 1`, then the receiver MUST comply
-and start sending the newest data.
+The `seek` request asks the sender to begin sending old data that is still
+available. The sender MAY not comply if that data suddenly becomes unavailable.
+If the value of `seek` is equal to `0`, then the receiver MUST comply
+and always start sending the newest data.
+
+When seeking, BOTH `seek_pts` and `seek_seq` MUST be valid, and MUST have come
+from an index packet.
 
 If the `resent_init` flag is set to a non-zero value, senders SHOULD flush all encoders
 such that the receiver can begin decoding as soon as possible.
