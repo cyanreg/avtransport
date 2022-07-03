@@ -78,9 +78,9 @@ of how they're allocated.
 |           0xA to 0xE | [Metadata](#metadata-packets)                         |
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
-|     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
-|         0xFE to 0xFF | [Stream data segment](#data-segmentation)             |
 |         0xFC to 0xFD | [Stream FEC segment](#fec-segments)                   |
+|         0xFE to 0xFF | [Stream data segment](#data-segmentation)             |
+|     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
 |     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
 |               0xF000 | [Stream duration](#stream-duration-packets)           |
 |               0xFFFF | [End of stream](#end-of-stream)                       |
