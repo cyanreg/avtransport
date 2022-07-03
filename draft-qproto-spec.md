@@ -119,6 +119,7 @@ The layout of the data in a `time_sync` packet is as follows:
 | Data   | Name              | Fixed value  | Description                                                            |
 |:-------|:------------------|-------------:|:-----------------------------------------------------------------------|
 | b(16)  | `time_descriptor` |          0x1 | Indicates this is a time synchronization packet.                       |
+| b(16)  | `padding`         |              | Padding, reserved for future use. MUST be 0x0.                         |
 | u(32)  | `global_seq`      |              | Monotonically incrementing per-packet global sequence number.          |
 | u(64)  | `epoch`           |              | Indicates the time epoch.                                              |
 | C(32)  | `raptor`          |              | Raptor code to correct and verify the previous contents of the packet. |
