@@ -343,10 +343,10 @@ If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 terminate the packet.
 
 The `data_compression` table is as follows:
-| Value | Name   | Description                                |
-|------:|:-------|:-------------------------------------------|
-|   0x0 | `NONE` | Packet data is uncompressed.               |
-|   0x1 | `ZSTD` | Packet data is compressed with Zstandard.  |
+| Value | Name   | Description                                                   |
+|------:|:-------|:--------------------------------------------------------------|
+|   0x0 | `NONE` | Packet data is uncompressed.                                  |
+|   0x1 | `ZSTD` | Packet data is compressed with Zstandard from IETF RFC 8878.  |
 
 Stream data segmentation
 ------------------------
