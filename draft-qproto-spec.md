@@ -105,8 +105,8 @@ as a Qproto session. The syntax is as follows:
 Multiple session packets MAY be present in a session, but MUST remain
 bytewise-identical.
 
-Implementations are allowed to only compare the first 4 bytes or 8 bytes
-to identify a Qproto session.
+Implementations are allowed to test the first 4 bytes to detect a Qproto stream.<br/>
+The Raptor code is, like for all packets, allowed to be ignored.
 
 Time synchronization packets
 ----------------------------
