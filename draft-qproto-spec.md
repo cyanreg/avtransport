@@ -23,14 +23,14 @@ Specification conventions
 -------------------------
 Throughout all of this document, bit sequences are always *big-endian*, and numbers
 are always *two's complement*.<br/>
-Keywords given in all caps are to be interpreted as stated in IETF RFC 2119.
+Keywords given in all caps are to be interpreted as stated in IETF BCP 14.
 
 A special notation is used to describe sequences of bits:
  - `u(N)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(N)`: the same, but the data describes a signed integer is signed.
  - `b(N)`: the data is an opaque sequence of N bits that clients MUST NOT interpret as anything else.
- - `r(N)`: the data is a rational number, with a numerator of `i(N/2)` and
-   following that, a denominator of `i(N/2)`. The denominator MUST be greater than `0`.
+ - `r(N*2)`: the data is a rational number, with a numerator of `i(N)` and
+   following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
  - `C(N)`: Systematic Raptor code (IETF RFC 5053) of N bits with symbol size of 32-bits
    to correct and verify the data from the start of the packet to the start of this code.
    Implementations are allowed to skip checking it.
@@ -75,17 +75,17 @@ of how they're allocated.
 |           0x3 to 0x7 | [Stream initialization data](#init-data-packets)      |
 |                  0x8 | [Video information](#video-info-packets)              |
 |                  0x9 | [Index packets](#index-packets)                       |
-|           0xa to 0xe | [Metadata](#metadata-packets)                         |
+|           0xA to 0xE | [Metadata](#metadata-packets)                         |
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
-|     0x0100 to 0x01ff | [Stream data](#data-packets)                          |
-|         0xfe to 0xff | [Stream data segment](#data-segmentation)             |
-|         0xfc to 0xfd | [Stream FEC segment](#fec-segments)                   |
-|     0x4000 to 0x40ff | [User data](#user-data-packets)                       |
-|               0xf000 | [Stream duration](#stream-duration-packets)           |
-|               0xffff | [End of stream](#end-of-stream)                       |
+|         0xFC to 0xFD | [Stream FEC segment](#fec-segments)                   |
+|         0xFE to 0xFF | [Stream data segment](#data-segmentation)             |
+|     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
+|     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
+|               0xF000 | [Stream duration](#stream-duration-packets)           |
+|               0xFFFF | [End of stream](#end-of-stream)                       |
 |                      | **Reverse signalling only**                           |
-|     0x5000 to 0x50ff | [Reverse user data](#reverse-user-data)               |
+|     0x5000 to 0x50FF | [Reverse user data](#reverse-user-data)               |
 |               0x8001 | [Control data](#control-data)                         |
 |               0x8002 | [Feedback](#feedback)                                 |
 |               0x8003 | [Resend](#resend)                                     |
@@ -259,7 +259,7 @@ set in the `fec_covered` field.<br/>
 This MUST always be *greater than zero*.
 
 The `header_raptor_2` field allows for nearly-certain recovery of the first 192
-bits of the first packet's header when 2 consequtive segments are received.<br/>
+bits of the first packet's header when 2 consecutive segments are received.<br/>
 This allows knowledge of the data type, timestamp and duration for stream data
 packets when the very first packet is lost, which when combined with the FEC
 data could fully recover the starting data packet.<br/>
@@ -343,10 +343,10 @@ If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 terminate the packet.
 
 The `data_compression` table is as follows:
-| Value | Name   | Description                                |
-|------:|:-------|:-------------------------------------------|
-|   0x0 | `NONE` | Packet data is uncompressed.               |
-|   0x1 | `ZSTD` | Packet data is compressed with Zstandard.  |
+| Value | Name   | Description                                                   |
+|------:|:-------|:--------------------------------------------------------------|
+|   0x0 | `NONE` | Packet data is uncompressed.                                  |
+|   0x1 | `ZSTD` | Packet data is compressed with Zstandard from IETF RFC 8878.  |
 
 Stream data segmentation
 ------------------------
