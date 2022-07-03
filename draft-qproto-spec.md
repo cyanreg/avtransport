@@ -29,8 +29,8 @@ A special notation is used to describe sequences of bits:
  - `u(N)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(N)`: the same, but the data describes a signed integer is signed.
  - `b(N)`: the data is an opaque sequence of N bits that clients MUST NOT interpret as anything else.
- - `r(N)`: the data is a rational number, with a numerator of `i(N/2)` and
-   following that, a denominator of `i(N/2)`. The denominator MUST be greater than `0`.
+ - `r(N*2)`: the data is a rational number, with a numerator of `i(N)` and
+   following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
  - `C(N)`: Systematic Raptor code (IETF RFC 5053) of N bits with symbol size of 32-bits
    to correct and verify the data from the start of the packet to the start of this code.
    Implementations are allowed to skip checking it.
