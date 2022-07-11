@@ -31,12 +31,22 @@ A special notation is used to describe sequences of bits:
  - `b(N)`: the data is an opaque sequence of N bits that clients MUST NOT interpret as anything else.
  - `r(N*2)`: the data is a rational number, with a numerator of `i(N)` and
    following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
- - `C(N)`: Systematic Raptor code (IETF RFC 5053) of N bits with symbol size of 32-bits
-   to correct and verify the data from the start of the packet to the start of this code.
-   Implementations are allowed to skip checking it.
+ - `R(k, m)`: Systematic Raptor code (IETF RFC 5053), with symbol size of 32-bits,
+   having `m`-bits long parity data (`m/32` symbols), and covering `k/32` symbols,
+   from the start of the packet or where the coverage of the last code ended.
+
+Raptor code correction is optional for receiver implementations.
+Senders MUST implement it.
+
+All packets are at least 36 bytes long (288 bits), and always have an 8 byte
+(64 bits) Raptor code after the first 28 bytes to verify and correct their data.
 
 All floating point samples and pixels are always **normalized** to fit within the
 interval `[-1.0, 1.0]`.
+
+The `global_seq` number SHOULD start at 0, and MUST be incremented by 1 each time
+after a packet has been sent. Once at `0xffffffff`, it MUST overflow back to `0x0`.
+This overflow MUST be handled by the receiver.
 
 Protocol overview
 -----------------
@@ -96,11 +106,17 @@ Session start packets
 Session start packets allow receivers to plausibly identify a stream of bytes
 as a Qproto session. The syntax is as follows:
 
-| Data   | Name                 | Fixed value | Description                                                            |
-|:-------|:---------------------|------------:|:-----------------------------------------------------------------------|
-| b(16)  | `session_descriptor` |      0x5170 | Indicates this is a Qproto session (`Qp` in hex).                      |
-| b(16)  | `session_version`    |         0x0 | Indicates the session version. This document describes version `0x0`.  |
-| C(32)  | `raptor`             |      *TODO* | Raptor code to correct and verify the previous contents of the packet. |
+| Data       | Name                 | Fixed value | Description                                                                |
+|:-----------|:---------------------|------------:|:---------------------------------------------------------------------------|
+| b(16)      | `session_descriptor` |      0x5170 | Indicates this is a Qproto session (`Qp` in hex).                          |
+| b(16)      | `session_version`    |         0x0 | Indicates the session version. This document describes version `0x0`.      |
+| u(32)      | `global_seq`         |             | Monotonically incrementing per-packet global sequence number.              |
+| b(8)       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 13. |
+| b(104)     | `producer_name`      |             | 13 byte UTF-8 string, containing the name of the producer.                 |
+| b(16)      | `producer_major`     |             | Major version of the producer.                                             |
+| b(16)      | `producer_minor`     |             | Minor version of the producer.                                             |
+| b(16)      | `producer_micro`     |             | Micro (patch) version of the producer.                                     |
+| R(224, 64) | `raptor`             |             | Raptor code to correct and verify the contents of the packet.              |
 
 Multiple session packets MAY be present in a session, but MUST remain
 bytewise-identical.
@@ -133,13 +149,14 @@ synchronized.
 
 The layout of the data in a `time_sync` packet is as follows:
 
-| Data   | Name              | Fixed value | Description                                                                                                                           |
-|:-------|:------------------|------------:|:--------------------------------------------------------------------------------------------------------------------------------------|
-| b(16)  | `time_descriptor` |         0x1 | Indicates this is a time synchronization packet.                                                                                      |
-| b(16)  | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
-| u(32)  | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                         |
-| u(64)  | `epoch`           |             | Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).  |
-| C(32)  | `raptor`          |             | Raptor code to correct and verify the previous contents of the packet.                                                                |
+| Data       | Name              | Fixed value | Description                                                                                                                           |
+|:-----------|:------------------|------------:|:--------------------------------------------------------------------------------------------------------------------------------------|
+| b(16)      | `time_descriptor` |         0x1 | Indicates this is a time synchronization packet.                                                                                      |
+| b(16)      | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
+| u(32)      | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                         |
+| u(64)      | `epoch`           |             | Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).  |
+| b(96)      | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
+| R(224, 64) | `raptor`          |             | Raptor code to correct and verify the contents of the packet.                                                                         |
 
 This signals the `epoch`, the absolute starting point, for all timestamps in
 all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970
@@ -173,18 +190,19 @@ This packet is used to signal stream registration.
 
 The layout of the data is as follows:
 
-| Data  | Name                | Fixed value | Description                                                               |
-|:------|:--------------------|------------:|:--------------------------------------------------------------------------|
-| b(16) | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
-| u(32) | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
-| b(16) | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
-| b(16) | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
-| b(16) | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
-| u(64) | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
-| b(64) | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
-| b(32) | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
-| r(64) | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
-| C(32) | `raptor`            |             | Raptor code to correct and verify the previous contents of the packet.    |
+| Data       | Name                | Fixed value | Description                                                               |
+|:-----------|:--------------------|------------:|:--------------------------------------------------------------------------|
+| b(16)      | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
+| b(16)      | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
+| u(32)      | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
+| b(16)      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
+| b(16)      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
+| u(64)      | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
+| b(64)      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
+| R(224, 64) | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.      |
+| b(32)      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
+| r(64)      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
+| R(96, 32)  | `raptor_2`          |             | Raptor code to correct the leftover previous 3 words.                     |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -226,9 +244,6 @@ If bits `0x8`, `0x20`, `0x40`, `0x80`, `0x100`, `0x200` are all unset,
 Once registered, streams generally need an [init data packet](#init-data-packets),
 unless the `stream_flags & 0x1` bit is set.
 
-Stream registration initializes the `seq_number` used for the stream to `0x0`.<br/>
-The sequence number MUST overflow gracefully back to `0x0`.
-
 Generic data packet structure
 -----------------------------
 To ease parsing, the specification defines a common template for data that
@@ -240,9 +255,10 @@ The following `generic_data_structure` template is used for generic data packets
 |:-------------------|:------------ |---------------:|:------------------------------------------------------------------------|
 | b(16)              | `descriptor` | *as specified* | Indicates the data packet type. Defined in later sections.              |
 | b(16)              | `stream_id`  |                | Indicates the stream ID for which this packet is applicable.            |
-| u(32)              | `seq_number` |                | Per-stream monotonically incrementing packet number.                    |
+| u(32)              | `global_seq` |                | Monotonically incrementing per-packet global sequence number.           |
 | u(32)              | `length`     |                | The size of the data in this packet.                                    |
-| C(32)              | `raptor`     |                | Raptor code to correct and verify the previous contents of the packet.  |
+| b(128)             | `padding`    |                | Padding, reserved for future use. MUST be 0x0.                          |
+| R(224, 64)         | `raptor`     |                | Raptor code to correct and verify the first 7 symbols of the packet.    |
 | b(`length`*8)      | `data`       |                | The packet data itself.                                                 |
 
 In case the data needs to be segmented, the following `generic_segment_structure`
@@ -252,10 +268,12 @@ template has to be used for segments that follow the above:
 |:------------------|:------------------|---------------:|:------------------------------------------------------------------------------------- |
 | b(16)             | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
 | b(16)             | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
-| u(32)             | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                  |
+| u(32)             | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
+| u(32)             | `total_data_seg`  |                | Total number of data segments, including the first data packet, and ending segment.   |
 | u(32)             | `seg_offset`      |                | The offset since the start of the data where the segment starts.                      |
 | u(32)             | `seg_length`      |                | The size of the data segment.                                                         |
-| C(32)             | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
+| b(64)             | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
+| R(224, 64)        | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
 | b(`seg_length`*8) | `seg_data`        |                | The data for the segment.                                                             |
 
 If the data in a `generic_data_structure` is to be segmented, it will have
@@ -269,12 +287,12 @@ is to be used:
 |:-----------------------|:------------------|---------------:|:--------------------------------------------------------------------------------------|
 | b(16)                  | `fec_descriptor`  | *as specified* | Indicates this is an FEC segment packet.                                              |
 | b(16)                  | `stream_id`       |                | Indicates the stream ID for whose packets are being backed.                           |
-| u(32)                  | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                  |
+| u(32)                  | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
 | b(32)                  | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                        |
 | u(32)                  | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
 | u(32)                  | `fec_covered`     |                | The total amount of payload bytes covered by this and preceding FEC segments.         |
-| C(32)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                |
-| C(96)                  | `header_raptor_2` |                | Half of a raptor code for the first 192 bits of the starting packet's header.         |
+| b(64)                  | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
+| R(224, 64)             | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
 | b(`fec_data_length`*8) | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.<br/>
@@ -292,9 +310,6 @@ bits of the first packet's header when 2 consecutive segments are received.<br/>
 This allows knowledge of the data type, timestamp and duration for stream data
 packets when the very first packet is lost, which when combined with the FEC
 data could fully recover the starting data packet.<br/>
-The raptor code should be of length 192 bits, same as the data's length. Each
-FEC packet with an even `seq_number` MUST contain the top 96 bits of the code,
-and each odd `seq_number` FEC packet MUST contain the bottom 96 bits.
 
 Init data packets
 -----------------
@@ -330,7 +345,7 @@ more [stream data segments](#stream-data-segmentation). It is laid out as follow
 |:-------------------|:------------------|------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)              | `data_descriptor` |    0x01\*\* | Indicates this is a stream data packet. The lower 8 bits are used as the `pkt_flags` field.                                                            |
 | b(16)              | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                               |
-| u(32)              | `seq_number`      |             | Per-stream monotonically incrementing packet number.                                                                                                   |
+| u(32)              | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                                          |
 | i(64)              | `pts`             |             | Indicates the presentation timestamp for when this frame SHOULD be presented at. MAY be combined with the `epoch` field for synchronized presentation. |
 | u(64)              | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                                   |
 | u(32)              | `data_length`     |             | The size of the data in this packet.                                                                                                                   |
@@ -446,7 +461,8 @@ distance to the next index packet.
 | u(32)              | `prev_idx`         |              | Negative offset of the previous index packet, if any, in bytes, relative to the current position. If exactly 0, indicates no such index is available, or is out of scope.      |
 | u(32)              | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it. |
 | u(32)              | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                            |
-| C(32)              | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                                                                                                         |
+| b(64)              | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                                                                                                                 |
+| R(224, 64)         | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                                                                                                           |
 | i(`nb_indices`*64) | `pkt_pts`          |              | The presentation timestamp of the index.                                                                                                                                       |
 | u(`nb_indices`*32) | `pkt_seq`          |              | The sequence number of the packet pointed to by `pkt_pos`. MUST be ignored if `pkt_pos` is 0.                                                                                  |
 | i(`nb_indices`*32) | `pkt_pos`          |              | The offset of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                          |
@@ -493,13 +509,13 @@ The following structure MUST be followed:
 | b(16)                  | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
 | u(16)                  | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
 | u(32)                  | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                                        |
-| u(32)                  | `seq_number`      |                | Per-stream monotonically incrementing packet number.                                                 |
 | u(8)                   | `icc_major_ver`   |                | Major version of the ICC profile. MAY be 0 if unknown.                                               |
 | u(8)                   | `icc_minor_ver`   |                | Minor version of the ICC profile.                                                                    |
 | u(8)                   | `icc_compression` |                | ICC profile compression, MUST be interpreted according to the `icc_compression` table below.         |
 | u(8)                   | `icc_name_length` |                | The length of the ICC profile name.                                                                  |
 | u(32)                  | `icc_data_length` |                | The length of the ICC profile.                                                                       |
-| C(64)                  | `raptor`          |                | Raptor code to correct and verify the previous contents of the packet.                               |
+| b(96)                  | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                                       |
+| R(224, 64)             | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                                 |
 | b(`icc_name_length`*8) | `icc_name`        |                | The full name of the ICC profile.                                                                    |
 | b(`icc_data_length`*8) | `icc_data`        |                | The ICC profile itself.                                                                              |
 
@@ -541,7 +557,8 @@ The following structure MUST be followed:
 | u(8)                    | `font_compression` |                | Font compression, MUST be interpreted according to the `font_compression` table below.        |
 | u(8)                    | `font_name_length` |                | The length of the font name.                                                                  |
 | u(32)                   | `font_data_length` |                | The length of the font data.                                                                  |
-| C(64)                   | `raptor`           |                | Raptor code to correct and verify the previous contents of the packet.                        |
+| b(96)                   | `padding`          |                | Padding, reserved for future use. MUST be 0x0.                                                |
+| R(224, 64)              | `raptor`           |                | Raptor code to correct and verify the first 7 symbols of the packet.                          |
 | b(`font_name_length`*8) | `font_name`        |                | The full name of the font file.                                                               |
 | b(`font_data_length`*8) | `font_data`        |                | The font file itself.                                                                         |
 
@@ -581,17 +598,17 @@ stream after decoding.
 | b(16)         | `video_info_descriptor`   |          0x8 | Indicates this packet contains video information.                                                                                             |
 | u(16)         | `stream_id`               |              | The stream ID for which to associate the video information with.                                                                              |
 | u(32)         | `global_seq`              |              | Monotonically incrementing per-packet global sequence number.                                                                                 |
-| u(32)         | `seq_number`              |              | Per-stream monotonically incrementing packet number.                                                                                          |
 | u(32)         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | u(32)         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
 | r(64)         | `signal_aspect`           |              | Indicates the signal aspect ratio of the image.                                                                                               |
-| u(8)          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
 | u(8)          | `chroma_subsampling`      |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
-| u(16)         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xffff` means `limited range`. Other values are reserved.                       |
+| u(8)          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
+| u(8)          | `bit_depth`               |              | Number of bits per pixel value.                                                                                                               |
+| u(8)          | `interlaced`              |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
+| R(224, 64)    | `raptor`                  |              | Raptor code to correct and verify the first 7 symbols of the packet.                                                                          |
 | r(64)         | `gamma`                   |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
 | r(64)         | `framerate`               |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
-| u(8)          | `interlaced`              |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
-| u(8)          | `bit_depth`               |              | Number of bits per pixel value.                                                                                                               |
+| u(16)         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xffff` means `limited range`. Other values are reserved.                       |
 | u(8)          | `chroma_pos`              |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
 | u(8)          | `primaries`               |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
 | u(8)          | `transfer`                |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
@@ -603,7 +620,8 @@ stream after decoding.
 | 2*r(64)       | `mastering_white_point`   |              | CIE 1931 xy chromacity coordinates of the white point.                                                                                        |
 | r(64)         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
 | r(64)         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
-| C(512)        | `raptor`                  |              | Raptor code to correct and verify the previous contents of the packet.                                                                        |
+| b(64)         | `padding`                 |              | Padding, reserved for future use. MUST be 0x0.                                                                                                |
+| R(1920, 640)  | `raptor`                  |              | Raptor code to correct and verify the data from `colorspace` to `max_luminance`.                                                              |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.<br/>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
@@ -669,7 +687,8 @@ The user-specific data packet is laid out as follows:
 | b(16)                   | `user_field`       |              | A free to use field for user data.                                                           |
 | u(32)                   | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
 | u(32)                   | `user_data_length` |              | The length of the user data.                                                                 |
-| C(32)                   | `raptor`           |              | Raptor code to correct and verify the previous contents of the packet.                       |
+| b(128)                  | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
+| R(224, 64)              | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                         |
 | b(`user_data_length`*8) | `user_data`        |              | The user data itself.                                                                        |
 
 If the user data needs FEC and segmentation, users SHOULD instead use the
@@ -680,13 +699,14 @@ Stream duration packets
 If the session length is well-known, implementations can reserve space up-front
 at the start of files to notify implementations of stream lengths.
 
-| Data  | Name                  |  Fixed value | Description                                                                                     |
-|:------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
-| b(16) | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
-| b(16) | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
-| u(32) | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
-| i(64) | `total_duration`      |              | The total duration of the stream(s).                                                            |
-| C(32) | `raptor`              |              | Raptor code to correct and verify the previous contents of the packet.                          |
+| Data       | Name                  |  Fixed value | Description                                                                                     |
+|:-----------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
+| b(16)      | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
+| b(16)      | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
+| u(32)      | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
+| i(64)      | `total_duration`      |              | The total duration of the stream(s).                                                            |
+| b(96)      | `padding`             |              | Padding, reserved for future use. MUST be 0x0.                                                  |
+| R(224, 64) | `raptor`              |              | Raptor code to correct and verify the first 7 symbols of the packet.                            |
 
 If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
@@ -700,13 +720,13 @@ End of stream
 -------------
 The EOS packet is laid out as follows:
 
-| Data  | Name             | Fixed value  | Description                                                                                             |
-|:----- |:-----------------|-------------:|:--------------------------------------------------------------------------------------------------------|
-| b(16) | `eos_descriptor` |       0xffff | Indicates this is an end-of-stream packet.                                                              |
-| b(16) | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
-| u(32) | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
-| u(32) | `seq_number`     |              | Per-stream monotonically incrementing packet number.                                                    |
-| C(32) | `raptor`         |              | Raptor code to correct and verify the previous contents of the packet.                                  |
+| Data       | Name             | Fixed value  | Description                                                                                             |
+|:-----------|:-----------------|-------------:|:--------------------------------------------------------------------------------------------------------|
+| b(16)      | `eos_descriptor` |       0xffff | Indicates this is an end-of-stream packet.                                                              |
+| b(16)      | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
+| u(32)      | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
+| b(160)     | `padding`        |              | Padding, reserved for future use. MUST be 0x0.                                                          |
+| R(224, 64) | `raptor`         |              | Raptor code to correct and verify the first 7 symbols of the packet.                                    |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer
 receive any packets, and implementations are free to unload decoding and free up
@@ -759,6 +779,9 @@ When using UDP-Lite, the same considerations as [UDP](#udp) apply.
 As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
 coverage MUST be used, where only the header (8 bytes) is checksummed.
 
+Implementations SHOULD insert adequate FEC information, and receivers SHOULD
+correct data with it, as packet integrity guarantees are off.
+
 QUIC
 ----
 Qproto tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
@@ -795,8 +818,8 @@ one-to-one transmission. The following syntax is used:
 |:-------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
 | b(16)  | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
 | b(8)   | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
-| u(32)  | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
 | b(8)   | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
+| u(32)  | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
 | b(128) | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
 | b(16)  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
 | b(8)   | `seek`             |              | If `1`, Asks the sender to seek to the position given by `seek_pts` and/or `seek_seq`.                   |
@@ -842,7 +865,7 @@ The following packet MAY be sent from the receiver to the sender.
 | b(64) | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
 | u(32) | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
 | u(32) | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
-| u(32) | `dropped_packets`  |              | Indicates the total number of dropped [data packets](#data-packets). A dropped packet is when the `seq_number` of a `data_packet` for a given `stream_id` did not increment monotonically, or when [data segments](#Data-segmentation) are missing. |
+| u(32) | `dropped_packets`  |              | Indicates the total number of dropped [packets](#data-packets).                                                                                                                                                                                     |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
 
@@ -857,8 +880,7 @@ that was likely dropped.
 | Data  | Name                | Fixed value  | Description                                                           |
 |:----- |:--------------------|-------------:|:----------------------------------------------------------------------|
 | b(16) | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
-| b(16) | `stream_id`         |              | The stream ID for which this packet applies to. MUST NOT be `0xffff`. |
-| u(32) | `seq_number`        |              | The sequence number of the packet that is missing.                    |
+| u(32) | `global_seq`        |              | The sequence number of the packet that is missing.                    |
 
 Stream control
 --------------
