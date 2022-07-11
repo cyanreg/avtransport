@@ -403,8 +403,8 @@ following descriptors:
 
 | Descriptor |                   Structure |                                         Type |
 |-----------:|----------------------------:|----------------------------------------------|
-|       0xff | `generic_segment_structure` | Non-final segment for incomplete stream data |
-|       0xfe | `generic_segment_structure` |     Final segment for incomplete stream data |
+|       0xFF | `generic_segment_structure` | Non-final segment for incomplete stream data |
+|       0xFE | `generic_segment_structure` |     Final segment for incomplete stream data |
 
 The size of the final assembled packet is the sum of all `seg_length` fields,
 plus the `data_length` field from the [stream data packet](#stream-data-packets).
@@ -432,7 +432,7 @@ with the following descriptor:
 
 | Descriptor |                   Structure |                                         Type |
 |-----------:|----------------------------:|----------------------------------------------|
-|       0xfd |     `generic_fec_structure` |   FEC data segment for the stream data packet|
+|       0xFD |     `generic_fec_structure` |   FEC data segment for the stream data packet|
 
 Implementations MAY discard the FEC data, or MAY delay the previous packet's
 decoding to correct it with the FEC data, or MAY attempt to decode the uncorrected
@@ -456,7 +456,7 @@ distance to the next index packet.
 | Data               | Name               |  Fixed value | Description                                                                                                                                                                    |
 |:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16)              | `index_descriptor` |          0x9 | Indicates this is an index packet.                                                                                                                                             |
-| b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams.                                                                                |
+| b(16)              | `stream_id`        |              | Indicates the stream ID for the index. May be 0xFFFF, in which case, it applies to all streams.                                                                                |
 | u(32)              | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                                                                                                  |
 | u(32)              | `prev_idx`         |              | Negative offset of the previous index packet, if any, in bytes, relative to the current position. If exactly 0, indicates no such index is available, or is out of scope.      |
 | u(32)              | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it. |
@@ -472,7 +472,7 @@ If valid, `prev_idx`, `next_idx` and `pkt_pos` offsets MUST point to the start o
 a packet. In other words, the byte pointed to by the offsets MUST contain the
 first, most significant byte of the descriptor of the pointed packet.
 
-If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
+If `stream_id` is 0xFFFF, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
 
 If a packet starts before the value of `pkt_pts` but has a duration that
@@ -490,11 +490,11 @@ with the following descriptors:
 
 | Descriptor |                   Structure |                                      Type |
 |-----------:|----------------------------:|------------------------------------------:|
-|        0xa |    `generic_data_structure` |                  Complete metadata packet |
-|        0xb |    `generic_data_structure` |                       Incomplete metadata |
-|        0xc | `generic_segment_structure` | Non-final segment for incomplete metadata |
-|        0xd | `generic_segment_structure` |     Final segment for incomplete metadata |
-|        0xe |     `generic_fec_structure` |              FEC segment for the metadata |
+|        0xA |    `generic_data_structure` |                  Complete metadata packet |
+|        0xB |    `generic_data_structure` |                       Incomplete metadata |
+|        0xC | `generic_segment_structure` | Non-final segment for incomplete metadata |
+|        0xD | `generic_segment_structure` |     Final segment for incomplete metadata |
+|        0xE |     `generic_fec_structure` |              FEC segment for the metadata |
 
 The actual metadata MUST be stored in `key` and `value` pairs as defined in BARE,
 IETF `draft-devault-bare-07`.
@@ -608,14 +608,14 @@ stream after decoding.
 | R(224, 64)    | `raptor`                  |              | Raptor code to correct and verify the first 7 symbols of the packet.                                                                          |
 | r(64)         | `gamma`                   |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
 | r(64)         | `framerate`               |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
-| u(16)         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xffff` means `limited range`. Other values are reserved.                       |
+| u(16)         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xFFFF` means `limited range`. Other values are reserved.                       |
 | u(8)          | `chroma_pos`              |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
 | u(8)          | `primaries`               |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
 | u(8)          | `transfer`                |              | Video transfer characteristics. MUST be interpreted according to ITU Standard H.273, `TransferCharacteristics` field.                         |
 | u(8)          | `matrix`                  |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
 | u(8)          | `has_mastering_primaries` |              | If `1`, signals that the following `mastering_primaries` and `mastering_white_point` contain valid data.                                      |
 | u(8)          | `has_luminance`           |              | If `1`, signals that the following `min_luminance` and `max_luminance` fields contain valid data.                                             |
-| 16*r(64)      | `custom_matrix`           |              | If `matrix` is equal to 0xff, use this custom matrix instead. Top, left, to bottom right, raster order.                                       |
+| 16*r(64)      | `custom_matrix`           |              | If `matrix` is equal to `0xFF`, use this custom matrix instead. Top, left, to bottom right, raster order.                                     |
 | 6*r(64)       | `mastering_primaries`     |              | CIE 1931 xy chromacity coordinates of the color primaries, `r`, `g`, `b` order.                                                               |
 | 2*r(64)       | `mastering_white_point`   |              | CIE 1931 xy chromacity coordinates of the white point.                                                                                        |
 | r(64)         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
@@ -636,7 +636,7 @@ The `colorspace` table is as follows:
 |   0x3 | `YCOCGR`    | Video contains a reversible form of YCoCg.                                                                               |
 |   0x4 | `YCGCOR`    | Same as `YCOCGR`, with swapped planes.                                                                                   |
 |   0x5 | `XYZ`       | Video contains XYZ color data.                                                                                           |
-|   0x6 | `XYB`       | Video contains XYB color data. **NOTE**: `matrix` MUST be equal to 0xff and the matrix in `custom_matrix` MUST be valid. |
+|   0x6 | `XYB`       | Video contains XYB color data. **NOTE**: `matrix` MUST be equal to 0xFF and the matrix in `custom_matrix` MUST be valid. |
 |   0x7 | `ICTCP`     | Video contains ICtCp color data.                                                                                         |
 
 The `subsampling` table is as follows:
@@ -701,14 +701,14 @@ at the start of files to notify implementations of stream lengths.
 
 | Data       | Name                  |  Fixed value | Description                                                                                     |
 |:-----------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
-| b(16)      | `duration_descriptor` |       0xf000 | Indicates this is an index packet.                                                              |
-| b(16)      | `stream_id`           |              | Indicates the stream ID for the index. May be 0xffff, in which case, it applies to all streams. |
+| b(16)      | `duration_descriptor` |       0xF000 | Indicates this is an index packet.                                                              |
+| b(16)      | `stream_id`           |              | Indicates the stream ID for the index. May be 0xFFFF, in which case, it applies to all streams. |
 | u(32)      | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
 | i(64)      | `total_duration`      |              | The total duration of the stream(s).                                                            |
 | b(96)      | `padding`             |              | Padding, reserved for future use. MUST be 0x0.                                                  |
 | R(224, 64) | `raptor`              |              | Raptor code to correct and verify the first 7 symbols of the packet.                            |
 
-If `stream_id` is 0xffff, the timebase used for `idx_pts` MUST be assumed to be
+If `stream_id` is 0xFFFF, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
 
 The duration MUST be the total amount of time the screen will be presented.<br/>
@@ -722,8 +722,8 @@ The EOS packet is laid out as follows:
 
 | Data       | Name             | Fixed value  | Description                                                                                             |
 |:-----------|:-----------------|-------------:|:--------------------------------------------------------------------------------------------------------|
-| b(16)      | `eos_descriptor` |       0xffff | Indicates this is an end-of-stream packet.                                                              |
-| b(16)      | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xffff, in which case, it applies to all streams. |
+| b(16)      | `eos_descriptor` |       0xFFFF | Indicates this is an end-of-stream packet.                                                              |
+| b(16)      | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xFFFF, in which case, it applies to all streams. |
 | u(32)      | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
 | b(160)     | `padding`        |              | Padding, reserved for future use. MUST be 0x0.                                                          |
 | R(224, 64) | `raptor`         |              | Raptor code to correct and verify the first 7 symbols of the packet.                                    |
@@ -788,7 +788,7 @@ Qproto tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
 as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.
 
-All data packets with descriptors `0x01**`, `0xff`, `0xfe`, `0xfd` and `0xfc`
+All data packets with descriptors `0x01**`, `0xFF`, `0xFE`, `0xFD` and `0xFC`
 MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
 IETF RFC 9221.<br/>
 All other packets MUST be sent over a reliable steam. FEC data for those packets
@@ -860,7 +860,7 @@ The following packet MAY be sent from the receiver to the sender.
 | Data  | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
 |:------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | b(16) | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
-| b(16) | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be 0xffff to indicate all streams.                                                                                                                                                |
+| b(16) | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be `0xFFFF` to indicate all streams.                                                                                                                                              |
 | b(64) | `epoch_offset`     |              | Time since `epoch`. MAY be 0. Can be used to estimate the latency.                                                                                                                                                                                  |
 | b(64) | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
 | u(32) | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
@@ -889,7 +889,7 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 | Data  | Name               | Fixed value  | Description                                                                      |
 |:----- |:-------------------|-------------:|:---------------------------------------------------------------------------------|
 | b(16) | `strm_descriptor`  |       0x8004 | Indicates this is a stream control data packet.                                  |
-| b(16) | `stream_id`        |              | The stream ID for which this packet applies to. MUST NOT be `0xffff`.            |
+| b(16) | `stream_id`        |              | The stream ID for which this packet applies to. MUST NOT be `0xFFFF`.            |
 | b(8)  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
 
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
@@ -927,14 +927,14 @@ definitions.
 
 For Opus encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
-MUST be 0x4f707573 (`Opus`).
+MUST be 0x4F707573 (`Opus`).
 
 The payload in the [stream initialization data](#init-data-packets) MUST be
 laid out in the following way:
 
 | Data               | Name              | Fixed value                     | Description                                                                           |
 |:------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
-| b(64) | `opus_descriptor` | 0x4f70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
+| b(64) | `opus_descriptor` | 0x4F70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
 | b(8)  | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
 | u(8)  | `opus_channels`   |                                 | Number of audio channels.                                                             |
 | u(16) | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
