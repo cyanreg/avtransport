@@ -190,19 +190,20 @@ This packet is used to signal stream registration.
 
 The layout of the data is as follows:
 
-| Data         | Name                | Fixed value | Description                                                               |
-|:-------------|:--------------------|------------:|:--------------------------------------------------------------------------|
-| `b(16)`      | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                           |
-| `b(16)`      | `stream_id`         |             | Indicates the stream ID for the new stream.                               |
-| `u(32)`      | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.             |
-| `b(16)`      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.              |
-| `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.           |
-| `u(64)`      | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                   |
-| `b(64)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                            |
-| `R(224, 64)` | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.      |
-| `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                 |
-| `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.           |
-| `R(96, 32)`  | `raptor_2`          |             | Raptor code to correct the leftover previous 3 words.                     |
+| Data         | Name                | Fixed value | Description                                                                     |
+|:-------------|:--------------------|------------:|:--------------------------------------------------------------------------------|
+| `b(16)`      | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                                 |
+| `b(16)`      | `stream_id`         |             | Indicates the stream ID for the new stream.                                     |
+| `u(32)`      | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.                   |
+| `b(16)`      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.                    |
+| `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.                 |
+| `u(64)`      | `bandwidth`         |             | Bandwidth in bits per second. MAY be 0.                                         |
+| `b(64)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                  |
+| `R(224, 64)` | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.            |
+| `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                       |
+| `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
+| `u(64)`      | `bitrate`           |             | Signals an average/target bitrate for the stream, if known, in bits per second. |
+| `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 words.                           |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
