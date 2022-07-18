@@ -88,8 +88,9 @@ of how they're allocated.
 |           0xA to 0xE | [Metadata](#metadata-packets)                         |
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
-|         0xFC to 0xFD | [Stream FEC segment](#fec-segments)                   |
-|         0xFE to 0xFF | [Stream data segment](#data-segmentation)             |
+|         0x30 to 0x31 | [FEC grouping](#fec-grouping)                         |
+|         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)            |
+|         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)      |
 |     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
 |     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
 |               0xF000 | [Stream duration](#stream-duration-packets)           |
@@ -270,7 +271,7 @@ template has to be used for segments that follow the above:
 | `b(16)`           | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
 | `b(16)`           | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
 | `u(32)`           | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
-| `u(32)`           | `total_data_seg`  |                | Total number of data segments, including the first data packet, and ending segment.   |
+| `u(32)`           | `pkt_total_data`  |                | Total number of data bytes, including the first data packet's, and ending segment's.  |
 | `u(32)`           | `seg_offset`      |                | The offset since the start of the data where the segment starts.                      |
 | `u(32)`           | `seg_length`      |                | The size of the data segment.                                                         |
 | `b(64)`           | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
@@ -291,7 +292,7 @@ is to be used:
 | `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
 | `b(32)`                | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                        |
 | `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
-| `u(32)`                | `fec_covered`     |                | The total amount of payload bytes covered by this and preceding FEC segments.         |
+| `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                            |
 | `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
 | `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
 | `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
@@ -412,11 +413,58 @@ Implementations MAY try to decode incomplete data packets with missing segments
 due to latency concerns.
 
 Senders MAY send duplicate segments to compensate for packet loss,
-but SHOULD use [FEC segments](#fec-segments) instead.
+but SHOULD use [FEC grouping](#fec-grouping) or
+[FEC segments](#fec-segments) instead.
 
 Implementations SHOULD discard any packets and segments that arrive after their
 presentation time. Implementations SHOULD drop any packets and segments
 that arrive with unrealistically far away presentation times.
+
+FEC grouping
+------------
+Whilst it's possible to send uncontextualized FEC data backing individual
+packets, for most applications, this is only feasible for very high bitrate
+single streams, as modern FEC algorithms are highly optimized for packet erasure
+recovery.
+
+FEC grouping allows for multiple buffered packets and segments from multiple
+streams to be FEC corrected in order to ensure no stream is starved of data.
+
+FEC grouped streams MUST be registered first via a special packet:
+
+| Data                      | Name                    | Fixed value | Description                                                                                                                                       |
+|:--------------------------|:------------------------|------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `b(16)`                   | `fec_group_descriptor`  |        0x30 | Indicates this is an FEC grouping packet.                                                                                                         |
+| `b(16)`                   | `fec_group_id`          |             | Indicates the stream ID for the FEC group.                                                                                                        |
+| `u(32)`                   | `global_seq`            |             | Monotonically incrementing per-packet global sequence number.                                                                                     |
+| `u(32)`                   | `fec_group_streams`     |             | Number of streams in the FEC group. MUST be less than or equal to 16.                                                                             |
+| `b(128)`                  | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
+| `R(224, 64)`              | `raptor`                |             | Raptor code to correct and verify the first 7 symbols of the packet.                                                                              |
+| `u(32*16)`                | `fec_nb_packets`        |             | Total number of packets for each stream in the FEC group.                                                                                         |
+| `u(32*16)`                | `fec_seq_number`        |             | The sequence number of the first packet for the stream to be included in the group.                                                               |
+| `u(32*16)`                | `fec_nb_data_size`      |             | The total number of bytes, including headers, in each FEC grouped stream included in the duration of the group.                                   |
+| `R(1536, 768)`            | `raptor`                |             | Raptor code for the previous 48 symbols.                                                                                                          |
+
+All streams in an FEC group **MUST** have timestamps that cover the same period
+of time.
+
+FEC groups use a different packet for the FEC data.
+
+| Data                   | Name              |    Fixed value | Description                                                                           |
+|:-----------------------|:------------------|---------------:|:--------------------------------------------------------------------------------------|
+| `b(16)`                | `fec_descriptor`  |           0x31 | Indicates this is an FEC group data packet.                                           |
+| `b(16)`                | `stream_id`       |                | Indicates the FEC group ID for whose packets are being backed.                        |
+| `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
+| `b(32)`                | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                        |
+| `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
+| `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                            |
+| `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
+| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
+| `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
+
+To perform FEC on a group, first, append all packets, including their headers,
+for all streams in incrementing order, removing packets which do not concern the
+streams included, and then use the FEC data signalled.
 
 Stream FEC segments
 -------------------
