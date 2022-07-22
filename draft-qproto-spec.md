@@ -68,6 +68,7 @@ An overall possible structure of packets in a general Qproto session can be:
 |                   [ICC profile](#icc-profile-packets) | ICC profile for correct video presentation.                                                         |
 |                         [Metadata](#metadata-packets) | Stream or session metadata.                                                                         |
 |                       [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                      |
+|       [Video orientation](#video-orientation-packets) | Video orientation.                                                                                  |
 |                   [Stream data](#stream-data-packets) | Stream data packets.                                                                                |
 |          [Stream segments](#stream-data-segmentation) | Segmented stream data packets.                                                                      |
 |                    [Stream FEC](#stream-fec-segments) | Optional FEC data for stream data.                                                                  |
@@ -89,6 +90,7 @@ of how they're allocated.
 |         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
 |         0x30 to 0x31 | [FEC grouping](#fec-grouping)                         |
+|                 0x40 | [Video orientation](#video-orientation-packets)       |
 |         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)            |
 |         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)      |
 |     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
@@ -719,6 +721,30 @@ To illustrate:
 |                1 | `Luma pixel` **3** |        **4** | `Luma pixel` |
 |    Between lines |              **1** |        **2** |              |
 |                2 | `Luma pixel` **5** |        **6** | `Luma pixel` |
+
+Video orientation packets
+-------------------------
+A standardized way to transmit orientation information is as follows:
+
+| Data                    | Name               | Fixed value  | Description                                                                                  |
+|:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
+| `b(16)`                 | `ori_descriptor`   |         0x40 | Indicates this is a video orientation packet.                                                |
+| `b(16)`                 | `stream_id`        |              | A free to use field for user data.                                                           |
+| `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
+| `u(64)`                 | `pts`              |              | The length of the user data.                                                                 |
+| `r(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.        |
+| `u(32)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
+| `R(224, 64)`            | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                         |
+
+Orientation packets take effect **on** the `pts` value signalled. Hence,
+video orientation packets MUST be sent **before** a stream data packet.
+The value MUST persist until a new orientation packet is sent, OR the stream
+is reinitialized.
+
+The actual rotation in radians is given by `π * (rotation.num/rotation.den)`.
+
+The value MAY be quantized to a modulus of of `π/2` (`rotation.num/rotation.den % 0.5 = 0`),
+in order to permit simple transposition for presentation rather than rotation.
 
 User data packets
 -----------------
