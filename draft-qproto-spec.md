@@ -743,8 +743,9 @@ is reinitialized.
 
 The actual rotation in radians is given by `π * (rotation.num/rotation.den)`.
 
-The value MAY be quantized to a modulus of of `π/2` (`rotation.num/rotation.den % 0.5 = 0`),
-in order to permit simple transposition for presentation rather than rotation.
+The value MAY be quantized to a modulus of `π/2` (`rotation.num/rotation.den % 0.5 = 0`)
+BY the receiver, in order to permit simple transposition for presentation rather
+than rotation.
 
 User data packets
 -----------------
