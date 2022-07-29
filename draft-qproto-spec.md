@@ -268,17 +268,18 @@ The following `generic_data_structure` template is used for generic data packets
 In case the data needs to be segmented, the following `generic_segment_structure`
 template has to be used for segments that follow the above:
 
-| Data              | Name              |    Fixed value | Description                                                                           |
-|:------------------|:------------------|---------------:|:------------------------------------------------------------------------------------- |
-| `b(16)`           | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor. |
-| `b(16)`           | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                          |
-| `u(32)`           | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
-| `u(32)`           | `pkt_total_data`  |                | Total number of data bytes, including the first data packet's, and ending segment's.  |
-| `u(32)`           | `seg_offset`      |                | The offset since the start of the data where the segment starts.                      |
-| `u(32)`           | `seg_length`      |                | The size of the data segment.                                                         |
-| `b(64)`           | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
-| `R(224, 64)`      | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
-| `b(seg_length*8)` | `seg_data`        |                | The data for the segment.                                                             |
+| Data              | Name              |    Fixed value | Description                                                                              |
+|:------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------|
+| `b(16)`           | `seg_descriptor`  | *as specified* | Indicates the segment type. Defined in later sections along with the data descriptor.    |
+| `b(16)`           | `stream_id`       |                | Indicates the stream ID for which this packet is applicable.                             |
+| `u(32)`           | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                            |
+| `b(32)`           | `target_seq`      |                | The sequence number of the starting packet.                                              |
+| `u(32)`           | `pkt_total_data`  |                | Total number of data bytes, including the first data packet's, and ending segment's.     |
+| `u(32)`           | `seg_offset`      |                | The offset since the start of the data where the segment starts.                         |
+| `u(32)`           | `seg_length`      |                | The size of the data segment.                                                            |
+| `b(32)`           | `header_7`        |                | A seventh of the main packet's header. The part taken is determined by `global_seq % 7`. |
+| `R(224, 64)`      | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                     |
+| `b(seg_length*8)` | `seg_data`        |                | The data for the segment.                                                                |
 
 If the data in a `generic_data_structure` is to be segmented, it will have
 a different descriptor. The descriptor in `generic_segment_structure` shall
@@ -287,17 +288,18 @@ be different for segments that finalize the data.
 Finally, in case the data requires FEC, the following `generic_fec_structure`
 is to be used:
 
-| Data                   | Name              |    Fixed value | Description                                                                           |
-|:-----------------------|:------------------|---------------:|:--------------------------------------------------------------------------------------|
-| `b(16)`                | `fec_descriptor`  | *as specified* | Indicates this is an FEC segment packet.                                              |
-| `b(16)`                | `stream_id`       |                | Indicates the stream ID for whose packets are being backed.                           |
-| `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                         |
-| `b(32)`                | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                        |
-| `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
-| `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                            |
-| `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
-| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
-| `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
+| Data                   | Name              |    Fixed value | Description                                                                              |
+|:-----------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------|
+| `b(16)`                | `fec_descriptor`  | *as specified* | Indicates this is an FEC segment packet.                                                 |
+| `b(16)`                | `stream_id`       |                | Indicates the stream ID for whose packets are being backed.                              |
+| `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                            |
+| `b(32)`                | `target_seq`      |                | The sequence number of the starting packet.                                              |
+| `b(32)`                | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                           |
+| `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                               |
+| `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                               |
+| `b(32)`                | `header_7`        |                | A seventh of the main packet's header. The part taken is determined by `global_seq % 7`. |
+| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                     |
+| `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload.    |
 
 The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.<br/>
 Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC
@@ -308,6 +310,9 @@ The symbol size MUST be 32-bits.
 The total number of bytes covered by this and previous FEC segments shall be
 set in the `fec_covered` field.<br/>
 This MUST always be *greater than zero*.
+
+The `header_7` field can be used to reconstruct the header of the very first
+packet in order to determine the timestamps and data type.
 
 Init data packets
 -----------------
