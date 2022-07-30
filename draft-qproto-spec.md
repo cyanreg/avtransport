@@ -455,6 +455,12 @@ FEC grouped streams MUST be registered first via a special packet:
 All streams in an FEC group **MUST** have timestamps that cover the same period
 of time.
 
+A stream may only be part of a single FEC group at any one time. Sending
+a new grouping that includes an already grouped stream will destroy the
+previous grouping.
+
+To end a grouping, one can send an end of stream packet with the group's ID.
+
 FEC groups use a different packet for the FEC data.
 
 | Data                   | Name              |    Fixed value | Description                                                                           |
