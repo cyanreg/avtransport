@@ -321,13 +321,13 @@ To provide this data to receivers, the templates defined in the
 [generic data packet structure](#generic-data-packet-structure) MUST be used,
 with the following descriptors:
 
-| Descriptor |                   Structure |                                                    Type |
-|-----------:|----------------------------:|--------------------------------------------------------:|
-|        0x3 |    `generic_data_structure` |                      Complete codec initialization data |
-|        0x4 |    `generic_data_structure` |                    Incomplete codec initialization data |
-|        0x5 | `generic_segment_structure` | Non-final segment for incomplete codec initializal data |
-|        0x6 | `generic_segment_structure` |     Final segment for incomplete codec initializal data |
-|        0x7 |     `generic_fec_structure` |              FEC segment for the codec initializal data |
+| Descriptor |                   Structure | Type |
+|-----------:|----------------------------:|-------------------------------------------------------------|
+|        0x3 |    `generic_data_structure` | Complete codec initialization data.                         |
+|        0x4 |    `generic_data_structure` | Incomplete codec initialization data.                       |
+|        0x5 | `generic_segment_structure` | Non-final segment for incomplete codec initialization data. |
+|        0x6 | `generic_segment_structure` | Final segment for incomplete codec initialization data.     |
+|        0x7 |     `generic_fec_structure` | FEC segment for the codec initialization data.              |
 
 For more information on the layout of the specific data, consult the
 [codec-specific encapsulation](#codec-encapsulation) addenda.
