@@ -552,8 +552,55 @@ with the following descriptors:
 |        0xD | `generic_segment_structure` |     Final segment for incomplete metadata |
 |        0xE |     `generic_fec_structure` |              FEC segment for the metadata |
 
-The actual metadata MUST be stored in `key` and `value` pairs as defined in BARE,
-IETF `draft-devault-bare-07`.
+The actual metadata MUST be stored using BARE, IETF `draft-devault-bare-07`.
+The schema to use MUST be as follows:
+
+```
+type MetadataSet struct {
+    title: optional<str>
+    stream_id: optional<u16>
+    language: optional<str>
+    track: optional<i32>
+    tracks: optional<i32>
+    artist: optional<str>
+    album_artist: optional<str>
+    album: optional<str>
+    date: optional<str>
+    tags: list< struct {
+        name: str
+        type Value union {
+            | str | bool | f32 | f64 | i8 | i16 | i32 | i64 | u8 | u16 | u32 | u64 | int | uint | data
+        }
+    }>
+}
+
+type Metadata list<MetadataSet>
+```
+
+Implementations can either send the data via a single `Metadata` struct,
+or as an array via `MetadataSet`.
+Each `stream_id` value in a `MetadataSet` MUST be unique.
+
+Each key `name` CAN be encountered multiple times. Implementations MUST
+discard the old `Value` associated with the key.
+If `stream_id` is present, the metadata is a separate set of values that just
+describe a single stream. Tags from other streams, or the general file
+metadata MUST NOT overwrite each other.
+
+If `stream_id` is omitted or equal to `0xFFFF`,
+the metadata applies for the session as a whole.
+
+Metadata can be updated by sending new metadata packets with new values.
+
+The values listed outside of `tags` SHOULD be interpreted as recommendations.
+If a `name` matches one of those values, the value outside of the `tags` field
+MUST take priority.
+
+The `language` field MUST be formatted as a **subtag**, according to the
+[IETF BPC 47](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
+
+The `date` field MUST be formatted according to the
+[IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
 
 ICC profile packets
 -------------------
