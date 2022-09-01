@@ -1,6 +1,6 @@
 Qproto
 ======
-This repository hosts the Qproto container/media transmission protocol, and any reference code that may be present.
+This repository hosts the Qproto container/media transmission protocol, and the reference implementation code.
 
 Currently, the protocol is a draft, and its name, along with its syntax is subject to change.
 

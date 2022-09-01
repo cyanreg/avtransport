@@ -1,0 +1,5 @@
+build
+*.log
+*.qp
+.github/_build
+.github/_install
