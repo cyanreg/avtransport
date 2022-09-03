@@ -26,12 +26,18 @@ headers = [
 # Base files
 sources = [
     'common.c',
+    'buffer.c',
 
     # Version
     vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],
                       input: 'version.c.in', output: 'version.c',
                       fallback: 'release')
 ]
+
+if get_option('output').auto()
+    sources += 'output.c'
+    sources += 'output_file.c'
+endif
 
 # Check for wmain support (Windows/MinGW)
 if cc.links('int wmain() { return 0; }', args: '-municode')

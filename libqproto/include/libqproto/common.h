@@ -54,7 +54,7 @@ enum QprotoConnectionType {
     /* File path */
     QPROTO_CONNECTION_FILE,
 
-    /* Raw reader/writer using the callbacks. */
+    /* Raw reader/writer using callbacks. */
     QPROTO_CONNECTION_CALLBACKS,
 };
 
@@ -115,12 +115,14 @@ void qp_close(QprotoContext **qp);
 QprotoBuffer *qp_buffer_create(void *data, size_t len,
                                void *opaque, void (*free)(void *opaque, void *data));
 
-/* Create and allocate a reference counted buffer. */
-QprotoBuffer *qp_buffer_alloc(size_t len,
-                              void *opaque, void (*free)(void *opaque, void *data));
+/* Default freeing callback for buffers that simply calls free(data) */
+void qp_buffer_default_free(void *opaque, void *data);
 
-/* Create a reference to a buffer. */
-QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer);
+/* Create and allocate a reference counted buffer. */
+QprotoBuffer *qp_buffer_alloc(size_t len);
+
+/* References the buffer. Returns the total references. */
+int qp_buffer_reference(QprotoBuffer *buffer);
 
 /* Access the data in a buffer. Does not reference it. */
 void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len);

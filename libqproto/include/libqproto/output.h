@@ -60,7 +60,8 @@ typedef struct QprotoOutputOptions {
     size_t buffer_size;
 } QprotoOutputOptions;
 
-int qp_output_open(QprotoContext *qp, QprotoOutputOptions *opts);
+int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
+                   QprotoOutputOptions *opts);
 int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch);
 int qp_output_add_stream(QprotoContext *qp, QprotoStream **st);
 int qp_output_add_font(QprotoContext *qp, QprotoBuffer *data, const char *name);

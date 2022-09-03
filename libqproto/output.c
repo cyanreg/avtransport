@@ -23,9 +23,10 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <libqproto/output.h>
+#include "output.h"
 
-int qp_output_open(QprotoContext *qp, QprotoOutputOptions *opts)
+int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
+                   QprotoOutputOptions *opts)
 {
 
     return 0;

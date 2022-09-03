@@ -23,6 +23,65 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <libqproto/output.h>
 
+#include "common.h"
+#include "libqproto/common.h"
+#include "output.h"
 
+struct PQOutputContext {
+    FILE *f;
+};
+
+static int file_init(QprotoContext *ctx, PQOutputContext **pc,
+                     QprotoOutputDestination *dst, QprotoOutputOptions *opts)
+{
+    PQOutputContext *priv = malloc(sizeof(*priv));
+    if (!priv)
+        return QP_ERROR(ENOMEM);
+
+    priv->f = fopen(dst->path, "w+");
+    if (!priv->f) {
+        free(priv);
+        return QP_ERROR(errno);
+    }
+
+    *pc = priv;
+
+    return 0;
+}
+
+static int file_output(QprotoContext *ctx, PQOutputContext *pc,
+                       QprotoBuffer *pkt)
+{
+    size_t len;
+    void *data = qp_buffer_get_data(pkt, &len);
+
+    size_t out = fwrite(data, len, 1, pc->f);
+    if (out != len)
+        return QP_ERROR(errno);
+
+    return 0;
+}
+
+static int file_close(QprotoContext *ctx, PQOutputContext **pc)
+{
+    int ret = fclose((*pc)->f);
+    free(*pc);
+    *pc = NULL;
+    if (ret)
+        return QP_ERROR(errno);
+
+    return 0;
+}
+
+const PQOutput pq_output_file = {
+    .name = "file",
+    .type = QPROTO_CONNECTION_FILE,
+    .init = file_init,
+    .output = file_output,
+    .close = file_close,
+};

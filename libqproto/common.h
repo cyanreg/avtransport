@@ -23,17 +23,22 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#ifndef LIBQPROTO_COMMON
+#define LIBQPROTO_COMMON
+
 #include <libqproto/common.h>
 
 struct QprotoContext {
     int has_output;
+    struct PQOutput *out_ctx;
+    struct PQOutputContext *out_ctx_priv;
 
     int has_input;
 
     QprotoContextOptions opts;
 };
 
-enum QPPacketType {
+enum PQPacketType {
     /* Indicates the 8 least significant bits are a mask */
     QP_PKT_FLAG_LSB_MASK = (1 << 31),
 
@@ -92,5 +97,4 @@ enum QPPacketType {
     QP_PKT_REV_STREAM_CONTROL = 0x8004,
 };
 
-typedef struct QPOutput {
-} QPOutput;
+#endif
