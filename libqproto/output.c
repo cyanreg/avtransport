@@ -29,5 +29,6 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
                    QprotoOutputOptions *opts)
 {
 
+
     return 0;
 }

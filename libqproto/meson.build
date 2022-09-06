@@ -34,6 +34,11 @@ sources = [
                       fallback: 'release')
 ]
 
+if get_option('input').auto()
+    sources += 'input.c'
+    sources += 'input_file.c'
+endif
+
 if get_option('output').auto()
     sources += 'output.c'
     sources += 'output_file.c'

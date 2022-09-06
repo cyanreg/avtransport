@@ -33,6 +33,7 @@ typedef struct QprotoInputSource {
     union {
         int reverse;
         const char *url;
+        int fd;
         int (*read_input)(void *opaque, QprotoBuffer *data, int64_t offset);
     };
 
@@ -41,14 +42,6 @@ typedef struct QprotoInputSource {
 
 /* List of callbacks. All are optional. */
 typedef struct QprotoInputCallbacks {
-    void (*control_cb)(void *opaque, int cease, int resend_init, int error,
-                       uint8_t redirect[16], uint16_t redirect_port,
-                       int seek_requested, int64_t seek_offset, uint32_t seek_seq);
-
-    void (*feedback_cb)(void *opaque, QprotoStream *st, uint64_t epoch_offset,
-                        uint64_t bandwidth, uint32_t fec_corrections,
-                        uint32_t corrupt_packets, uint32_t missing_packets);
-
     void (*stream_register_cb)(void *opaque, QprotoStream *st);
     void (*stream_update_cb)(void *opaque, QprotoStream *st);
     void (*font_register_cb)(void *opaque, QprotoBuffer *data, const char *name);
@@ -60,11 +53,36 @@ typedef struct QprotoInputCallbacks {
 
     void (*duration_cb)(void *opaque, int64_t duration_nsec);
     void (*stream_close_cb)(void *opaque, QprotoStream *st);
+
+    /* Reports a timeout, with the number of nanoseconds since the last packet */
+    void (*timeout)(void *opaque, uint64_t last_received);
+
+    /**
+     * Reverse signalling callbacks. May be hooked up directly to
+     * the output context.
+     */
+    int (*control_cb)(QprotoContext *qp, void *opaque, int cease,
+                      int resend_init, int error, uint8_t redirect[16],
+                      uint16_t redirect_port, int seek_requested,
+                      int64_t seek_offset, uint32_t seek_seq);
+
+    int (*feedback_cb)(QprotoContext *qp, void *opaque, QprotoStream *st,
+                       uint64_t epoch_offset, uint64_t bandwidth,
+                       uint32_t fec_corrections, uint32_t corrupt_packets,
+                       uint32_t missing_packets);
 } QprotoInputCallbacks;
 
 typedef struct QprotoInputOptions {
-    /* Whether to always check and correct using Raptor codes in the headers. */
-    int always_test_headers;
+    /**
+     * Whether to always check and correct using Raptor codes in the headers.
+     */
+    bool always_test_headers;
+
+    /**
+     * Time in nanoseconds to wait on new data before calling the callback.
+     * Default: infinite.
+     */
+    uint64_t timeout;
 } QprotoInputOptions;
 
 /* Open a Qproto stream or a file for reading. */
@@ -84,7 +102,8 @@ int qp_input_seek(QprotoContext *qp, QprotoStream *st, int64_t offset, int absol
  * Can be called multiple times from different threads. */
 int qp_input_process(QprotoContext *qp, int64_t timeout);
 
-/* Start a thread that will call qp_input_process as data becomes available. */
+/* Start a thread that will call qp_input_process as data becomes available.
+ * Otherwise, qp_input_process() may be called manually. */
 int qp_input_start_thread(QprotoContext *qp);
 
 #endif

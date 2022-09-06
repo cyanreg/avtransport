@@ -27,13 +27,28 @@
 #define LIBQPROTO_COMMON
 
 #include <libqproto/common.h>
+#include <libqproto/input.h>
+#include <libqproto/output.h>
+
+enum PQProtocolType {
+    PQ_UNKNOWN,
+    PQ_UDP,
+    PQ_QUIC,
+};
 
 struct QprotoContext {
-    int has_output;
-    struct PQOutput *out_ctx;
-    struct PQOutputContext *out_ctx_priv;
+    struct {
+        QprotoOutputDestination dst;
+        struct PQOutput *cb;
+        struct PQOutputContext *ctx;
+    } out;
 
-    int has_input;
+    struct {
+        QprotoInputSource src;
+        struct PQInput *cb;
+        struct PQInputContext *ctx;
+        QprotoInputCallbacks proc;
+    } in;
 
     QprotoContextOptions opts;
 };
@@ -96,5 +111,8 @@ enum PQPacketType {
     QP_PKT_REV_RESEND = 0x8003,
     QP_PKT_REV_STREAM_CONTROL = 0x8004,
 };
+
+int pq_parse_address(const char *path, enum PQProtocolType *proto,
+                     uint8_t dst_ip[16], uint16_t *dst_port);
 
 #endif

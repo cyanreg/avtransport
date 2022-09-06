@@ -24,6 +24,10 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
+
+#include <arpa/inet.h>
+#include <netdb.h>
 
 #include "common.h"
 
@@ -47,4 +51,99 @@ void qp_close(QprotoContext **qp)
         free(*qp);
         *qp = NULL;
     }
+}
+
+int pq_parse_address(const char *path, enum PQProtocolType *proto,
+                     uint8_t dst_ip[16], uint16_t *dst_port)
+{
+    /* Zero out output */
+    *proto = PQ_UNKNOWN;
+    dst_ip = (uint8_t [16]){ 0 };
+    *dst_port = 0;
+
+    char *dup = strdup(path);
+    if (!dup)
+        return QP_ERROR(ENOMEM);
+
+    char *tmp = NULL;
+    char *protocol = strtok_r(dup, ":", &tmp); /* Protocol */
+    if (!strcmp(protocol, "udp")) {
+        *proto = PQ_UDP;
+    } else if (!strcmp(protocol, "quic")) {
+        *proto = PQ_QUIC;
+    } else {
+        free(dup);
+        return QP_ERROR(ENOTSUP);
+    }
+
+    char *addr_pre = strtok_r(protocol, ":", &tmp);
+    if (!strcmp(addr_pre, "//") && (addr_pre[2])) {
+        addr_pre += 2;
+    } else {
+        free(dup);
+        return QP_ERROR(ENOTSUP);
+    }
+
+    if (addr_pre[0] == '[') {
+        tmp = NULL;
+        char *endb = strtok_r(addr_pre, "]", &tmp);
+
+        struct in6_addr dst_6 = { 0 };
+        int ret = inet_pton(AF_INET6, endb, &dst_6);
+        if (!ret)
+            endb = strtok_r(addr_pre, "]", &tmp);
+
+        if (ret || !endb) {
+            free(dup);
+            return QP_ERROR(EINVAL);
+        }
+
+        memcpy(dst_ip, dst_6.s6_addr, 16);
+
+        if (addr_pre[0] == ':') {
+            char *res = NULL;
+            *dst_port = strtol(addr_pre + 1, &res, 10);
+            if (res) {
+                free(dup);
+                return QP_ERROR(EINVAL);
+            }
+        }
+
+        free(dup);
+        return 0;
+    }
+
+    /* Attempt to convert and parse the IP address as IPv4 in IPv6 */
+    char *addr = strtok_r(addr_pre, ":", &tmp);
+    char addr_temp[32] = { "::FFFF:" };
+    memcpy(addr_temp + strlen(addr_temp), addr, strlen(addr));
+    addr_temp[31] = '\0';
+
+    struct in6_addr dst_4 = { 0 };
+    int ret = inet_pton(AF_INET6, addr_temp, &dst_4);
+    if (ret) {
+        int error;
+        struct addrinfo hints = { 0 }, *res = NULL;
+        const char *service = "0";
+
+        char *sport = strtok_r(addr_pre, ":", &tmp);
+        if (sport[0])
+            sport += 1; /* Skip : */
+
+        hints.ai_socktype = SOCK_DGRAM;
+        hints.ai_family   = AF_INET6;
+        hints.ai_flags    = 0;
+        if ((error = getaddrinfo(addr, service, &hints, &res))) {
+            free(dup);
+            return QP_ERROR(EINVAL);
+        }
+
+        memcpy(dst_ip, res->ai_addr, res->ai_addrlen);
+    } else {
+        memcpy(dst_ip, dst_4.s6_addr, 16);
+    }
+
+    free(dup);
+
+    return 0;
 }

@@ -30,9 +30,10 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <errno.h>
+#include <stdbool.h>
 
-typedef struct QprotoContext QprotoContext;
-typedef struct QprotoBuffer QprotoBuffer;
+typedef struct QprotoContext  QprotoContext;
+typedef struct QprotoBuffer   QprotoBuffer;
 typedef struct QprotoMetadata QprotoMetadata;
 
 /* Rational data type structure. */
@@ -53,6 +54,12 @@ enum QprotoConnectionType {
 
     /* File path */
     QPROTO_CONNECTION_FILE,
+
+    /* Socket */
+    QPROTO_CONNECTION_SOCKET,
+
+    /* File descriptor */
+    QPROTO_CONNECTION_FD,
 
     /* Raw reader/writer using callbacks. */
     QPROTO_CONNECTION_CALLBACKS,

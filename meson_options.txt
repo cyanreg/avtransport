@@ -1,0 +1,2 @@
+option('output', type: 'feature', value: 'auto', description: 'Output support')
+option('input', type: 'feature', value: 'auto', description: 'Input support')

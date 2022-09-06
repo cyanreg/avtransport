@@ -23,58 +23,26 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <libqproto/output.h>
+#ifndef LIBQPROTO_OUTPUT
+#define LIBQPROTO_OUTPUT
 
-#include <linux/io_uring.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <libqproto/output.h>
 
 #include "common.h"
-#include "libqproto/common.h"
-#include "output.h"
 
+typedef struct PQOutputContext PQOutputContext;
 
-struct PQOutputContext {
-    int fd;
-};
+typedef struct PQOutput {
+    const char *name;
+    enum QprotoConnectionType type;
 
-static int sock_init(QprotoContext *ctx, PQOutputContext **pc,
-                     QprotoOutputDestination *dst, QprotoOutputOptions *opts)
-{
-    PQOutputContext *priv = malloc(sizeof(*priv));
-    if (!priv)
-        return QP_ERROR(ENOMEM);
+    int (*init)(QprotoContext *ctx, PQOutputContext **pc,
+                QprotoOutputDestination *dst, QprotoOutputOptions *opts);
 
+    int (*output)(QprotoContext *ctx, PQOutputContext *pc,
+                  QprotoBuffer *data);
 
-    *pc = priv;
+    int (*close)(QprotoContext *ctx, PQOutputContext **pc);
+} PQOutput;
 
-    return 0;
-}
-
-static int sock_output(QprotoContext *ctx, PQOutputContext *pc,
-                       QprotoBuffer *pkt)
-{
-    size_t len;
-    void *data = qp_buffer_get_data(pkt, &len);
-
-
-    return 0;
-}
-
-static int sock_close(QprotoContext *ctx, PQOutputContext **pc)
-{
-
-    return 0;
-}
-
-const PQOutput pq_output_file = {
-    .name = "file",
-    .type = QPROTO_CONNECTION_SOCKET,
-    .init = sock_init,
-    .output = sock_output,
-    .close = sock_close,
-};
+#endif
