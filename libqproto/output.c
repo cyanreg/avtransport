@@ -230,6 +230,41 @@ int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
     return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, data);
 }
 
+int qp_output_close_stream(QprotoContext *qp, QprotoStream *st)
+{
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
+    int i;
+    for (i = 0; i < qp->nb_stream; i++)
+        if (qp->stream[i]->id == st->id)
+            break;
+    if (i == qp->nb_stream)
+        return QP_ERROR(EINVAL);
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_EOS);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 32, 0);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    free(st->private);
+    free(st);
+
+    memmove(&qp->stream[i], &qp->stream[i+1], sizeof(qp)*(qp->nb_stream - i));
+    qp->nb_stream--;
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+}
+
 int qp_output_close(QprotoContext *qp)
 {
     if (!qp->dst.ctx)
