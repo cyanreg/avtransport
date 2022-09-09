@@ -47,6 +47,7 @@ struct QprotoContext {
         const struct PQOutput *cb;
         struct PQOutputContext *ctx;
         atomic_uint seq;
+        uint64_t epoch;
     } dst;
 
     struct {
@@ -55,6 +56,7 @@ struct QprotoContext {
         struct PQInputContext *ctx;
         QprotoInputCallbacks proc;
         atomic_uint seq;
+        uint64_t epoch;
     } src;
 
     QprotoStream **stream;

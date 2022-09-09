@@ -42,6 +42,9 @@ static const PQOutput *pq_output_list[] = {
 int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
                    QprotoOutputOptions *opts)
 {
+    if (qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
     const PQOutput *out;
     for (out = pq_output_list[0]; out; out++) {
         if (out->type == dst->type)
@@ -85,8 +88,33 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     return ret;
 }
 
+int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch)
+{
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_TIME_SYNC);
+    PQ_WBL(h, 16, 0);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 64, epoch);
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 32, 0);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+}
+
 QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
 {
+    if (!qp->dst.ctx)
+        return NULL;
+
     QprotoStream *ret = NULL;
     QprotoStream **new = realloc(qp->stream, sizeof(*new)*(qp->nb_stream + 1));
     if (!new)
@@ -111,6 +139,9 @@ QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
 
 int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 {
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
     int i;
     for (i = 0; i < qp->nb_stream; i++)
         if (qp->stream[i]->id == st->id)
@@ -142,12 +173,15 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 
     st->private->codec_id = st->codec_id;
 
-    return 0;
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
 }
 
 int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
                                 QprotoPacket *pkt)
 {
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
     uint8_t hdr[372];
     uint8_t *h = hdr;
     uint64_t raptor;
