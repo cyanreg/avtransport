@@ -174,5 +174,22 @@ int qp_output_close(QprotoContext *qp)
     if (!qp->dst.ctx)
         return QP_ERROR(EINVAL);
 
-    return qp->dst.cb->close(qp, &qp->dst.ctx);
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_EOS);
+    PQ_WBL(h, 16, 0xFFFF);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 32, 0);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+    int ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+
+    int ret2 = qp->dst.cb->close(qp, &qp->dst.ctx);
+
+    return ret < 0 ? ret : ret2;
 }
