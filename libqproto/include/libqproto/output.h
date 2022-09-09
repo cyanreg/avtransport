@@ -99,8 +99,11 @@ int qp_output_add_font(QprotoContext *qp, QprotoBuffer *data, const char *name);
  * If compiled with threads, actual output happens in a different thread. */
 int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
                                 QprotoPacket *pkt);
+
+/* Write user data packets */
 int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
-                              uint16_t descriptor, int prioritize);
+                              uint8_t descriptor_flags, uint16_t user,
+                              int prioritize);
 
 int qp_output_close_stream(QprotoContext *qp, QprotoStream *st);
 

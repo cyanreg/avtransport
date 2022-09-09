@@ -194,13 +194,40 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(h, 64, pkt->pts);
     PQ_WBL(h, 64, pkt->duration);
-    PQ_WBL(h, 64, qp_buffer_get_data_len(pkt->data));
+    PQ_WBL(h, 32, qp_buffer_get_data_len(pkt->data));
 
     // TODO
     raptor = 0;
     PQ_WBL(h, 64, raptor);
 
     return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, pkt->data);
+}
+
+int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
+                              uint8_t descriptor_flags, uint16_t user,
+                              int prioritize)
+{
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+    uint16_t desc = QP_PKT_USER_DATA & 0xFF00;
+
+    desc |= descriptor_flags;
+
+    PQ_WBL(h, 16, desc);
+    PQ_WBL(h, 16, user);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 32, qp_buffer_get_data_len(data));
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 64, 0);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, data);
 }
 
 int qp_output_close(QprotoContext *qp)
