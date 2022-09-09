@@ -205,6 +205,7 @@ The layout of the data is as follows:
 | `R(224, 64)` | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.            |
 | `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                       |
 | `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
+| `u(64)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
 | `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 words.                           |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
