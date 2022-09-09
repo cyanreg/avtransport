@@ -23,6 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <string.h>
+
 #include "output.h"
 #include "utils.h"
 
@@ -51,7 +53,35 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     qp->dst.cb = out;
     qp->dst.dst = *dst;
 
-    return out->init(qp, &qp->dst.ctx, dst, opts);
+    int ret = out->init(qp, &qp->dst.ctx, dst, opts);
+    if (ret < 0)
+        return ret;
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+
+    PQ_WBL(h, 16, 0x5170);
+    PQ_WBL(h, 16, 0x0);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+
+    *h = strlen(PROJECT_NAME);
+    h++;
+
+    memcpy(h, PROJECT_NAME, h[-1]);
+    h += h[-1];
+
+    PQ_WBL(h, 16, PROJECT_VERSION_MAJOR);
+    PQ_WBL(h, 16, PROJECT_VERSION_MINOR);
+    PQ_WBL(h, 16, PROJECT_VERSION_MICRO);
+
+    uint64_t raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+    if (ret < 0)
+        qp->dst.cb->close(qp, &qp->dst.ctx);
+
+    return ret;
 }
 
 int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,

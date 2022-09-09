@@ -65,9 +65,11 @@ static int file_output(QprotoContext *ctx, PQOutputContext *pc,
     if (out != hdr_len)
         return QP_ERROR(errno);
 
-    out = fwrite(data, len, 1, pc->f);
-    if (out != len)
-        return QP_ERROR(errno);
+    if (buf) {
+        out = fwrite(data, len, 1, pc->f);
+        if (out != len)
+            return QP_ERROR(errno);
+    }
 
     return 0;
 }
