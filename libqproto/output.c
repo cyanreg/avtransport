@@ -60,7 +60,7 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     uint8_t hdr[372];
     uint8_t *h = hdr;
 
-    PQ_WBL(h, 16, 0x5170);
+    PQ_WBL(h, 16, QP_PKT_SESSION_START);
     PQ_WBL(h, 16, 0x0);
     PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
 
@@ -90,7 +90,9 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     uint8_t hdr[372];
     uint8_t *h = hdr;
     uint64_t raptor;
-    uint16_t desc = (0x01 << 8) | (pkt->type & 0xC0);
+    uint16_t desc = QP_PKT_STREAM_DATA & 0xFF00;
+
+    desc |= (pkt->type & 0xC0);
 
     PQ_WBL(h, 16, desc);
     PQ_WBL(h, 16, st->id);
