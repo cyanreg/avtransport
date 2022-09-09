@@ -23,4 +23,59 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <libqproto/input.h>
 
+#include "common.h"
+#include "libqproto/common.h"
+#include "input.h"
+
+struct PQInputContext {
+    FILE *f;
+};
+
+static int file_init(QprotoContext *ctx, PQInputContext **pc,
+                     QprotoInputSource *src, QprotoInputOptions *opts)
+{
+    PQInputContext *priv = malloc(sizeof(*priv));
+    if (!priv)
+        return QP_ERROR(ENOMEM);
+
+    priv->f = fopen(src->path, "r");
+    if (!priv->f) {
+        free(priv);
+        return QP_ERROR(errno);
+    }
+
+    *pc = priv;
+
+    return 0;
+}
+
+static int file_process(QprotoContext *qp, PQInputContext *pc)
+{
+
+
+    return 0;
+}
+
+static int file_close(QprotoContext *ctx, PQInputContext **pc)
+{
+    int ret = fclose((*pc)->f);
+    free(*pc);
+    *pc = NULL;
+    if (ret)
+        return QP_ERROR(errno);
+
+    return 0;
+}
+
+const PQInput pq_input_file = {
+    .name = "file",
+    .type = QPROTO_CONNECTION_FILE,
+    .init = file_init,
+    .process = file_process,
+    .close = file_close,
+};

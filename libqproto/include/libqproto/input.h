@@ -32,7 +32,7 @@ typedef struct QprotoInputSource {
     enum QprotoConnectionType type;
     union {
         int reverse;
-        const char *url;
+        const char *path;
         int fd;
         int (*read_input)(void *opaque, QprotoBuffer *data, int64_t offset);
     };
@@ -86,7 +86,7 @@ typedef struct QprotoInputOptions {
 } QprotoInputOptions;
 
 /* Open a Qproto stream or a file for reading. */
-int qp_input_open(QprotoContext *qp, QprotoInputSource *in,
+int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
                   QprotoInputCallbacks *cb,
                   QprotoInputOptions *opts);
 
@@ -105,5 +105,8 @@ int qp_input_process(QprotoContext *qp, int64_t timeout);
 /* Start a thread that will call qp_input_process as data becomes available.
  * Otherwise, qp_input_process() may be called manually. */
 int qp_input_start_thread(QprotoContext *qp);
+
+/* Close input and free all associated data with it. */
+int qp_input_close(QprotoContext *qp);
 
 #endif

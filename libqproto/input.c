@@ -25,10 +25,46 @@
 
 #include "input.h"
 
+extern const PQInput pq_input_file;
+
+static const PQInput *pq_input_list[] = {
+    &pq_input_file,
+
+    NULL,
+};
+
+int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
+                  QprotoInputCallbacks *cb,
+                  QprotoInputOptions *opts)
+{
+    const PQInput *in;
+    for (in = pq_input_list[0]; in; in++) {
+        if (in->type == src->type)
+            break;
+    }
+
+    if (!in)
+        return QP_ERROR(ENOTSUP);
+
+    qp->src.cb = in;
+    qp->src.src = *src;
+    qp->src.proc = *cb;
+
+    return in->init(qp, &qp->src.ctx, src, opts);
+}
+
 int qp_input_process(QprotoContext *qp, int64_t timeout)
 {
-    if (!qp->in.cb)
+    if (!qp->src.ctx)
         return QP_ERROR(EINVAL);
 
-    return qp->in.cb->process(qp, qp->in.ctx);
+    return qp->src.cb->process(qp, qp->src.ctx);
+}
+
+int qp_input_close(QprotoContext *qp)
+{
+    if (!qp->src.ctx)
+        return QP_ERROR(EINVAL);
+
+    return qp->src.cb->close(qp, &qp->src.ctx);
 }

@@ -71,7 +71,7 @@ static int sock_close(QprotoContext *ctx, PQOutputContext **pc)
     return 0;
 }
 
-const PQOutput pq_output_file = {
+const PQOutput pq_output_socket = {
     .name = "file",
     .type = QPROTO_CONNECTION_SOCKET,
     .init = sock_init,

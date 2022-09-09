@@ -103,4 +103,6 @@ int qp_output_feedback(QprotoContext *qp, void *opaque, QprotoStream *st,
                        uint32_t fec_corrections, uint32_t corrupt_packets,
                        uint32_t missing_packets);
 
+int qp_output_close(QprotoContext *qp);
+
 #endif

@@ -39,16 +39,16 @@ enum PQProtocolType {
 struct QprotoContext {
     struct {
         QprotoOutputDestination dst;
-        struct PQOutput *cb;
+        const struct PQOutput *cb;
         struct PQOutputContext *ctx;
-    } out;
+    } dst;
 
     struct {
         QprotoInputSource src;
-        struct PQInput *cb;
+        const struct PQInput *cb;
         struct PQInputContext *ctx;
         QprotoInputCallbacks proc;
-    } in;
+    } src;
 
     QprotoContextOptions opts;
 };

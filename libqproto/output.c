@@ -25,10 +25,38 @@
 
 #include "output.h"
 
+extern const PQOutput pq_output_file;
+extern const PQOutput pq_output_socket;
+
+static const PQOutput *pq_output_list[] = {
+    &pq_output_file,
+    &pq_output_socket,
+
+    NULL,
+};
+
 int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
                    QprotoOutputOptions *opts)
 {
+    const PQOutput *out;
+    for (out = pq_output_list[0]; out; out++) {
+        if (out->type == dst->type)
+            break;
+    }
 
+    if (!out)
+        return QP_ERROR(ENOTSUP);
 
-    return 0;
+    qp->dst.cb = out;
+    qp->dst.dst = *dst;
+
+    return out->init(qp, &qp->dst.ctx, dst, opts);
+}
+
+int qp_output_close(QprotoContext *qp)
+{
+    if (!qp->dst.ctx)
+        return QP_ERROR(EINVAL);
+
+    return qp->dst.cb->close(qp, &qp->dst.ctx);
 }
