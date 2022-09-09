@@ -97,7 +97,7 @@ typedef struct QprotoStream {
     enum QprotoCodecID codec_id;
     QprotoMetadata *meta;
 
-    enum QprotoStreamFlags stream_flags;
+    enum QprotoStreamFlags flags;
     QprotoBuffer *icc_profile;
     QprotoRational timebase;
     int64_t bitrate;
@@ -106,6 +106,9 @@ typedef struct QprotoStream {
 
     struct QprotoStream *related_to;
     struct QprotoStream *derived_from;
+
+    /* libqproto private stream data. Do not use. */
+    struct PQStreamPriv *private;
 } QprotoStream;
 
 typedef struct QprotoPacket {

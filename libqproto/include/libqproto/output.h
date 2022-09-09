@@ -77,12 +77,23 @@ typedef struct QprotoOutputOptions {
     uint64_t timeout;
 } QprotoOutputOptions;
 
+/* Open an output and immediately send a stream session packet */
 int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
                    QprotoOutputOptions *opts);
+
+/* Send an epoch packet and set the epoch to use. */
 int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch);
-int qp_output_add_stream(QprotoContext *qp, QprotoStream **st);
-int qp_output_add_font(QprotoContext *qp, QprotoBuffer *data, const char *name);
+
+/* Register a stream and allocate internal state for it.
+ * To automatically assign a stream ID, set id to 65536.
+ * If there's an existing stream with the same ID, will return NULL. */
+QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id);
+
+/* Update a stream, (re-)emmitting a stream registration packet.
+ * The id MUST match the one from qp_output_add_stream(). */
 int qp_output_update_stream(QprotoContext *qp, QprotoStream *st);
+
+int qp_output_add_font(QprotoContext *qp, QprotoBuffer *data, const char *name);
 
 /* Write data to output. Can be called from multiple threads at once.
  * If compiled with threads, actual output happens in a different thread. */

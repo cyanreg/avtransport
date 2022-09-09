@@ -24,6 +24,7 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
 
 #include "output.h"
 #include "utils.h"
@@ -82,6 +83,66 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
         qp->dst.cb->close(qp, &qp->dst.ctx);
 
     return ret;
+}
+
+QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
+{
+    QprotoStream *ret = NULL;
+    QprotoStream **new = realloc(qp->stream, sizeof(*new)*(qp->nb_stream + 1));
+    if (!new)
+        return NULL;
+    qp->stream = new;
+
+    ret = calloc(1, sizeof(**new));
+    if (!ret)
+        return NULL;
+
+    ret->private = calloc(1, sizeof(*ret->private));
+    if (!ret->private) {
+        free(ret);
+        return NULL;
+    }
+
+    new[qp->nb_stream] = ret;
+    qp->nb_stream++;
+
+    return ret;
+}
+
+int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
+{
+    int i;
+    for (i = 0; i < qp->nb_stream; i++)
+        if (qp->stream[i]->id == st->id)
+            break;
+    if (i == qp->nb_stream)
+        return QP_ERROR(EINVAL);
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_STREAM_REG);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 16, st->related_to ? st->related_to->id : st->id);
+    PQ_WBL(h, 16, st->derived_from ? st->derived_from->id : st->id);
+    PQ_WBL(h, 64, st->bitrate);
+    PQ_WBL(h, 64, st->flags);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    PQ_WBL(h, 32, st->codec_id);
+    PQ_WBL(h, 32, st->timebase.num);
+    PQ_WBL(h, 32, st->timebase.den);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    st->private->codec_id = st->codec_id;
+
+    return 0;
 }
 
 int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,

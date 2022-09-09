@@ -37,6 +37,10 @@ enum PQProtocolType {
     PQ_QUIC,
 };
 
+typedef struct PQStreamPriv {
+    enum QprotoCodecID codec_id;
+} PQStreamPriv;
+
 struct QprotoContext {
     struct {
         QprotoOutputDestination dst;
@@ -52,6 +56,9 @@ struct QprotoContext {
         QprotoInputCallbacks proc;
         atomic_uint seq;
     } src;
+
+    QprotoStream **stream;
+    int nb_stream;
 
     QprotoContextOptions opts;
 };
