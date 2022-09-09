@@ -86,6 +86,11 @@ void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len)
     return buffer->data;
 }
 
+size_t qp_buffer_get_data_len(QprotoBuffer *buffer)
+{
+    return buffer->len;
+}
+
 void qp_buffer_unref(QprotoBuffer **buffer)
 {
     QprotoBuffer *buf = *buffer;

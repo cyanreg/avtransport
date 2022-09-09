@@ -83,6 +83,11 @@ enum QprotoCodecID {
     QPROTO_CODEC_ASS = 65536,
 };
 
+enum QprotoFrameType {
+    QPROTO_KEYFRAME = 0x80,
+    QPROTO_S_FRAME = 0x40,
+};
+
 enum QprotoStreamFlags {
     QPROTO_STREAM_STILL_PICTURE = 1,
 };
@@ -104,8 +109,9 @@ typedef struct QprotoStream {
 } QprotoStream;
 
 typedef struct QprotoPacket {
-    QprotoBuffer *buffer;
+    QprotoBuffer *data;
 
+    enum QprotoFrameType type;
     int64_t pts;
     int64_t dts;
     int64_t duration;
@@ -133,6 +139,9 @@ int qp_buffer_reference(QprotoBuffer *buffer);
 
 /* Access the data in a buffer. Does not reference it. */
 void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len);
+
+/* Get the data length */
+size_t qp_buffer_get_data_len(QprotoBuffer *buffer);
 
 /* Unreference a reference counted buffer. */
 void qp_buffer_unref(QprotoBuffer **buffer);

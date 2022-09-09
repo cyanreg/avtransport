@@ -29,6 +29,7 @@
 #include <libqproto/common.h>
 #include <libqproto/input.h>
 #include <libqproto/output.h>
+#include <stdatomic.h>
 
 enum PQProtocolType {
     PQ_UNKNOWN,
@@ -41,6 +42,7 @@ struct QprotoContext {
         QprotoOutputDestination dst;
         const struct PQOutput *cb;
         struct PQOutputContext *ctx;
+        atomic_uint seq;
     } dst;
 
     struct {
@@ -48,6 +50,7 @@ struct QprotoContext {
         const struct PQInput *cb;
         struct PQInputContext *ctx;
         QprotoInputCallbacks proc;
+        atomic_uint seq;
     } src;
 
     QprotoContextOptions opts;

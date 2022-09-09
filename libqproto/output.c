@@ -24,6 +24,7 @@
  */
 
 #include "output.h"
+#include "utils.h"
 
 extern const PQOutput pq_output_file;
 extern const PQOutput pq_output_socket;
@@ -51,6 +52,28 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     qp->dst.dst = *dst;
 
     return out->init(qp, &qp->dst.ctx, dst, opts);
+}
+
+int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
+                                QprotoPacket *pkt)
+{
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+    uint16_t desc = (0x01 << 8) | (pkt->type & 0xC0);
+
+    PQ_WBL(h, 16, desc);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 64, pkt->pts);
+    PQ_WBL(h, 64, pkt->duration);
+    PQ_WBL(h, 64, qp_buffer_get_data_len(pkt->data));
+
+    // TODO
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, pkt->data);
 }
 
 int qp_output_close(QprotoContext *qp)

@@ -40,7 +40,7 @@ typedef struct PQOutput {
                 QprotoOutputDestination *dst, QprotoOutputOptions *opts);
 
     int (*output)(QprotoContext *ctx, PQOutputContext *pc,
-                  QprotoBuffer *data);
+                  uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf);
 
     int (*close)(QprotoContext *ctx, PQOutputContext **pc);
 } PQOutput;

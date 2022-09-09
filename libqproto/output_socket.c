@@ -56,10 +56,10 @@ static int sock_init(QprotoContext *ctx, PQOutputContext **pc,
 }
 
 static int sock_output(QprotoContext *ctx, PQOutputContext *pc,
-                       QprotoBuffer *pkt)
+                       uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf)
 {
     size_t len;
-    void *data = qp_buffer_get_data(pkt, &len);
+    void *data = qp_buffer_get_data(buf, &len);
 
 
     return 0;

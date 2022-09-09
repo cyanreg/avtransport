@@ -40,8 +40,10 @@ int qp_init(QprotoContext **qp, QprotoContextOptions *opts)
     if (opts)
         ctx->opts = *opts;
 
-    *qp = ctx;
+    atomic_init(&ctx->dst.seq, 0);
+    atomic_init(&ctx->src.seq, 0);
 
+    *qp = ctx;
     return 0;
 }
 
