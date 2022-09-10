@@ -32,15 +32,11 @@
 #include <errno.h>
 #include <stdbool.h>
 
-typedef struct QprotoContext  QprotoContext;
-typedef struct QprotoBuffer   QprotoBuffer;
-typedef struct QprotoMetadata QprotoMetadata;
+#include <libqproto/video.h>
+#include <libqproto/utils.h>
 
-/* Rational data type structure. */
-typedef struct QprotoRational {
-    int num;
-    int den;
-} QprotoRational;
+typedef struct QprotoContext  QprotoContext;
+typedef struct QprotoMetadata QprotoMetadata;
 
 enum QprotoConnectionType {
     /* Reverse connectivity for senders/receivers.
@@ -97,8 +93,10 @@ typedef struct QprotoStream {
     enum QprotoCodecID codec_id;
     QprotoMetadata *meta;
 
-    enum QprotoStreamFlags flags;
+    QprotoStreamVideoInfo video_info;
     QprotoBuffer *icc_profile;
+
+    enum QprotoStreamFlags flags;
     QprotoRational timebase;
     int64_t bitrate;
 
@@ -126,32 +124,5 @@ int qp_init(QprotoContext **qp, QprotoContextOptions *opts);
 /* Uninitialize a context, closing all connections and files gracefully,
  * and free all memory used. */
 void qp_close(QprotoContext **qp);
-
-/* Create a reference counted buffer from existing data. */
-QprotoBuffer *qp_buffer_create(void *data, size_t len,
-                               void *opaque, void (*free)(void *opaque, void *data));
-
-/* Default freeing callback for buffers that simply calls free(data) */
-void qp_buffer_default_free(void *opaque, void *data);
-
-/* Create and allocate a reference counted buffer. */
-QprotoBuffer *qp_buffer_alloc(size_t len);
-
-/* References the buffer. Returns the total references. */
-int qp_buffer_reference(QprotoBuffer *buffer);
-
-/* Access the data in a buffer. Does not reference it. */
-void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len);
-
-/* Get the data length */
-size_t qp_buffer_get_data_len(QprotoBuffer *buffer);
-
-/* Unreference a reference counted buffer. */
-void qp_buffer_unref(QprotoBuffer **buffer);
-
-/* All functions return negative values for errors.
- * This is a wrapper that's used to convert standard stderr values into
- * negatives. */
-#define QP_ERROR(err) (-(err))
 
 #endif
