@@ -39,10 +39,14 @@ typedef struct PQOutput {
     int (*init)(QprotoContext *ctx, PQOutputContext **pc,
                 QprotoOutputDestination *dst, QprotoOutputOptions *opts);
 
+    uint32_t (*max_pkt_len)(QprotoContext *ctx, PQOutputContext *pc);
+
     int (*output)(QprotoContext *ctx, PQOutputContext *pc,
                   uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf);
 
     int (*close)(QprotoContext *ctx, PQOutputContext **pc);
 } PQOutput;
+
+uint32_t pq_unlim_pkt_len(QprotoContext *ctx, PQOutputContext *pc);
 
 #endif

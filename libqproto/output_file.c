@@ -26,10 +26,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <libqproto/output.h>
 
 #include "common.h"
-#include "libqproto/common.h"
 #include "output.h"
 
 struct PQOutputContext {
@@ -89,6 +87,7 @@ const PQOutput pq_output_file = {
     .name = "file",
     .type = QPROTO_CONNECTION_FILE,
     .init = file_init,
+    .max_pkt_len = pq_unlim_pkt_len,
     .output = file_output,
     .close = file_close,
 };

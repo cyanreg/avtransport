@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "common.h"
 #include "output.h"
 #include "utils.h"
 
@@ -185,8 +186,15 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     uint8_t hdr[372];
     uint8_t *h = hdr;
     uint64_t raptor;
-    uint16_t desc = QP_PKT_STREAM_DATA & 0xFF00;
+    size_t data_len = qp_buffer_get_data_len(pkt->data);
+    if (data_len > UINT32_MAX)
+        return QP_ERROR(EINVAL);
 
+    uint32_t mtu = qp->dst.cb->max_pkt_len(qp, qp->dst.ctx);
+
+    uint16_t desc;
+    desc = QP_PKT_STREAM_DATA & 0xFF00;
+    desc |= data_len > mtu ? 0x20 : 0x0;
     desc |= (pkt->type & 0xC0);
 
     PQ_WBL(h, 16, desc);
@@ -194,7 +202,7 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(h, 64, pkt->pts);
     PQ_WBL(h, 64, pkt->duration);
-    PQ_WBL(h, 32, qp_buffer_get_data_len(pkt->data));
+    PQ_WBL(h, 32, data_len);
 
     // TODO
     raptor = 0;
@@ -288,4 +296,9 @@ int qp_output_close(QprotoContext *qp)
     int ret2 = qp->dst.cb->close(qp, &qp->dst.ctx);
 
     return ret < 0 ? ret : ret2;
+}
+
+uint32_t pq_unlim_pkt_len(QprotoContext *ctx, PQOutputContext *pc)
+{
+    return UINT32_MAX;
 }
