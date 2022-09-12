@@ -93,6 +93,9 @@ typedef struct QprotoStream {
     enum QprotoCodecID codec_id;
     QprotoMetadata *meta;
 
+    /* Duration in nanoseconds, if known. */
+    uint64_t duration;
+
     QprotoStreamVideoInfo video_info;
     QprotoBuffer *icc_profile;
 

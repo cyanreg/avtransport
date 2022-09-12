@@ -63,4 +63,7 @@ void qp_buffer_unref(QprotoBuffer **buffer);
  * negatives. */
 #define QP_ERROR(err) (-(err))
 
+#define QPMIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
+#define QPMAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
+
 #endif
