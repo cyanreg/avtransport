@@ -138,6 +138,28 @@ QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
     return ret;
 }
 
+static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
+{
+    if (!st->duration)
+        return 0;
+
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_STREAM_DURATION);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 64, st->duration);
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 32, 0);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+}
+
 int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 {
     if (!qp->dst.ctx)
@@ -174,7 +196,15 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 
     st->private->codec_id = st->codec_id;
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+    int ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+    if (ret < 0)
+        return ret;
+
+    ret = pq_output_stream_duration(qp, st);
+    if (ret < 0)
+        return ret;
+
+    return ret;
 }
 
 int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
