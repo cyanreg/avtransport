@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "libqproto/video.h"
 #include "output.h"
 #include "utils.h"
 
@@ -138,6 +139,63 @@ QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
     return ret;
 }
 
+static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
+{
+    QprotoStreamVideoInfo *vi = &st->video_info;
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+
+    PQ_WBL(h, 16, QP_PKT_STREAM_DURATION);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 32, vi->width);
+    PQ_WBL(h, 32, vi->height);
+    PQ_WBL(h, 32, vi->signal_aspect.num);
+    PQ_WBL(h, 32, vi->signal_aspect.den);
+    PQ_WBL(h, 8,  vi->subsampling);
+    PQ_WBL(h, 8,  vi->colorspace);
+    PQ_WBL(h, 8,  vi->bit_depth);
+    PQ_WBL(h, 8,  vi->interlaced);
+
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    PQ_WBL(h, 32, vi->gamma.num);
+    PQ_WBL(h, 32, vi->gamma.den);
+    PQ_WBL(h, 32, vi->framerate.num);
+    PQ_WBL(h, 32, vi->framerate.den);
+    PQ_WBL(h, 16, vi->limited_range);
+    PQ_WBL(h, 8,  vi->chroma_pos);
+    PQ_WBL(h, 8,  vi->primaries);
+    PQ_WBL(h, 8,  vi->transfer);
+    PQ_WBL(h, 8,  vi->matrix);
+    PQ_WBL(h, 8,  vi->has_mastering_primaries);
+    PQ_WBL(h, 8,  vi->has_luminance);
+    for (int i = 0; i < 16; i++) {
+        PQ_WBL(h, 32, vi->custom_matrix[i].num);
+        PQ_WBL(h, 32, vi->custom_matrix[i].den);
+    }
+    for (int i = 0; i < 6; i++) {
+        PQ_WBL(h, 32, vi->custom_primaries[i].num);
+        PQ_WBL(h, 32, vi->custom_primaries[i].den);
+    }
+    PQ_WBL(h, 32, vi->white_point[0].num);
+    PQ_WBL(h, 32, vi->white_point[0].den);
+    PQ_WBL(h, 32, vi->white_point[1].num);
+    PQ_WBL(h, 32, vi->white_point[1].den);
+    PQ_WBL(h, 32, vi->min_luminance.num);
+    PQ_WBL(h, 32, vi->min_luminance.den);
+    PQ_WBL(h, 32, vi->max_luminance.num);
+    PQ_WBL(h, 32, vi->max_luminance.den);
+
+    uint32_t raptor2[20] = { 0 };
+    for (int i = 0; i < 20; i++)
+        PQ_WBL(h, 32, raptor2[i]);
+
+    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
+}
+
 static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
 {
     if (!st->duration)
@@ -201,6 +259,10 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
         return ret;
 
     ret = pq_output_stream_duration(qp, st);
+    if (ret < 0)
+        return ret;
+
+    ret = pq_output_video_info(qp, st);
     if (ret < 0)
         return ret;
 

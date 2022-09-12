@@ -109,7 +109,7 @@ typedef struct QprotoStreamVideoInfo {
     enum QprotoColorspace colorspace;
     uint8_t bit_depth;
     uint8_t interlaced;
-    uint64_t gamma;
+    QprotoRational gamma;
     QprotoRational framerate;
     uint16_t limited_range;
     enum QprotoChromaPos chroma_pos;
@@ -118,13 +118,13 @@ typedef struct QprotoStreamVideoInfo {
     enum QprotoMatrix matrix;
     bool has_mastering_primaries;
 
-    uint64_t custom_matrix[16];
-    uint64_t custom_primaries[6];
-    uint64_t white_point[2];
+    QprotoRational custom_matrix[16];
+    QprotoRational custom_primaries[6];
+    QprotoRational white_point[2];
 
     bool has_luminance;
-    uint64_t min_luminance;
-    uint64_t max_luminance;
+    QprotoRational min_luminance;
+    QprotoRational max_luminance;
 } QprotoStreamVideoInfo;
 
 #endif

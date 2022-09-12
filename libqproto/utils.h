@@ -28,6 +28,32 @@
 
 #include "../config.h"
 
+#ifndef PQ_RB8
+#define PQ_RB8(x)               \
+    (((const uint8_t *)(x))[0])
+#endif
+
+#ifndef PQ_RL8
+#define PQ_RL8(x)               \
+    (((const uint8_t *)(x))[0])
+#endif
+
+#ifndef PQ_WB8
+#define PQ_WB8(p, val)             \
+    do {                           \
+        uint8_t d = (val);         \
+        ((uint8_t *)(p))[0] = (d); \
+    } while(0)
+#endif
+
+#ifndef PQ_WL8
+#define PQ_WL8(p, val)             \
+    do {                           \
+        uint8_t d = (val);         \
+        ((uint8_t *)(p))[0] = (d); \
+    } while(0)
+#endif
+
 #ifndef PQ_RB16
 #define PQ_RB16(x)                                                 \
     ((((const uint8_t *)(x))[0] << 8) | ((const uint8_t *)(x))[1])
@@ -48,7 +74,8 @@
 #endif
 
 #ifndef PQ_WL16
-#define PQ_WL16(p, val) do {            \
+#define PQ_WL16(p, val)                 \
+    do {                                \
         uint16_t d = (val);             \
         ((uint8_t *)(p))[0] = (d) >> 0; \
         ((uint8_t *)(p))[1] = (d) >> 8; \
