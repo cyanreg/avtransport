@@ -30,6 +30,7 @@ sources = [
 
     'input.c',
     'output.c',
+    'raptor.c',
 
     # Version
     vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],

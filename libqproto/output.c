@@ -31,6 +31,7 @@
 #include "output.h"
 #include "utils.h"
 #include "buffer.h"
+#include "raptor.h"
 
 extern const PQOutput pq_output_file;
 extern const PQOutput pq_output_socket;
@@ -80,9 +81,7 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     PQ_WBL(h, 16, PROJECT_VERSION_MAJOR);
     PQ_WBL(h, 16, PROJECT_VERSION_MINOR);
     PQ_WBL(h, 16, PROJECT_VERSION_MICRO);
-
-    uint64_t raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
     if (ret < 0)
@@ -98,7 +97,6 @@ int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch)
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_TIME_SYNC);
     PQ_WBL(h, 16, 0);
@@ -106,9 +104,7 @@ int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch)
     PQ_WBL(h, 64, epoch);
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 32, 0);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
 }
@@ -149,7 +145,6 @@ static int pq_generic_segment(QprotoContext *qp, uint8_t *header,
     size_t off = offset;
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
     uint8_t h7 = 0;
     QprotoBuffer tmp;
     int ret;
@@ -168,9 +163,7 @@ static int pq_generic_segment(QprotoContext *qp, uint8_t *header,
         PQ_WBL(h, 32, off);
         PQ_WBL(h, 32, QPMIN(len, max));
         PQ_WBL(h, 32, PQ_RB32(header + h7));
-
-        raptor = 0;
-        PQ_WBL(h, 64, raptor);
+        PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
         ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, &tmp);
         pq_buffer_quick_unref(&tmp);
@@ -197,7 +190,6 @@ static int pq_output_generic_data(QprotoContext *qp, QprotoStream *st,
     int ret;
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
     uint32_t seq;
     size_t data_len = qp_buffer_get_data_len(buf);
     if (data_len > UINT32_MAX)
@@ -213,10 +205,7 @@ static int pq_output_generic_data(QprotoContext *qp, QprotoStream *st,
     PQ_WBL(h, 32, QPMIN(data_len, mtu));
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 64, 0);
-
-    // TODO
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, buf);
     if (ret < 0)
@@ -235,7 +224,6 @@ static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
     QprotoStreamVideoInfo *vi = &st->video_info;
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_STREAM_DURATION);
     PQ_WBL(h, 16, st->id);
@@ -248,10 +236,7 @@ static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(h, 8,  vi->colorspace);
     PQ_WBL(h, 8,  vi->bit_depth);
     PQ_WBL(h, 8,  vi->interlaced);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
-
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
     PQ_WBL(h, 32, vi->gamma.num);
     PQ_WBL(h, 32, vi->gamma.den);
     PQ_WBL(h, 32, vi->framerate.num);
@@ -280,7 +265,8 @@ static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(h, 32, vi->max_luminance.num);
     PQ_WBL(h, 32, vi->max_luminance.den);
 
-    uint32_t raptor2[20] = { 0 };
+    uint32_t raptor2[20];
+    pq_calc_raptor_short(h, raptor2, 60, 20);
     for (int i = 0; i < 20; i++)
         PQ_WBL(h, 32, raptor2[i]);
 
@@ -294,7 +280,6 @@ static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_STREAM_DURATION);
     PQ_WBL(h, 16, st->id);
@@ -302,9 +287,7 @@ static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(h, 64, st->duration);
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 32, 0);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
 }
@@ -323,7 +306,6 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_STREAM_REG);
     PQ_WBL(h, 16, st->id);
@@ -332,16 +314,11 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(h, 16, st->derived_from ? st->derived_from->id : st->id);
     PQ_WBL(h, 64, st->bitrate);
     PQ_WBL(h, 64, st->flags);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
-
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
     PQ_WBL(h, 32, st->codec_id);
     PQ_WBL(h, 32, st->timebase.num);
     PQ_WBL(h, 32, st->timebase.den);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_160(h));
 
     st->private->codec_id = st->codec_id;
 
@@ -381,7 +358,6 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     int ret;
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
     uint32_t seq;
     size_t data_len = qp_buffer_get_data_len(pkt->data);
     if (data_len > UINT32_MAX)
@@ -401,10 +377,7 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     PQ_WBL(h, 64, pkt->pts);
     PQ_WBL(h, 64, pkt->duration);
     PQ_WBL(h, 32, QPMIN(data_len, mtu));
-
-    // TODO
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, pkt->data);
     if (ret < 0)
@@ -427,7 +400,6 @@ int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
     uint16_t desc = QP_PKT_USER_DATA & 0xFF00;
 
     desc |= descriptor_flags;
@@ -438,9 +410,7 @@ int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
     PQ_WBL(h, 32, qp_buffer_get_data_len(data));
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 64, 0);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, data);
 }
@@ -459,7 +429,6 @@ int qp_output_close_stream(QprotoContext *qp, QprotoStream *st)
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_EOS);
     PQ_WBL(h, 16, st->id);
@@ -467,9 +436,7 @@ int qp_output_close_stream(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 32, 0);
-
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
     free(st->private);
     free(st);
@@ -487,7 +454,6 @@ int qp_output_close(QprotoContext *qp)
 
     uint8_t hdr[372];
     uint8_t *h = hdr;
-    uint64_t raptor;
 
     PQ_WBL(h, 16, QP_PKT_EOS);
     PQ_WBL(h, 16, 0xFFFF);
@@ -495,11 +461,9 @@ int qp_output_close(QprotoContext *qp)
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 64, 0);
     PQ_WBL(h, 32, 0);
+    PQ_WBL(h, 64, pq_calc_raptor_224(h));
 
-    raptor = 0;
-    PQ_WBL(h, 64, raptor);
-    int ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
-
+    int ret  = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, NULL);
     int ret2 = qp->dst.cb->close(qp, &qp->dst.ctx);
 
     return ret < 0 ? ret : ret2;
