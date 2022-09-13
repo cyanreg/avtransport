@@ -103,7 +103,7 @@ typedef struct QprotoStream {
     QprotoRational timebase;
     int64_t bitrate;
 
-    QprotoBuffer *extradata;
+    QprotoBuffer *init_data;
 
     struct QprotoStream *related_to;
     struct QprotoStream *derived_from;

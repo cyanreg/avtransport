@@ -155,6 +155,7 @@ static int pq_generic_segment(QprotoContext *qp, uint8_t *header,
     int ret;
 
     do {
+        h = hdr;
         len_tgt = QPMIN(len, max);
 
         pq_buffer_quick_ref(&tmp, data, off, len_tgt);
@@ -182,7 +183,51 @@ static int pq_generic_segment(QprotoContext *qp, uint8_t *header,
         off += len_tgt;
     } while (len > 0);
 
-    return 0;
+    return ret;
+}
+
+static int pq_output_generic_data(QprotoContext *qp, QprotoStream *st,
+                                  QprotoBuffer *buf,
+                                  uint16_t desc_full, uint16_t desc_part,
+                                  uint16_t desc_seg, uint16_t desc_end)
+{
+    if (!buf)
+        return 0;
+
+    int ret;
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+    uint32_t seq;
+    size_t data_len = qp_buffer_get_data_len(buf);
+    if (data_len > UINT32_MAX)
+        return QP_ERROR(EINVAL);
+
+    uint32_t mtu = qp->dst.cb->max_pkt_len(qp, qp->dst.ctx);
+
+    seq = atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed);
+
+    PQ_WBL(h, 16, data_len > mtu ? desc_part : desc_full);
+    PQ_WBL(h, 16, st->id);
+    PQ_WBL(h, 32, seq);
+    PQ_WBL(h, 32, QPMIN(data_len, mtu));
+    PQ_WBL(h, 64, 0);
+    PQ_WBL(h, 64, 0);
+
+    // TODO
+    raptor = 0;
+    PQ_WBL(h, 64, raptor);
+
+    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, buf);
+    if (ret < 0)
+        return ret;
+
+    if (data_len > mtu)
+        ret = pq_generic_segment(qp, hdr, seq, st, buf,
+                                 QPMIN(data_len, mtu), mtu,
+                                 desc_seg, desc_end);
+
+    return ret;
 }
 
 static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
@@ -309,6 +354,12 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
         return ret;
 
     ret = pq_output_video_info(qp, st);
+    if (ret < 0)
+        return ret;
+
+    ret = pq_output_generic_data(qp, st, st->init_data,
+                                 QP_PKT_STREAM_INIT, QP_PKT_STREAM_INIT_PRT,
+                                 QP_PKT_STREAM_INIT_SEG, QP_PKT_STREAM_INIT_END);
     if (ret < 0)
         return ret;
 
