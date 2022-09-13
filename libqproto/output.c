@@ -363,6 +363,12 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
     if (ret < 0)
         return ret;
 
+    ret = pq_output_generic_data(qp, st, st->icc_profile,
+                                 QP_PKT_ICC, QP_PKT_ICC_PRT,
+                                 QP_PKT_ICC_SEG, QP_PKT_ICC_END);
+    if (ret < 0)
+        return ret;
+
     return ret;
 }
 
