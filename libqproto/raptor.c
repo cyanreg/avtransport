@@ -23,19 +23,23 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <string.h>
+
 #include "raptor.h"
 
-uint64_t pq_calc_raptor_224(uint8_t *data_end)
+uint64_t pq_calc_raptor_224(uint8_t *data)
 {
     return 0;
 }
 
-uint64_t pq_calc_raptor_160(uint8_t *data_end)
+uint64_t pq_calc_raptor_160(uint8_t *data)
 {
     return 0;
 }
 
-void pq_calc_raptor_short(uint8_t *data_end, uint32_t *code,
-                          size_t data_len_sym, uint8_t code_len_sym)
+uint8_t *pq_calc_raptor_short(uint8_t *data, uint8_t *code,
+                              size_t data_len, size_t code_len)
 {
+    memset(code, 0, code_len);
+    return code;
 }

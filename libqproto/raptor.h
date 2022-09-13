@@ -29,10 +29,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
-uint64_t pq_calc_raptor_224(uint8_t *data_end);
-uint64_t pq_calc_raptor_160(uint8_t *data_end);
+uint64_t pq_calc_raptor_224(uint8_t *data);
+uint64_t pq_calc_raptor_160(uint8_t *data);
 
-void pq_calc_raptor_short(uint8_t *data_end, uint32_t *code,
-                          size_t data_len_sym, uint8_t code_len_sym);
+uint8_t *pq_calc_raptor_short(uint8_t *data, uint8_t *code,
+                              size_t data_len, size_t code_len);
 
 #endif

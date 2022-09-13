@@ -26,6 +26,9 @@
 #ifndef LIBQPROTO_UTILS
 #define LIBQPROTO_UTILS
 
+#include <stdint.h>
+#include <string.h>
+
 #include "../config.h"
 
 #ifndef PQ_RB8
@@ -182,16 +185,63 @@
 #define PQ_WN(p, l, v) PQ_WL##l(p, v)
 #endif
 
-#define PQ_WBL(p, l, v) \
-    do {                \
-        PQ_WB##l(p, v); \
-        p += l >> 3;    \
+
+typedef struct PQByteStream {
+    uint8_t *start;
+    uint8_t *ptr;
+    uint8_t *end;
+} PQByteStream;
+
+#define PQ_INIT(bs, buf, len)    \
+    PQByteStream bs = {          \
+        .start = buf,            \
+        .ptr = buf,              \
+        .end = buf + len,        \
+    };
+
+#define PQ_RESET(bs)           \
+    do {                       \
+        (bs).ptr = (bs).start; \
     } while (0)
 
-#define PQ_WLL(p, l, v) \
-    do {                \
-        PQ_WL##l(p, v); \
-        p += l >> 3;    \
+#define PQ_WBL(bs, l, v)             \
+    do {                                           \
+        if ((((bs).ptr) + (l >> 3)) <= (bs).end) { \
+            PQ_WL##l((bs).ptr, (v));               \
+            (bs).ptr += l >> 3;                    \
+        }                                          \
     } while (0)
+
+#define PQ_WLL(bs, l, v)                           \
+    do {                                           \
+        if ((((bs).ptr) + (l >> 3)) <= (bs).end) { \
+            PQ_WL##l((bs).ptr, (v));               \
+            (bs).ptr += l >> 3;                    \
+        }                                          \
+    } while (0)
+
+#define PQ_WPD(bs, len)                                       \
+    do {                                                      \
+        memset((bs).ptr, 0, QPMIN(len, (bs).end - (bs).ptr)); \
+        (bs).ptr += QPMIN(len, (bs).end - (bs).ptr);          \
+    } while (0)
+
+#define PQ_WDT(bs, buf, len)                                    \
+    do {                                                        \
+        memcpy((bs).ptr, buf, QPMIN(len, (bs).end - (bs).ptr)); \
+        (bs).ptr += QPMIN(len, (bs).end - (bs).ptr);            \
+    } while (0)
+
+#define PQ_WST(bs, str, fixed_len)                      \
+    do {                                                \
+        PQ_WDT(bs, str, QPMIN(strlen(str), fixed_len)); \
+        PQ_WPD(bs, QPMAX(fixed_len - strlen(str), 0));  \
+    } while (0)
+
+#define PQ_GETLAST(bs, len)             \
+    (QPMAX((bs).start, (bs).ptr - len))
+
+#define PQ_WLEN(bs)         \
+    ((bs).ptr - (bs).start)
 
 #endif

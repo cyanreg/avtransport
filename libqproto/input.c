@@ -61,6 +61,16 @@ int qp_input_process(QprotoContext *qp, int64_t timeout)
     return qp->src.cb->process(qp, qp->src.ctx);
 }
 
+static int pq_input_demux(QprotoContext *qp, QprotoBuffer *buf)
+{
+    size_t len;
+    uint8_t *data = qp_buffer_get_data(buf, &len);
+
+
+
+    return 0;
+}
+
 int qp_input_close(QprotoContext *qp)
 {
     if (!qp->src.ctx)

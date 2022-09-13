@@ -56,7 +56,7 @@ static int file_output(QprotoContext *ctx, PQOutputContext *pc,
                        uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf)
 {
     size_t len;
-    void *data = qp_buffer_get_data(buf, &len);
+    uint8_t *data = qp_buffer_get_data(buf, &len);
 
     /* TODO: use io_uring */
     size_t out = fwrite(hdr, hdr_len, 1, pc->f);
