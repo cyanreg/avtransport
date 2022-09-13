@@ -30,6 +30,7 @@
 #include "libqproto/video.h"
 #include "output.h"
 #include "utils.h"
+#include "buffer.h"
 
 extern const PQOutput pq_output_file;
 extern const PQOutput pq_output_socket;
@@ -137,6 +138,51 @@ QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
     qp->nb_stream++;
 
     return ret;
+}
+
+static int pq_generic_segment(QprotoContext *qp, uint8_t *header,
+                              uint32_t header_pkt_seq, QprotoStream *st,
+                              QprotoBuffer *data, size_t offset, size_t max,
+                              uint16_t seg_desc, uint16_t term_desc)
+{
+    size_t len_tot = qp_buffer_get_data_len(data), len = len_tot, len_tgt;
+    size_t off = offset;
+    uint8_t hdr[372];
+    uint8_t *h = hdr;
+    uint64_t raptor;
+    uint8_t h7 = 0;
+    QprotoBuffer tmp;
+    int ret;
+
+    do {
+        len_tgt = QPMIN(len, max);
+
+        pq_buffer_quick_ref(&tmp, data, off, len_tgt);
+
+        PQ_WBL(h, 16, len < max ? term_desc : seg_desc);
+        PQ_WBL(h, 16, st->id);
+        PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+        PQ_WBL(h, 32, header_pkt_seq);
+        PQ_WBL(h, 32, len_tot);
+        PQ_WBL(h, 32, off);
+        PQ_WBL(h, 32, QPMIN(len, max));
+        PQ_WBL(h, 32, PQ_RB32(header + h7));
+
+        raptor = 0;
+        PQ_WBL(h, 64, raptor);
+
+        ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, &tmp);
+        pq_buffer_quick_unref(&tmp);
+        if (ret < 0) {
+            return ret;
+        }
+
+        h7 = (h7 + 1) % 28;
+        len -= len_tgt;
+        off += len_tgt;
+    } while (len > 0);
+
+    return 0;
 }
 
 static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
@@ -275,9 +321,11 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     if (!qp->dst.ctx)
         return QP_ERROR(EINVAL);
 
+    int ret;
     uint8_t hdr[372];
     uint8_t *h = hdr;
     uint64_t raptor;
+    uint32_t seq;
     size_t data_len = qp_buffer_get_data_len(pkt->data);
     if (data_len > UINT32_MAX)
         return QP_ERROR(EINVAL);
@@ -288,19 +336,29 @@ int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
     desc = QP_PKT_STREAM_DATA & 0xFF00;
     desc |= data_len > mtu ? 0x20 : 0x0;
     desc |= (pkt->type & 0xC0);
+    seq = atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed);
 
     PQ_WBL(h, 16, desc);
     PQ_WBL(h, 16, st->id);
-    PQ_WBL(h, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(h, 32, seq);
     PQ_WBL(h, 64, pkt->pts);
     PQ_WBL(h, 64, pkt->duration);
-    PQ_WBL(h, 32, data_len);
+    PQ_WBL(h, 32, QPMIN(data_len, mtu));
 
     // TODO
     raptor = 0;
     PQ_WBL(h, 64, raptor);
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, pkt->data);
+    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, h - hdr, pkt->data);
+    if (ret < 0)
+        return ret;
+
+    if (data_len > mtu)
+        ret = pq_generic_segment(qp, hdr, seq, st, pkt->data,
+                                 QPMIN(data_len, mtu), mtu,
+                                 QP_PKT_STREAM_SEG_DATA, QP_PKT_STREAM_SEG_END);
+
+    return 0;
 }
 
 int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,

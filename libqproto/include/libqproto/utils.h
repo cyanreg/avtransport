@@ -27,6 +27,7 @@
 #define LIBQPROTO_UTILS_HEADER
 
 #include <stddef.h>
+#include <stdint.h>
 
 /* Rational data type structure. */
 typedef struct QprotoRational {
@@ -37,17 +38,21 @@ typedef struct QprotoRational {
 typedef struct QprotoBuffer QprotoBuffer;
 
 /* Create a reference counted buffer from existing data. */
-QprotoBuffer *qp_buffer_create(void *data, size_t len,
-                               void *opaque, void (*free)(void *opaque, void *data));
+QprotoBuffer *qp_buffer_create(uint8_t *data, size_t len,
+                               void *opaque, void (*free_fn)(void *opaque, void *base_data));
 
-/* Default freeing callback for buffers that simply calls free(data) */
-void qp_buffer_default_free(void *opaque, void *data);
+/* Default freeing callback for buffers that simply calls free(base_data) */
+void qp_buffer_default_free(void *opaque, void *base_data);
 
 /* Create and allocate a reference counted buffer. */
 QprotoBuffer *qp_buffer_alloc(size_t len);
 
-/* References the buffer. Returns the total references. */
-int qp_buffer_reference(QprotoBuffer *buffer);
+/* References the buffer. Returns a new reference at the offset and length requested.
+ * If offset AND length are 0, references the whole buffer. */
+QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_t len);
+
+/* Returns the current numer of references */
+int qp_buffer_get_refcount(QprotoBuffer *buffer);
 
 /* Access the data in a buffer. Does not reference it. */
 void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len);
