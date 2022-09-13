@@ -387,7 +387,8 @@ The `pkt_flags` field MUST be interpreted in the following way:
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 [data segment](#stream-data-segmentation) packet with an ID of `0xfe` MUST be present to
-terminate the packet.
+terminate the packet. A packet with an `0x40` flag MUST NOT have a `data_length` equal
+to 0.
 
 The `data_compression` table is as follows:
 | Value | Name   | Description                                                   |
