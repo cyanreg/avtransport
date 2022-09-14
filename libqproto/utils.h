@@ -185,7 +185,6 @@
 #define PQ_WN(p, l, v) PQ_WL##l(p, v)
 #endif
 
-
 typedef struct PQByteStream {
     uint8_t *start;
     uint8_t *ptr;
@@ -243,5 +242,25 @@ typedef struct PQByteStream {
 
 #define PQ_WLEN(bs)         \
     ((bs).ptr - (bs).start)
+
+#define PQ_RDR(base_read, e, len)                                   \
+static inline uint ##len## _t pq_bs_read_##e##len(PQByteStream *bs) \
+{                                                                   \
+    uint ##len## _t v;                                              \
+    if ((bs)->ptr + (len >> 3) <= (bs)->end) {                      \
+        v = base_read##len((bs)->ptr);                              \
+        (bs)->ptr += len >> 3;                                      \
+    }                                                               \
+    return v;                                                       \
+}
+
+PQ_RDR(PQ_RB, b, 8)
+PQ_RDR(PQ_RL, l, 8)
+PQ_RDR(PQ_RB, b, 16)
+PQ_RDR(PQ_RL, l, 16)
+PQ_RDR(PQ_RB, b, 32)
+PQ_RDR(PQ_RL, l, 32)
+PQ_RDR(PQ_RB, b, 64)
+PQ_RDR(PQ_RL, l, 64)
 
 #endif
