@@ -220,10 +220,10 @@ typedef struct PQByteStream {
         }                                          \
     } while (0)
 
-#define PQ_WPD(bs, len)                                       \
-    do {                                                      \
-        memset((bs).ptr, 0, QPMIN(len, (bs).end - (bs).ptr)); \
-        (bs).ptr += QPMIN(len, (bs).end - (bs).ptr);          \
+#define PQ_WPD(bs, len)                                            \
+    do {                                                           \
+        memset((bs).ptr, 0, QPMIN(len >> 3, (bs).end - (bs).ptr)); \
+        (bs).ptr += QPMIN(len >> 3, (bs).end - (bs).ptr);          \
     } while (0)
 
 #define PQ_WDT(bs, buf, len)                                    \
@@ -232,10 +232,10 @@ typedef struct PQByteStream {
         (bs).ptr += QPMIN(len, (bs).end - (bs).ptr);            \
     } while (0)
 
-#define PQ_WST(bs, str, fixed_len)                      \
-    do {                                                \
-        PQ_WDT(bs, str, QPMIN(strlen(str), fixed_len)); \
-        PQ_WPD(bs, QPMAX(fixed_len - strlen(str), 0));  \
+#define PQ_WST(bs, str, fixed_len)                          \
+    do {                                                    \
+        PQ_WDT(bs, str, QPMIN(strlen(str), fixed_len));     \
+        PQ_WPD(bs, QPMAX(fixed_len - strlen(str), 0) << 3); \
     } while (0)
 
 #define PQ_GETLAST(bs, len)             \
