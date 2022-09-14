@@ -61,9 +61,21 @@ enum QprotoConnectionType {
     QPROTO_CONNECTION_CALLBACKS,
 };
 
+enum QPLogLevel {
+    QP_LOG_QUIET    = -(1 << 0),
+    QP_LOG_FATAL    =  (0 << 0),
+    QP_LOG_ERROR    = +(1 << 0),
+    QP_LOG_WARN     = +(1 << 1),
+    QP_LOG_INFO     = +(1 << 2),
+    QP_LOG_VERBOSE  = +(1 << 3),
+    QP_LOG_DEBUG    = +(1 << 4),
+    QP_LOG_TRACE    = +(1 << 5),
+};
+
 typedef struct QprotoContextOptions {
     void *log_opaque;
-    void (*log_cb)(void *log_opaque, const char *format, va_list args, int error);
+    void (*log_cb)(void *log_opaque, enum QPLogLevel level,
+                   const char *format, va_list args, int error);
 } QprotoContextOptions;
 
 enum QprotoCodecID {

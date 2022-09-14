@@ -23,6 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -148,4 +149,12 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
     free(dup);
 
     return 0;
+}
+
+void pq_log(void *ctx, enum QPLogLevel level, const char *fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    vprintf(fmt, args);
+    va_end(args);
 }
