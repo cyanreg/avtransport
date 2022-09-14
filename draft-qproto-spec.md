@@ -1009,6 +1009,7 @@ that was likely dropped.
 | Data    | Name                | Fixed value  | Description                                                           |
 |:--------|:--------------------|-------------:|:----------------------------------------------------------------------|
 | `b(16)` | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
+| `b(16)` | `reserved`          |              | Reserved for future use.                                              |
 | `u(32)` | `global_seq`        |              | The sequence number of the packet that is missing.                    |
 
 Stream control
