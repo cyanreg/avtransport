@@ -48,8 +48,9 @@ typedef struct QprotoInputCallbacks {
     void (*epoch_cb)(void *opaque, uint64_t epoch);
 
     void (*metadata_cb)(void *opaque, QprotoStream *st, QprotoMetadata *meta);
-    void (*stream_pkt_cb)(void *opaque, QprotoStream *st, QprotoPacket *pkt, int present);
-    void (*user_pkt_cb)(void *opaque, QprotoBuffer *data, uint16_t descriptor);
+    int (*stream_pkt_cb)(void *opaque, QprotoStream *st, QprotoPacket pkt, int present);
+    int (*user_pkt_cb)(void *opaque, QprotoBuffer *data, uint16_t descriptor,
+                       uint16_t user, uint32_t seq);
 
     void (*duration_cb)(void *opaque, int64_t duration_nsec);
     void (*stream_close_cb)(void *opaque, QprotoStream *st);
@@ -87,7 +88,7 @@ typedef struct QprotoInputOptions {
 
 /* Open a Qproto stream or a file for reading. */
 int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
-                  QprotoInputCallbacks *cb,
+                  QprotoInputCallbacks *cb, void *cb_opaque,
                   QprotoInputOptions *opts);
 
 /* Adjusts input options on the fly. */

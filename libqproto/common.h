@@ -55,6 +55,7 @@ struct QprotoContext {
         const struct PQInput *cb;
         struct PQInputContext *ctx;
         QprotoInputCallbacks proc;
+        void *cb_opaque;
         atomic_uint seq;
         uint64_t epoch;
     } src;
