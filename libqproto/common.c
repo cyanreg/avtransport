@@ -178,6 +178,18 @@ QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id)
     return ret;
 }
 
+QprotoStream *qp_find_stream(QprotoContext *qp, uint16_t id)
+{
+    int i;
+    for (i = 0; i < qp->nb_stream; i++) {
+        if (qp->stream[i]->id == id)
+            break;
+    }
+    if (i == qp->nb_stream)
+        return NULL;
+    return qp->stream[i];
+}
+
 void pq_log(void *ctx, enum QPLogLevel level, const char *fmt, ...)
 {
     va_list args;

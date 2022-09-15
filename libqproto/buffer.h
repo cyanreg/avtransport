@@ -47,4 +47,6 @@ int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
 
 void pq_buffer_quick_unref(QprotoBuffer *buf);
 
+int pq_buffer_offset(QprotoBuffer *buf, ptrdiff_t offset);
+
 #endif

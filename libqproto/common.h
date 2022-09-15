@@ -129,6 +129,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
                      uint8_t dst_ip[16], uint16_t *dst_port);
 
 QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id);
+QprotoStream *qp_find_stream(QprotoContext *qp, uint16_t id);
 
 #if defined(__GNUC__) || defined(__clang__)
 #define pq_printf_format(fmtpos, attrpos) __attribute__((__format__(__printf__, fmtpos, attrpos)))

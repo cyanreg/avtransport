@@ -24,7 +24,7 @@
  */
 
 #include "common.h"
-#include "libqproto/utils.h"
+#include "buffer.h"
 #include "utils.h"
 #include "input.h"
 
@@ -80,9 +80,12 @@ static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
     uint32_t codec_id = pq_bs_read_b32(bs);
     QprotoRational tb = { pq_bs_read_b32(bs), pq_bs_read_b32(bs) };
 
-    QprotoStream *st = qp_alloc_stream(qp, st_id);
-    if (!st)
-        return QP_ERROR(ENOMEM);
+    QprotoStream *st = qp_find_stream(qp, st_id);
+    if (!st) {
+        st = qp_alloc_stream(qp, st_id);
+        if (!st)
+            return QP_ERROR(ENOMEM);
+    }
 
     st->codec_id = codec_id;
     st->bitrate = bandwidth;
@@ -90,40 +93,54 @@ static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
     st->timebase = tb;
 
     if (st_id_rel != st_id) {
-        int i;
-        for (i = 0; i < qp->nb_stream; i++) {
-            if (qp->stream[i]->id == st_id_rel)
-                break;
-        }
-        if (i == qp->nb_stream)
+        QprotoStream *rel_stream = qp_find_stream(qp, st_id_rel);
+        if (!rel_stream)
             pq_log(qp, QP_LOG_ERROR, "Invalid related stream ID: %i\n", st_id_rel);
         else
-            st->related_to = qp->stream[i];
+            st->related_to = rel_stream;
     }
     if (st_id_der != st_id) {
-        int i;
-        for (i = 0; i < qp->nb_stream; i++) {
-            if (qp->stream[i]->id == st_id_der)
-                break;
-        }
-        if (i == qp->nb_stream)
+        QprotoStream *derived_stream = qp_find_stream(qp, st_id_der);
+        if (!derived_stream)
             pq_log(qp, QP_LOG_ERROR, "Invalid derived stream ID: %i\n", st_id_der);
         else
-            st->derived_from = qp->stream[i];
-    }
+            st->derived_from = derived_stream;
+     }
 
-    return qp->src.proc.stream_register_cb(qp->src.cb_opaque, st);
+    int ret = qp->src.proc.stream_register_cb(qp->src.cb_opaque, st);
+
+    return ret;
 }
 
 static int pq_input_stream_data(QprotoContext *qp, PQByteStream *bs,
                                 QprotoBuffer *buf)
 {
-    uint16_t desc = pq_bs_read_b16(bs);
-    uint16_t st = pq_bs_read_b16(bs);
+    uint8_t  desc = pq_bs_read_b16(bs);
+    uint16_t st_id = pq_bs_read_b16(bs);
+    pq_bs_skip(bs, 32);
+    int64_t pts = pq_bs_read_b64(bs); // TODO: fix
+    int64_t duration = pq_bs_read_b64(bs); // TODO: fix
+    uint32_t len = pq_bs_read_b32(bs);
 
+    if (len != qp_buffer_get_data_len(buf) - 36)
+        pq_log(qp, QP_LOG_ERROR, "Error: mismatching stream packet length field!\n");
 
+    pq_buffer_offset(buf, 36);
 
-    return 0;
+    QprotoStream *st = qp_find_stream(qp, st_id);
+    if (!st)
+        pq_log(qp, QP_LOG_ERROR, "Error: invalid stream ID!\n");
+
+    QprotoPacket pkt = { 0 };
+    pkt.pts = pts;
+    pkt.dts = pts;
+    pkt.duration = duration;
+    pkt.type = desc & 0xFF;
+    pkt.data = buf;
+
+    int ret = qp->src.proc.stream_pkt_cb(qp->src.cb_opaque, st, pkt, 1);
+
+    return ret;
 }
 
 static int pq_input_user_data(QprotoContext *qp, PQByteStream *bs,
@@ -137,8 +154,11 @@ static int pq_input_user_data(QprotoContext *qp, PQByteStream *bs,
     if (len != qp_buffer_get_data_len(buf) - 36)
         pq_log(qp, QP_LOG_ERROR, "Error: mismatching user packet length field!\n");
 
+    pq_buffer_offset(buf, 36);
+
     int ret = qp->src.proc.user_pkt_cb(qp->src.cb_opaque, buf, desc,
                                        user_field, seq);
+
     return ret;
 }
 

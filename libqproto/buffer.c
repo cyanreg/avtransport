@@ -100,6 +100,16 @@ QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_
     return ret;
 }
 
+int pq_buffer_offset(QprotoBuffer *buf, ptrdiff_t offset)
+{
+    if (buf->base_data + offset > buf->end_data)
+        return QP_ERROR(EINVAL);
+
+    buf->data += offset;
+
+    return 0;
+}
+
 int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
                         ptrdiff_t offset, int64_t len)
 {
