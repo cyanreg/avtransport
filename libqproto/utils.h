@@ -254,6 +254,12 @@ static inline uint ##len## _t pq_bs_read_##e##len(PQByteStream *bs) \
     return v;                                                       \
 }
 
+static inline void pq_bs_skip(PQByteStream *bs, size_t len)
+{
+    if (bs->ptr + (len >> 3) <= bs->end)
+        bs->ptr += len >> 3;
+}
+
 PQ_RDR(PQ_RB, b, 8)
 PQ_RDR(PQ_RL, l, 8)
 PQ_RDR(PQ_RB, b, 16)

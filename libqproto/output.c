@@ -105,29 +105,7 @@ int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch)
 
 QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
 {
-    if (!qp->dst.ctx)
-        return NULL;
-
-    QprotoStream *ret = NULL;
-    QprotoStream **new = realloc(qp->stream, sizeof(*new)*(qp->nb_stream + 1));
-    if (!new)
-        return NULL;
-    qp->stream = new;
-
-    ret = calloc(1, sizeof(**new));
-    if (!ret)
-        return NULL;
-
-    ret->private = calloc(1, sizeof(*ret->private));
-    if (!ret->private) {
-        free(ret);
-        return NULL;
-    }
-
-    new[qp->nb_stream] = ret;
-    qp->nb_stream++;
-
-    return ret;
+    return qp_alloc_stream(qp, id);
 }
 
 static int pq_output_generic_segment(QprotoContext *qp, uint8_t *header,

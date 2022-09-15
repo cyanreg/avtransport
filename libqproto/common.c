@@ -151,6 +151,33 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
     return 0;
 }
 
+QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id)
+{
+    if (!qp->dst.ctx)
+        return NULL;
+
+    QprotoStream *ret = NULL;
+    QprotoStream **new = realloc(qp->stream, sizeof(*new)*(qp->nb_stream + 1));
+    if (!new)
+        return NULL;
+    qp->stream = new;
+
+    ret = calloc(1, sizeof(**new));
+    if (!ret)
+        return NULL;
+
+    ret->private = calloc(1, sizeof(*ret->private));
+    if (!ret->private) {
+        free(ret);
+        return NULL;
+    }
+
+    new[qp->nb_stream] = ret;
+    qp->nb_stream++;
+
+    return ret;
+}
+
 void pq_log(void *ctx, enum QPLogLevel level, const char *fmt, ...)
 {
     va_list args;

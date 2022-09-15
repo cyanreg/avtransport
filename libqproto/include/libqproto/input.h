@@ -42,7 +42,7 @@ typedef struct QprotoInputSource {
 
 /* List of callbacks. All are optional. */
 typedef struct QprotoInputCallbacks {
-    void (*stream_register_cb)(void *opaque, QprotoStream *st);
+    int (*stream_register_cb)(void *opaque, QprotoStream *st);
     void (*stream_update_cb)(void *opaque, QprotoStream *st);
     void (*font_register_cb)(void *opaque, QprotoBuffer *data, const char *name);
     void (*epoch_cb)(void *opaque, uint64_t epoch);

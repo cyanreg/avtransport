@@ -65,6 +65,56 @@ int qp_input_process(QprotoContext *qp, int64_t timeout)
     return qp->src.cb->process(qp, qp->src.ctx);
 }
 
+static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
+                               QprotoBuffer *buf)
+{
+    pq_bs_skip(bs, 16);
+    uint16_t st_id = pq_bs_read_b16(bs);
+    pq_bs_skip(bs, 32);
+    pq_bs_skip(bs, 32);
+    uint16_t st_id_rel = pq_bs_read_b16(bs);
+    uint16_t st_id_der = pq_bs_read_b16(bs);
+    uint64_t bandwidth = pq_bs_read_b64(bs);
+    uint64_t flags = pq_bs_read_b64(bs);
+    pq_bs_skip(bs, 64);
+    uint32_t codec_id = pq_bs_read_b32(bs);
+    QprotoRational tb = { pq_bs_read_b32(bs), pq_bs_read_b32(bs) };
+
+    QprotoStream *st = qp_alloc_stream(qp, st_id);
+    if (!st)
+        return QP_ERROR(ENOMEM);
+
+    st->codec_id = codec_id;
+    st->bitrate = bandwidth;
+    st->flags = flags;
+    st->timebase = tb;
+
+    if (st_id_rel != st_id) {
+        int i;
+        for (i = 0; i < qp->nb_stream; i++) {
+            if (qp->stream[i]->id == st_id_rel)
+                break;
+        }
+        if (i == qp->nb_stream)
+            pq_log(qp, QP_LOG_ERROR, "Invalid related stream ID: %i\n", st_id_rel);
+        else
+            st->related_to = qp->stream[i];
+    }
+    if (st_id_der != st_id) {
+        int i;
+        for (i = 0; i < qp->nb_stream; i++) {
+            if (qp->stream[i]->id == st_id_der)
+                break;
+        }
+        if (i == qp->nb_stream)
+            pq_log(qp, QP_LOG_ERROR, "Invalid derived stream ID: %i\n", st_id_der);
+        else
+            st->derived_from = qp->stream[i];
+    }
+
+    return qp->src.proc.stream_register_cb(qp->src.cb_opaque, st);
+}
+
 static int pq_input_stream_data(QprotoContext *qp, PQByteStream *bs,
                                 QprotoBuffer *buf)
 {
@@ -89,8 +139,6 @@ static int pq_input_user_data(QprotoContext *qp, PQByteStream *bs,
 
     int ret = qp->src.proc.user_pkt_cb(qp->src.cb_opaque, buf, desc,
                                        user_field, seq);
-    qp_buffer_unref(&buf);
-
     return ret;
 }
 
@@ -110,13 +158,19 @@ static int pq_input_demux(QprotoContext *qp, QprotoBuffer *buf)
     PQ_RESET(bs);
 
     /* Filter out the non-flag, non-arbitrary bits. */
-    uint8_t desc_h = desc >> 8;
+    uint16_t desc_h = desc & 0xFF00;
     if (!(desc_h & (QP_PKT_STREAM_DATA & 0xFF00)))
         pq_input_stream_data(qp, &bs, buf);
     if (!(desc_h & (QP_PKT_USER_DATA & 0xFF00)))
         pq_input_user_data(qp, &bs, buf);
 
+    switch (desc) {
+    case QP_PKT_STREAM_REG:
+        pq_input_stream_reg(qp, &bs, buf);
+        break;
+    }
 
+    qp_buffer_unref(&buf);
 
     return 0;
 }
