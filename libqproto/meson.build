@@ -40,6 +40,7 @@ sources = [
 
 if get_option('input').auto()
     sources += 'input_file.c'
+    sources += 'reorder.c'
 endif
 
 if get_option('output').auto()

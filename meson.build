@@ -24,6 +24,18 @@ else
     conf.set('CONFIG_BIG_ENDIAN', 0)
 endif
 
+if get_option('input').auto()
+    conf.set('CONFIG_INPUT', 1)
+else
+    conf.set('CONFIG_INPUT', 0)
+endif
+
+if get_option('output').auto()
+    conf.set('CONFIG_OUTPUT', 1)
+else
+    conf.set('CONFIG_OUTPUT', 0)
+endif
+
 cc = meson.get_compiler('c')
 
 subdir('libqproto')
