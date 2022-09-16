@@ -31,6 +31,7 @@
 #include <netdb.h>
 
 #include "common.h"
+#include "reorder.h"
 
 int qp_init(QprotoContext **qp, QprotoContextOptions *opts)
 {
@@ -51,6 +52,8 @@ int qp_init(QprotoContext **qp, QprotoContextOptions *opts)
 void qp_close(QprotoContext **qp)
 {
     if (qp) {
+        pq_reorder_uninit(*qp);
+
         free(*qp);
         *qp = NULL;
     }

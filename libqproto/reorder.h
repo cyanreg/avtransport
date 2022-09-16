@@ -38,16 +38,16 @@ enum PQPktChainStatus {
 
 int pq_reorder_init(QprotoContext *qp, size_t max_buffer);
 
-/**
- * Returns the final assembled packet if available.
- */
-PQPktChain *pq_reorder_packets(QprotoContext *qp, QprotoBuffer *data,
-                               enum PQPacketType type);
+int pq_reorder_push_pkt(QprotoContext *qp, QprotoBuffer *data,
+                        ptrdiff_t offset, uint32_t seq,
+                        enum PQPacketType type);
 
 enum PQPktChainStatus pq_chain_get_status(QprotoContext *qp, PQPktChain *chain);
 
 QprotoBuffer *pq_chain_get_buffer(QprotoContext *qp, PQPktChain *chain);
 
 void pq_reorder_pop_chain(QprotoContext *qp, PQPktChain *chain);
+
+void pq_reorder_uninit(QprotoContext *qp);
 
 #endif

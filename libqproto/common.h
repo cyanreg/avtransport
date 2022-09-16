@@ -58,8 +58,7 @@ struct QprotoContext {
         void *cb_opaque;
         atomic_uint seq;
         uint64_t epoch;
-        struct PQBufEntry *buf;
-        int buf_elements;
+        struct PQReorder *rctx;
     } src;
 
     QprotoStream **stream;
