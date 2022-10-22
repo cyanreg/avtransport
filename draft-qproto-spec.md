@@ -840,7 +840,13 @@ at the start of files to notify implementations of stream lengths.
 If `stream_id` is 0xFFFF, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
 
-The duration MUST be the total amount of time the screen will be presented.<br/>
+If the value of `total_duration` is 0, the entire packet MUST be ignored.
+In such cases, implementations are free to attempt to measure stream duration
+via other methods.<br/>
+This makes it possible to write stream duration packets at the start of
+streams, and amend them later.
+
+The duration MUST be the total amount of time the stream will be presented.<br/>
 Any negative duration MUST be excluded.
 
 The duration MUST be treated as metadata rather than a hard limit.
