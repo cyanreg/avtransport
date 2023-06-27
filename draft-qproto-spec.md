@@ -170,6 +170,8 @@ packets as often as necessary to prevent clock drift and jitter.
 In case of a zero `ts_clock_hz`, the sender MUST be assumed to not provide a clock signal reference, and the timestamps
 MUST be interpreted as being, in the receiver's understanding, realtime.
 
+The `ts_clock_id` is a unique 8-bit identifier for the clock. It allows to associate a clock with a given stream.
+
 The `epoch` is a global, *optional* field that receivers MAY interpret.<br/>
 The `epoch` value MUST NOT change between packets.<br/>
 The `epoch` is an absolute starting point, for all timestamps in
@@ -196,7 +198,8 @@ The layout of the data is as follows:
 | `R(224, 64)` | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.            |
 | `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                       |
 | `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
-| `u(64)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
+| `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.          |
+| `u(56)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
 | `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 words.                           |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
@@ -892,6 +895,10 @@ match a video frame's duration.
 Implementations SHOULD use the derived `ts_clock_freq` field from
 [Time synchronization](#time-synchronization-packets) packets
 to perform jitter compensation of stream timestamps.
+
+The `ts_clock_id` of the [stream registration](#stream-registration-packets) packets
+is matched up to the `ts_clock_id` of [time synchronization](#time-synchronization-packets)
+packets. If a match is not found, then no processing must be done.
 
 **NOTE**: The only valid targets to perform timestamp jitter compensation are
 streams with the same timebase, which MUST BE equal to the inverse of `ts_clock_freq`.
