@@ -132,6 +132,12 @@ static int pq_input_stream_data(QprotoContext *qp, PQByteStream *bs,
         pq_log(qp, QP_LOG_ERROR, "Error: invalid stream ID!\n");
 
     QprotoPacket pkt = { 0 };
+
+
+
+
+
+    
     pkt.pts = pts;
     pkt.dts = pts;
     pkt.duration = duration;

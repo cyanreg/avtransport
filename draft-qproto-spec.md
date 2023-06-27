@@ -1,5 +1,5 @@
-Qproto protocol
-===============
+# Qproto protocol
+
 The Qproto protocol is a new standardized mechanism for multimedia transport and
 storage. This protocol aims to be a simple, reliable and robust low-overhead method
 that borrows design decisions from other protocols and aims to be generic,
@@ -19,8 +19,8 @@ This specifications provides support for streaming over different protocols:
 See the [streaming](#streaming) section for information on how to adapt Qproto for such
 use-cases.
 
-Specification conventions
--------------------------
+### Specification conventions
+
 Throughout all of this document, bit sequences are always *big-endian*, and numbers
 are always *two's complement*.<br/>
 Keywords given in all caps are to be interpreted as stated in IETF BCP 14.
@@ -48,8 +48,8 @@ The `global_seq` number SHOULD start at 0, and MUST be incremented by 1 each tim
 after a packet has been sent. Once at `0xffffffff`, it MUST overflow back to `0x0`.
 This overflow MUST be handled by the receiver.
 
-Protocol overview
------------------
+### Protocol overview
+
 On a high-level, Qproto is a thin packetized wrapper around codec, metadata and
 user packets and provides context and error resilience, as well as defining a
 standardized way to transmit such data between clients.
@@ -81,7 +81,6 @@ of how they're allocated.
 |           Descriptor | Packet type                                           |
 |---------------------:|:------------------------------------------------------|
 |               0x5170 | [Session start](#session-start-packets)               |
-|                  0x1 | [Time synchronization](#time-synchronization-packets) |
 |                  0x2 | [Stream registration](#stream-registration-packets)   |
 |           0x3 to 0x7 | [Stream initialization data](#init-data-packets)      |
 |                  0x8 | [Video information](#video-info-packets)              |
@@ -94,6 +93,7 @@ of how they're allocated.
 |         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)            |
 |         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)      |
 |     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
+|     0x0300 to 0x03FF | [Time synchronization](#time-synchronization-packets) |
 |     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
 |               0xF000 | [Stream duration](#stream-duration-packets)           |
 |               0xFFFF | [End of stream](#end-of-stream)                       |
@@ -104,8 +104,16 @@ of how they're allocated.
 |               0x8003 | [Resend](#resend)                                     |
 |               0x8004 | [Stream control](#stream-control)                     |
 
-Session start packets
----------------------
+## Packet description
+
+This section lists the syntax of each individual packet type and specifies its purpose,
+and rules about its usage.
+
+Special considerations and suggestions which need to be taken into account in a streaming
+scenario are described in the [streaming](#streaming) section.
+
+### Session start packets
+
 Session start packets allow receivers to plausibly identify a stream of bytes
 as a Qproto session. The syntax is as follows:
 
@@ -127,68 +135,51 @@ bytewise-identical.
 Implementations are allowed to test the first 4 bytes to detect a Qproto stream.<br/>
 The Raptor code is, like for all packets, allowed to be ignored.
 
-Time synchronization packets
-----------------------------
-Time synchronization packets are optional multi-purpose packets which signal
-a context for all timestamps in all streams, using a field called `epoch`,
-which denotes an absolute basis in time.<br/>
-Using these packets, the following can be acheived:
+### Time synchronization packets
 
- - If `epoch` is in the future, enables synchronized playback across multiple
-   unconnected devices.
- - If `epoch` is in the past, the field can be used as metadata to indicate
-   the date at which it was started.
- - If such a packet is present in a stream, with an `epoch` in the past,
-   permits for latency measurements.
+Time synchronization packets are optional dual-purpose packets which signal:
 
-All of these uses **rely** on having devices with accurately synchronized clocks.<br/>
-Users are allowed to ignore time synchronization packets in all cases,
-including if clock synchronization is not guaranteed.
+ - A context for all timestamps in all streams, using a field called `epoch`,
+   which denotes an absolute basis in time, to allow for optional receiver
+   synchronization.
+ - A device clock counter (`ts_clock_seq`) and clock frequency (`ts_clock_freq`),
+   to allow for accurate clock cycle synchronization of packet timestamps,
+   stream synchronization, and to enable clock drift and jitter compensation.
 
-Device clock synchronization is outside of the scope of this document.
-Users can use the Network Time Protocol (NTP), specified in IETF RFC 5905,
-or any other protocol to synchronize clocks, or simply assume they are already
-synchronized.
-
-The layout of the data in a `time_sync` packet is as follows:
+The structure of the data in a `time_sync` packet is as follows:
 
 | Data         | Name              | Fixed value | Description                                                                                                                           |
 |:-------------|:------------------|------------:|:--------------------------------------------------------------------------------------------------------------------------------------|
-| `b(16)`      | `time_descriptor` |         0x1 | Indicates this is a time synchronization packet.                                                                                      |
-| `b(16)`      | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
+| `b(16)`      | `data_descriptor` |    0x03\*\* | Indicates this is a stream data packet. The lower 8 bits are used as the `ts_clock_id` field.                                         |
+| `b(16)`      | `ts_clock_hz2`    |             | Value, in multiples of 1/65536 Hz, to be added to `ts_clock_hz` to make `ts_clock_freq`.                                              |
 | `u(32)`      | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                         |
 | `u(64)`      | `epoch`           |             | Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).  |
-| `b(96)`      | `padding`         |             | Padding, reserved for future use. MUST be 0x0.                                                                                        |
+| `u(64)`      | `ts_clock_seq`    |             | Monotonically incrementing counter, incremented once for each cycle of the device clock, at a rate of `ts_clock_freq` per second.     |
+| `u(32)`      | `ts_clock_hz`     |             | Hertz value of the device clock. MAY be set to zero to indicate the source is unclocked.                                              |
 | `R(224, 64)` | `raptor`          |             | Raptor code to correct and verify the contents of the packet.                                                                         |
 
-This signals the `epoch`, the absolute starting point, for all timestamps in
+The `ts_clock_freq` field is equal to `ts_clock_freq = ts_clock_hz + ts_clock_hz2/65536`.
+Implementations SHOULD prefer to use integer math, and instead have the `ts_clock_freq` in increments of 1/65536 Hz.
+
+The field defines a strictly monotonic clock signal with a rate of `ts_clock_freq`, which atomically increments a counter,
+`ts_clock_seq` on the **rising** edge of the waveform.
+
+To interpret the clock, read the [jitter compensation](#jitter-compensation) section. Senders SHOULD send time synchronization
+packets as often as necessary to prevent clock drift and jitter.
+
+In case of a zero `ts_clock_hz`, the sender MUST be assumed to not provide a clock signal reference, and the timestamps
+MUST be interpreted as being, in the receiver's understanding, realtime.
+
+The `epoch` is a global, *optional* field that receivers MAY interpret.<br/>
+The `epoch` value MUST NOT change between packets.<br/>
+The `epoch` is an absolute starting point, for all timestamps in
 all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970
 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
 
-To use such packets, users SHOULD perform the following:
+The possible applications of the `epoch` field are described in the [epoch](#epoch) section.
 
- - First, convert all stream timestamps (`pts` values from [stream data packets](#data-packets))
-   from the `timebase` given in [stream registration packets](#stream-registration-packets) into
-   a timebase of 1 nanosecond (numerator of `1`, denominator of `1000000000`).
- - Then, add the value of `epoch` to each of the converted `pts` values.
+### Stream registration packets
 
-The new `pts` timestamps now represent an absolute point in time.
-Users can measure the current time, and compare. If the new `pts` values
-are larger than the current time, users CAN wait and delay presentation of the
-content to such a time, if possible.<br/>
-In the context of a real-time stream, the latency between sender and receiver
-is simply the difference between the new `pts` values and the current time.
-
-If the new `pts` values are in the past, then users SHOULD present new
-packets as if no time synchronization packets have been sent, or MAY
-shorten the `duration` field to prevent future packets queueing up.
-
-In all cases, users SHOULD interpret the `epoch` field as `date` metadata,
-indicating when the Qproto session was made, overwriting any existing field
-in [metadata packets](#metadata-packets).
-
-Stream registration packets
----------------------------
 This packet is used to signal stream registration.
 
 The layout of the data is as follows:
@@ -248,8 +239,8 @@ If bits `0x8`, `0x20`, `0x40`, `0x80`, `0x100`, `0x200` are all unset,
 Once registered, streams generally need an [init data packet](#init-data-packets),
 unless the `stream_flags & 0x1` bit is set.
 
-Generic data packet structure
------------------------------
+### Generic data packet structure
+
 To ease parsing, the specification defines a common template for data that
 requires no special treatment.
 
@@ -314,8 +305,8 @@ This MUST always be *greater than zero*.
 The `header_7` field can be used to reconstruct the header of the very first
 packet in order to determine the timestamps and data type.
 
-Init data packets
------------------
+### Initialization data packets
+
 Codecs generally require a one-off special piece of data needed to initialize them.<br/>
 To provide this data to receivers, the templates defined in the
 [generic data packet structure](#generic-data-packet-structure) MUST be used,
@@ -339,8 +330,8 @@ If so, when reading a file, it MUST stop, otherwise in a live scenario,
 it MUST send an `unsupported` [control data](#control-data), if such a
 connection is open.
 
-Stream data packets
--------------------
+### Stream data packets
+
 The data packets indicate the start of a stream packet, which may be fragmented into
 more [stream data segments](#stream-data-segmentation). It is laid out as follows:
 
@@ -349,7 +340,7 @@ more [stream data segments](#stream-data-segmentation). It is laid out as follow
 | `b(16)`            | `data_descriptor` |    0x01\*\* | Indicates this is a stream data packet. The lower 8 bits are used as the `pkt_flags` field.                                                            |
 | `b(16)`            | `stream_id`       |             | Indicates the stream ID for this packet.                                                                                                               |
 | `u(32)`            | `global_seq`      |             | Monotonically incrementing per-packet global sequence number.                                                                                          |
-| `i(64)`            | `pts`             |             | Indicates the presentation timestamp for when this frame SHOULD be presented at. MAY be combined with the `epoch` field for synchronized presentation. |
+| `i(64)`            | `pts`             |             | Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the [Timestamps](#timestamps) section.   |
 | `u(64)`            | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                                   |
 | `u(32)`            | `data_length`     |             | The size of the data in this packet.                                                                                                                   |
 | `R(224, 64)`       | `data_raptor`     |             | Raptor code to correct and verify the previous contents of the packet.                                                                                 |
@@ -358,37 +349,25 @@ more [stream data segments](#stream-data-segmentation). It is laid out as follow
 For information on the layout of the specific codec-specific packet data, consult
 the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
-The final timestamp in nanoseconds is given by the following formula:
-`pts*timebase.num*1000000000/timebase.den`.
-Users MAY ensure that this overflows gracefully after ~260 years.
-
-The same formula is also valid for the `dts` field in [H.264](#h264-encapsulation).
-
-Implementations MUST feed the packets to the decoder in an incrementing order
-according to the `dts` field.
-
-Negative `pts` values ARE allowed, and implementations MUST decode such frames,
-however MUST NOT present any such frames unless `pts + duration` is greater than 0,
-in which case they MUST present the data required for that duration.<br/>
-This enables removal of extra samples added during audio compression, as well
-as permitting video segments taken out of context from a stream to bundle
-all dependencies (other frames) required for their presentation.
-
 The `pkt_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                                                                                                                  |
 |-----------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|             0x80 | Packet contains a keyframe which may be decoded standalone.                                                                                                                                                  |
-|             0x40 | Packet contains an S-frame, which may be used in stead of a keyframe to begin decoding from, with graceful presentation degradation, or may be used to switch between different variants of the same stream. |
+|             0xE0 | Top 3 bits to be interpreted using the `frame_type` table below.                                                                                                                                             |
 |             0x20 | Packet is incomplete and requires extra [data segments](#stream-data-segmentation) to be completed.                                                                                                          |
-|             0x10 | Packet contains the second field of an interlaced frame. See the `interlacing` table in [video information packets](#video-info-packets).                                                                    |
 |              0x8 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
-|              0x7 | Bottom 3 bits to be interpreted using the `data_compression` table below.                                                                                                                                    |
+|              0x3 | Bottom 2 bits to be interpreted using the `data_compression` table below.                                                                                                                                    |
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 [data segment](#stream-data-segmentation) packet with an ID of `0xfe` MUST be present to
 terminate the packet. A packet with an `0x40` flag MUST NOT have a `data_length` equal
 to 0.
+
+The `frame_type` table is as follows:
+| Value | Name   | Description                                                   |
+|------:|:-------|:--------------------------------------------------------------|
+|   0x0 | `KEY`  | Packet data contains a keyframe, able to be decoded standalone.                                   |
+|   0x1 | `S`    | Packet data contains a scalable frame, able to be decoded standalone with acceptable degradation. |
 
 The `data_compression` table is as follows:
 | Value | Name   | Description                                                   |
@@ -396,8 +375,8 @@ The `data_compression` table is as follows:
 |   0x0 | `NONE` | Packet data is uncompressed.                                  |
 |   0x1 | `ZSTD` | Packet data is compressed with Zstandard from IETF RFC 8878.  |
 
-Stream data segmentation
-------------------------
+### Stream data segmentation
+
 Packets can be split up into separate chunks that may be received out of order
 and assembled. This allows transmission over switched networks with a limited MTU,
 or prevents very large packets from one stream interfering with another stream.
@@ -428,8 +407,8 @@ Implementations SHOULD discard any packets and segments that arrive after their
 presentation time. Implementations SHOULD drop any packets and segments
 that arrive with unrealistically far away presentation times.
 
-FEC grouping
-------------
+### FEC grouping
+
 Whilst it's possible to send uncontextualized FEC data backing individual
 packets, for most applications, this is only feasible for very high bitrate
 single streams, as modern FEC algorithms are highly optimized for packet erasure
@@ -480,8 +459,8 @@ To perform FEC on a group, first, append all packets, including their headers,
 for all streams in incrementing order, removing packets which do not concern the
 streams included, and then use the FEC data signalled.
 
-Stream FEC segments
--------------------
+### Stream FEC segments
+
 Stream data packets and segments MAY be backed by FEC data packets.
 The structure used for FEC segments follows the `generic_fec_structure` template
 from the [generic data packet structure](#generic-data-packet-structure) section,
@@ -505,8 +484,8 @@ set in the `fec_covered` field. This MUST be greater than zero, unless
 The same lifetime and duplication rules apply for FEC segments as they do for
 regular data segments.
 
-Index packets
--------------
+### Index packets
+
 The index packet contains available byte offsets of nearby keyframes and the
 distance to the next index packet.
 
@@ -538,8 +517,8 @@ correct subtitle presentation, or long duration still pictures like slideshows.
 
 When streaming, `idx_pos`, `prev_idx` and `next_idx` MUST be `0`.
 
-Metadata packets
-----------------
+### Metadata packets
+
 The metadata packets can be sent for the overall session, or for a specific
 `stream_id` substream. The data is contained in structures templated in the
 [generic data packet structure](#generic-data-packet-structure),
@@ -603,8 +582,8 @@ The `language` field MUST be formatted as a **subtag**, according to the
 The `date` field MUST be formatted according to the
 [IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
 
-ICC profile packets
--------------------
+### ICC profile packets
+
 Embedding of ICC profiles for accurate color reproduction is supported.<br/>
 The following structure MUST be followed:
 
@@ -646,8 +625,8 @@ The `icc_compression` table is as follows:
 characteristics values in [video info packets](#video-info-packets). The matrix
 coefficients are still required for RGB conversion.
 
-Font data packets
------------------
+### Font data packets
+
 Subtitles may often require custom fonts. Qproto supports embedding of fonts
 for use by subtitles.<br/>
 The following structure MUST be followed:
@@ -692,8 +671,8 @@ The `font_compression` table is as follows:
 
 *WOFF2* fonts SHOULD NOT be compressed, as they're already compressed.
 
-Video info packets
-------------------
+### Video info packets
+
 Video info packets contain everything needed to correctly interpret a video
 stream after decoding.
 
@@ -781,22 +760,21 @@ To illustrate:
 |    Between lines |              **1** |        **2** |              |
 |                2 | `Luma pixel` **5** |        **6** | `Luma pixel` |
 
-Video orientation packets
--------------------------
+### Video orientation packets
+
 A standardized way to transmit orientation information is as follows:
 
 | Data                    | Name               | Fixed value  | Description                                                                                  |
 |:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
 | `b(16)`                 | `ori_descriptor`   |         0x40 | Indicates this is a video orientation packet.                                                |
-| `b(16)`                 | `stream_id`        |              | A free to use field for user data.                                                           |
+| `b(16)`                 | `stream_id`        |              | The stream ID for which to associate the video information with.                             |
 | `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
-| `u(64)`                 | `pts`              |              | The length of the user data.                                                                 |
 | `r(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.        |
-| `u(32)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
+| `b(96)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
 | `R(224, 64)`            | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                         |
 
-Orientation packets take effect **on** the `pts` value signalled. Hence,
-video orientation packets MUST be sent **before** a stream data packet.
+Video orientation packets SHOULD be taken into account and be applied upon
+the next video packet in the bitstream, but not before.
 The value MUST persist until a new orientation packet is sent, OR the stream
 is reinitialized.
 
@@ -806,8 +784,8 @@ The value MAY be quantized to a modulus of `π/2` (`rotation.num/rotation.den % 
 BY the receiver, in order to permit simple transposition for presentation rather
 than rotation.
 
-User data packets
------------------
+### User data packets
+
 The user-specific data packet is laid out as follows:
 
 | Data                    | Name               | Fixed value  | Description                                                                                  |
@@ -823,8 +801,8 @@ The user-specific data packet is laid out as follows:
 If the user data needs FEC and segmentation, users SHOULD instead use the
 [custom codec packets](#custom-codec-encapsulation).
 
-Stream duration packets
------------------------
+### Stream duration packets
+
 If the session length is well-known, implementations can reserve space up-front
 at the start of files to notify implementations of stream lengths.
 
@@ -851,8 +829,8 @@ Any negative duration MUST be excluded.
 
 The duration MUST be treated as metadata rather than a hard limit.
 
-End of stream
--------------
+### End of stream
+
 The EOS packet is laid out as follows:
 
 | Data         | Name             | Fixed value  | Description                                                                                             |
@@ -875,11 +853,151 @@ allowed to gracefully wait for a reconnection.
 If encountered in a file, the implementation MAY regard any data present afterwards
 as padding and ignore it. Qproto files MUST NOT be concatenated.
 
-Streaming
-=========
+## Timestamps
 
-UDP
----
+Qproto supports high resolution timestamps, with a maximum resolution of
+465.66129 **picoseconds**. Furthermore, the reliability of the timestamps
+can be assured through jitter compenstation.
+
+**All** time-related fields (`pts`, `dts` and `duration`) have a corresponding
+`timebase` field with which to interpret them.
+
+The mathematical expression to calculate the time `t`, in seconds, of a timestamp
+or duration `v` and a *rational* timebase `b` is the following:
+
+```
+t = v * b.num / b.den
+```
+
+The timebase of [stream data](#stream-data-packets), [stream duration](#stream-duration-packets),
+or any other packets with an explicit `stream_id` field is given in the
+[Stream registration](#stream-registration-packets) packets for the appropriate stream.
+
+The time `t` of a `pts` field corresponds to the exact time when a packet must be
+instantaneously released from a decoding buffer, and instantaneously presented.
+
+The time `t` of a `dts` field corresponds to the exact time when a packet must be
+input into a synchronous 1-in-1-out decoder.
+
+The time `t` of a `duration` field corresponds to the exact time difference between
+two **consecutive** frames of audio or video. If the field is non-zero, this assertion
+MUST hold. If this condition is violated, the behavior is **UNSPECIFIED**.
+
+For subtitle frames, the `duration` field's definition is different. It specifies the
+time during which the contents of the current packet MUST be presented. It MAY not
+match a video frame's duration.
+
+### Jitter compensation
+
+Implementations SHOULD use the derived `ts_clock_freq` field from
+[Time synchronization](#time-synchronization-packets) packets
+to perform jitter compensation of stream timestamps.
+
+**NOTE**: The only valid targets to perform timestamp jitter compensation are
+streams with the same timebase, which MUST BE equal to the inverse of `ts_clock_freq`.
+Jitter compensation is otherwise undefined.
+
+As the `ts_clock_freq` field defines a strictly monotonic clock signal with a rate of `ts_clock_freq`,
+which atomically increments a counter, `ts_clock_seq` on the **rising** edge of the waveform, this
+can be used to compensate the `pts`, `dts` and `duration` values of stream packets.
+
+The following is a suggestion for implementations:
+ - Initialize a phase-locked loop, with a frequency equal to `ts_clock_freq`.
+ - Initialize a counter, `local_ts_clock_seq`, to be equal to `ts_clock_seq`.
+ - Increment the `local_ts_clock_seq` on the **rising** edge of the local oscillator's waveform.
+
+On every received packet:
+ - Measure the difference `Δ` between `pts` and `local_ts_clock_seq`.
+ - If `Δ` is small, assume `pts` has jitter, and replace it with `local_ts_clock_seq`
+ - Otherwise, add `Δ` to `local_ts_clock_seq`.
+
+This is a very simple example which depends on the local receiver oscillator simply being
+*more precise* than the transmitter's oscillator.
+
+### Negative times
+
+The time `t` of a `pts` MAY be negative. Packets with a negative timestamps
+**MUST** be decoded, but **NOT** presented.
+
+For audio packets, this corresponds to the internal algorithmic delay between
+the first output sample and the correct sample being available.</br>
+For audio, the time between `t` and `0` MAY not be a multiple of the
+audio data's `duration` of a packet. Implementations MUST nevertheless remove any
+decoded samples with a negative time.
+
+Negative `pts` values ARE allowed, and implementations MUST decode such frames,
+however MUST NOT present any such frames unless `pts + duration` is greater than 0,
+in which case they MUST present the data required for that duration.<br/>
+This enables removal of extra samples added during audio compression, as well
+as permitting video segments taken out of context from a stream to bundle
+all dependencies (other frames) required for their presentation.
+
+### Epoch
+
+The `epoch` field of [time synchronization](#time-synchronization-packets) packets
+is an optional field.
+
+If non-zero, it MUST signal the exact time, in nanoseconds, since
+00:00:00 UTC on 1 January 1970, according to the transmitter's wall clock time,
+**of the stream starting**. If a start time is not known, it MUST be zero.
+Once a stream has started, it MUST NOT be changed.
+
+The user is allowed to handle the field in the following ways:
+
+| Action          | Description                                                                                              |
+|:----------------|:---------------------------------------------------------------------------------------------------------|
+| Use as metadata | The `epoch` field is used to override [metadata](#metadata-packets)'s `date` field.                      |
+| Ignore          | The field is completely ignored.                                                                         |
+| Stream duration | The field is used to measure the total time the stream has been operational.                             |
+| Stream latency  | The field is used to measure latency.                                                                    |
+| Synchronization | The field is used to synchronize several unconnected receivers.                                          |
+
+By default, implementations MUST use the field as metadata, if present. Otherwise, they SHOULD ignore it.
+
+Users are free to use the field to measure the stream duration by converting the `t` of the `pts`
+field of any stream's packet to nanoseconds (multiply by `1000000000`), rounding it, and subtracting
+it from the `epoch` time (`t - epoch`).
+
+Users are also free to measure the latency in a similar way, by measuring their current wallclock time
+`t'`, and using `Δ = t' - t - epoch`. `Δ` will be the delay in nanoseconds.
+
+Finally, if **explicitly requested**, implementations are allowed to *delay* presentation by interpreting
+a negative latency value of `Δ` as a delay.</br>
+**NOTE**: packets which had a negative timestamp before MUST still be dropped to permit for correct decoding
+and presentation.
+
+Note that `stream latency` and `synchronization` actions depend on all devices having accurately synchronized
+clocks. This protocol does not guarantee, nor specify this, as this is outside its scope. Users can use the
+Network Time Protocol (NTP), specified in IETF RFC 5905, or any other protocol to synchronize clocks, or
+simply assume all device are already synchronized.
+
+## Streaming
+
+This section describes and suggests behavior for realtime Qproto streams.
+
+In general, implementations **SHOULD** emit the following packet types
+at the given frequencies.
+
+|                                           Packet type | Suggested frequency  | Reason                                                                                          |
+|------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
+|               [Session start](#session-start-packets) | Target startup delay | To identify a stream as Qproto without ambiguity.                                               |
+| [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
+|   [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
+|      [Stream initialization data](#init-data-packets) | Target startup delay | To initialize decoding of stream packets.                                                       |
+|              [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
+|                   [ICC profile](#icc-profile-packets) | Target startup delay | Optional ICC profile for correct video presentation.                                            |
+|       [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
+|                         [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
+|                        Stream data or segment packets | Always               |                                                                                                 |
+|                    [Stream FEC](#stream-fec-segments) | FEC length           | Optional FEC data for stream data.                                                              |
+|                       [User data](#user-data-packets) | As necessary         | Optional user data packets.                                                                     |
+|                       [End of stream](#end-of-stream) | Once                 | Finalizes a stream.                                                                             |
+
+In particular, [time synchronization](#time-synchronization-packets) packets should
+be sent as often as necessary if timestamp jitter avoidance is a requirement.
+
+### UDP
+
 To adapt Qproto for streaming over UDP is trivial - simply send the data packets
 as-is specified, with no changes required. The sender implementation SHOULD
 resent [session start](#session-start-packets),
@@ -905,8 +1023,8 @@ Data packets MAY be padded by appending random data or zeroes after the `packet_
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
 
-UDP-Lite
---------
+### UDP-Lite
+
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
 available throughout the network.<br/>
 When using UDP-Lite, the same considerations as [UDP](#udp) apply.
@@ -917,8 +1035,8 @@ coverage MUST be used, where only the header (8 bytes) is checksummed.
 Implementations SHOULD insert adequate FEC information, and receivers SHOULD
 correct data with it, as packet integrity guarantees are off.
 
-QUIC
-----
+### QUIC
+
 Qproto tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
 as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.
@@ -937,15 +1055,15 @@ packets to be sent without fragmentation.
 
 Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
 
-Reverse signalling
-==================
+## Reverse signalling
+
 The following section is a specification on how reverse signalling, where
 receiver(s) communicates with the sender, should be formatted.
 
 The same port an method MUST be used for reverse signalling as the sender's.
 
-Control data
-------------
+### Control data
+
 The receiver can use this type to return errors and more to the sender in a
 one-to-one transmission. The following syntax is used:
 
@@ -988,8 +1106,8 @@ The following error values are allowed:
 |   0x1 | Generic error.                                                                                                                                                                                                                                                                   |
 |   0x2 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
-Feedback
---------
+### Feedback
+
 The following packet MAY be sent from the receiver to the sender.
 
 | Data    | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
@@ -1007,8 +1125,8 @@ Receivers SHOULD send out a new statistics packet every time a count was updated
 If the descriptor of the dropped packed is known, receivers SHOULD set it
 in `dropped_type`, and senders SHOULD resend it as soon as possible.
 
-Resend
-------
+### Resend
+
 The following packet MAY be sent to ask the client to resend a recent packet
 that was likely dropped.
 
@@ -1018,8 +1136,8 @@ that was likely dropped.
 | `b(16)` | `reserved`          |              | Reserved for future use.                                              |
 | `u(32)` | `global_seq`        |              | The sequence number of the packet that is missing.                    |
 
-Stream control
---------------
+### Stream control
+
 The receiver can use this type to subscribe or unsubscribe from streams.
 
 | Data    | Name               | Fixed value  | Description                                                                      |
@@ -1031,21 +1149,19 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
 all packets necessary to initialize the stream MUST be resent.
 
-Reverse user data
------------------
+### Reverse user data
+
+This is identical to the [user data packets](#user-data-packets), but with a different ID.
+
 | Data                    | Name               | Fixed value  | Description                                                                                  |
 |:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
 | `b(16)`                 | `user_descriptor`  |     0x50\*\* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
 | `u(32)`                 | `user_data_length` |              | The length of the user data.                                                                 |
 | `b(user_data_length*8)` | `user_data`        |              | The user data itself.                                                                        |
 
-This is identical to the [user data packets](#user-data-packets), but with a different ID.
+## Addendum
 
-Addendum
-========
-
-Codec encapsulation
--------------------
+### Codec encapsulation
 The following section lists the supported codecs, along with their encapsulation
 definitions.
 
@@ -1130,7 +1246,7 @@ The [stream initialization data](#init-data-packets) payload MUST contain an
 `AVCDecoderConfigurationRecord` structure, as defined in `ISO 14496-15`.
 
 The `packet_data` MUST contain the following elements in order:
- - A single `b(64)` element with the `DTS`, the time, which indicates when a
+ - A single `b(64)` element with the `dts`, the time, which indicates when a
    frame should be input into a synchronous 1-in-1-out decoder.
  - Raw `NAL` elements, concatenated.
 
