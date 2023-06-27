@@ -11,13 +11,55 @@ to solve issues with current other containers, like timestamp rounding, lack of 
 inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
 and rigid overseeing organizations.
 
-This specifications provides support for streaming over different protocols:
- - [UDP](#udp)
- - [UDP-Lite](#udp-lite)
- - [QUIC](#quic)
+## Table of Contents
 
-See the [streaming](#streaming) section for information on how to adapt Qproto for such
-use-cases.
+- [Qproto protocol](#qproto-protocol)
+    - [Specification conventions](#specification-conventions)
+    - [Protocol overview](#protocol-overview)
+  - [Packet description](#packet-description)
+    - [Session start packets](#session-start-packets)
+    - [Time synchronization packets](#time-synchronization-packets)
+    - [Stream registration packets](#stream-registration-packets)
+    - [Generic data packet structure](#generic-data-packet-structure)
+    - [Initialization data packets](#initialization-data-packets)
+    - [Stream data packets](#stream-data-packets)
+    - [Stream data segmentation](#stream-data-segmentation)
+    - [FEC grouping](#fec-grouping)
+    - [Stream FEC segments](#stream-fec-segments)
+    - [Index packets](#index-packets)
+    - [Metadata packets](#metadata-packets)
+    - [ICC profile packets](#icc-profile-packets)
+    - [Font data packets](#font-data-packets)
+    - [Video info packets](#video-info-packets)
+    - [Video orientation packets](#video-orientation-packets)
+    - [User data packets](#user-data-packets)
+    - [Stream duration packets](#stream-duration-packets)
+    - [End of stream](#end-of-stream)
+  - [Timestamps](#timestamps)
+    - [Jitter compensation](#jitter-compensation)
+    - [Negative times](#negative-times)
+    - [Epoch](#epoch)
+  - [Streaming](#streaming)
+    - [UDP](#udp)
+    - [UDP-Lite](#udp-lite)
+    - [QUIC](#quic)
+  - [Reverse signalling](#reverse-signalling)
+    - [Control data](#control-data)
+    - [Feedback](#feedback)
+    - [Resend](#resend)
+    - [Stream control](#stream-control)
+    - [Reverse user data](#reverse-user-data)
+  - [Addendum](#addendum)
+    - [Codec encapsulation](#codec-encapsulation)
+      - [Opus encapsulation](#opus-encapsulation)
+      - [AAC encapsulation](#aac-encapsulation)
+      - [AV1 encapsulation](#av1-encapsulation)
+      - [H264 encapsulation](#h264-encapsulation)
+      - [Dirac/VC-2](#diracvc-2)
+      - [ASS encapsulation](#ass-encapsulation)
+      - [Raw audio encapsulation](#raw-audio-encapsulation)
+      - [Raw video encapsulation](#raw-video-encapsulation)
+      - [Custom codec encapsulation](#custom-codec-encapsulation)
 
 ### Specification conventions
 
@@ -1182,7 +1224,7 @@ definitions.
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
 
-### Opus encapsulation
+#### Opus encapsulation
 
 For Opus encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1215,7 +1257,7 @@ Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the
 first stream packet's `pts` value to a negative value as defined in
 [data packets](#data-packets) to remove the required number of prepended samples.
 
-### AAC encapsulation
+#### AAC encapsulation
 
 For AAC encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1231,7 +1273,7 @@ Implementations **MUST** set the first stream packet's `pts` value to a negative
 value as defined in [data packets](#data-packets) to remove the required number
 of prepended samples.
 
-### AV1 encapsulation
+#### AV1 encapsulation
 
 For AV1 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1243,7 +1285,7 @@ consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
 
-### H264 encapsulation
+#### H264 encapsulation
 
 For H264 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1259,7 +1301,7 @@ The `packet_data` MUST contain the following elements in order:
 
 `Annex-B` formatted packets MUST NOT be used.
 
-### Dirac/VC-2
+#### Dirac/VC-2
 
 For Dirac or VC-2 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1272,7 +1314,7 @@ MUST have bit `0x1` set.
 The `packet_data` MUST contain raw sequences,
 with one sequence being a picture.
 
-### ASS encapsulation
+#### ASS encapsulation
 
 For ASS encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1307,7 +1349,7 @@ order in which to reconstruct the original ASS file.
 
 Multiple packets with the same `pts` and `dts` ARE permitted.
 
-### Raw audio encapsulation
+#### Raw audio encapsulation
 
 For raw audio encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1354,7 +1396,7 @@ The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest
 **power of two**, with the padding in the **least significant bits**. That means
 that 24 bit samples are coded as 32 bits, with the data contained in the topmost 24 bits.
 
-### Raw video encapsulation
+#### Raw video encapsulation
 
 For raw video encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
@@ -1411,7 +1453,7 @@ unsupported.
 This structure is flexible enough to permit zero-copy or one-copy streaming
 of video from most sources.
 
-### Custom codec encapsulation
+#### Custom codec encapsulation
 
 A special section is dedicated for custom codec storage. While potentially useful
 for experimentation and for specialized usecases, users of such are invited to submit
