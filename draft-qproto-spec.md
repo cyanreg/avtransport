@@ -1358,14 +1358,14 @@ laid out in the following way:
 
 | Data                  | Name               | Description                                                                                                                             |
 |:----------------------|:-------------------|:----------------------------------------------------------------------------------------------------------------------------------------|
-| `u(32)                | `rv_width`         | The number of horizontal pixels the video stream contains.                                                                              |
-| `u(32)                | `rv_height`        | The number of vertical pixels the video stream contains.                                                                                |
-| `u(8)                 | `rv_components`    | The number of components the video stream contains.                                                                                     |
-| `u(8)                 | `rv_planes`        | The number of planes the video components are placed in.                                                                                |
-| `u(8)                 | `rv_bpp`           | The number of bits for each **individual** component pixel.                                                                             |
-| `u(8)                 | `rv_ver_subsample` | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
-| `u(8)                 | `rv_hor_subsample` | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
-| `b(32)                | `rv_flags`         | Flags for the video stream.                                                                                                             |
+| `u(32)`               | `rv_width`         | The number of horizontal pixels the video stream contains.                                                                              |
+| `u(32)`               | `rv_height`        | The number of vertical pixels the video stream contains.                                                                                |
+| `u(8)`                | `rv_components`    | The number of components the video stream contains.                                                                                     |
+| `u(8)`                | `rv_planes`        | The number of planes the video components are placed in.                                                                                |
+| `u(8)`                | `rv_bpp`           | The number of bits for each **individual** component pixel.                                                                             |
+| `u(8)`                | `rv_ver_subsample` | Vertical subsampling factor. Indicates how many bits to shift from `rv_height` to get the plane height. MUST be 0 if video is RGB.      |
+| `u(8)`                | `rv_hor_subsample` | Horizontal subsampling factor. Indicates how many bits to shift from `rv_width` to get the plane width. MUST be 0 if video is RGB.      |
+| `b(32)`               | `rv_flags`         | Flags for the video stream.                                                                                                             |
 | `u(rc_planes*32)`     | `rv_plane_stride`  | For each plane, the total number of bytes **per horizontal line**, including any padding.                                               |
 | `u(rv_components*8)`  | `rc_plane`         | Specifies the plane index that the component belongs in.                                                                                |
 | `u(rv_components*8)`  | `rc_stride`        | Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.       |
