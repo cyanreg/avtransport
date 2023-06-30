@@ -164,8 +164,9 @@ as a Qproto session. The syntax is as follows:
 | `b(16)`      | `session_descriptor` |      0x5170 | Indicates this is a Qproto session (`Qp` in hex).                          |
 | `b(16)`      | `session_version`    |         0x0 | Indicates the session version. This document describes version `0x0`.      |
 | `u(32)`      | `global_seq`         |             | Monotonically incrementing per-packet global sequence number.              |
-| `b(8)`       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 13. |
-| `b(104)`     | `producer_name`      |             | 13 byte UTF-8 string, containing the name of the producer.                 |
+| `b(8)`       | `session_flags`      |             | Session flags.                                                             |
+| `b(8)`       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 12. |
+| `b(96)`      | `producer_name`      |             | 12 byte UTF-8 string, containing the name of the producer.                 |
 | `b(16)`      | `producer_major`     |             | Major version of the producer.                                             |
 | `b(16)`      | `producer_minor`     |             | Minor version of the producer.                                             |
 | `b(16)`      | `producer_micro`     |             | Micro (patch) version of the producer.                                     |
@@ -173,6 +174,12 @@ as a Qproto session. The syntax is as follows:
 
 Multiple session packets MAY be present in a session, but MUST remain
 bytewise-identical.
+
+The `session_flags` field MUST be interpreted in the following way:
+
+| Bit position set | Description                                                                                                  |
+|-----------------:|:-------------------------------------------------------------------------------------------------------------|
+|              0x1 | Indicates session is capable and ready to receive bidirectional data packets.                                |
 
 Implementations are allowed to test the first 4 bytes to detect a Qproto stream.<br/>
 The Raptor code is, like for all packets, allowed to be ignored.
@@ -577,37 +584,28 @@ with the following descriptors:
 |        0xD | `generic_segment_structure` |     Final segment for incomplete metadata |
 |        0xE |     `generic_fec_structure` |              FEC segment for the metadata |
 
-The actual metadata MUST be stored using BARE, IETF `draft-devault-bare-07`.
-The schema to use MUST be as follows:
+The actual metadata MUST be stored using CBOR, as standardized in IETF RFC 8878.
 
-```
-type MetadataSet struct {
-    title: optional<str>
-    stream_id: optional<u16>
-    language: optional<str>
-    track: optional<i32>
-    tracks: optional<i32>
-    artist: optional<str>
-    album_artist: optional<str>
-    album: optional<str>
-    date: optional<str>
-    tags: list< struct {
-        name: str
-        type Value union {
-            | str | bool | f32 | f64 | i8 | i16 | i32 | i64 | u8 | u16 | u32 | u64 | int | uint | data
-        }
-    }>
-}
+The following string keys SHOULD be used:
 
-type Metadata list<MetadataSet>
-```
+|           Name |                        Type |                                                       Description |
+|---------------:|----------------------------:|------------------------------------------------------------------:|
+|        `title` |                 text string |                                          Full name of the stream. |
+|    `stream_id` |            unsigned integer |  Stream ID for which to apply the tags under the current section. |
+|     `language` |                 text string |                         Language name subtag, as per IETF BPC 47. |
+|         `date` |                 text string |                                                  Date of release. |
+|        `track` |            unsigned integer |                  Track number, if the stream is part of an album. |
+|       `tracks` |            unsigned integer |            Total number of tracks, if stream is part of an album. |
+|       `artist` |                 text string |                 Full name of the performing artist on this track. |
+| `album_artist` |                 text string | Full name of the album's artist. MUST be the same for each track. |
+|        `album` |                 text string |                                           Full name of the album. |
 
-Implementations can either send the data via a single `Metadata` struct,
-or as an array via `MetadataSet`.
-Each `stream_id` value in a `MetadataSet` MUST be unique.
+Implementations are free to insert any other tags.
 
-Each key `name` CAN be encountered multiple times. Implementations MUST
-discard the old `Value` associated with the key.
+Each `stream_id` value in a section MUST be unique.
+
+Each name key CAN be encountered multiple times. Implementations MUST
+discard the old value associated with the key and update the metadata.
 If `stream_id` is present, the metadata is a separate set of values that just
 describe a single stream. Tags from other streams, or the general file
 metadata MUST NOT overwrite each other.
@@ -616,10 +614,6 @@ If `stream_id` is omitted or equal to `0xFFFF`,
 the metadata applies for the session as a whole.
 
 Metadata can be updated by sending new metadata packets with new values.
-
-The values listed outside of `tags` SHOULD be interpreted as recommendations.
-If a `name` matches one of those values, the value outside of the `tags` field
-MUST take priority.
 
 The `language` field MUST be formatted as a **subtag**, according to the
 [IETF BPC 47](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
@@ -922,7 +916,8 @@ The time `t` of a `pts` field corresponds to the exact time when a packet must b
 instantaneously released from a decoding buffer, and instantaneously presented.
 
 The time `t` of a `dts` field corresponds to the exact time when a packet must be
-input into a synchronous 1-in-1-out decoder.
+input into a synchronous 1-in-1-out decoder. The `dts` field is defined as part
+of the payload when necessary ([codec encapsulation](#codec-encapsulation)).
 
 The time `t` of a `duration` field corresponds to the exact time difference between
 two **consecutive** frames of audio or video. If the field is non-zero, this assertion
