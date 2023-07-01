@@ -120,31 +120,31 @@ An overall possible structure of packets in a general Qproto session can be:
 Each packet MUST be prefixed with a descriptor to identify it. Below is a table
 of how they're allocated.
 
-|           Descriptor | Packet type                                           |
-|---------------------:|:------------------------------------------------------|
-|               0x5170 | [Session start](#session-start-packets)               |
-|                  0x2 | [Stream registration](#stream-registration-packets)   |
-|           0x3 to 0x7 | [Stream initialization data](#init-data-packets)      |
-|                  0x8 | [Video information](#video-info-packets)              |
-|                  0x9 | [Index packets](#index-packets)                       |
-|           0xA to 0xE | [Metadata](#metadata-packets)                         |
-|         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                   |
-|         0x20 to 0x24 | [Embedded font](#font-data-packets)                   |
-|         0x30 to 0x31 | [FEC grouping](#fec-grouping)                         |
-|                 0x40 | [Video orientation](#video-orientation-packets)       |
-|         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)            |
-|         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)      |
-|     0x0100 to 0x01FF | [Stream data](#data-packets)                          |
-|     0x0300 to 0x03FF | [Time synchronization](#time-synchronization-packets) |
-|     0x4000 to 0x40FF | [User data](#user-data-packets)                       |
-|               0xF000 | [Stream duration](#stream-duration-packets)           |
-|               0xFFFF | [End of stream](#end-of-stream)                       |
-|                      | **Reverse signalling only**                           |
-|     0x5000 to 0x50FF | [Reverse user data](#reverse-user-data)               |
-|               0x8001 | [Control data](#control-data)                         |
-|               0x8002 | [Feedback](#feedback)                                 |
-|               0x8003 | [Resend](#resend)                                     |
-|               0x8004 | [Stream control](#stream-control)                     |
+|           Descriptor | Packet type                                              |
+|---------------------:|:---------------------------------------------------------|
+|               0x5170 | [Session start](#session-start-packets)                  |
+|                  0x2 | [Stream registration](#stream-registration-packets)      |
+|           0x3 to 0x7 | [Stream initialization data](#init-data-packets)         |
+|                  0x8 | [Video information](#video-info-packets)                 |
+|                  0x9 | [Index packets](#index-packets)                          |
+|           0xA to 0xE | [Metadata](#metadata-packets)                            |
+|         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                      |
+|         0x20 to 0x24 | [Embedded font](#font-data-packets)                      |
+|         0x30 to 0x31 | [FEC grouping](#fec-grouping)                            |
+|                 0x40 | [Video orientation](#video-orientation-packets)          |
+|         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)               |
+|         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)         |
+|     0x0100 to 0x01FF | [Stream data](#data-packets)                             |
+|     0x0300 to 0x03FF | [Time synchronization](#time-synchronization-packets)    |
+|     0x0400 to 0x04FF | [User data](#user-data-packets)                          |
+|               0x0500 | [Stream duration](#stream-duration-packets)              |
+|               0x0FFF | [End of stream](#end-of-stream)                          |
+|     0x8000 to 0x80FF | Reserved for **[reverse signalling](#reverse-signalling) |
+|                      | **[reverse signalling](#reverse-signalling) only**       |
+|               0xF001 | [Control data](#control-data)                            |
+|               0xF002 | [Feedback](#feedback)                                    |
+|               0xF003 | [Resend](#resend)                                        |
+|               0xF004 | [Stream control](#stream-control)                        |
 
 ## Packet description
 
@@ -179,7 +179,7 @@ The `session_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Description                                                                                                  |
 |-----------------:|:-------------------------------------------------------------------------------------------------------------|
-|              0x1 | Indicates session is capable and ready to receive bidirectional data packets.                                |
+|              0x1 | Indicates session is capable and ready to receive [reverse signalling](#reverse-signalling) data packets.    |
 
 Implementations are allowed to test the first 4 bytes to detect a Qproto stream.<br/>
 The Raptor code is, like for all packets, allowed to be ignored.
@@ -847,7 +847,7 @@ at the start of files to notify implementations of stream lengths.
 
 | Data         | Name                  |  Fixed value | Description                                                                                     |
 |:-------------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
-| `b(16)`      | `duration_descriptor` |       0xF000 | Indicates this is an index packet.                                                              |
+| `b(16)`      | `duration_descriptor` |       0x0500 | Indicates this is an index packet.                                                              |
 | `b(16)`      | `stream_id`           |              | Indicates the stream ID for the index. May be 0xFFFF, in which case, it applies to all streams. |
 | `u(32)`      | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
 | `i(64)`      | `total_duration`      |              | The total duration of the stream(s).                                                            |
@@ -874,7 +874,7 @@ The EOS packet is laid out as follows:
 
 | Data         | Name             | Fixed value  | Description                                                                                             |
 |:-------------|:-----------------|-------------:|:--------------------------------------------------------------------------------------------------------|
-| `b(16)`      | `eos_descriptor` |       0xFFFF | Indicates this is an end-of-stream packet.                                                              |
+| `b(16)`      | `eos_descriptor` |       0x0FFF | Indicates this is an end-of-stream packet.                                                              |
 | `b(16)`      | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xFFFF, in which case, it applies to all streams. |
 | `u(32)`      | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
 | `b(160)`     | `padding`        |              | Padding, reserved for future use. MUST be 0x0.                                                          |
@@ -1050,7 +1050,7 @@ decoding.
 
 UDP mode is unidirectional, but the implementations are free to use the
 [reverse signalling](#reverse-signalling) data if they negotiate it themselves.<br/>
-Reverse signalling MUST NOT be used if the connection is insecure.
+Reverse signalling SHOULD NOT be used if the connection is public.
 
 Implementations MUST segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.<br/>
@@ -1064,6 +1064,9 @@ Data packets MAY be padded by appending random data or zeroes after the `packet_
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
 
+If [reverse signalling](#reverse-signalling) is used, same port number an method MUST
+be used for reverse signalling as the sender's.
+
 ### UDP-Lite
 
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
@@ -1075,6 +1078,9 @@ coverage MUST be used, where only the UDP-Lite header (8 bytes) is checksummed.
 
 Implementations SHOULD insert adequate FEC information, and receivers SHOULD
 correct data with it, as packet integrity guarantees are off.
+
+If [reverse signalling](#reverse-signalling) is used, same port number an method MUST
+be used for reverse signalling as the sender's.
 
 ### QUIC
 
@@ -1096,12 +1102,22 @@ packets to be sent without fragmentation.
 
 Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
 
+[Reverse signalling](#reverse-signalling) is natively supported on QUIC.
+
 ## Reverse signalling
 
-The following section is a specification on how reverse signalling, where
-receiver(s) communicates with the sender, should be formatted.
+Qproto supports bidirectional connections. Implementing this part of the
+specification is fully optional.
 
-The same port an method MUST be used for reverse signalling as the sender's.
+**All** packets send back from a receiver to the transmitter MUST have bit
+`0x8000` set in their descriptors. This means that the receiver can send back
+the same type of packets that the transmitter can, with a number of extra
+packets for control.
+
+Receivers **MUST** receive a [session start](#session-start-packets) packet
+from a transmitter, with bit `0x1` set in the `session_flags` bitmask before
+they are allowed to send packets back. The only exception is for receivers
+who.
 
 ### Control data
 
@@ -1189,16 +1205,6 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
 all packets necessary to initialize the stream MUST be resent.
-
-### Reverse user data
-
-This is identical to the [user data packets](#user-data-packets), but with a different ID.
-
-| Data                    | Name               | Fixed value  | Description                                                                                  |
-|:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
-| `b(16)`                 | `user_descriptor`  |     0x50\*\* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
-| `u(32)`                 | `user_data_length` |              | The length of the user data.                                                                 |
-| `b(user_data_length*8)` | `user_data`        |              | The user data itself.                                                                        |
 
 ## Addendum
 
