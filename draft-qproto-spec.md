@@ -249,7 +249,7 @@ The layout of the data is as follows:
 | `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
 | `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.          |
 | `u(56)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
-| `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 words.                           |
+| `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 symbols.                         |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -260,7 +260,7 @@ The `stream_flags` field may be interpreted as such:
 
 | Bit set | Description                                                                                                             |
 |--------:|:------------------------------------------------------------------------------------------------------------------------|
-|     0x1 | Stream does not require any [init data packet](#init-data-packets).                                                     |
+|     0x1 | Reserved.                                                                                                               |
 |     0x2 | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
 |     0x4 | Stream is a still picture and only a single decodable frame will be sent.                                               |
 |     0x8 | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
@@ -395,7 +395,7 @@ more [stream data segments](#stream-data-segmentation). It is laid out as follow
 | `i(64)`            | `pts`             |             | Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the [Timestamps](#timestamps) section.   |
 | `u(64)`            | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                                   |
 | `u(32)`            | `data_length`     |             | The size of the data in this packet.                                                                                                                   |
-| `R(224, 64)`       | `data_raptor`     |             | Raptor code to correct and verify the previous contents of the packet.                                                                                 |
+| `R(224, 64)`       | `data_raptor`     |             | Raptor code to correct and verify the packet header.                                                                                                   |
 | `b(data_length*8)` | `packet_data`     |             | The packet data itself.                                                                                                                                |
 
 For information on the layout of the specific codec-specific packet data, consult
@@ -1044,10 +1044,7 @@ be sent as often as necessary if timestamp jitter avoidance is a requirement.
 
 To adapt Qproto for streaming over UDP is trivial - simply send the data packets
 as-is specified, with no changes required. The sender implementation SHOULD
-resent [session start](#session-start-packets),
-[time synchronization](#time-synchronization-packets) packets, as well as
-all stream registration, initialization and video info packets for all streams
-at most as often as the stream with the lowest frequency of `keyframe`s in order
+resent packets at the frequencies listed [above](#session-start-packets)
 to permit for implementations that didn't catch on the start of the stream begin
 decoding.
 
@@ -1074,7 +1071,7 @@ available throughout the network.<br/>
 When using UDP-Lite, the same considerations as [UDP](#udp) apply.
 
 As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
-coverage MUST be used, where only the header (8 bytes) is checksummed.
+coverage MUST be used, where only the UDP-Lite header (8 bytes) is checksummed.
 
 Implementations SHOULD insert adequate FEC information, and receivers SHOULD
 correct data with it, as packet integrity guarantees are off.
