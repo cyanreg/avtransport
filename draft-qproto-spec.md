@@ -1210,6 +1210,7 @@ definitions.
  - [AAC](#aac-encapsulation)
  - [AV1](#av1-encapsulation)
  - [H.264](#h264-encapsulation)
+ - [H.265](#h265-encapsulation)
  - [Dirac/VC-2](#diracvc-2)
  - [ASS](#ass-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
@@ -1283,15 +1284,31 @@ For H264 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x48323634 (`H264`).
 
-The [stream initialization data](#init-data-packets) payload MUST contain an
-`AVCDecoderConfigurationRecord` structure, as defined in `ISO 14496-15`.
-
-The `packet_data` MUST contain the following elements in order:
+The `packet_data` MUST contain the following elements, in order:
  - A single `b(64)` element with the `dts`, the time, which indicates when a
    frame should be input into a synchronous 1-in-1-out decoder.
- - Raw `NAL` elements, concatenated.
+ - `Annex-B` formatted NAL units, with startcode emulation bits included.
 
-`Annex-B` formatted packets MUST NOT be used.
+[Stream initialization data](#init-data-packets) packets MAY be sent, to
+speed up stream initialization. If they are present, they MUST contain an
+`AVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 14496-15`.
+
+#### H265 encapsulation
+
+For H265 encapsulation, the `codec_id` in
+[stream registration packets](#stream-registration-packets)
+MUST be 0x48323635 (`H265`).
+
+The `packet_data` MUST contain the following elements, in order:
+ - A single `b(64)` element with the `dts`, the time, which indicates when a
+   frame should be input into a synchronous 1-in-1-out decoder.
+ - `Annex-B` formatted NAL units, with startcode emulation bits included.
+
+`Annex-B` formatted packets MUST be used, with startcode emulation bits included.
+
+[Stream initialization data](#init-data-packets) packets MAY be sent, to
+speed up stream initialization. If they are present, they MUST contain an
+`HEVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 23008`.
 
 #### Dirac/VC-2
 
