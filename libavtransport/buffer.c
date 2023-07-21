@@ -29,10 +29,10 @@
 #include "common.h"
 #include "buffer.h"
 
-QprotoBuffer *qp_buffer_create(uint8_t *data, size_t len,
-                               void *opaque, void (*free_fn)(void *opaque, void *base_data))
+AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
+                             void *opaque, void (*free_fn)(void *opaque, void *base_data))
 {
-    QprotoBuffer *buf = malloc(sizeof(*buf));
+    AVTBuffer *buf = malloc(sizeof(*buf));
     if (!buf)
         return NULL;
 
@@ -54,18 +54,18 @@ QprotoBuffer *qp_buffer_create(uint8_t *data, size_t len,
     return buf;
 }
 
-void qp_buffer_default_free(void *opaque, void *base_data)
+void avt_buffer_default_free(void *opaque, void *base_data)
 {
     free(base_data);
 }
 
-QprotoBuffer *qp_buffer_alloc(size_t len)
+AVTBuffer *avt_buffer_alloc(size_t len)
 {
     void *alloc = malloc(len);
     if (!alloc)
         return NULL;
 
-    QprotoBuffer *buf = qp_buffer_create(alloc, len, NULL, qp_buffer_default_free);
+    AVTBuffer *buf = avt_buffer_create(alloc, len, NULL, avt_buffer_default_free);
     if (!buf) {
         free(alloc);
         return NULL;
@@ -74,7 +74,7 @@ QprotoBuffer *qp_buffer_alloc(size_t len)
     return buf;
 }
 
-QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_t len)
+AVTBuffer *avt_buffer_reference(AVTBuffer *buffer, ptrdiff_t offset, int64_t len)
 {
     if (!buffer)
         return NULL;
@@ -86,7 +86,7 @@ QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_
     if (buffer->base_data + offset > buffer->end_data)
         return NULL;
 
-    QprotoBuffer *ret = malloc(sizeof(*ret));
+    AVTBuffer *ret = malloc(sizeof(*ret));
     if (!ret)
         return NULL;
 
@@ -100,17 +100,17 @@ QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_
     return ret;
 }
 
-int pq_buffer_offset(QprotoBuffer *buf, ptrdiff_t offset)
+int pq_buffer_offset(AVTBuffer *buf, ptrdiff_t offset)
 {
     if (buf->base_data + offset > buf->end_data)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
 
     buf->data += offset;
 
     return 0;
 }
 
-int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
+int pq_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
                         ptrdiff_t offset, int64_t len)
 {
     if (!buffer)
@@ -119,9 +119,9 @@ int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
     if (!len)
         len = buffer->end_data - (buffer->data + offset);
     if (len < 0)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
     if (buffer->base_data + offset > buffer->end_data)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
 
     atomic_fetch_add_explicit(buffer->refcnt, 1, memory_order_relaxed);
 
@@ -133,7 +133,7 @@ int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
     return 0;
 }
 
-void pq_buffer_quick_unref(QprotoBuffer *buf)
+void pq_buffer_quick_unref(AVTBuffer *buf)
 {
     if (!buf)
         return;
@@ -144,7 +144,7 @@ void pq_buffer_quick_unref(QprotoBuffer *buf)
     }
 }
 
-int qp_buffer_get_refcount(QprotoBuffer *buffer)
+int avt_buffer_get_refcount(AVTBuffer *buffer)
 {
     if (!buffer)
         return 0;
@@ -152,7 +152,7 @@ int qp_buffer_get_refcount(QprotoBuffer *buffer)
     return atomic_load_explicit(buffer->refcnt, memory_order_relaxed);
 }
 
-void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len)
+void *avt_buffer_get_data(AVTBuffer *buffer, size_t *len)
 {
     if (!buffer) {
         *len = 0;
@@ -163,7 +163,7 @@ void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len)
     return buffer->data;
 }
 
-size_t qp_buffer_get_data_len(QprotoBuffer *buffer)
+size_t avt_buffer_get_data_len(AVTBuffer *buffer)
 {
     if (!buffer)
         return 0;
@@ -171,9 +171,9 @@ size_t qp_buffer_get_data_len(QprotoBuffer *buffer)
     return buffer->len;
 }
 
-void qp_buffer_unref(QprotoBuffer **buffer)
+void avt_buffer_unref(AVTBuffer **buffer)
 {
-    QprotoBuffer *buf = *buffer;
+    AVTBuffer *buf = *buffer;
     if (!buffer)
         return;
 

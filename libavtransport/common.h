@@ -23,12 +23,12 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_COMMON
-#define LIBQPROTO_COMMON
+#ifndef LIBAVTRANSPORT_COMMON
+#define LIBAVTRANSPORT_COMMON
 
-#include <libqproto/common.h>
-#include <libqproto/input.h>
-#include <libqproto/output.h>
+#include <libavtransport/common.h>
+#include <libavtransport/input.h>
+#include <libavtransport/output.h>
 #include <stdatomic.h>
 
 enum PQProtocolType {
@@ -38,12 +38,12 @@ enum PQProtocolType {
 };
 
 typedef struct PQStreamPriv {
-    enum QprotoCodecID codec_id;
+    enum AVTCodecID codec_id;
 } PQStreamPriv;
 
-struct QprotoContext {
+struct AVTContext {
     struct {
-        QprotoOutputDestination dst;
+        AVTOutputDestination dst;
         const struct PQOutput *cb;
         struct PQOutputContext *ctx;
         atomic_uint seq;
@@ -51,86 +51,86 @@ struct QprotoContext {
     } dst;
 
     struct {
-        QprotoInputSource src;
+        AVTInputSource src;
         const struct PQInput *cb;
         struct PQInputContext *ctx;
-        QprotoInputCallbacks proc;
+        AVTInputCallbacks proc;
         void *cb_opaque;
         atomic_uint seq;
         uint64_t epoch;
         struct PQReorder *rctx;
     } src;
 
-    QprotoStream **stream;
+    AVTStream **stream;
     int nb_stream;
 
-    QprotoContextOptions opts;
+    AVTContextOptions opts;
 };
 
 enum PQPacketType {
     /* Indicates the 8 least significant bits are a mask */
-    QP_PKT_FLAG_LSB_MASK = (1 << 31),
+    AVT_PKT_FLAG_LSB_MASK = (1 << 31),
 
-    QP_PKT_SESSION_START = 0x5170,
-    QP_PKT_TIME_SYNC = 0x1,
-    QP_PKT_STREAM_REG = 0x2,
+    AVT_PKT_SESSION_START = 0x5170,
+    AVT_PKT_TIME_SYNC = 0x1,
+    AVT_PKT_STREAM_REG = 0x2,
 
-    QP_PKT_STREAM_INIT = 0x3,
-    QP_PKT_STREAM_INIT_PRT = 0x4,
-    QP_PKT_STREAM_INIT_SEG = 0x5,
-    QP_PKT_STREAM_INIT_END = 0x6,
-    QP_PKT_STREAM_INIT_FEC = 0x7,
+    AVT_PKT_STREAM_INIT = 0x3,
+    AVT_PKT_STREAM_INIT_PRT = 0x4,
+    AVT_PKT_STREAM_INIT_SEG = 0x5,
+    AVT_PKT_STREAM_INIT_END = 0x6,
+    AVT_PKT_STREAM_INIT_FEC = 0x7,
 
-    QP_PKT_VIDEO_INFO = 0x8,
-    QP_PKT_INDEX = 0x9,
+    AVT_PKT_VIDEO_INFO = 0x8,
+    AVT_PKT_INDEX = 0x9,
 
-    QP_PKT_METADATA = 0xA,
-    QP_PKT_METADATA_PRT = 0xB,
-    QP_PKT_METADATA_SEG = 0xC,
-    QP_PKT_METADATA_END = 0xD,
-    QP_PKT_METADATA_FEC = 0xE,
+    AVT_PKT_METADATA = 0xA,
+    AVT_PKT_METADATA_PRT = 0xB,
+    AVT_PKT_METADATA_SEG = 0xC,
+    AVT_PKT_METADATA_END = 0xD,
+    AVT_PKT_METADATA_FEC = 0xE,
 
-    QP_PKT_ICC = 0x10,
-    QP_PKT_ICC_PRT = 0x11,
-    QP_PKT_ICC_SEG = 0x12,
-    QP_PKT_ICC_END = 0x13,
-    QP_PKT_ICC_FEC = 0x14,
+    AVT_PKT_ICC = 0x10,
+    AVT_PKT_ICC_PRT = 0x11,
+    AVT_PKT_ICC_SEG = 0x12,
+    AVT_PKT_ICC_END = 0x13,
+    AVT_PKT_ICC_FEC = 0x14,
 
-    QP_PKT_FONT = 0x20,
-    QP_PKT_FONT_PRT = 0x21,
-    QP_PKT_FONT_SEG = 0x22,
-    QP_PKT_FONT_END = 0x23,
-    QP_PKT_FONT_FEC = 0x24,
+    AVT_PKT_FONT = 0x20,
+    AVT_PKT_FONT_PRT = 0x21,
+    AVT_PKT_FONT_SEG = 0x22,
+    AVT_PKT_FONT_END = 0x23,
+    AVT_PKT_FONT_FEC = 0x24,
 
-    QP_PKT_FEC_GROUP_REG = 0x30,
-    QP_PKT_FEC_GROUP_DATA = 0x31,
+    AVT_PKT_FEC_GROUP_REG = 0x30,
+    AVT_PKT_FEC_GROUP_DATA = 0x31,
 
-    QP_PKT_VIDEO_ORIENTATION = 0x40,
+    AVT_PKT_VIDEO_ORIENTATION = 0x40,
 
-    QP_PKT_STREAM_FEC_DATA = 0xFC,
-    QP_PKT_STREAM_FEC_END = 0xFD,
+    AVT_PKT_STREAM_FEC_DATA = 0xFC,
+    AVT_PKT_STREAM_FEC_END = 0xFD,
 
-    QP_PKT_STREAM_SEG_DATA = 0xFE,
-    QP_PKT_STREAM_SEG_END = 0xFF,
+    AVT_PKT_STREAM_SEG_DATA = 0xFE,
+    AVT_PKT_STREAM_SEG_END = 0xFF,
 
-    QP_PKT_STREAM_DATA = 0x01FF | QP_PKT_FLAG_LSB_MASK,
-    QP_PKT_USER_DATA = 0x40FF | QP_PKT_FLAG_LSB_MASK,
+    AVT_PKT_STREAM_DATA = 0x01FF | AVT_PKT_FLAG_LSB_MASK,
+    AVT_PKT_USER_DATA = 0x40FF | AVT_PKT_FLAG_LSB_MASK,
 
-    QP_PKT_STREAM_DURATION = 0xF000,
-    QP_PKT_EOS = 0xFFFF,
+    AVT_PKT_STREAM_DURATION = 0xF000,
+    AVT_PKT_EOS = 0xFFFF,
 
-    QP_PKT_REV_USER_DATA = 0x50FF | QP_PKT_FLAG_LSB_MASK,
-    QP_PKT_REV_CONTROL = 0x8001,
-    QP_PKT_REV_FEEDBACK = 0x8002,
-    QP_PKT_REV_RESEND = 0x8003,
-    QP_PKT_REV_STREAM_CONTROL = 0x8004,
+    AVT_PKT_REV_USER_DATA = 0x50FF | AVT_PKT_FLAG_LSB_MASK,
+    AVT_PKT_REV_CONTROL = 0x8001,
+    AVT_PKT_REV_FEEDBACK = 0x8002,
+    AVT_PKT_REV_RESEND = 0x8003,
+    AVT_PKT_REV_STREAM_CONTROL = 0x8004,
 };
 
 int pq_parse_address(const char *path, enum PQProtocolType *proto,
                      uint8_t dst_ip[16], uint16_t *dst_port);
 
-QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id);
-QprotoStream *qp_find_stream(QprotoContext *qp, uint16_t id);
+AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id);
+AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id);
 
 #if defined(__GNUC__) || defined(__clang__)
 #define pq_printf_format(fmtpos, attrpos) __attribute__((__format__(__printf__, fmtpos, attrpos)))
@@ -138,6 +138,6 @@ QprotoStream *qp_find_stream(QprotoContext *qp, uint16_t id);
 #define pq_printf_format(fmtpos, attrpos)
 #endif
 
-void pq_log(void *ctx, enum QPLogLevel level, const char *fmt, ...) pq_printf_format(3, 4);
+void pq_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...) pq_printf_format(3, 4);
 
 #endif

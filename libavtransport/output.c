@@ -26,8 +26,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include <libavtransport/video.h>
+
 #include "common.h"
-#include "libqproto/video.h"
 #include "output.h"
 #include "utils.h"
 #include "buffer.h"
@@ -43,11 +44,11 @@ static const PQOutput *pq_output_list[] = {
     NULL,
 };
 
-int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
-                   QprotoOutputOptions *opts)
+int avt_output_open(AVTContext *ctx, AVTOutputDestination *dst,
+                   AVTOutputOptions *opts)
 {
-    if (qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     const PQOutput *out;
     for (out = pq_output_list[0]; out; out++) {
@@ -56,88 +57,88 @@ int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
     }
 
     if (!out)
-        return QP_ERROR(ENOTSUP);
+        return AVT_ERROR(ENOTSUP);
 
-    qp->dst.cb = out;
-    qp->dst.dst = *dst;
+    ctx->dst.cb = out;
+    ctx->dst.dst = *dst;
 
-    int ret = out->init(qp, &qp->dst.ctx, dst, opts);
+    int ret = out->init(ctx, &ctx->dst.ctx, dst, opts);
     if (ret < 0)
         return ret;
 
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_SESSION_START);
+    PQ_WBL(bs, 16, AVT_PKT_SESSION_START);
     PQ_WBL(bs, 16, 0x0);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
-    PQ_WBL(bs, 8, QPMIN(strlen(PROJECT_NAME), 13));
-    PQ_WST(bs, PROJECT_NAME, 13);
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs,  8, AVTMIN(strlen(PROJECT_NAME), 13));
+    PQ_WST(bs, 13, PROJECT_NAME);
     PQ_WBL(bs, 16, PROJECT_VERSION_MAJOR);
     PQ_WBL(bs, 16, PROJECT_VERSION_MINOR);
     PQ_WBL(bs, 16, PROJECT_VERSION_MICRO);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
     if (ret < 0)
-        qp->dst.cb->close(qp, &qp->dst.ctx);
+        ctx->dst.cb->close(ctx, &ctx->dst.ctx);
 
     return ret;
 }
 
-int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch)
+int avt_output_set_epoch(AVTContext *ctx, uint64_t epoch)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_TIME_SYNC);
+    PQ_WBL(bs, 16, AVT_PKT_TIME_SYNC);
     PQ_WBL(bs, 16, 0);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(bs, 64, epoch);
     PQ_WPD(bs, 96);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    return ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
 }
 
-QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id)
+AVTStream *avt_output_add_stream(AVTContext *ctx, uint16_t id)
 {
-    return qp_alloc_stream(qp, id);
+    return avt_alloc_stream(ctx, id);
 }
 
-static int pq_output_generic_segment(QprotoContext *qp, uint8_t *header,
-                                     uint32_t header_pkt_seq, QprotoStream *st,
-                                     QprotoBuffer *data, size_t offset, size_t max,
+static int pq_output_generic_segment(AVTContext *ctx, uint8_t *header,
+                                     uint32_t header_pkt_seq, AVTStream *st,
+                                     AVTBuffer *data, size_t offset, size_t max,
                                      uint16_t seg_desc, uint16_t term_desc)
 {
-    size_t len_tot = qp_buffer_get_data_len(data), len = len_tot, len_tgt;
+    size_t len_tot = avt_buffer_get_data_len(data), len = len_tot, len_tgt;
     size_t off = offset;
     uint8_t h7 = 0;
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
-    QprotoBuffer tmp;
+    AVTBuffer tmp;
     int ret;
 
     do {
         PQ_RESET(bs);
-        len_tgt = QPMIN(len, max);
+        len_tgt = AVTMIN(len, max);
 
         pq_buffer_quick_ref(&tmp, data, off, len_tgt);
 
         PQ_WBL(bs, 16, len < max ? term_desc : seg_desc);
         PQ_WBL(bs, 16, st->id);
-        PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+        PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
         PQ_WBL(bs, 32, header_pkt_seq);
         PQ_WBL(bs, 32, len_tot);
         PQ_WBL(bs, 32, off);
-        PQ_WBL(bs, 32, QPMIN(len, max));
+        PQ_WBL(bs, 32, AVTMIN(len, max));
         PQ_WBL(bs, 32, PQ_RB32(header + h7));
         PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-        ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), &tmp);
+        ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), &tmp);
         pq_buffer_quick_unref(&tmp);
         if (ret < 0) {
             return ret;
@@ -151,8 +152,8 @@ static int pq_output_generic_segment(QprotoContext *qp, uint8_t *header,
     return ret;
 }
 
-static int pq_output_generic_data(QprotoContext *qp, QprotoStream *st,
-                                  QprotoBuffer *buf,
+static int pq_output_generic_data(AVTContext *ctx, AVTStream *st,
+                                  AVTBuffer *buf,
                                   uint16_t desc_full, uint16_t desc_part,
                                   uint16_t desc_seg, uint16_t desc_end)
 {
@@ -163,43 +164,43 @@ static int pq_output_generic_data(QprotoContext *qp, QprotoStream *st,
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
     uint32_t seq;
-    size_t data_len = qp_buffer_get_data_len(buf);
+    size_t data_len = avt_buffer_get_data_len(buf);
     if (data_len > UINT32_MAX)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
 
-    uint32_t mtu = qp->dst.cb->max_pkt_len(qp, qp->dst.ctx);
+    uint32_t mtu = ctx->dst.cb->max_pkt_len(ctx, ctx->dst.ctx);
 
-    seq = atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed);
+    seq = atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed);
 
     PQ_WBL(bs, 16, data_len > mtu ? desc_part : desc_full);
     PQ_WBL(bs, 16, st->id);
     PQ_WBL(bs, 32, seq);
-    PQ_WBL(bs, 32, QPMIN(data_len, mtu));
+    PQ_WBL(bs, 32, AVTMIN(data_len, mtu));
     PQ_WPD(bs, 128);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), buf);
+    ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), buf);
     if (ret < 0)
         return ret;
 
     if (data_len > mtu)
-        ret = pq_output_generic_segment(qp, hdr, seq, st, buf,
-                                        QPMIN(data_len, mtu), mtu,
+        ret = pq_output_generic_segment(ctx, hdr, seq, st, buf,
+                                        AVTMIN(data_len, mtu), mtu,
                                         desc_seg, desc_end);
 
     return ret;
 }
 
-static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
+static int pq_output_video_info(AVTContext *ctx, AVTStream *st)
 {
-    QprotoStreamVideoInfo *vi = &st->video_info;
+    AVTStreamVideoInfo *vi = &st->video_info;
     uint8_t hdr[356];
     uint8_t raptor2[80];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_STREAM_DURATION);
+    PQ_WBL(bs, 16, AVT_PKT_STREAM_DURATION);
     PQ_WBL(bs, 16, st->id);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(bs, 32, vi->width);
     PQ_WBL(bs, 32, vi->height);
     PQ_WBL(bs, 32, vi->signal_aspect.num);
@@ -238,10 +239,10 @@ static int pq_output_video_info(QprotoContext *qp, QprotoStream *st)
     PQ_WBL(bs, 32, vi->max_luminance.den);
     PQ_WDT(bs, pq_calc_raptor_short(PQ_GETLAST(bs, 240), raptor2, 240, 80), 80);
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    return ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
 }
 
-static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
+static int pq_output_stream_duration(AVTContext *ctx, AVTStream *st)
 {
     if (!st->duration)
         return 0;
@@ -249,34 +250,34 @@ static int pq_output_stream_duration(QprotoContext *qp, QprotoStream *st)
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_STREAM_DURATION);
+    PQ_WBL(bs, 16, AVT_PKT_STREAM_DURATION);
     PQ_WBL(bs, 16, st->id);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(bs, 64, st->duration);
     PQ_WPD(bs, 96);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    return ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
 }
 
-int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
+int avt_output_update_stream(AVTContext *ctx, AVTStream *st)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     int i;
-    for (i = 0; i < qp->nb_stream; i++)
-        if (qp->stream[i]->id == st->id)
+    for (i = 0; i < ctx->nb_stream; i++)
+        if (ctx->stream[i]->id == st->id)
             break;
-    if (i == qp->nb_stream)
-        return QP_ERROR(EINVAL);
+    if (i == ctx->nb_stream)
+        return AVT_ERROR(EINVAL);
 
     uint8_t hdr[56];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_STREAM_REG);
+    PQ_WBL(bs, 16, AVT_PKT_STREAM_REG);
     PQ_WBL(bs, 16, st->id);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(bs, 16, st->related_to ? st->related_to->id : st->id);
     PQ_WBL(bs, 16, st->derived_from ? st->derived_from->id : st->id);
     PQ_WBL(bs, 64, st->bitrate);
@@ -289,150 +290,150 @@ int qp_output_update_stream(QprotoContext *qp, QprotoStream *st)
 
     st->private->codec_id = st->codec_id;
 
-    int ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    int ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
     if (ret < 0)
         return ret;
 
-    ret = pq_output_stream_duration(qp, st);
+    ret = pq_output_stream_duration(ctx, st);
     if (ret < 0)
         return ret;
 
-    ret = pq_output_video_info(qp, st);
+    ret = pq_output_video_info(ctx, st);
     if (ret < 0)
         return ret;
 
-    ret = pq_output_generic_data(qp, st, st->init_data,
-                                 QP_PKT_STREAM_INIT, QP_PKT_STREAM_INIT_PRT,
-                                 QP_PKT_STREAM_INIT_SEG, QP_PKT_STREAM_INIT_END);
+    ret = pq_output_generic_data(ctx, st, st->init_data,
+                                 AVT_PKT_STREAM_INIT, AVT_PKT_STREAM_INIT_PRT,
+                                 AVT_PKT_STREAM_INIT_SEG, AVT_PKT_STREAM_INIT_END);
     if (ret < 0)
         return ret;
 
-    ret = pq_output_generic_data(qp, st, st->icc_profile,
-                                 QP_PKT_ICC, QP_PKT_ICC_PRT,
-                                 QP_PKT_ICC_SEG, QP_PKT_ICC_END);
+    ret = pq_output_generic_data(ctx, st, st->icc_profile,
+                                 AVT_PKT_ICC, AVT_PKT_ICC_PRT,
+                                 AVT_PKT_ICC_SEG, AVT_PKT_ICC_END);
     if (ret < 0)
         return ret;
 
     return ret;
 }
 
-int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
-                                QprotoPacket *pkt)
+int avt_output_write_stream_data(AVTContext *ctx, AVTStream *st,
+                                AVTPacket *pkt)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     int ret;
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
     uint32_t seq;
-    size_t data_len = qp_buffer_get_data_len(pkt->data);
+    size_t data_len = avt_buffer_get_data_len(pkt->data);
     if (data_len > UINT32_MAX)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
 
-    uint32_t mtu = qp->dst.cb->max_pkt_len(qp, qp->dst.ctx);
+    uint32_t mtu = ctx->dst.cb->max_pkt_len(ctx, ctx->dst.ctx);
 
     uint16_t desc;
-    desc = QP_PKT_STREAM_DATA & 0xFF00;
+    desc = AVT_PKT_STREAM_DATA & 0xFF00;
     desc |= data_len > mtu ? 0x20 : 0x0;
     desc |= (pkt->type & 0xC0);
-    seq = atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed);
+    seq = atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed);
 
     PQ_WBL(bs, 16, desc);
     PQ_WBL(bs, 16, st->id);
     PQ_WBL(bs, 32, seq);
     PQ_WBL(bs, 64, pkt->pts);
     PQ_WBL(bs, 64, pkt->duration);
-    PQ_WBL(bs, 32, QPMIN(data_len, mtu));
+    PQ_WBL(bs, 32, AVTMIN(data_len, mtu));
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    ret = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), pkt->data);
+    ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), pkt->data);
     if (ret < 0)
         return ret;
 
     if (data_len > mtu)
-        ret = pq_output_generic_segment(qp, hdr, seq, st, pkt->data,
-                                        QPMIN(data_len, mtu), mtu,
-                                        QP_PKT_STREAM_SEG_DATA,
-                                        QP_PKT_STREAM_SEG_END);
+        ret = pq_output_generic_segment(ctx, hdr, seq, st, pkt->data,
+                                        AVTMIN(data_len, mtu), mtu,
+                                        AVT_PKT_STREAM_SEG_DATA,
+                                        AVT_PKT_STREAM_SEG_END);
 
     return 0;
 }
 
-int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
+int avt_output_write_user_data(AVTContext *ctx, AVTBuffer *data,
                               uint8_t descriptor_flags, uint16_t user,
                               int prioritize)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
-    uint16_t desc = QP_PKT_USER_DATA & 0xFF00;
+    uint16_t desc = AVT_PKT_USER_DATA & 0xFF00;
 
     desc |= descriptor_flags;
 
     PQ_WBL(bs, 16, desc);
     PQ_WBL(bs, 16, user);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
-    PQ_WBL(bs, 32, qp_buffer_get_data_len(data));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, avt_buffer_get_data_len(data));
     PQ_WPD(bs, 128);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), data);
+    return ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), data);
 }
 
-int qp_output_close_stream(QprotoContext *qp, QprotoStream *st)
+int avt_output_close_stream(AVTContext *ctx, AVTStream *st)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     int i;
-    for (i = 0; i < qp->nb_stream; i++)
-        if (qp->stream[i]->id == st->id)
+    for (i = 0; i < ctx->nb_stream; i++)
+        if (ctx->stream[i]->id == st->id)
             break;
-    if (i == qp->nb_stream)
-        return QP_ERROR(EINVAL);
+    if (i == ctx->nb_stream)
+        return AVT_ERROR(EINVAL);
 
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_EOS);
+    PQ_WBL(bs, 16, AVT_PKT_EOS);
     PQ_WBL(bs, 16, st->id);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WPD(bs, 160);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
     free(st->private);
     free(st);
 
-    memmove(&qp->stream[i], &qp->stream[i+1], sizeof(*qp->stream)*(qp->nb_stream - i));
-    qp->nb_stream--;
+    memmove(&ctx->stream[i], &ctx->stream[i+1], sizeof(*ctx->stream)*(ctx->nb_stream - i));
+    ctx->nb_stream--;
 
-    return qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    return ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
 }
 
-int qp_output_close(QprotoContext *qp)
+int avt_output_close(AVTContext *ctx)
 {
-    if (!qp->dst.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->dst.ctx)
+        return AVT_ERROR(EINVAL);
 
     uint8_t hdr[36];
     PQ_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, QP_PKT_EOS);
+    PQ_WBL(bs, 16, AVT_PKT_EOS);
     PQ_WBL(bs, 16, 0xFFFF);
-    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&qp->dst.seq, 1, memory_order_relaxed));
+    PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WPD(bs, 160);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
 
-    int ret  = qp->dst.cb->output(qp, qp->dst.ctx, hdr, PQ_WLEN(bs), NULL);
-    int ret2 = qp->dst.cb->close(qp, &qp->dst.ctx);
+    int ret  = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+    int ret2 = ctx->dst.cb->close(ctx, &ctx->dst.ctx);
 
     return ret < 0 ? ret : ret2;
 }
 
-uint32_t pq_unlim_pkt_len(QprotoContext *ctx, PQOutputContext *pc)
+uint32_t pq_unlim_pkt_len(AVTContext *ctx, PQOutputContext *pc)
 {
     return UINT32_MAX;
 }

@@ -23,31 +23,30 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_REORDER
-#define LIBQPROTO_REORDER
+#ifndef LIBAVTRANSPORT_BUFFER
+#define LIBAVTRANSPORT_BUFFER
 
-#include "common.h"
-#include "buffer.h"
+#include <stdatomic.h>
 
-typedef struct PQPktChain PQPktChain;
+#include <libavtransport/utils.h>
 
-enum PQPktChainStatus {
-    PQ_PKT_CHAIN_COMPLETE,
-    PQ_PKT_CHAIN_INCOMPLETE,
+struct AVTBuffer {
+    uint8_t *data;
+    size_t len;
+
+    uint8_t *base_data;
+    uint8_t *end_data;
+
+    void (*free)(void *opaque, void *data);
+    void *opaque;
+    atomic_int *refcnt;
 };
 
-int pq_reorder_init(QprotoContext *qp, size_t max_buffer);
+int pq_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
+                        ptrdiff_t offset, int64_t len);
 
-int pq_reorder_push_pkt(QprotoContext *qp, QprotoBuffer *data,
-                        ptrdiff_t offset, uint32_t seq,
-                        enum PQPacketType type);
+void pq_buffer_quick_unref(AVTBuffer *buf);
 
-enum PQPktChainStatus pq_chain_get_status(QprotoContext *qp, PQPktChain *chain);
-
-QprotoBuffer *pq_chain_get_buffer(QprotoContext *qp, PQPktChain *chain);
-
-void pq_reorder_pop_chain(QprotoContext *qp, PQPktChain *chain);
-
-void pq_reorder_uninit(QprotoContext *qp);
+int pq_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
 
 #endif

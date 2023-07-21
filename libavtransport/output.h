@@ -23,58 +23,30 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <libqproto/output.h>
+#ifndef LIBAVTRANSPORT_OUTPUT
+#define LIBAVTRANSPORT_OUTPUT
 
-#include <linux/io_uring.h>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
-#include <libqproto/output.h>
+#include <libavtransport/output.h>
 
 #include "common.h"
-#include "libqproto/common.h"
-#include "output.h"
 
+typedef struct PQOutputContext PQOutputContext;
 
-struct PQOutputContext {
-    int fd;
-};
+typedef struct PQOutput {
+    const char *name;
+    enum AVTConnectionType type;
 
-static int sock_init(QprotoContext *ctx, PQOutputContext **pc,
-                     QprotoOutputDestination *dst, QprotoOutputOptions *opts)
-{
-    PQOutputContext *priv = malloc(sizeof(*priv));
-    if (!priv)
-        return QP_ERROR(ENOMEM);
+    int (*init)(AVTContext *ctx, PQOutputContext **pc,
+                AVTOutputDestination *dst, AVTOutputOptions *opts);
 
+    uint32_t (*max_pkt_len)(AVTContext *ctx, PQOutputContext *pc);
 
-    *pc = priv;
+    int (*output)(AVTContext *ctx, PQOutputContext *pc,
+                  uint8_t *hdr, size_t hdr_len, AVTBuffer *buf);
 
-    return 0;
-}
+    int (*close)(AVTContext *ctx, PQOutputContext **pc);
+} PQOutput;
 
-static int sock_output(QprotoContext *ctx, PQOutputContext *pc,
-                       uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf)
-{
-    size_t len;
-    void *data = qp_buffer_get_data(buf, &len);
+uint32_t pq_unlim_pkt_len(AVTContext *ctx, PQOutputContext *pc);
 
-
-    return 0;
-}
-
-static int sock_close(QprotoContext *ctx, PQOutputContext **pc)
-{
-
-    return 0;
-}
-
-const PQOutput pq_output_socket = {
-    .name = "file",
-    .type = QPROTO_CONNECTION_SOCKET,
-    .init = sock_init,
-    .output = sock_output,
-    .close = sock_close,
-};
+#endif

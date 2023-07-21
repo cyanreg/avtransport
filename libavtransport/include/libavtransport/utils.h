@@ -23,52 +23,52 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_UTILS_HEADER
-#define LIBQPROTO_UTILS_HEADER
+#ifndef LIBAVTRANSPORT_UTILS_HEADER
+#define LIBAVTRANSPORT_UTILS_HEADER
 
 #include <stddef.h>
 #include <stdint.h>
 
 /* Rational data type structure. */
-typedef struct QprotoRational {
+typedef struct AVTRational {
     int num;
     int den;
-} QprotoRational;
+} AVTRational;
 
-typedef struct QprotoBuffer QprotoBuffer;
+typedef struct AVTBuffer AVTBuffer;
 
 /* Create a reference counted buffer from existing data. */
-QprotoBuffer *qp_buffer_create(uint8_t *data, size_t len,
+AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
                                void *opaque, void (*free_fn)(void *opaque, void *base_data));
 
 /* Default freeing callback for buffers that simply calls free(base_data) */
-void qp_buffer_default_free(void *opaque, void *base_data);
+void avt_buffer_default_free(void *opaque, void *base_data);
 
 /* Create and allocate a reference counted buffer. */
-QprotoBuffer *qp_buffer_alloc(size_t len);
+AVTBuffer *avt_buffer_alloc(size_t len);
 
 /* References the buffer. Returns a new reference at the offset and length requested.
  * If offset AND length are 0, references the whole buffer. */
-QprotoBuffer *qp_buffer_reference(QprotoBuffer *buffer, ptrdiff_t offset, int64_t len);
+AVTBuffer *avt_buffer_reference(AVTBuffer *buffer, ptrdiff_t offset, int64_t len);
 
 /* Returns the current numer of references */
-int qp_buffer_get_refcount(QprotoBuffer *buffer);
+int avt_buffer_get_refcount(AVTBuffer *buffer);
 
 /* Access the data in a buffer. Does not reference it. */
-void *qp_buffer_get_data(QprotoBuffer *buffer, size_t *len);
+void *avt_buffer_get_data(AVTBuffer *buffer, size_t *len);
 
 /* Get the data length */
-size_t qp_buffer_get_data_len(QprotoBuffer *buffer);
+size_t avt_buffer_get_data_len(AVTBuffer *buffer);
 
 /* Unreference a reference counted buffer. */
-void qp_buffer_unref(QprotoBuffer **buffer);
+void avt_buffer_unref(AVTBuffer **buffer);
 
 /* All functions return negative values for errors.
  * This is a wrapper that's used to convert standard stderr values into
  * negatives. */
-#define QP_ERROR(err) (-(err))
+#define AVT_ERROR(err) (-(err))
 
-#define QPMIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
-#define QPMAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
+#define AVTMIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
+#define AVTMAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
 
 #endif

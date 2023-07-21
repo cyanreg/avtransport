@@ -23,8 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_UTILS
-#define LIBQPROTO_UTILS
+#ifndef LIBAVTRANSPORT_UTILS
+#define LIBAVTRANSPORT_UTILS
 
 #include <stdint.h>
 #include <string.h>
@@ -221,24 +221,24 @@ typedef struct PQByteStream {
 
 #define PQ_WPD(bs, len)                                            \
     do {                                                           \
-        memset((bs).ptr, 0, QPMIN(len >> 3, (bs).end - (bs).ptr)); \
-        (bs).ptr += QPMIN(len >> 3, (bs).end - (bs).ptr);          \
+        memset((bs).ptr, 0, AVTMIN(len >> 3, (bs).end - (bs).ptr)); \
+        (bs).ptr += AVTMIN(len >> 3, (bs).end - (bs).ptr);          \
     } while (0)
 
 #define PQ_WDT(bs, buf, len)                                    \
     do {                                                        \
-        memcpy((bs).ptr, buf, QPMIN(len, (bs).end - (bs).ptr)); \
-        (bs).ptr += QPMIN(len, (bs).end - (bs).ptr);            \
+        memcpy((bs).ptr, buf, AVTMIN(len, (bs).end - (bs).ptr)); \
+        (bs).ptr += AVTMIN(len, (bs).end - (bs).ptr);            \
     } while (0)
 
-#define PQ_WST(bs, str, fixed_len)                          \
+#define PQ_WST(bs, fixed_len, str)                          \
     do {                                                    \
-        PQ_WDT(bs, str, QPMIN(strlen(str), fixed_len));     \
-        PQ_WPD(bs, QPMAX(fixed_len - strlen(str), 0) << 3); \
+        PQ_WDT(bs, str, AVTMIN(strlen(str), fixed_len));     \
+        PQ_WPD(bs, AVTMAX(fixed_len - strlen(str), 0) << 3); \
     } while (0)
 
 #define PQ_GETLAST(bs, len)             \
-    (QPMAX((bs).start, (bs).ptr - len))
+    (AVTMAX((bs).start, (bs).ptr - len))
 
 #define PQ_WLEN(bs)         \
     ((bs).ptr - (bs).start)

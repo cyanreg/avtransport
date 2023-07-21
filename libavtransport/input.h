@@ -23,30 +23,25 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_BUFFER
-#define LIBQPROTO_BUFFER
+#ifndef LIBAVTRANSPORT_INPUT
+#define LIBAVTRANSPORT_INPUT
 
-#include <stdatomic.h>
+#include <libavtransport/input.h>
 
-#include <libqproto/utils.h>
+#include "common.h"
 
-struct QprotoBuffer {
-    uint8_t *data;
-    size_t len;
+typedef struct PQInputContext PQInputContext;
 
-    uint8_t *base_data;
-    uint8_t *end_data;
+typedef struct PQInput {
+    const char *name;
+    enum AVTConnectionType type;
 
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
+    int (*init)(AVTContext *ctx, PQInputContext **pc, AVTInputSource *in,
+                AVTInputOptions *opts);
 
-int pq_buffer_quick_ref(QprotoBuffer *dst, QprotoBuffer *buffer,
-                        ptrdiff_t offset, int64_t len);
+    int (*process)(AVTContext *ctx, PQInputContext *pc);
 
-void pq_buffer_quick_unref(QprotoBuffer *buf);
-
-int pq_buffer_offset(QprotoBuffer *buf, ptrdiff_t offset);
+    int (*close)(AVTContext *ctx, PQInputContext **pc);
+} PQInput;
 
 #endif

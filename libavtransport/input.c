@@ -36,9 +36,9 @@ static const PQInput *pq_input_list[] = {
     NULL,
 };
 
-int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
-                  QprotoInputCallbacks *cb, void *cb_opaque,
-                  QprotoInputOptions *opts)
+int avt_input_open(AVTContext *ctx, AVTInputSource *src,
+                   AVTInputCallbacks *cb, void *cb_opaque,
+                   AVTInputOptions *opts)
 {
     const PQInput *in;
     for (in = pq_input_list[0]; in; in++) {
@@ -47,26 +47,26 @@ int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
     }
 
     if (!in)
-        return QP_ERROR(ENOTSUP);
+        return AVT_ERROR(ENOTSUP);
 
-    qp->src.cb = in;
-    qp->src.src = *src;
-    qp->src.proc = *cb;
-    qp->src.cb_opaque = cb_opaque;
+    ctx->src.cb = in;
+    ctx->src.src = *src;
+    ctx->src.proc = *cb;
+    ctx->src.cb_opaque = cb_opaque;
 
-    return in->init(qp, &qp->src.ctx, src, opts);
+    return in->init(ctx, &ctx->src.ctx, src, opts);
 }
 
-int qp_input_process(QprotoContext *qp, int64_t timeout)
+int avt_input_process(AVTContext *ctx, int64_t timeout)
 {
-    if (!qp->src.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->src.ctx)
+        return AVT_ERROR(EINVAL);
 
-    return qp->src.cb->process(qp, qp->src.ctx);
+    return ctx->src.cb->process(ctx, ctx->src.ctx);
 }
 
-static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
-                               QprotoBuffer *buf)
+static int pq_input_stream_reg(AVTContext *ctx, PQByteStream *bs,
+                               AVTBuffer *buf)
 {
     pq_bs_skip(bs, 16);
     uint16_t st_id = pq_bs_read_b16(bs);
@@ -78,13 +78,13 @@ static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
     uint64_t flags = pq_bs_read_b64(bs);
     pq_bs_skip(bs, 64);
     uint32_t codec_id = pq_bs_read_b32(bs);
-    QprotoRational tb = { pq_bs_read_b32(bs), pq_bs_read_b32(bs) };
+    AVTRational tb = { pq_bs_read_b32(bs), pq_bs_read_b32(bs) };
 
-    QprotoStream *st = qp_find_stream(qp, st_id);
+    AVTStream *st = avt_find_stream(ctx, st_id);
     if (!st) {
-        st = qp_alloc_stream(qp, st_id);
+        st = avt_alloc_stream(ctx, st_id);
         if (!st)
-            return QP_ERROR(ENOMEM);
+            return AVT_ERROR(ENOMEM);
     }
 
     st->codec_id = codec_id;
@@ -93,27 +93,27 @@ static int pq_input_stream_reg(QprotoContext *qp, PQByteStream *bs,
     st->timebase = tb;
 
     if (st_id_rel != st_id) {
-        QprotoStream *rel_stream = qp_find_stream(qp, st_id_rel);
+        AVTStream *rel_stream = avt_find_stream(ctx, st_id_rel);
         if (!rel_stream)
-            pq_log(qp, QP_LOG_ERROR, "Invalid related stream ID: %i\n", st_id_rel);
+            pq_log(ctx, AVT_LOG_ERROR, "Invalid related stream ID: %i\n", st_id_rel);
         else
             st->related_to = rel_stream;
     }
     if (st_id_der != st_id) {
-        QprotoStream *derived_stream = qp_find_stream(qp, st_id_der);
+        AVTStream *derived_stream = avt_find_stream(ctx, st_id_der);
         if (!derived_stream)
-            pq_log(qp, QP_LOG_ERROR, "Invalid derived stream ID: %i\n", st_id_der);
+            pq_log(ctx, AVT_LOG_ERROR, "Invalid derived stream ID: %i\n", st_id_der);
         else
             st->derived_from = derived_stream;
      }
 
-    int ret = qp->src.proc.stream_register_cb(qp->src.cb_opaque, st);
+    int ret = ctx->src.proc.stream_register_cb(ctx->src.cb_opaque, st);
 
     return ret;
 }
 
-static int pq_input_stream_data(QprotoContext *qp, PQByteStream *bs,
-                                QprotoBuffer *buf)
+static int pq_input_stream_data(AVTContext *ctx, PQByteStream *bs,
+                                AVTBuffer *buf)
 {
     uint8_t  desc = pq_bs_read_b16(bs);
     uint16_t st_id = pq_bs_read_b16(bs);
@@ -122,60 +122,59 @@ static int pq_input_stream_data(QprotoContext *qp, PQByteStream *bs,
     int64_t duration = pq_bs_read_b64(bs); // TODO: fix
     uint32_t len = pq_bs_read_b32(bs);
 
-    if (len != qp_buffer_get_data_len(buf) - 36)
-        pq_log(qp, QP_LOG_ERROR, "Error: mismatching stream packet length field!\n");
+    if (len != avt_buffer_get_data_len(buf) - 36)
+        pq_log(ctx, AVT_LOG_ERROR, "Error: mismatching stream packet length field!\n");
 
     pq_buffer_offset(buf, 36);
 
-    QprotoStream *st = qp_find_stream(qp, st_id);
+    AVTStream *st = avt_find_stream(ctx, st_id);
     if (!st)
-        pq_log(qp, QP_LOG_ERROR, "Error: invalid stream ID!\n");
+        pq_log(ctx, AVT_LOG_ERROR, "Error: invalid stream ID!\n");
 
-    QprotoPacket pkt = { 0 };
-
-
+    AVTPacket pkt = { 0 };
 
 
 
-    
+
+
     pkt.pts = pts;
     pkt.dts = pts;
     pkt.duration = duration;
     pkt.type = desc & 0xFF;
     pkt.data = buf;
 
-    int ret = qp->src.proc.stream_pkt_cb(qp->src.cb_opaque, st, pkt, 1);
+    int ret = ctx->src.proc.stream_pkt_cb(ctx->src.cb_opaque, st, pkt, 1);
 
     return ret;
 }
 
-static int pq_input_user_data(QprotoContext *qp, PQByteStream *bs,
-                              QprotoBuffer *buf)
+static int pq_input_user_data(AVTContext *ctx, PQByteStream *bs,
+                              AVTBuffer *buf)
 {
     uint16_t desc = pq_bs_read_b16(bs);
     uint16_t user_field = pq_bs_read_b16(bs);
     uint32_t seq = pq_bs_read_b32(bs);
     uint32_t len = pq_bs_read_b32(bs);
 
-    if (len != qp_buffer_get_data_len(buf) - 36)
-        pq_log(qp, QP_LOG_ERROR, "Error: mismatching user packet length field!\n");
+    if (len != avt_buffer_get_data_len(buf) - 36)
+        pq_log(ctx, AVT_LOG_ERROR, "Error: mismatching user packet length field!\n");
 
     pq_buffer_offset(buf, 36);
 
-    int ret = qp->src.proc.user_pkt_cb(qp->src.cb_opaque, buf, desc,
+    int ret = ctx->src.proc.user_pkt_cb(ctx->src.cb_opaque, buf, desc,
                                        user_field, seq);
 
     return ret;
 }
 
-static int pq_input_demux(QprotoContext *qp, QprotoBuffer *buf)
+static int pq_input_demux(AVTContext *ctx, AVTBuffer *buf)
 {
     size_t len;
-    uint8_t *data = qp_buffer_get_data(buf, &len);
+    uint8_t *data = avt_buffer_get_data(buf, &len);
 
     /* Packets are never smaller than 36 bytes */
     if (len < 36)
-        return QP_ERROR(EINVAL);
+        return AVT_ERROR(EINVAL);
 
     PQ_INIT(bs, data, len)
 
@@ -185,26 +184,26 @@ static int pq_input_demux(QprotoContext *qp, QprotoBuffer *buf)
 
     /* Filter out the non-flag, non-arbitrary bits. */
     uint16_t desc_h = desc & 0xFF00;
-    if (!(desc_h & (QP_PKT_STREAM_DATA & 0xFF00)))
-        pq_input_stream_data(qp, &bs, buf);
-    if (!(desc_h & (QP_PKT_USER_DATA & 0xFF00)))
-        pq_input_user_data(qp, &bs, buf);
+    if (!(desc_h & (AVT_PKT_STREAM_DATA & 0xFF00)))
+        pq_input_stream_data(ctx, &bs, buf);
+    if (!(desc_h & (AVT_PKT_USER_DATA & 0xFF00)))
+        pq_input_user_data(ctx, &bs, buf);
 
     switch (desc) {
-    case QP_PKT_STREAM_REG:
-        pq_input_stream_reg(qp, &bs, buf);
+    case AVT_PKT_STREAM_REG:
+        pq_input_stream_reg(ctx, &bs, buf);
         break;
     }
 
-    qp_buffer_unref(&buf);
+    avt_buffer_unref(&buf);
 
     return 0;
 }
 
-int qp_input_close(QprotoContext *qp)
+int avt_input_close(AVTContext *ctx)
 {
-    if (!qp->src.ctx)
-        return QP_ERROR(EINVAL);
+    if (!ctx->src.ctx)
+        return AVT_ERROR(EINVAL);
 
-    return qp->src.cb->close(qp, &qp->src.ctx);
+    return ctx->src.cb->close(ctx, &ctx->src.ctx);
 }

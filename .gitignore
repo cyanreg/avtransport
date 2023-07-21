@@ -1,5 +1,7 @@
 build
 *.log
-*.qp
+*.av
+*.avt
+*.avts
 .github/_build
 .github/_install

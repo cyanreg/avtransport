@@ -34,7 +34,7 @@ typedef struct PQBufEntry {
     ptrdiff_t seg_offset;
     size_t    seg_len;
 
-    QprotoBuffer data;
+    AVTBuffer data;
 
     struct PQBufEntry *start;
     struct PQBufEntry *prev;
@@ -50,84 +50,84 @@ typedef struct PQReorder {
     int nb_used;
 } PQReorder;
 
-int pq_reorder_init(QprotoContext *qp, size_t max_buffer)
+int pq_reorder_init(AVTContext *ctx, size_t max_buffer)
 {
-    PQReorder *ctx = qp->src.rctx = calloc(1, sizeof(PQReorder));
+    PQReorder *reorder = ctx->src.rctx = calloc(1, sizeof(PQReorder));
     if (!ctx)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
-    ctx->nb_avail = 32;
+    reorder->nb_avail = 32;
 
-    ctx->avail = calloc(ctx->nb_avail, sizeof(PQBufEntry *));
-    if (!ctx->avail)
-        return QP_ERROR(ENOMEM);
+    reorder->avail = calloc(reorder->nb_avail, sizeof(PQBufEntry *));
+    if (!reorder->avail)
+        return AVT_ERROR(ENOMEM);
 
-    ctx->used = calloc(ctx->nb_avail, sizeof(PQBufEntry *));
-    if (!ctx->used)
-        return QP_ERROR(ENOMEM);
+    reorder->used = calloc(reorder->nb_avail, sizeof(PQBufEntry *));
+    if (!reorder->used)
+        return AVT_ERROR(ENOMEM);
 
-    for (int i = 0; i < ctx->nb_avail; i++) {
-        ctx->avail[i] = calloc(1, sizeof(PQBufEntry));
-        if (!ctx->avail[i])
-            return QP_ERROR(ENOMEM);
+    for (int i = 0; i < reorder->nb_avail; i++) {
+        reorder->avail[i] = calloc(1, sizeof(PQBufEntry));
+        if (!reorder->avail[i])
+            return AVT_ERROR(ENOMEM);
     }
 
     return 0;
 }
 
-static int pq_reorder_alloc(PQReorder *ctx)
+static int pq_reorder_alloc(PQReorder *reorder)
 {
-    PQBufEntry **atmp = realloc(ctx->avail, (ctx->nb_avail + 1)*sizeof(PQBufEntry *));
+    PQBufEntry **atmp = realloc(reorder->avail, (reorder->nb_avail + 1)*sizeof(PQBufEntry *));
     if (!atmp)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
-    ctx->avail = atmp;
+    reorder->avail = atmp;
 
-    atmp = realloc(ctx->used, (ctx->nb_used + 1)*sizeof(PQBufEntry *));
+    atmp = realloc(reorder->used, (reorder->nb_used + 1)*sizeof(PQBufEntry *));
     if (!atmp)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
-    ctx->used = atmp;
+    reorder->used = atmp;
 
-    atmp[ctx->nb_avail] = calloc(1, sizeof(PQBufEntry));
-    if (!atmp[ctx->nb_avail])
-        return QP_ERROR(ENOMEM);
+    atmp[reorder->nb_avail] = calloc(1, sizeof(PQBufEntry));
+    if (!atmp[reorder->nb_avail])
+        return AVT_ERROR(ENOMEM);
 
-    ctx->nb_avail++;
+    reorder->nb_avail++;
 
     return 0;
 }
 
-int pq_reorder_push_pkt(QprotoContext *qp, QprotoBuffer *data,
+int pq_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
                         ptrdiff_t offset, uint32_t seq,
                         enum PQPacketType type)
 {
     int ret;
-    PQReorder *ctx = qp->src.rctx;
+    PQReorder *reorder = ctx->src.rctx;
     PQBufEntry *ins, *tmp, *entry = NULL;
 
-    if (type == (QP_PKT_STREAM_DATA & 0xFF00) ||
-        type == (QP_PKT_STREAM_SEG_DATA) ||
-        type == (QP_PKT_STREAM_SEG_END))
-        entry = qp->src.rctx->stream_data;
+    if (type == (AVT_PKT_STREAM_DATA & 0xFF00) ||
+        type == (AVT_PKT_STREAM_SEG_DATA) ||
+        type == (AVT_PKT_STREAM_SEG_END))
+        entry = ctx->src.rctx->stream_data;
 
     while (entry->next && (entry->seq < seq) && (entry->seg_offset < offset))
         entry = entry->next;
 
-    if (!ctx->nb_avail) {
-        ret = pq_reorder_alloc(ctx);
+    if (!reorder->nb_avail) {
+        ret = pq_reorder_alloc(reorder);
         if (ret < 0)
             return ret;
     }
 
-    ins = ctx->avail[ctx->nb_avail - 1];
-    ctx->nb_avail--;
-    ctx->used[ctx->nb_used] = ins;
-    ctx->nb_used++;
+    ins = reorder->avail[reorder->nb_avail - 1];
+    reorder->nb_avail--;
+    reorder->used[reorder->nb_used] = ins;
+    reorder->nb_used++;
 
     ins->seq = seq;
     ins->seg_offset = offset;
-    ins->seg_len = qp_buffer_get_data_len(data);
+    ins->seg_len = avt_buffer_get_data_len(data);
 
     tmp = entry->next;
     entry->next = ins;
@@ -137,20 +137,20 @@ int pq_reorder_push_pkt(QprotoContext *qp, QprotoBuffer *data,
     return 0;
 }
 
-void pq_reorder_uninit(QprotoContext *qp)
+void pq_reorder_uninit(AVTContext *ctx)
 {
-    PQReorder *ctx = qp->src.rctx;
+    PQReorder *reorder = ctx->src.rctx;
 
-    for (int i = 0; i < ctx->nb_used; i++) {
-        pq_buffer_quick_unref(&ctx->used[i]->data);
-        free(ctx->used[i]);
+    for (int i = 0; i < reorder->nb_used; i++) {
+        pq_buffer_quick_unref(&reorder->used[i]->data);
+        free(reorder->used[i]);
     }
-    for (int i = 0; i < ctx->nb_avail; i++)
-        free(ctx->avail[i]);
+    for (int i = 0; i < reorder->nb_avail; i++)
+        free(reorder->avail[i]);
 
-    free(ctx->avail);
-    free(ctx->used);
+    free(reorder->avail);
+    free(reorder->used);
 
-    free(qp->src.rctx);
-    qp->src.rctx = NULL;
+    free(ctx->src.rctx);
+    ctx->src.rctx = NULL;
 }

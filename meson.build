@@ -1,4 +1,4 @@
-project('libqproto', 'c',
+project('libavtransport', 'c',
     license: 'MIT',
     default_options: [ 'buildtype=debugoptimized', 'c_std=c99', 'warning_level=1' ],
     version: '0.0.1',
@@ -38,7 +38,11 @@ endif
 
 cc = meson.get_compiler('c')
 
-subdir('libqproto')
+subdir('libavtransport')
+
+if get_option('tools').auto()
+    subdir('tools')
+endif
 
 configure_file(
     output: 'config.h',

@@ -34,17 +34,17 @@ struct PQOutputContext {
     FILE *f;
 };
 
-static int file_init(QprotoContext *ctx, PQOutputContext **pc,
-                     QprotoOutputDestination *dst, QprotoOutputOptions *opts)
+static int file_init(AVTContext *ctx, PQOutputContext **pc,
+                     AVTOutputDestination *dst, AVTOutputOptions *opts)
 {
     PQOutputContext *priv = malloc(sizeof(*priv));
     if (!priv)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
     priv->f = fopen(dst->path, "w+");
     if (!priv->f) {
         free(priv);
-        return QP_ERROR(errno);
+        return AVT_ERROR(errno);
     }
 
     *pc = priv;
@@ -52,40 +52,40 @@ static int file_init(QprotoContext *ctx, PQOutputContext **pc,
     return 0;
 }
 
-static int file_output(QprotoContext *ctx, PQOutputContext *pc,
-                       uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf)
+static int file_output(AVTContext *ctx, PQOutputContext *pc,
+                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
 {
     size_t len;
-    uint8_t *data = qp_buffer_get_data(buf, &len);
+    uint8_t *data = avt_buffer_get_data(buf, &len);
 
     /* TODO: use io_uring */
     size_t out = fwrite(hdr, hdr_len, 1, pc->f);
     if (out != hdr_len)
-        return QP_ERROR(errno);
+        return AVT_ERROR(errno);
 
     if (buf) {
         out = fwrite(data, len, 1, pc->f);
         if (out != len)
-            return QP_ERROR(errno);
+            return AVT_ERROR(errno);
     }
 
     return 0;
 }
 
-static int file_close(QprotoContext *ctx, PQOutputContext **pc)
+static int file_close(AVTContext *ctx, PQOutputContext **pc)
 {
     int ret = fclose((*pc)->f);
     free(*pc);
     *pc = NULL;
     if (ret)
-        return QP_ERROR(errno);
+        return AVT_ERROR(errno);
 
     return 0;
 }
 
 const PQOutput pq_output_file = {
     .name = "file",
-    .type = QPROTO_CONNECTION_FILE,
+    .type = AVT_CONNECTION_FILE,
     .init = file_init,
     .max_pkt_len = pq_unlim_pkt_len,
     .output = file_output,

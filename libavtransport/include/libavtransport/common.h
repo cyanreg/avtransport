@@ -23,8 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_COMMON_HEADER
-#define LIBQPROTO_COMMON_HEADER
+#ifndef LIBAVTRANSPORT_COMMON_HEADER
+#define LIBAVTRANSPORT_COMMON_HEADER
 
 #include <stdint.h>
 #include <stdarg.h>
@@ -32,112 +32,112 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include <libqproto/video.h>
-#include <libqproto/utils.h>
+#include <libavtransport/video.h>
+#include <libavtransport/utils.h>
 
-typedef struct QprotoContext  QprotoContext;
-typedef struct QprotoMetadata QprotoMetadata;
+typedef struct AVTContext  AVTContext;
+typedef struct AVTMetadata AVTMetadata;
 
-enum QprotoConnectionType {
+enum AVTConnectionType {
     /* Reverse connectivity for senders/receivers.
      * The context MUST already have an output or input initialized. */
-    QPROTO_CONNECTION_REVERSE = 1,
+    AVT_CONNECTION_REVERSE = 1,
 
     /* URL address in the form of:
      * <protocol>://<address>:<port>
      * <protocol> MUST be "udp", "udplite" OR "quic" */
-    QPROTO_CONNECTION_URL,
+    AVT_CONNECTION_URL,
 
     /* File path */
-    QPROTO_CONNECTION_FILE,
+    AVT_CONNECTION_FILE,
 
     /* Socket */
-    QPROTO_CONNECTION_SOCKET,
+    AVT_CONNECTION_SOCKET,
 
     /* File descriptor */
-    QPROTO_CONNECTION_FD,
+    AVT_CONNECTION_FD,
 
     /* Raw reader/writer using callbacks. */
-    QPROTO_CONNECTION_CALLBACKS,
+    AVT_CONNECTION_CALLBACKS,
 };
 
-enum QPLogLevel {
-    QP_LOG_QUIET    = -(1 << 0),
-    QP_LOG_FATAL    =  (0 << 0),
-    QP_LOG_ERROR    = +(1 << 0),
-    QP_LOG_WARN     = +(1 << 1),
-    QP_LOG_INFO     = +(1 << 2),
-    QP_LOG_VERBOSE  = +(1 << 3),
-    QP_LOG_DEBUG    = +(1 << 4),
-    QP_LOG_TRACE    = +(1 << 5),
+enum AVTLogLevel {
+    AVT_LOG_QUIET    = -(1 << 0),
+    AVT_LOG_FATAL    =  (0 << 0),
+    AVT_LOG_ERROR    = +(1 << 0),
+    AVT_LOG_WARN     = +(1 << 1),
+    AVT_LOG_INFO     = +(1 << 2),
+    AVT_LOG_VERBOSE  = +(1 << 3),
+    AVT_LOG_DEBUG    = +(1 << 4),
+    AVT_LOG_TRACE    = +(1 << 5),
 };
 
-typedef struct QprotoContextOptions {
+typedef struct AVTContextOptions {
     void *log_opaque;
-    void (*log_cb)(void *log_opaque, enum QPLogLevel level,
+    void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
                    const char *format, va_list args, int error);
-} QprotoContextOptions;
+} AVTContextOptions;
 
-enum QprotoCodecID {
-    QPROTO_CODEC_RAW_VIDEO = 1,
-    QPROTO_CODEC_AV1,
-    QPROTO_CODEC_H264,
-    QPROTO_CODEC_DIRAC,
+enum AVTCodecID {
+    AVT_CODEC_RAW_VIDEO = 1,
+    AVT_CODEC_AV1,
+    AVT_CODEC_H264,
+    AVT_CODEC_DIRAC,
 
-    QPROTO_CODEC_RAW_AUDIO = 32768,
-    QPROTO_CODEC_OPUS,
-    QPROTO_CODEC_AAC,
+    AVT_CODEC_RAW_AUDIO = 32768,
+    AVT_CODEC_OPUS,
+    AVT_CODEC_AAC,
 
-    QPROTO_CODEC_ASS = 65536,
+    AVT_CODEC_ASS = 65536,
 };
 
-enum QprotoFrameType {
-    QPROTO_KEYFRAME = 0x80,
-    QPROTO_S_FRAME = 0x40,
+enum AVTFrameType {
+    AVT_KEYFRAME = 0x80,
+    AVT_S_FRAME = 0x40,
 };
 
-enum QprotoStreamFlags {
-    QPROTO_STREAM_STILL_PICTURE = 1,
+enum AVTStreamFlags {
+    AVT_STREAM_STILL_PICTURE = 1,
 };
 
-typedef struct QprotoStream {
+typedef struct AVTStream {
     uint32_t id;
-    enum QprotoCodecID codec_id;
-    QprotoMetadata *meta;
+    enum AVTCodecID codec_id;
+    AVTMetadata *meta;
 
     /* Duration in nanoseconds, if known. */
     uint64_t duration;
 
-    QprotoStreamVideoInfo video_info;
-    QprotoBuffer *icc_profile;
+    AVTStreamVideoInfo video_info;
+    AVTBuffer *icc_profile;
 
-    enum QprotoStreamFlags flags;
-    QprotoRational timebase;
+    enum AVTStreamFlags flags;
+    AVTRational timebase;
     int64_t bitrate;
 
-    QprotoBuffer *init_data;
+    AVTBuffer *init_data;
 
-    struct QprotoStream *related_to;
-    struct QprotoStream *derived_from;
+    struct AVTStream *related_to;
+    struct AVTStream *derived_from;
 
-    /* libqproto private stream data. Do not use. */
+    /* libavtransport private stream data. Do not use. */
     struct PQStreamPriv *private;
-} QprotoStream;
+} AVTStream;
 
-typedef struct QprotoPacket {
-    QprotoBuffer *data;
+typedef struct AVTPacket {
+    AVTBuffer *data;
 
-    enum QprotoFrameType type;
+    enum AVTFrameType type;
     int64_t pts;
     int64_t dts;
     int64_t duration;
-} QprotoPacket;
+} AVTPacket;
 
-/* Allocate a Qproto context with the given context options. */
-int qp_init(QprotoContext **qp, QprotoContextOptions *opts);
+/* Allocate an AVTransport context with the given context options. */
+int avt_init(AVTContext **ctx, AVTContextOptions *opts);
 
 /* Uninitialize a context, closing all connections and files gracefully,
  * and free all memory used. */
-void qp_close(QprotoContext **qp);
+void avt_close(AVTContext **ctx);
 
 #endif

@@ -57,20 +57,20 @@ endif
 add_global_arguments(build_opts, language: 'c')
 
 inc = include_directories('./include')
-lib = library('qproto', sources,
+libavtransport = library('avtransport', sources,
     install: true,
     dependencies: dependencies,
     soversion: ver_major,
     include_directories: inc,
 )
 
-libqproto = declare_dependency(
-    link_with: lib,
+libavtransport_dep = declare_dependency(
+    link_with: libavtransport,
     include_directories: inc,
 )
 
-# Allows projects to build libplacebo by cloning into ./subprojects/libqproto
-meson.override_dependency('libplacebo', libqproto)
+# Allows projects to build libavtransport by cloning into ./subprojects/libavtransport
+meson.override_dependency('libavtransport', libavtransport_dep)
 
 # Install headers
 foreach h : headers
@@ -89,6 +89,6 @@ pkg = import('pkgconfig')
 pkg.generate(
     name: meson.project_name(),
     description: 'Multimedia container and protocol',
-    libraries: lib,
+    libraries: libavtransport,
     version: meson.project_version(),
 )

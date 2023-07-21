@@ -1,6 +1,6 @@
-# Qproto protocol
+# AVTransport protocol
 
-The Qproto protocol is a new standardized mechanism for multimedia transport and
+The AVTransport protocol is a new standardized mechanism for multimedia transport and
 storage. This protocol aims to be a simple, reliable and robust low-overhead method
 that borrows design decisions from other protocols and aims to be generic,
 rather than specialized for certain use-cases. With minimal changes, it can be
@@ -13,7 +13,7 @@ and rigid overseeing organizations.
 
 ## Table of Contents
 
-- [Qproto protocol](#qproto-protocol)
+- [AVTransport protocol](#avtransport-protocol)
     - [Specification conventions](#specification-conventions)
     - [Protocol overview](#protocol-overview)
   - [Packet description](#packet-description)
@@ -48,13 +48,13 @@ and rigid overseeing organizations.
     - [Feedback](#feedback)
     - [Resend](#resend)
     - [Stream control](#stream-control)
-    - [Reverse user data](#reverse-user-data)
   - [Addendum](#addendum)
     - [Codec encapsulation](#codec-encapsulation)
       - [Opus encapsulation](#opus-encapsulation)
       - [AAC encapsulation](#aac-encapsulation)
       - [AV1 encapsulation](#av1-encapsulation)
       - [H264 encapsulation](#h264-encapsulation)
+      - [H265 encapsulation](#h265-encapsulation)
       - [Dirac/VC-2](#diracvc-2)
       - [ASS encapsulation](#ass-encapsulation)
       - [Raw audio encapsulation](#raw-audio-encapsulation)
@@ -92,59 +92,59 @@ This overflow MUST be handled by the receiver.
 
 ### Protocol overview
 
-On a high-level, Qproto is a thin packetized wrapper around codec, metadata and
+On a high-level, AVTransport is a thin packetized wrapper around codec, metadata and
 user packets and provides context and error resilience, as well as defining a
 standardized way to transmit such data between clients.
 
-An overall possible structure of packets in a general Qproto session can be:
+An overall possible structure of packets in a general AVTransport session can be:
 
-|                                           Packet type | Description                                                                                         |
-|------------------------------------------------------:|:----------------------------------------------------------------------------------------------------|
-|               [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify a stream of bytes as a Qproto session. |
-| [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                          |
-|                   [Embedded font](#font-data-packets) | Optional embedded font for subtitles.                                                               |
-|   [Stream registration](#stream-registration-packets) | Register a new stream.                                                                              |
-|           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                       |
-|      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                      |
-|              [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                      |
-|                   [ICC profile](#icc-profile-packets) | ICC profile for correct video presentation.                                                         |
-|                         [Metadata](#metadata-packets) | Stream or session metadata.                                                                         |
-|                       [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                      |
-|       [Video orientation](#video-orientation-packets) | Video orientation.                                                                                  |
-|                   [Stream data](#stream-data-packets) | Stream data packets.                                                                                |
-|          [Stream segments](#stream-data-segmentation) | Segmented stream data packets.                                                                      |
-|                    [Stream FEC](#stream-fec-segments) | Optional FEC data for stream data.                                                                  |
-|                       [User data](#user-data-packets) | Optional user data packets.                                                                         |
-|                       [End of stream](#end-of-stream) | Finalizes a stream or session.                                                                      |
+|                                           Packet type | Description                                                                                           |
+|------------------------------------------------------:|:------------------------------------------------------------------------------------------------------|
+|               [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify the stream as an AVTransport session.    |
+| [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                            |
+|                   [Embedded font](#font-data-packets) | Optional embedded font for subtitles.                                                                 |
+|   [Stream registration](#stream-registration-packets) | Register a new stream.                                                                                |
+|           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                         |
+|      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                        |
+|              [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                        |
+|                   [ICC profile](#icc-profile-packets) | ICC profile for correct video presentation.                                                           |
+|                         [Metadata](#metadata-packets) | Stream or session metadata.                                                                           |
+|                       [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                        |
+|       [Video orientation](#video-orientation-packets) | Video orientation.                                                                                    |
+|                   [Stream data](#stream-data-packets) | Stream data packets.                                                                                  |
+|          [Stream segments](#stream-data-segmentation) | Segmented stream data packets.                                                                        |
+|                    [Stream FEC](#stream-fec-segments) | Optional FEC data for stream data.                                                                    |
+|                       [User data](#user-data-packets) | Optional user data packets.                                                                           |
+|                       [End of stream](#end-of-stream) | Finalizes a stream or session.                                                                        |
 
 Each packet MUST be prefixed with a descriptor to identify it. Below is a table
 of how they're allocated.
 
-|           Descriptor | Packet type                                              |
-|---------------------:|:---------------------------------------------------------|
-|               0x5170 | [Session start](#session-start-packets)                  |
-|                  0x2 | [Stream registration](#stream-registration-packets)      |
-|           0x3 to 0x7 | [Stream initialization data](#init-data-packets)         |
-|                  0x8 | [Video information](#video-info-packets)                 |
-|                  0x9 | [Index packets](#index-packets)                          |
-|           0xA to 0xE | [Metadata](#metadata-packets)                            |
-|         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                      |
-|         0x20 to 0x24 | [Embedded font](#font-data-packets)                      |
-|         0x30 to 0x31 | [FEC grouping](#fec-grouping)                            |
-|                 0x40 | [Video orientation](#video-orientation-packets)          |
-|         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)               |
-|         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)         |
-|     0x0100 to 0x01FF | [Stream data](#data-packets)                             |
-|     0x0300 to 0x03FF | [Time synchronization](#time-synchronization-packets)    |
-|     0x0400 to 0x04FF | [User data](#user-data-packets)                          |
-|               0x0500 | [Stream duration](#stream-duration-packets)              |
-|               0x0FFF | [End of stream](#end-of-stream)                          |
-|     0x8000 to 0x80FF | Reserved for **[reverse signalling](#reverse-signalling) |
-|                      | **[reverse signalling](#reverse-signalling) only**       |
-|               0xF001 | [Control data](#control-data)                            |
-|               0xF002 | [Feedback](#feedback)                                    |
-|               0xF003 | [Resend](#resend)                                        |
-|               0xF004 | [Stream control](#stream-control)                        |
+|           Descriptor | Packet type                                                |
+|---------------------:|:-----------------------------------------------------------|
+|               0x4156 | [Session start](#session-start-packets)                    |
+|                  0x2 | [Stream registration](#stream-registration-packets)        |
+|           0x3 to 0x7 | [Stream initialization data](#init-data-packets)           |
+|                  0x8 | [Video information](#video-info-packets)                   |
+|                  0x9 | [Index packets](#index-packets)                            |
+|           0xA to 0xE | [Metadata](#metadata-packets)                              |
+|         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                        |
+|         0x20 to 0x24 | [Embedded font](#font-data-packets)                        |
+|         0x30 to 0x31 | [FEC grouping](#fec-grouping)                              |
+|                 0x40 | [Video orientation](#video-orientation-packets)            |
+|         0xFC to 0xFD | [Stream FEC segment](#stream-fec-segments)                 |
+|         0xFE to 0xFF | [Stream data segment](#stream-data-segmentation)           |
+|     0x0100 to 0x01FF | [Stream data](#data-packets)                               |
+|     0x0300 to 0x03FF | [Time synchronization](#time-synchronization-packets)      |
+|     0x0500 to 0x05FF | [User data](#user-data-packets)                            |
+|               0x0600 | [Stream duration](#stream-duration-packets)                |
+|               0x0FFF | [End of stream](#end-of-stream)                            |
+|     0x8000 to 0x80FF | Reserved for **[reverse signalling](#reverse-signalling)** |
+|                      | **[reverse signalling](#reverse-signalling) only**         |
+|               0xF001 | [Control data](#control-data)                              |
+|               0xF002 | [Feedback](#feedback)                                      |
+|               0xF003 | [Resend](#resend)                                          |
+|               0xF004 | [Stream control](#stream-control)                          |
 
 ## Packet description
 
@@ -157,20 +157,20 @@ scenario are described in the [streaming](#streaming) section.
 ### Session start packets
 
 Session start packets allow receivers to plausibly identify a stream of bytes
-as a Qproto session. The syntax is as follows:
+as an AVTransport session. The syntax is as follows:
 
-| Data         | Name                 | Fixed value | Description                                                                |
-|:-------------|:---------------------|------------:|:---------------------------------------------------------------------------|
-| `b(16)`      | `session_descriptor` |      0x5170 | Indicates this is a Qproto session (`Qp` in hex).                          |
-| `b(16)`      | `session_version`    |         0x0 | Indicates the session version. This document describes version `0x0`.      |
-| `u(32)`      | `global_seq`         |             | Monotonically incrementing per-packet global sequence number.              |
-| `b(8)`       | `session_flags`      |             | Session flags.                                                             |
-| `b(8)`       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 12. |
-| `b(96)`      | `producer_name`      |             | 12 byte UTF-8 string, containing the name of the producer.                 |
-| `b(16)`      | `producer_major`     |             | Major version of the producer.                                             |
-| `b(16)`      | `producer_minor`     |             | Minor version of the producer.                                             |
-| `b(16)`      | `producer_micro`     |             | Micro (patch) version of the producer.                                     |
-| `R(224, 64)` | `raptor`             |             | Raptor code to correct and verify the contents of the packet.              |
+| Data         | Name                 | Fixed value | Description                                                                    |
+|:-------------|:---------------------|------------:|:-------------------------------------------------------------------------------|
+| `b(16)`      | `session_descriptor` |      0x4156 | Indicates this is a AVTransport session (`AV`).                                |
+| `b(16)`      | `session_version`    |      0x5331 | Indicates the session version. This document describes version `21296` (`S0`). |
+| `u(32)`      | `global_seq`         |             | Monotonically incrementing per-packet global sequence number.                  |
+| `b(8)`       | `session_flags`      |             | Session flags.                                                                 |
+| `b(8)`       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 12.     |
+| `b(96)`      | `producer_name`      |             | 12 byte UTF-8 string, containing the name of the producer.                     |
+| `b(16)`      | `producer_major`     |             | Major version of the producer.                                                 |
+| `b(16)`      | `producer_minor`     |             | Minor version of the producer.                                                 |
+| `b(16)`      | `producer_micro`     |             | Micro (patch) version of the producer.                                         |
+| `R(224, 64)` | `raptor`             |             | Raptor code to correct and verify the contents of the packet.                  |
 
 Multiple session packets MAY be present in a session, but MUST remain
 bytewise-identical.
@@ -181,7 +181,7 @@ The `session_flags` field MUST be interpreted in the following way:
 |-----------------:|:-------------------------------------------------------------------------------------------------------------|
 |              0x1 | Indicates session is capable and ready to receive [reverse signalling](#reverse-signalling) data packets.    |
 
-Implementations are allowed to test the first 4 bytes to detect a Qproto stream.<br/>
+Implementations are allowed to test the first 4 bytes to detect a AVTransport stream.<br/>
 The Raptor code is, like for all packets, allowed to be ignored.
 
 ### Time synchronization packets
@@ -666,7 +666,7 @@ coefficients are still required for RGB conversion.
 
 ### Font data packets
 
-Subtitles may often require custom fonts. Qproto supports embedding of fonts
+Subtitles may often require custom fonts. AVTransport supports embedding of fonts
 for use by subtitles.<br/>
 The following structure MUST be followed:
 
@@ -829,7 +829,7 @@ The user-specific data packet is laid out as follows:
 
 | Data                    | Name               | Fixed value  | Description                                                                                  |
 |:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
-| `b(16)`                 | `user_descriptor`  |     0x40\*\* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
+| `b(16)`                 | `user_descriptor`  |     0x05\*\* | Indicates this is an opaque user-specific data. The bottom byte is included and free to use. |
 | `b(16)`                 | `user_field`       |              | A free to use field for user data.                                                           |
 | `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
 | `u(32)`                 | `user_data_length` |              | The length of the user data.                                                                 |
@@ -847,7 +847,7 @@ at the start of files to notify implementations of stream lengths.
 
 | Data         | Name                  |  Fixed value | Description                                                                                     |
 |:-------------|:----------------------|-------------:|:------------------------------------------------------------------------------------------------|
-| `b(16)`      | `duration_descriptor` |       0x0500 | Indicates this is an index packet.                                                              |
+| `b(16)`      | `duration_descriptor` |       0x0600 | Indicates this is an index packet.                                                              |
 | `b(16)`      | `stream_id`           |              | Indicates the stream ID for the index. May be 0xFFFF, in which case, it applies to all streams. |
 | `u(32)`      | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
 | `i(64)`      | `total_duration`      |              | The total duration of the stream(s).                                                            |
@@ -890,11 +890,11 @@ If not encountered in a stream, and the connection was cut, then the receiver is
 allowed to gracefully wait for a reconnection.
 
 If encountered in a file, the implementation MAY regard any data present afterwards
-as padding and ignore it. Qproto files MUST NOT be concatenated.
+as padding and ignore it. AVTransport files MUST NOT be concatenated.
 
 ## Timestamps
 
-Qproto supports high resolution timestamps, with a maximum resolution of
+AVTransport supports high resolution timestamps, with a maximum resolution of
 465.66129 **picoseconds**. Furthermore, the reliability of the timestamps
 can be assured through jitter compenstation.
 
@@ -1017,14 +1017,14 @@ simply assume all device are already synchronized.
 
 ## Streaming
 
-This section describes and suggests behavior for realtime Qproto streams.
+This section describes and suggests behavior for realtime AVTransport streams.
 
 In general, implementations **SHOULD** emit the following packet types
 at the given frequencies.
 
 |                                           Packet type | Suggested frequency  | Reason                                                                                          |
 |------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
-|               [Session start](#session-start-packets) | Target startup delay | To identify a stream as Qproto without ambiguity.                                               |
+|               [Session start](#session-start-packets) | Target startup delay | To identify a stream as AVTransport without ambiguity.                                          |
 | [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
 |   [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
 |      [Stream initialization data](#init-data-packets) | Target startup delay | To initialize decoding of stream packets.                                                       |
@@ -1042,7 +1042,7 @@ be sent as often as necessary if timestamp jitter avoidance is a requirement.
 
 ### UDP
 
-To adapt Qproto for streaming over UDP is trivial - simply send the data packets
+To adapt AVTransport for streaming over UDP is trivial - simply send the data packets
 as-is specified, with no changes required. The sender implementation SHOULD
 resent packets at the frequencies listed [above](#session-start-packets)
 to permit for implementations that didn't catch on the start of the stream begin
@@ -1084,7 +1084,7 @@ be used for reverse signalling as the sender's.
 
 ### QUIC
 
-Qproto tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
+AVTransport tries to use as much of the modern conveniences of QUIC (IETF RFC 9000)
 as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.
 
@@ -1106,7 +1106,7 @@ Jumbograms MAY be used where supported to reduce overhead and increase efficienc
 
 ## Reverse signalling
 
-Qproto supports bidirectional connections. Implementing this part of the
+AVTransport supports bidirectional connections. Implementing this part of the
 specification is fully optional.
 
 **All** packets send back from a receiver to the transmitter MUST have bit

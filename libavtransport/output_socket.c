@@ -23,59 +23,55 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+#include <libavtransport/output.h>
+#include <libavtransport/common.h>
+
+#include <linux/io_uring.h>
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
-#include <libqproto/input.h>
 
 #include "common.h"
-#include "libqproto/common.h"
-#include "input.h"
+#include "output.h"
 
-struct PQInputContext {
-    FILE *f;
+struct PQOutputContext {
+    int fd;
 };
 
-static int file_init(QprotoContext *ctx, PQInputContext **pc,
-                     QprotoInputSource *src, QprotoInputOptions *opts)
+static int sock_init(AVTContext *ctx, PQOutputContext **pc,
+                     AVTOutputDestination *dst, AVTOutputOptions *opts)
 {
-    PQInputContext *priv = malloc(sizeof(*priv));
+    PQOutputContext *priv = malloc(sizeof(*priv));
     if (!priv)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
-    priv->f = fopen(src->path, "r");
-    if (!priv->f) {
-        free(priv);
-        return QP_ERROR(errno);
-    }
 
     *pc = priv;
 
     return 0;
 }
 
-static int file_process(QprotoContext *qp, PQInputContext *pc)
+static int sock_output(AVTContext *ctx, PQOutputContext *pc,
+                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
 {
-
+    size_t len;
+    void *data = avt_buffer_get_data(buf, &len);
 
     return 0;
 }
 
-static int file_close(QprotoContext *ctx, PQInputContext **pc)
+static int sock_close(AVTContext *ctx, PQOutputContext **pc)
 {
-    int ret = fclose((*pc)->f);
-    free(*pc);
-    *pc = NULL;
-    if (ret)
-        return QP_ERROR(errno);
 
     return 0;
 }
 
-const PQInput pq_input_file = {
+const PQOutput pq_output_socket = {
     .name = "file",
-    .type = QPROTO_CONNECTION_FILE,
-    .init = file_init,
-    .process = file_process,
-    .close = file_close,
+    .type = AVT_CONNECTION_SOCKET,
+    .init = sock_init,
+    .output = sock_output,
+    .close = sock_close,
 };

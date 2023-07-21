@@ -30,32 +30,34 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <libavtransport/common.h>
+
 #include "common.h"
 #include "reorder.h"
 
-int qp_init(QprotoContext **qp, QprotoContextOptions *opts)
+int avt_init(AVTContext **ctx, AVTContextOptions *opts)
 {
-    QprotoContext *ctx = malloc(sizeof(*ctx));
-    if (!ctx)
-        return QP_ERROR(ENOMEM);
+    AVTContext *tmp = malloc(sizeof(*tmp));
+    if (!tmp)
+        return AVT_ERROR(ENOMEM);
 
     if (opts)
-        ctx->opts = *opts;
+        tmp->opts = *opts;
 
-    atomic_init(&ctx->dst.seq, 0);
-    atomic_init(&ctx->src.seq, 0);
+    atomic_init(&tmp->dst.seq, 0);
+    atomic_init(&tmp->src.seq, 0);
 
-    *qp = ctx;
+    *ctx = tmp;
     return 0;
 }
 
-void qp_close(QprotoContext **qp)
+void avt_close(AVTContext **ctx)
 {
-    if (qp) {
-        pq_reorder_uninit(*qp);
+    if (ctx) {
+        pq_reorder_uninit(*ctx);
 
-        free(*qp);
-        *qp = NULL;
+        free(*ctx);
+        *ctx = NULL;
     }
 }
 
@@ -69,7 +71,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
 
     char *dup = strdup(path);
     if (!dup)
-        return QP_ERROR(ENOMEM);
+        return AVT_ERROR(ENOMEM);
 
     char *tmp = NULL;
     char *protocol = strtok_r(dup, ":", &tmp); /* Protocol */
@@ -79,7 +81,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
         *proto = PQ_QUIC;
     } else {
         free(dup);
-        return QP_ERROR(ENOTSUP);
+        return AVT_ERROR(ENOTSUP);
     }
 
     char *addr_pre = strtok_r(protocol, ":", &tmp);
@@ -87,7 +89,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
         addr_pre += 2;
     } else {
         free(dup);
-        return QP_ERROR(ENOTSUP);
+        return AVT_ERROR(ENOTSUP);
     }
 
     if (addr_pre[0] == '[') {
@@ -101,7 +103,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
 
         if (ret || !endb) {
             free(dup);
-            return QP_ERROR(EINVAL);
+            return AVT_ERROR(EINVAL);
         }
 
         memcpy(dst_ip, dst_6.s6_addr, 16);
@@ -111,7 +113,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
             *dst_port = strtol(addr_pre + 1, &res, 10);
             if (res) {
                 free(dup);
-                return QP_ERROR(EINVAL);
+                return AVT_ERROR(EINVAL);
             }
         }
 
@@ -141,7 +143,7 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
         hints.ai_flags    = 0;
         if ((error = getaddrinfo(addr, service, &hints, &res))) {
             free(dup);
-            return QP_ERROR(EINVAL);
+            return AVT_ERROR(EINVAL);
         }
 
         memcpy(dst_ip, res->ai_addr, res->ai_addrlen);
@@ -154,16 +156,16 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
     return 0;
 }
 
-QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id)
+AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id)
 {
-    if (!qp->dst.ctx)
+    if (!ctx->dst.ctx)
         return NULL;
 
-    QprotoStream *ret = NULL;
-    QprotoStream **new = realloc(qp->stream, sizeof(*new)*(qp->nb_stream + 1));
+    AVTStream *ret = NULL;
+    AVTStream **new = realloc(ctx->stream, sizeof(*new)*(ctx->nb_stream + 1));
     if (!new)
         return NULL;
-    qp->stream = new;
+    ctx->stream = new;
 
     ret = calloc(1, sizeof(**new));
     if (!ret)
@@ -175,25 +177,25 @@ QprotoStream *qp_alloc_stream(QprotoContext *qp, uint16_t id)
         return NULL;
     }
 
-    new[qp->nb_stream] = ret;
-    qp->nb_stream++;
+    new[ctx->nb_stream] = ret;
+    ctx->nb_stream++;
 
     return ret;
 }
 
-QprotoStream *qp_find_stream(QprotoContext *qp, uint16_t id)
+AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id)
 {
     int i;
-    for (i = 0; i < qp->nb_stream; i++) {
-        if (qp->stream[i]->id == id)
+    for (i = 0; i < ctx->nb_stream; i++) {
+        if (ctx->stream[i]->id == id)
             break;
     }
-    if (i == qp->nb_stream)
+    if (i == ctx->nb_stream)
         return NULL;
-    return qp->stream[i];
+    return ctx->stream[i];
 }
 
-void pq_log(void *ctx, enum QPLogLevel level, const char *fmt, ...)
+void pq_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);

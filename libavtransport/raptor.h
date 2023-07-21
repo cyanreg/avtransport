@@ -23,30 +23,16 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_OUTPUT
-#define LIBQPROTO_OUTPUT
+#ifndef LIBAVTRANSPORT_RAPTOR
+#define LIBAVTRANSPORT_RAPTOR
 
-#include <libqproto/output.h>
+#include <stdint.h>
+#include <stddef.h>
 
-#include "common.h"
+uint64_t pq_calc_raptor_224(uint8_t *data);
+uint64_t pq_calc_raptor_160(uint8_t *data);
 
-typedef struct PQOutputContext PQOutputContext;
-
-typedef struct PQOutput {
-    const char *name;
-    enum QprotoConnectionType type;
-
-    int (*init)(QprotoContext *ctx, PQOutputContext **pc,
-                QprotoOutputDestination *dst, QprotoOutputOptions *opts);
-
-    uint32_t (*max_pkt_len)(QprotoContext *ctx, PQOutputContext *pc);
-
-    int (*output)(QprotoContext *ctx, PQOutputContext *pc,
-                  uint8_t *hdr, size_t hdr_len, QprotoBuffer *buf);
-
-    int (*close)(QprotoContext *ctx, PQOutputContext **pc);
-} PQOutput;
-
-uint32_t pq_unlim_pkt_len(QprotoContext *ctx, PQOutputContext *pc);
+uint8_t *pq_calc_raptor_short(uint8_t *data, uint8_t *code,
+                              size_t data_len, size_t code_len);
 
 #endif

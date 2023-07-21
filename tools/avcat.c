@@ -23,16 +23,7 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_RAPTOR
-#define LIBQPROTO_RAPTOR
-
-#include <stdint.h>
-#include <stddef.h>
-
-uint64_t pq_calc_raptor_224(uint8_t *data);
-uint64_t pq_calc_raptor_160(uint8_t *data);
-
-uint8_t *pq_calc_raptor_short(uint8_t *data, uint8_t *code,
-                              size_t data_len, size_t code_len);
-
-#endif
+int wmain(int argc, wchar_t **argv)
+{
+    return 0;
+}

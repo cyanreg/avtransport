@@ -23,24 +23,24 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_OUTPUT_HEADER
-#define LIBQPROTO_OUTPUT_HEADER
+#ifndef LIBAVTRANSPORT_OUTPUT_HEADER
+#define LIBAVTRANSPORT_OUTPUT_HEADER
 
-#include <libqproto/common.h>
+#include <libavtransport/common.h>
 
-typedef struct QprotoOutputDestination {
-    enum QprotoConnectionType type;
+typedef struct AVTOutputDestination {
+    enum AVTConnectionType type;
     union {
         int reverse;
         const char *path;
         int fd;
-        int (*write_output)(void *opaque, QprotoBuffer *buf);
+        int (*write_data)(void *opaque, AVTBuffer *buf);
     };
 
     void *opaque;
-} QprotoOutputDestination;
+} AVTOutputDestination;
 
-typedef struct QprotoOutputOptions {
+typedef struct AVTOutputOptions {
     /**
      * If the context has an input, include its packets into the output.
      */
@@ -75,48 +75,48 @@ typedef struct QprotoOutputOptions {
      * Default: infinite.
      */
     uint64_t timeout;
-} QprotoOutputOptions;
+} AVTOutputOptions;
 
 /* Open an output and immediately send a stream session packet */
-int qp_output_open(QprotoContext *qp, QprotoOutputDestination *dst,
-                   QprotoOutputOptions *opts);
+int avt_output_open(AVTContext *ctx, AVTOutputDestination *dst,
+                    AVTOutputOptions *opts);
 
 /* Send an epoch packet and set the epoch to use. */
-int qp_output_set_epoch(QprotoContext *qp, uint64_t epoch);
+int avt_output_set_epoch(AVTContext *ctx, uint64_t epoch);
 
 /* Register a stream and allocate internal state for it.
  * To automatically assign a stream ID, set id to 65536.
  * If there's an existing stream with the same ID, will return NULL. */
-QprotoStream *qp_output_add_stream(QprotoContext *qp, uint16_t id);
+AVTStream *avt_output_add_stream(AVTContext *ctx, uint16_t id);
 
 /* Update a stream, (re-)emmitting a stream registration packet.
- * The id MUST match the one from qp_output_add_stream(). */
-int qp_output_update_stream(QprotoContext *qp, QprotoStream *st);
+ * The id MUST match the one from avt_output_add_stream(). */
+int avt_output_update_stream(AVTContext *ctx, AVTStream *st);
 
-int qp_output_add_font(QprotoContext *qp, QprotoBuffer *data, const char *name);
+int avt_output_add_font(AVTContext *ctx, AVTBuffer *data, const char *name);
 
 /* Write data to output. Can be called from multiple threads at once.
  * If compiled with threads, actual output happens in a different thread. */
-int qp_output_write_stream_data(QprotoContext *qp, QprotoStream *st,
-                                QprotoPacket *pkt);
+int avt_output_write_stream_data(AVTContext *ctx, AVTStream *st,
+                                 AVTPacket *pkt);
 
 /* Write user data packets */
-int qp_output_write_user_data(QprotoContext *qp, QprotoBuffer *data,
-                              uint8_t descriptor_flags, uint16_t user,
-                              int prioritize);
+int avt_output_write_user_data(AVTContext *ctx, AVTBuffer *data,
+                               uint8_t descriptor_flags, uint16_t user,
+                               int prioritize);
 
-int qp_output_close_stream(QprotoContext *qp, QprotoStream *st);
+int avt_output_close_stream(AVTContext *ctx, AVTStream *st);
 
-int qp_output_control(QprotoContext *qp, void *opaque, int cease,
-                      int resend_init, int error, uint8_t redirect[16],
-                      uint16_t redirect_port, int seek_requested,
-                      int64_t seek_offset, uint32_t seek_seq);
+int avt_output_control(AVTContext *ctx, void *opaque, int cease,
+                       int resend_init, int error, uint8_t redirect[16],
+                       uint16_t redirect_port, int seek_requested,
+                       int64_t seek_offset, uint32_t seek_seq);
 
-int qp_output_feedback(QprotoContext *qp, void *opaque, QprotoStream *st,
-                       uint64_t epoch_offset, uint64_t bandwidth,
-                       uint32_t fec_corrections, uint32_t corrupt_packets,
-                       uint32_t missing_packets);
+int avt_output_feedback(AVTContext *ctx, void *opaque, AVTStream *st,
+                        uint64_t epoch_offset, uint64_t bandwidth,
+                        uint32_t fec_corrections, uint32_t corrupt_packets,
+                        uint32_t missing_packets);
 
-int qp_output_close(QprotoContext *qp);
+int avt_output_close(AVTContext *ctx);
 
 #endif

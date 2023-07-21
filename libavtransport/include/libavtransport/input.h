@@ -23,37 +23,37 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_INPUT_HEADER
-#define LIBQPROTO_INPUT_HEADER
+#ifndef LIBAVTRANSPORT_INPUT_HEADER
+#define LIBAVTRANSPORT_INPUT_HEADER
 
-#include <libqproto/common.h>
+#include <libavtransport/common.h>
 
-typedef struct QprotoInputSource {
-    enum QprotoConnectionType type;
+typedef struct AVTInputSource {
+    enum AVTConnectionType type;
     union {
         int reverse;
         const char *path;
         int fd;
-        int (*read_input)(void *opaque, QprotoBuffer *data, int64_t offset);
+        int (*read_data)(void *opaque, AVTBuffer *data, int64_t offset);
     };
 
     void *opaque;
-} QprotoInputSource;
+} AVTInputSource;
 
 /* List of callbacks. All are optional. */
-typedef struct QprotoInputCallbacks {
-    int (*stream_register_cb)(void *opaque, QprotoStream *st);
-    void (*stream_update_cb)(void *opaque, QprotoStream *st);
-    void (*font_register_cb)(void *opaque, QprotoBuffer *data, const char *name);
+typedef struct AVTInputCallbacks {
+    int  (*stream_register_cb)(void *opaque, AVTStream *st);
+    void (*stream_update_cb)(void *opaque, AVTStream *st);
+    void (*font_register_cb)(void *opaque, AVTBuffer *data, const char *name);
     void (*epoch_cb)(void *opaque, uint64_t epoch);
 
-    void (*metadata_cb)(void *opaque, QprotoStream *st, QprotoMetadata *meta);
-    int (*stream_pkt_cb)(void *opaque, QprotoStream *st, QprotoPacket pkt, int present);
-    int (*user_pkt_cb)(void *opaque, QprotoBuffer *data, uint16_t descriptor,
-                       uint16_t user, uint32_t seq);
+    void (*metadata_cb)(void *opaque, AVTStream *st, AVTMetadata *meta);
+    int  (*stream_pkt_cb)(void *opaque, AVTStream *st, AVTPacket pkt, int present);
+    int  (*user_pkt_cb)(void *opaque, AVTBuffer *data, uint16_t descriptor,
+                        uint16_t user, uint32_t seq);
 
     void (*duration_cb)(void *opaque, int64_t duration_nsec);
-    void (*stream_close_cb)(void *opaque, QprotoStream *st);
+    void (*stream_close_cb)(void *opaque, AVTStream *st);
 
     /* Reports a timeout, with the number of nanoseconds since the last packet */
     void (*timeout)(void *opaque, uint64_t last_received);
@@ -62,18 +62,18 @@ typedef struct QprotoInputCallbacks {
      * Reverse signalling callbacks. May be hooked up directly to
      * the output context.
      */
-    int (*control_cb)(QprotoContext *qp, void *opaque, int cease,
+    int (*control_cb)(AVTContext *ctx, void *opaque, int cease,
                       int resend_init, int error, uint8_t redirect[16],
                       uint16_t redirect_port, int seek_requested,
                       int64_t seek_offset, uint32_t seek_seq);
 
-    int (*feedback_cb)(QprotoContext *qp, void *opaque, QprotoStream *st,
+    int (*feedback_cb)(AVTContext *ctx, void *opaque, AVTStream *st,
                        uint64_t epoch_offset, uint64_t bandwidth,
                        uint32_t fec_corrections, uint32_t corrupt_packets,
                        uint32_t missing_packets);
-} QprotoInputCallbacks;
+} AVTInputCallbacks;
 
-typedef struct QprotoInputOptions {
+typedef struct AVTInputOptions {
     /**
      * Whether to always check and correct using Raptor codes in the headers.
      */
@@ -84,30 +84,30 @@ typedef struct QprotoInputOptions {
      * Default: infinite.
      */
     uint64_t timeout;
-} QprotoInputOptions;
+} AVTInputOptions;
 
-/* Open a Qproto stream or a file for reading. */
-int qp_input_open(QprotoContext *qp, QprotoInputSource *src,
-                  QprotoInputCallbacks *cb, void *cb_opaque,
-                  QprotoInputOptions *opts);
+/* Open an AVTransport stream or a file for reading. */
+int avt_input_open(AVTContext *ctx, AVTInputSource *src,
+                   AVTInputCallbacks *cb, void *cb_opaque,
+                   AVTInputOptions *opts);
 
 /* Adjusts input options on the fly. */
-int qp_input_set_options(QprotoContext *qp, QprotoInputOptions *opts);
+int avt_input_set_options(AVTContext *ctx, AVTInputOptions *opts);
 
 /* Seek into the stream, if possible. */
-int qp_input_seek(QprotoContext *qp, QprotoStream *st, int64_t offset, int absolute);
+int avt_input_seek(AVTContext *ctx, AVTStream *st, int64_t offset, int absolute);
 
 /* Process a single packet and call its relevant callback. If no input is
  * available within the timeout duration (nanoseconds),
- * will return QP_ERROR(EAGAIN).
+ * will return AVT_ERROR(EAGAIN).
  * Can be called multiple times from different threads. */
-int qp_input_process(QprotoContext *qp, int64_t timeout);
+int avt_input_process(AVTContext *ctx, int64_t timeout);
 
-/* Start a thread that will call qp_input_process as data becomes available.
- * Otherwise, qp_input_process() may be called manually. */
-int qp_input_start_thread(QprotoContext *qp);
+/* Start a thread that will call avt_input_process as data becomes available.
+ * Otherwise, avt_input_process() may be called manually. */
+int avt_input_start_thread(AVTContext *ctx);
 
 /* Close input and free all associated data with it. */
-int qp_input_close(QprotoContext *qp);
+int avt_input_close(AVTContext *ctx);
 
 #endif

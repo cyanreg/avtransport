@@ -23,25 +23,59 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#ifndef LIBQPROTO_INPUT
-#define LIBQPROTO_INPUT
-
-#include <libqproto/input.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <libavtransport/input.h>
+#include <libavtransport/common.h>
 
 #include "common.h"
+#include "input.h"
 
-typedef struct PQInputContext PQInputContext;
+struct PQInputContext {
+    FILE *f;
+};
 
-typedef struct PQInput {
-    const char *name;
-    enum QprotoConnectionType type;
+static int file_init(AVTContext *ctx, PQInputContext **pc,
+                     AVTInputSource *src, AVTInputOptions *opts)
+{
+    PQInputContext *priv = malloc(sizeof(*priv));
+    if (!priv)
+        return AVT_ERROR(ENOMEM);
 
-    int (*init)(QprotoContext *qp, PQInputContext **pc, QprotoInputSource *in,
-                QprotoInputOptions *opts);
+    priv->f = fopen(src->path, "r");
+    if (!priv->f) {
+        free(priv);
+        return AVT_ERROR(errno);
+    }
 
-    int (*process)(QprotoContext *qp, PQInputContext *pc);
+    *pc = priv;
 
-    int (*close)(QprotoContext *qp, PQInputContext **pc);
-} PQInput;
+    return 0;
+}
 
-#endif
+static int file_process(AVTContext *ctx, PQInputContext *pc)
+{
+
+
+    return 0;
+}
+
+static int file_close(AVTContext *ctx, PQInputContext **pc)
+{
+    int ret = fclose((*pc)->f);
+    free(*pc);
+    *pc = NULL;
+    if (ret)
+        return AVT_ERROR(errno);
+
+    return 0;
+}
+
+const PQInput pq_input_file = {
+    .name = "file",
+    .type = AVT_CONNECTION_FILE,
+    .init = file_init,
+    .process = file_process,
+    .close = file_close,
+};
