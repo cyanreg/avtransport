@@ -43,6 +43,8 @@ and rigid overseeing organizations.
     - [UDP](#udp)
     - [UDP-Lite](#udp-lite)
     - [QUIC](#quic)
+    - [Packetized networks](#packetized-networks)
+    - [Serial](#serial)
   - [Reverse signalling](#reverse-signalling)
     - [Control data](#control-data)
     - [Feedback](#feedback)
@@ -1103,6 +1105,33 @@ packets to be sent without fragmentation.
 Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
 
 [Reverse signalling](#reverse-signalling) is natively supported on QUIC.
+
+### Packetized networks
+
+AVTransport is a series of individual packets with no overarching data structure.
+This allows for it to be contained over any protocol or transmitted over any packetized
+network.
+
+The built-in resilience in each data structure makes the protocol suitable even over
+connections with a high bit error rate.
+
+Poor connection reliability can be largely overcome by using
+[forward error correction](#fec-grouping).
+
+This specification does not specify how linking or transmission is performed - only
+that the AVTransport packets remain compliant with their definition here, and the
+stream as a whole remains compliant.
+
+### Serial
+
+AVTransport explicitly carries the size of the contained data. This makes it suitable
+for not only packetized networks, but also serial links.
+
+Users MUST track the start of each AVTransport packet themselves, using the packet headers
+and, optionally, Raptor data to synchronize with the source.
+
+The specification contains no recommendation on how the data is transported. Users
+SHOULD, if necessary, use FEC and other reliability features.
 
 ## Reverse signalling
 
