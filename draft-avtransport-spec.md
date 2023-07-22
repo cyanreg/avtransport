@@ -65,7 +65,7 @@ and rigid overseeing organizations.
       - [Custom codec encapsulation](#custom-codec-encapsulation)
   - [Annex](#annex)
     - [Annex A: LDPC](#annex-a-ldpc)
-      - [ldpc_160_64](#ldpc_160_64)
+      - [ldpc_168_64](#ldpc_168_64)
       - [ldpc_224_64](#ldpc_224_64)
       - [ldpc_2016_768](#ldpc_2016_768)
 
@@ -255,7 +255,7 @@ The layout of the data is as follows:
 | `R(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
 | `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.          |
 | `u(64)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
-| `L(168, 64)` | `ldpc_160_64`       |             | LDPC to correct the leftover previous 168 bits.                                 |
+| `L(168, 64)` | `ldpc_168_64`       |             | LDPC to correct the leftover previous 168 bits.                                 |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -1556,7 +1556,7 @@ The following **H** matrices below shall be used for encoding (via the pseudocod
 
 Implementations are free to convert them to G matrices and use conventional encoding methods.
 
-#### ldpc_160_64
+#### ldpc_168_64
 ```
 To be optimized
 ```
