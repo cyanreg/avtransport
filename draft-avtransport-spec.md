@@ -164,7 +164,7 @@ as an AVTransport session. The syntax is as follows:
 | Data         | Name                 | Fixed value | Description                                                                    |
 |:-------------|:---------------------|------------:|:-------------------------------------------------------------------------------|
 | `b(16)`      | `session_descriptor` |      0x4156 | Indicates this is a AVTransport session (`AV`).                                |
-| `b(16)`      | `session_version`    |      0x5331 | Indicates the session version. This document describes version `21296` (`S0`). |
+| `b(16)`      | `session_version`    |      0x5430 | Indicates the session version. This document describes version `21552` (`T0`). |
 | `u(32)`      | `global_seq`         |             | Monotonically incrementing per-packet global sequence number.                  |
 | `b(8)`       | `session_flags`      |             | Session flags.                                                                 |
 | `b(8)`       | `producer_name_len`  |             | Length of the string in `producer_name`. MUST be less than or equal to 12.     |
@@ -1162,8 +1162,8 @@ one-to-one transmission. The following syntax is used:
 | `b(128)` | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
 | `b(16)`  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
 | `b(8)`   | `seek`             |              | If `1`, Asks the sender to seek to the position given by `seek_pts` and/or `seek_seq`.                   |
-| `i(64)`  | `seek_pts`         |              | The PTS value to seek to, as given by [index_packets](#index-packets).                                   |
-| `u(32)`  | `seek_seq`         |              | The sequence number of the packet to seek to, as given by [index_packets](#index-packets).               |
+| `i(64)`  | `seek_pts`         |              | The PTS value to seek to, as given by [index packets](#index-packets).                                   |
+| `u(32)`  | `seek_seq`         |              | The sequence number of the packet to seek to, as given by [index packets](#index-packets).               |
 
 If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
 do not match, the sender **MUST** cease this connection, reopen a new connection
@@ -1187,10 +1187,10 @@ for the newsest available data, that data's payload is once again sent over an
 *unreliable* stream.
 
 The following error values are allowed:
-| Value | Description                                                                                                                                                                                                                                                                      |
-|------:|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x1 | Generic error.                                                                                                                                                                                                                                                                   |
-|   0x2 | Unsupported data. May be sent after the sender sends an [init packet](#init-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
+| Value | Description                                                                                                                                                                                                                                                                                                   |
+|------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x1 | Generic error.                                                                                                                                                                                                                                                                                                |
+|   0x2 | Unsupported data. May be sent after the sender sends a [stream registration packet](#stream-registration-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
 ### Feedback
 
@@ -1204,7 +1204,7 @@ The following packet MAY be sent from the receiver to the sender.
 | `b(64)` | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
 | `u(32)` | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
 | `u(32)` | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
-| `u(32)` | `dropped_packets`  |              | Indicates the total number of dropped [packets](#data-packets).                                                                                                                                                                                     |
+| `u(32)` | `dropped_packets`  |              | Indicates the total number of dropped packets.                                                                                                                                                                                                      |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
 
