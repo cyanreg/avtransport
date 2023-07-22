@@ -28,7 +28,7 @@ and rigid overseeing organizations.
     - [Stream FEC segments](#stream-fec-segments)
     - [Index packets](#index-packets)
     - [Metadata packets](#metadata-packets)
-    - [ICC profile packets](#icc-profile-packets)
+    - [LUT/ICC profile packets](#luticc-profile-packets)
     - [Font data packets](#font-data-packets)
     - [Video info packets](#video-info-packets)
     - [Video orientation packets](#video-orientation-packets)
@@ -59,9 +59,15 @@ and rigid overseeing organizations.
       - [H265 encapsulation](#h265-encapsulation)
       - [Dirac/VC-2](#diracvc-2)
       - [ASS encapsulation](#ass-encapsulation)
+      - [DNG/TIFF encapsulation](#dngtiff-encapsulation)
       - [Raw audio encapsulation](#raw-audio-encapsulation)
       - [Raw video encapsulation](#raw-video-encapsulation)
       - [Custom codec encapsulation](#custom-codec-encapsulation)
+  - [Annex](#annex)
+    - [Annex A: LDPC](#annex-a-ldpc)
+      - [ldpc_160_64](#ldpc_160_64)
+      - [ldpc_224_64](#ldpc_224_64)
+      - [ldpc_2016_768](#ldpc_2016_768)
 
 ### Specification conventions
 
@@ -73,17 +79,15 @@ A special notation is used to describe sequences of bits:
  - `u(N)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(N)`: the same, but the data describes a signed integer is signed.
  - `b(N)`: the data is an opaque sequence of N bits that clients MUST NOT interpret as anything else.
- - `r(N*2)`: the data is a rational number, with a numerator of `i(N)` and
+ - `R(N*2)`: the data is a rational number, with a numerator of `i(N)` and
    following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
- - `R(k, m)`: Systematic Raptor code (IETF RFC 5053), with symbol size of 32-bits,
-   having `m`-bits long parity data (`m/32` symbols), and covering `k/32` symbols,
-   from the start of the packet or where the coverage of the last code ended.
+ - `L(k, m)`: LDPC parity data, `m` bits long, generated from the previous `k` bits signalled in the packet.
 
-Raptor code correction is optional for receiver implementations.
+Applying LDPC error correction is optional for receiver implementations.
 Senders MUST implement it.
 
 All packets are at least 36 bytes long (288 bits), and always have an 8 byte
-(64 bits) Raptor code after the first 28 bytes to verify and correct their data.
+(64 bits) LDPC code after the first 28 bytes to verify and correct their data.
 
 All floating point samples and pixels are always **normalized** to fit within the
 interval `[-1.0, 1.0]`.
@@ -109,7 +113,7 @@ An overall possible structure of packets in a general AVTransport session can be
 |           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                         |
 |      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                        |
 |              [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                        |
-|                   [ICC profile](#icc-profile-packets) | ICC profile for correct video presentation.                                                           |
+|            [LUT/ICC profile](#luticc-profile-packets) | Color lookup table or ICC profile for correct video presentation.                                     |
 |                         [Metadata](#metadata-packets) | Stream or session metadata.                                                                           |
 |                       [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                        |
 |       [Video orientation](#video-orientation-packets) | Video orientation.                                                                                    |
@@ -130,7 +134,7 @@ of how they're allocated.
 |                  0x8 | [Video information](#video-info-packets)                   |
 |                  0x9 | [Index packets](#index-packets)                            |
 |           0xA to 0xE | [Metadata](#metadata-packets)                              |
-|         0x10 to 0x14 | [ICC profile](#icc-profile-packets)                        |
+|         0x10 to 0x14 | [LUT/ICC profile](#luticc-profile-packets)                 |
 |         0x20 to 0x24 | [Embedded font](#font-data-packets)                        |
 |         0x30 to 0x31 | [FEC grouping](#fec-grouping)                              |
 |                 0x40 | [Video orientation](#video-orientation-packets)            |
@@ -172,7 +176,7 @@ as an AVTransport session. The syntax is as follows:
 | `b(16)`      | `producer_major`     |             | Major version of the producer.                                                 |
 | `b(16)`      | `producer_minor`     |             | Minor version of the producer.                                                 |
 | `b(16)`      | `producer_micro`     |             | Micro (patch) version of the producer.                                         |
-| `R(224, 64)` | `raptor`             |             | Raptor code to correct and verify the contents of the packet.                  |
+| `L(224, 64)` | `ldpc_224_64`        |             | LDPC data to correct and verify the contents of the packet.                    |
 
 Multiple session packets MAY be present in a session, but MUST remain
 bytewise-identical.
@@ -184,7 +188,7 @@ The `session_flags` field MUST be interpreted in the following way:
 |              0x1 | Indicates session is capable and ready to receive [reverse signalling](#reverse-signalling) data packets.    |
 
 Implementations are allowed to test the first 4 bytes to detect a AVTransport stream.<br/>
-The Raptor code is, like for all packets, allowed to be ignored.
+The LDPC data is, like for all packets, allowed to be ignored by receivers.
 
 ### Time synchronization packets
 
@@ -207,7 +211,7 @@ The structure of the data in a `time_sync` packet is as follows:
 | `u(64)`      | `epoch`           |             | Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).  |
 | `u(64)`      | `ts_clock_seq`    |             | Monotonically incrementing counter, incremented once for each cycle of the device clock, at a rate of `ts_clock_freq` per second.     |
 | `u(32)`      | `ts_clock_hz`     |             | Hertz value of the device clock. MAY be set to zero to indicate the source is unclocked.                                              |
-| `R(224, 64)` | `raptor`          |             | Raptor code to correct and verify the contents of the packet.                                                                         |
+| `L(224, 64)` | `ldpc_224_64`     |             | LDPC data to correct and verify the contents of the packet.                                                                           |
 
 The `ts_clock_freq` field is equal to `ts_clock_freq = ts_clock_hz + ts_clock_hz2/65536`.
 Implementations SHOULD prefer to use integer math, and instead have the `ts_clock_freq` in increments of 1/65536 Hz.
@@ -246,12 +250,12 @@ The layout of the data is as follows:
 | `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.                 |
 | `u(64)`      | `bandwidth`         |             | Average bitrate in bits per second. MAY be 0 to indicate VBR or unknown.        |
 | `b(64)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                  |
-| `R(224, 64)` | `raptor`            |             | Raptor code to correct and verify the first 7 symbols of the packet.            |
+| `L(224, 64)` | `ldpc_224_64`       |             | LDPC data to correct and verify the previous 224 bits of the packet.            |
 | `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                       |
-| `r(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
+| `R(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                 |
 | `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.          |
-| `u(56)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
-| `R(160, 64)` | `raptor_2`          |             | Raptor code to correct the leftover previous 5 symbols.                         |
+| `u(64)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                           |
+| `L(168, 64)` | `ldpc_160_64`       |             | LDPC to correct the leftover previous 168 bits.                                 |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -300,15 +304,15 @@ requires no special treatment.
 
 The following `generic_data_structure` template is used for generic data packets:
 
-| Data          | Name         |    Fixed value | Description                                                             |
-|:--------------|:------------ |---------------:|:------------------------------------------------------------------------|
-| `b(16)`       | `descriptor` | *as specified* | Indicates the data packet type. Defined in later sections.              |
-| `b(16)`       | `stream_id`  |                | Indicates the stream ID for which this packet is applicable.            |
-| `u(32)`       | `global_seq` |                | Monotonically incrementing per-packet global sequence number.           |
-| `u(32)`       | `length`     |                | The size of the data in this packet.                                    |
-| `b(128)`      | `padding`    |                | Padding, reserved for future use. MUST be 0x0.                          |
-| `R(224, 64)`  | `raptor`     |                | Raptor code to correct and verify the first 7 symbols of the packet.    |
-| `b(length*8)` | `data`       |                | The packet data itself.                                                 |
+| Data          | Name          |    Fixed value | Description                                                             |
+|:--------------|:--------------|---------------:|:------------------------------------------------------------------------|
+| `b(16)`       | `descriptor`  | *as specified* | Indicates the data packet type. Defined in later sections.              |
+| `b(16)`       | `stream_id`   |                | Indicates the stream ID for which this packet is applicable.            |
+| `u(32)`       | `global_seq`  |                | Monotonically incrementing per-packet global sequence number.           |
+| `u(32)`       | `length`      |                | The size of the data in this packet.                                    |
+| `b(128)`      | `padding`     |                | Padding, reserved for future use. MUST be 0x0.                          |
+| `L(224, 64)`  | `ldpc_224_64` |                | LDPC data to correct and verify the previous 224 bits of the packet.    |
+| `b(length*8)` | `data`        |                | The packet data itself.                                                 |
 
 In case the data needs to be segmented, the following `generic_segment_structure`
 template has to be used for segments that follow the above:
@@ -323,7 +327,7 @@ template has to be used for segments that follow the above:
 | `u(32)`           | `seg_offset`      |                | The offset since the start of the data where the segment starts.                         |
 | `u(32)`           | `seg_length`      |                | The size of the data segment.                                                            |
 | `b(32)`           | `header_7`        |                | A seventh of the main packet's header. The part taken is determined by `global_seq % 7`. |
-| `R(224, 64)`      | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                     |
+| `L(224, 64)`      | `ldpc_224_64`     |                | LDPC data to correct and verify the previous 224 bits of the packet.                     |
 | `b(seg_length*8)` | `seg_data`        |                | The data for the segment.                                                                |
 
 If the data in a `generic_data_structure` is to be segmented, it will have
@@ -343,7 +347,7 @@ is to be used:
 | `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                               |
 | `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                               |
 | `b(32)`                | `header_7`        |                | A seventh of the main packet's header. The part taken is determined by `global_seq % 7`. |
-| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                     |
+| `L(224, 64)`           | `ldpc_224_64`     |                | LDPC data to correct and verify the previous 224 bits of the packet.                     |
 | `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload.    |
 
 The data in an FEC packet MUST be systematic RaptorQ, as per IETF RFC 6330.<br/>
@@ -397,7 +401,7 @@ more [stream data segments](#stream-data-segmentation). It is laid out as follow
 | `i(64)`            | `pts`             |             | Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the [Timestamps](#timestamps) section.   |
 | `u(64)`            | `duration`        |             | The duration of this packet in stream timebase unis.                                                                                                   |
 | `u(32)`            | `data_length`     |             | The size of the data in this packet.                                                                                                                   |
-| `R(224, 64)`       | `data_raptor`     |             | Raptor code to correct and verify the packet header.                                                                                                   |
+| `L(224, 64)`       | `ldpc_224_64`     |             | LDPC data to correct and verify the packet header.                                                                                                     |
 | `b(data_length*8)` | `packet_data`     |             | The packet data itself.                                                                                                                                |
 
 For information on the layout of the specific codec-specific packet data, consult
@@ -480,11 +484,12 @@ FEC grouped streams MUST be registered first via a special packet:
 | `u(32)`                   | `global_seq`            |             | Monotonically incrementing per-packet global sequence number.                                                                                     |
 | `u(32)`                   | `fec_group_streams`     |             | Number of streams in the FEC group. MUST be less than or equal to 16.                                                                             |
 | `b(128)`                  | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
-| `R(224, 64)`              | `raptor`                |             | Raptor code to correct and verify the first 7 symbols of the packet.                                                                              |
-| `u(32*16)`                | `fec_nb_packets`        |             | Total number of packets for each stream in the FEC group.                                                                                         |
-| `u(32*16)`                | `fec_seq_number`        |             | The sequence number of the first packet for the stream to be included in the group.                                                               |
-| `u(32*16)`                | `fec_nb_data_size`      |             | The total number of bytes, including headers, in each FEC grouped stream included in the duration of the group.                                   |
-| `R(1536, 768)`            | `raptor`                |             | Raptor code for the previous 48 symbols.                                                                                                          |
+| `L(224, 64)`              | `ldpc_224_64`           |             | LDPC data to correct and verify the previous 224 bits of the packet.                                                                              |
+| `u(32*20)`                | `fec_nb_packets`        |             | Total number of packets for each stream in the FEC group.                                                                                         |
+| `u(32*20)`                | `fec_seq_number`        |             | The sequence number of the first packet for the stream to be included in the group.                                                               |
+| `u(32*20)`                | `fec_nb_data_size`      |             | The total number of bytes, including headers, in each FEC grouped stream included in the duration of the group.                                   |
+| `b(96)`                   | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
+| `L(2016, 768)`            | `ldpc_2016_768`         |             | LDPC data to correct and verify the previous 2016 bits of the packet.                                                                             |
 
 All streams in an FEC group **MUST** have timestamps that cover the same period
 of time.
@@ -506,7 +511,7 @@ FEC groups use a different packet for the FEC data.
 | `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
 | `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                            |
 | `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
-| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                  |
+| `L(224, 64)`           | `ldpc_224_64`     |                | LDPC data to correct and verify the first 224 bits of the packet.                     |
 | `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
 
 To perform FEC on a group, first, append all packets, including their headers,
@@ -552,7 +557,7 @@ distance to the next index packet.
 | `u(32)`            | `next_idx`         |              | Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it. |
 | `u(32)`            | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                            |
 | `b(64)`            | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                                                                                                                 |
-| `R(224, 64)`       | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                                                                                                           |
+| `L(224, 64)`       | `ldpc_224_64`      |              | LDPC data to correct and verify the last 224 bits of the packet.                                                                                                               |
 | `i(nb_indices*64)` | `pkt_pts`          |              | The presentation timestamp of the index.                                                                                                                                       |
 | `u(nb_indices*32)` | `pkt_seq`          |              | The sequence number of the packet pointed to by `pkt_pos`. MUST be ignored if `pkt_pos` is 0.                                                                                  |
 | `i(nb_indices*32)` | `pkt_pos`          |              | The offset of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                          |
@@ -623,48 +628,57 @@ The `language` field MUST be formatted as a **subtag**, according to the
 The `date` field MUST be formatted according to the
 [IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
 
-### ICC profile packets
+### LUT/ICC profile packets
 
-Embedding of ICC profiles for accurate color reproduction is supported.<br/>
+Embedding of color lookup tables (LUTs) and ICC profiles for accurate color reproduction is supported.<br/>
 The following structure MUST be followed:
 
-| Data                   | Name              |    Fixed value | Description                                                                                          |
-|:-----------------------|:------------------|---------------:|:-----------------------------------------------------------------------------------------------------|
-| `b(16)`                | `icc_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete ICC profile (0x10) or the start of a segmented one (0x11). |
-| `u(16)`                | `stream_id`       |                | The stream ID for which to apply the ICC profile.                                                    |
-| `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                                        |
-| `u(8)`                 | `icc_major_ver`   |                | Major version of the ICC profile. MAY be 0 if unknown.                                               |
-| `u(8)`                 | `icc_minor_ver`   |                | Minor version of the ICC profile.                                                                    |
-| `u(8)`                 | `icc_compression` |                | ICC profile compression, MUST be interpreted according to the `icc_compression` table below.         |
-| `u(8)`                 | `icc_name_length` |                | The length of the ICC profile name.                                                                  |
-| `u(32)`                | `icc_data_length` |                | The length of the ICC profile.                                                                       |
-| `b(96)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                                       |
-| `R(224, 64)`           | `raptor`          |                | Raptor code to correct and verify the first 7 symbols of the packet.                                 |
-| `b(icc_name_length*8)` | `icc_name`        |                | The full name of the ICC profile.                                                                    |
-| `b(icc_data_length*8)` | `icc_data`        |                | The ICC profile itself.                                                                              |
+| Data                   | Name              |    Fixed value | Description                                                                                                 |
+|:-----------------------|:------------------|---------------:|:------------------------------------------------------------------------------------------------------------|
+| `b(16)`                | `lut_descriptor`  |  0x10 and 0x11 | Indicates this packet contains a complete LUT or ICC profile (0x10) or the start of a segmented one (0x11). |
+| `u(16)`                | `stream_id`       |                | The stream ID for which to apply the LUT/ICC profile.                                                       |
+| `u(32)`                | `global_seq`      |                | Monotonically incrementing per-packet global sequence number.                                               |
+| `u(32)`                | `lut_type`        |                | The data type contained, MUST be interpreted according to the `lut_type` table below.                       |
+| `u(8)`                 | `icc_major_ver`   |                | Major version of the ICC profile. Does NOT apply for lookup tables. MAY be 0 if unknown.                    |
+| `u(8)`                 | `icc_minor_ver`   |                | Minor version of the ICC profile. Does NOT apply for lookup tables.                                         |
+| `u(8)`                 | `lut_compression` |                | LUT/ICC data compression, MUST be interpreted according to the `lut_compression` table below.               |
+| `u(8)`                 | `lut_name_length` |                | The length of the LUT/ICC profile name.                                                                     |
+| `u(32)`                | `lut_data_length` |                | The length of the LUT/ICC profile.                                                                          |
+| `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                                              |
+| `L(224, 64)`           | `ldpc_224_64`     |                | LDPC data to correct and verify the previous 224 bits of the packet.                                        |
+| `b(icc_name_length*8)` | `lut_name`        |                | The full name of the LUT/ICC profile.                                                                       |
+| `b(icc_data_length*8)` | `lut_data`        |                | The data itself.                                                                                            |
 
-Often, ICC profiles may be too large to fit in one MTU, hence they can be segmented
+Often, LUT/ICC profiles may be too large to fit in one MTU, hence they can be segmented
 in the same way as data packets, as well as be error-corrected. The syntax for
-ICC segments and FEC packets is via the following
+segmentation and FEC packets is via the following
 [generic data packet structure](#generic-data-packet-structure) templates:
 
-| Descriptor |                   Structure |                               Type |
-|-----------:|----------------------------:|-----------------------------------:|
-|       0x12 | `generic_segment_structure` | Non-final segment for ICC profiles |
-|       0x13 | `generic_segment_structure` |     Final segment for ICC profiles |
-|       0x14 |     `generic_fec_structure` |    FEC segment for the ICC Profile |
+| Descriptor |                   Structure |                                   Type |
+|-----------:|----------------------------:|---------------------------------------:|
+|       0x12 | `generic_segment_structure` | Non-final segment for LUT/ICC profiles |
+|       0x13 | `generic_segment_structure` |     Final segment for LUT/ICC profiles |
+|       0x14 |     `generic_fec_structure` |    FEC segment for the LUT/ICC Profile |
 
-If the `icc_descriptor` is `0x11`, then at least one `0x13` segment MUST be received.
+If the `lut_descriptor` is `0x11`, then at least one `0x13` segment MUST be received.
 
-The `icc_compression` table is as follows:
+The `lut_type` table is as follows:
 | Value | Name   | Description                                |
 |------:|:-------|:-------------------------------------------|
-|   0x0 | `NONE` | ICC data is uncompressed.                  |
-|   0x1 | `ZSTD` | ICC data is compressed with Zstandard.     |
+|   0x0 | `ICC`  | Data contains a regular ICC profile.       |
+|   0x1 | `CUBE` | Data contains an Adobe .cube file.         |
 
-**NOTE**: ICC profiles MUST take precedence over the primaries and transfer
+The `lut_compression` table is as follows:
+| Value | Name   | Description                                |
+|------:|:-------|:-------------------------------------------|
+|   0x0 | `NONE` | Data is uncompressed.                      |
+|   0x1 | `ZSTD` | Data is compressed with Zstandard.         |
+
+**NOTE**: Lookup tables and ICC profiles MUST take precedence over the primaries and transfer
 characteristics values in [video info packets](#video-info-packets). The matrix
 coefficients are still required for RGB conversion.
+
+**NOTE**: BOTH an ICC profile and a color lookup table may be applied for a single stream.
 
 ### Font data packets
 
@@ -682,7 +696,7 @@ The following structure MUST be followed:
 | `u(8)`                  | `font_name_length` |                | The length of the font name.                                                                  |
 | `u(32)`                 | `font_data_length` |                | The length of the font data.                                                                  |
 | `b(96)`                 | `padding`          |                | Padding, reserved for future use. MUST be 0x0.                                                |
-| `R(224, 64)`            | `raptor`           |                | Raptor code to correct and verify the first 7 symbols of the packet.                          |
+| `L(224, 64)`            | `ldpc_224_64`      |                | LDPC data to correct and verify the previous 224 bits of the packet.                          |
 | `b(font_name_length*8)` | `font_name`        |                | The full name of the font file.                                                               |
 | `b(font_data_length*8)` | `font_data`        |                | The font file itself.                                                                         |
 
@@ -724,14 +738,14 @@ stream after decoding.
 | `u(32)`         | `global_seq`              |              | Monotonically incrementing per-packet global sequence number.                                                                                 |
 | `u(32)`         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | `u(32)`         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
-| `r(64)`         | `signal_aspect`           |              | Indicates the signal aspect ratio of the image.                                                                                               |
+| `R(64)`         | `signal_aspect`           |              | Indicates the signal aspect ratio of the image.                                                                                               |
 | `u(8)`          | `chroma_subsampling`      |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
 | `u(8)`          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
 | `u(8)`          | `bit_depth`               |              | Number of bits per pixel value.                                                                                                               |
 | `u(8)`          | `interlaced`              |              | Video data is interlaced. MUST be interpreted using the `interlacing` table below.                                                            |
-| `R(224, 64)`    | `raptor`                  |              | Raptor code to correct and verify the first 7 symbols of the packet.                                                                          |
-| `r(64)`         | `gamma`                   |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
-| `r(64)`         | `framerate`               |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
+| `L(224, 64)`    | `ldpc_224_64`             |              | LDPC data to correct and verify the previous 224 bits of the packet.                                                                          |
+| `R(64)`         | `gamma`                   |              | Indicates the gamma power curve for the video pixel values.                                                                                   |
+| `R(64)`         | `framerate`               |              | Indicates the framerate. If it's variable, MAY be used to indicate the average framerate. If video is interlaced, indicates the *field* rate. |
 | `u(16)`         | `limited_range`           |              | Indicates the signal range. If `0x0`, means `full range`. If `0xFFFF` means `limited range`. Other values are reserved.                       |
 | `u(8)`          | `chroma_pos`              |              | Chroma sample position for subsampled chroma. MUST be interpreted using the `chroma_pos_val` table below.                                     |
 | `u(8)`          | `primaries`               |              | Video color primaries. MUST be interpreted according to ITU Standard H.273, `ColourPrimaries` field.                                          |
@@ -739,13 +753,17 @@ stream after decoding.
 | `u(8)`          | `matrix`                  |              | Video matrix coefficients. MUST be interpreted according to ITU Standard H.273, `MatrixCoefficients` field.                                   |
 | `u(8)`          | `has_mastering_primaries` |              | If `1`, signals that the following `mastering_primaries` and `mastering_white_point` contain valid data.                                      |
 | `u(8)`          | `has_luminance`           |              | If `1`, signals that the following `min_luminance` and `max_luminance` fields contain valid data.                                             |
-| `16*r(64)`      | `custom_matrix`           |              | If `matrix` is equal to `0xFF`, use this custom matrix instead. Top, left, to bottom right, raster order.                                     |
-| `6*r(64)`       | `mastering_primaries`     |              | CIE 1931 xy chromacity coordinates of the color primaries, `r`, `g`, `b` order.                                                               |
-| `2*r(64)`       | `mastering_white_point`   |              | CIE 1931 xy chromacity coordinates of the white point.                                                                                        |
-| `r(64)`         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
-| `r(64)`         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
+| `16*R(64)`      | `custom_matrix`           |              | If `matrix` is equal to `0xFF`, use this custom matrix instead. Top, left, to bottom right, raster order.                                     |
+| `6*R(64)`       | `mastering_primaries`     |              | CIE 1931 xy chromacity coordinates of the color primaries, `r`, `g`, `b` order.                                                               |
+| `2*R(64)`       | `mastering_white_point`   |              | CIE 1931 xy chromacity coordinates of the white point.                                                                                        |
+| `R(64)`         | `min_luminance`           |              | Minimal luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
+| `R(64)`         | `max_luminance`           |              | Maximum luminance of the mastering display, in cd/m<sup>2</sup>.                                                                              |
+| `u(32)`         | `presentation_width`      |              | Final presentation width of the image. All other pixels MUST be ignored.                                                                      |
+| `u(32)`         | `presentation_height`     |              | Final presentation height of the image. All other pixels MUST be ignored.                                                                     |
+| `u(16)`         | `presentation_x_offset`   |              | X offset for the location of the final presentation box.                                                                                      |
+| `u(16)`         | `presentation_y_offset`   |              | Y offset for the location of the final presentation box.                                                                                      |
 | `b(64)`         | `padding`                 |              | Padding, reserved for future use. MUST be 0x0.                                                                                                |
-| `R(1920, 640)`  | `raptor`                  |              | Raptor code to correct and verify the data from `colorspace` to `max_luminance`.                                                              |
+| `L(2016, 768)`  | `ldpc_2016_768`           |              | LDPC data to correct and verify the previous 2016 bits of the packet (from `gamma` to `padding`, inclusive).                                  |
 
 Note that `full range` has many synonyms used - `PC range`, `full swing` and `JPEG range`.<br/>
 Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
@@ -810,9 +828,9 @@ A standardized way to transmit orientation information is as follows:
 | `b(16)`                 | `ori_descriptor`   |         0x40 | Indicates this is a video orientation packet.                                                |
 | `b(16)`                 | `stream_id`        |              | The stream ID for which to associate the video information with.                             |
 | `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
-| `r(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.        |
+| `R(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.        |
 | `b(96)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
-| `R(224, 64)`            | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                         |
+| `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                         |
 
 Video orientation packets SHOULD be taken into account and be applied upon
 the next video packet in the bitstream, but not before.
@@ -825,6 +843,8 @@ The value MAY be quantized to a modulus of `π/2` (`rotation.num/rotation.den % 
 BY the receiver, in order to permit simple transposition for presentation rather
 than rotation.
 
+Rotation SHOULD be applied after all other transformations have been performed on the image, including cropping via the `presentation_width/height` fields.
+
 ### User data packets
 
 The user-specific data packet is laid out as follows:
@@ -836,7 +856,7 @@ The user-specific data packet is laid out as follows:
 | `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
 | `u(32)`                 | `user_data_length` |              | The length of the user data.                                                                 |
 | `b(128)`                | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
-| `R(224, 64)`            | `raptor`           |              | Raptor code to correct and verify the first 7 symbols of the packet.                         |
+| `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                         |
 | `b(user_data_length*8)` | `user_data`        |              | The user data itself.                                                                        |
 
 If the user data needs FEC and segmentation, users SHOULD instead use the
@@ -854,7 +874,7 @@ at the start of files to notify implementations of stream lengths.
 | `u(32)`      | `global_seq`          |              | Monotonically incrementing per-packet global sequence number.                                   |
 | `i(64)`      | `total_duration`      |              | The total duration of the stream(s).                                                            |
 | `b(96)`      | `padding`             |              | Padding, reserved for future use. MUST be 0x0.                                                  |
-| `R(224, 64)` | `raptor`              |              | Raptor code to correct and verify the first 7 symbols of the packet.                            |
+| `L(224, 64)` | `ldpc_224_64`         |              | LDPC data to correct and verify the previous 224 bits of the packet.                            |
 
 If `stream_id` is 0xFFFF, the timebase used for `idx_pts` MUST be assumed to be
 **1 nanosecond**, numerator of `1`, denominator of `1000000000`.
@@ -880,7 +900,7 @@ The EOS packet is laid out as follows:
 | `b(16)`      | `stream_id`      |              | Indicates the stream ID for the end of stream. May be 0xFFFF, in which case, it applies to all streams. |
 | `u(32)`      | `global_seq`     |              | Monotonically incrementing per-packet global sequence number.                                           |
 | `b(160)`     | `padding`        |              | Padding, reserved for future use. MUST be 0x0.                                                          |
-| `R(224, 64)` | `raptor`         |              | Raptor code to correct and verify the first 7 symbols of the packet.                                    |
+| `L(224, 64)` | `ldpc_224_64`    |              | LDPC data to correct and verify the previous 224 bits of the packet.                                    |
 
 The `stream_id` field may be used to indicate that a specific stream will no longer
 receive any packets, and implementations are free to unload decoding and free up
@@ -1031,7 +1051,7 @@ at the given frequencies.
 |   [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
 |      [Stream initialization data](#init-data-packets) | Target startup delay | To initialize decoding of stream packets.                                                       |
 |              [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
-|                   [ICC profile](#icc-profile-packets) | Target startup delay | Optional ICC profile for correct video presentation.                                            |
+|            [LUT/ICC profile](#luticc-profile-packets) | Target startup delay | Optional LUT/ICC profile for correct video presentation.                                        |
 |       [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
 |                         [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
 |                        Stream data or segment packets | Always               |                                                                                                 |
@@ -1128,7 +1148,7 @@ AVTransport explicitly carries the size of the contained data. This makes it sui
 for not only packetized networks, but also serial links.
 
 Users MUST track the start of each AVTransport packet themselves, using the packet headers
-and, optionally, Raptor data to synchronize with the source.
+and, optionally, LDPC data to synchronize with the source.
 
 The specification contains no recommendation on how the data is transported. Users
 SHOULD, if necessary, use FEC and other reliability features.
@@ -1248,6 +1268,7 @@ definitions.
  - [H.265](#h265-encapsulation)
  - [Dirac/VC-2](#diracvc-2)
  - [ASS](#ass-encapsulation)
+ - [DNG/TIFF](#dngtiff-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
@@ -1393,6 +1414,15 @@ order in which to reconstruct the original ASS file.
 
 Multiple packets with the same `pts` and `dts` ARE permitted.
 
+#### DNG/TIFF encapsulation
+
+For DNG/TIFF encapsulation, the `codec_id` in
+[stream registration packets](#stream-registration-packets)
+MUST be 0x54494646 (`TIFF`).
+
+The `packet_data` MUST contain a raw TIFF file,
+with one packet being a single picture.
+
 #### Raw audio encapsulation
 
 For raw audio encapsulation, the `codec_id` in
@@ -1513,3 +1543,30 @@ The [stream initialization data](#init-data-packets) packet can be any length
 and contain any sequence of data.
 
 The `packet_data` field can be any length and contain any sequence of data.
+
+## Annex
+
+### Annex A: LDPC
+
+This normative annex shall cover the usage of LDPC within AVTransport.
+
+The LDPC variant to be used is **irregular**, systematic, with no subblocks. The full block, along with the check data, shall be sent to an LDPC decoder.
+
+The following **H** matrices below shall be used for encoding (via the pseudocode above) and decoding.
+
+Implementations are free to convert them to G matrices and use conventional encoding methods.
+
+#### ldpc_160_64
+```
+To be optimized
+```
+
+#### ldpc_224_64
+```
+To be optimized
+```
+
+#### ldpc_2016_768
+```
+To be optimized
+```
