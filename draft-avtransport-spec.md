@@ -409,12 +409,13 @@ the [codec-specific encapsulation](#codec-encapsulation) addenda.
 
 The `pkt_flags` field MUST be interpreted in the following way:
 
-| Bit position set | Description                                                                                                                                                                                                  |
-|-----------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|             0xE0 | Top 3 bits to be interpreted using the `frame_type` table below.                                                                                                                                             |
-|             0x20 | Packet is incomplete and requires extra [data segments](#stream-data-segmentation) to be completed.                                                                                                          |
-|              0x8 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                                                                                                                                  |
-|              0x3 | Bottom 2 bits to be interpreted using the `data_compression` table below.                                                                                                                                    |
+| Bit position set | Description                                                                                           |
+|-----------------:|:------------------------------------------------------------------------------------------------------|
+|             0xE0 | Top 3 bits to be interpreted using the `frame_type` table below.                                      |
+|             0x20 | Packet is incomplete and requires extra [data segments](#stream-data-segmentation) to be completed.   |
+|             0x10 | Packet is a part of an FEC group and SHOULD be kept.                                                  |
+|              0x8 | User-defined flag. Implementations MUST ignore it, and MUST leave it as-is.                           |
+|              0x3 | Bottom 2 bits to be interpreted using the `data_compression` table below.                             |
 
 If the `0x40` flag is set, then the packet data is incomplete, and at least ONE
 [data segment](#stream-data-segmentation) packet with an ID of `0xfe` MUST be present to
@@ -483,13 +484,33 @@ FEC grouped streams MUST be registered first via a special packet:
 | `b(16)`                   | `fec_group_id`          |             | Indicates the stream ID for the FEC group.                                                                                                        |
 | `u(32)`                   | `global_seq`            |             | Monotonically incrementing per-packet global sequence number.                                                                                     |
 | `u(32)`                   | `fec_group_streams`     |             | Number of streams in the FEC group. MUST be less than or equal to 16.                                                                             |
-| `b(128)`                  | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
+| `b(64)`                   | `fec_common_oti`        |             | IETF RFC 6330, RaptorQ Common FEC Object Transmission Information. Must be interpreted using the table `fec_common_oti` below.                    |
+| `b(32)`                   | `fec_scheme_oti`        |             | IETF RFC 6330, RaptorQ Scheme-Specific FEC Object Transmission Information. Must be interpreted using the table `fec_scheme_oti` below.           |
+| `b(32)`                   | `fec_start_global_seq`  |             | The global sequence number of the very first packet in the FEC group.                                                                             |
 | `L(224, 64)`              | `ldpc_224_64`           |             | LDPC data to correct and verify the previous 224 bits of the packet.                                                                              |
-| `u(32*20)`                | `fec_nb_packets`        |             | Total number of packets for each stream in the FEC group.                                                                                         |
-| `u(32*20)`                | `fec_seq_number`        |             | The sequence number of the first packet for the stream to be included in the group.                                                               |
-| `u(32*20)`                | `fec_nb_data_size`      |             | The total number of bytes, including headers, in each FEC grouped stream included in the duration of the group.                                   |
-| `b(96)`                   | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
+| `u(32*16)`                | `fec_nb_packets`        |             | Total number of packets for each stream in the FEC group.                                                                                         |
+| `u(32*16)`                | `fec_seq_number`        |             | The sequence number of the first packet for the stream to be included in the group.                                                               |
+| `u(32*16)`                | `fec_nb_data_size`      |             | The total number of bytes, including headers, in each FEC grouped stream included in the duration of the group.                                   |
+| `b(480)`                  | `padding`               |             | Padding, reserved for future use. MUST be 0x0.                                                                                                    |
 | `L(2016, 768)`            | `ldpc_2016_768`         |             | LDPC data to correct and verify the previous 2016 bits of the packet.                                                                             |
+
+The `fec_common_oti` field MUST be interpreted as the following, given in [RFC 6330 Section 3.2.2. Common](https://datatracker.ietf.org/doc/html/rfc6330#section-3.3.2):
+
+| Data                   | Name                          |    Fixed value | Description                                                                                                                                  |
+|:-----------------------|:------------------------------|---------------:|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| `u(40)`                | `fec_oti_com_transfer_length` |                | 40-bit unsigned integer. A non-negative integer that is at most 946270874880.  This is the transfer length of the object in units of octets. |
+| `b(8)`                 | `fec_oti_com_reserved`        |                | Reserved value. MUST be set to 0.                                                                                                            |
+| `u(16)`                | `fec_oti_com_symbol_size`     |                | 16-bit unsigned integer. A positive integer that is less than 2^^16.  This is the size of a symbol in units of octets.                       |
+
+It is **hightly recommended** that the common OTI parameters never change once transmitted. This lets implementations attempt to apply FEC if they miss a `fec_group_descriptor` packet.
+
+The `fec_scheme_oti` field MUST be interpreted as the following, given in [RFC 6330 Section 3.2.3. Common](https://datatracker.ietf.org/doc/html/rfc6330#section-3.3.3):
+
+| Data                   | Name                      |    Fixed value | Description                                                                                                                                  |
+|:-----------------------|:--------------------------|---------------:|:---------------------------------------------------------------------------------------------------------------------------------------------|
+| `u(8)`                 | `fec_sch_source_blocks`   |                | Number of source blocks.                                                                                                                     |
+| `b(16)`                | `fec_sch_reserved`        |                | Number of sub-blocks in each source block.                                                                                                   |
+| `u(8)`                 | `fec_sch_symbol_align`    |                | Symbol alignment parameter.                                                                                                                  |
 
 All streams in an FEC group **MUST** have timestamps that cover the same period
 of time.
@@ -498,7 +519,7 @@ A stream may only be part of a single FEC group at any one time. Sending
 a new grouping that includes an already grouped stream will destroy the
 previous grouping.
 
-To end a grouping, one can send an end of stream packet with the group's ID.
+To end a grouping prematurely, one can send an end of stream packet with the group's ID.
 
 FEC groups use a different packet for the FEC data.
 
@@ -510,13 +531,26 @@ FEC groups use a different packet for the FEC data.
 | `b(32)`                | `fec_data_offset` |                | The byte offset for the FEC data for this FEC packet protects.                        |
 | `u(32)`                | `fec_data_length` |                | The length of the FEC data in this packet.                                            |
 | `u(32)`                | `fec_total`       |                | The total amount of bytes in the FEC data.                                            |
-| `b(64)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
+| `b(64)`                | `fec_source`      |                | Provides a single source packet which contains data to be forward error corrected.    |
 | `L(224, 64)`           | `ldpc_224_64`     |                | LDPC data to correct and verify the first 224 bits of the packet.                     |
+| `b(64*3)`              | `fec_source`      |                | Provides 3 source packets which contain data to be forward error corrected.           |
+| `b(32)`                | `padding`         |                | Padding, reserved for future use. MUST be 0x0.                                        |
+| `L(224, 64)`           | `ldpc_224_64`     |                | LDPC data to correct and verify the previous 224 bits of the packet.                  |
 | `b(fec_data_length*8)` | `fec_data`        |                | The FEC data that can be used to check or correct the previous data packet's payload. |
 
-To perform FEC on a group, first, append all packets, including their headers,
-for all streams in incrementing order, removing packets which do not concern the
-streams included, and then use the FEC data signalled.
+The `fec_source` data is defined as follows:
+
+| Data                   | Name              |    Fixed value | Description                                                                    |
+|:-----------------------|:------------------|---------------:|:-------------------------------------------------------------------------------|
+| `u(32)`                | `fec_source_seq`  |                | Indicates a single packet's serial ID which is to be backed by this FEC group. |
+| `u(16)`                | `fec_source_blk`  |                | Indicates the FEC source block to which the signaled packet belongs to.        |
+| `u(16)`                | `fec_symbol_id`   |                | Indicates the symbol ID of the packet for the source block.                    |
+
+Each `fec_source` structure MUST reference a valid packet, in transmission order.
+If there are no more valid packets to reference, the sender **MUST** start repeating from the very first FEC source.
+
+To perform FEC, first, concatenate the payload of each packet referenced into each source block, in order of the source symbol ID.
+Then, perform the procedure to apply FEC as described by [RFC 6330 Section 4.4.1. Source Block COnstruction](https://datatracker.ietf.org/doc/html/rfc6330#section-4.4.1).
 
 ### Stream FEC segments
 
@@ -1570,3 +1604,12 @@ To be optimized
 ```
 To be optimized
 ```
+
+### Annex B: Informative muxer behaviour
+
+This annex covers recommended practices for muxers, particularly with regards to avoiding stream starvation.
+
+### Annex C: Informative demuxer behaviour
+
+This annex covers recommended practices for demuxers, mainly with packet lifetime,
+buffering, and reordering.
