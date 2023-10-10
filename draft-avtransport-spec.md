@@ -21,7 +21,7 @@ and rigid overseeing organizations.
     - [Time synchronization packets](#time-synchronization-packets)
     - [Stream registration packets](#stream-registration-packets)
     - [Generic data packet structure](#generic-data-packet-structure)
-    - [Initialization data packets](#initialization-data-packets)
+    - [Stream initialization data](#stream-initialization-data)
     - [Stream data packets](#stream-data-packets)
     - [Stream data segmentation](#stream-data-segmentation)
     - [FEC grouping](#fec-grouping)
@@ -106,24 +106,24 @@ standardized way to transmit such data between clients.
 
 An overall possible structure of packets in a general AVTransport session can be:
 
-|                                           Packet type | Description                                                                                           |
-|------------------------------------------------------:|:------------------------------------------------------------------------------------------------------|
-|               [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify the stream as an AVTransport session.    |
-| [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                            |
-|                   [Embedded font](#font-data-packets) | Optional embedded font for subtitles.                                                                 |
-|   [Stream registration](#stream-registration-packets) | Register a new stream.                                                                                |
-|           [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                         |
-|      [Stream initialization data](#init-data-packets) | Stream initialization packets.                                                                        |
-|              [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                        |
-|            [LUT/ICC profile](#luticc-profile-packets) | Color lookup table or ICC profile for correct video presentation.                                     |
-|                         [Metadata](#metadata-packets) | Stream or session metadata.                                                                           |
-|                       [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                        |
-|       [Video orientation](#video-orientation-packets) | Video orientation.                                                                                    |
-|                   [Stream data](#stream-data-packets) | Stream data packets.                                                                                  |
-|          [Stream segments](#stream-data-segmentation) | Segmented stream data packets.                                                                        |
-|                    [Stream FEC](#stream-fec-segments) | Optional FEC data for stream data.                                                                    |
-|                       [User data](#user-data-packets) | Optional user data packets.                                                                           |
-|                       [End of stream](#end-of-stream) | Finalizes a stream or session.                                                                        |
+|                                                Packet type | Description                                                                                           |
+|-----------------------------------------------------------:|:------------------------------------------------------------------------------------------------------|
+|                    [Session start](#session-start-packets) | Starts the session with a signature. May be used to identify the stream as an AVTransport session.    |
+|      [Time synchronization](#time-synchronization-packets) | Optional time synchronization field to establish an epoch.                                            |
+|                        [Embedded font](#font-data-packets) | Optional embedded font for subtitles.                                                                 |
+|        [Stream registration](#stream-registration-packets) | Register a new stream.                                                                                |
+|                [Stream duration](#stream-duration-packets) | Optionally notify of the stream(s)' duration.                                                         |
+|  [Stream initialization data](#stream-initialization-data) | Stream initialization data packets.                                                                   |
+|                   [Video information](#video-info-packets) | Required video information to correctly present decoded video.                                        |
+|                 [LUT/ICC profile](#luticc-profile-packets) | Color lookup table or ICC profile for correct video presentation.                                     |
+|                              [Metadata](#metadata-packets) | Stream or session metadata.                                                                           |
+|                            [Index packets](#index-packets) | Optional index packets to enable fast seeking.                                                        |
+|            [Video orientation](#video-orientation-packets) | Video orientation.                                                                                    |
+|                        [Stream data](#stream-data-packets) | Stream data packets.                                                                                  |
+|               [Stream segments](#stream-data-segmentation) | Segmented stream data packets.                                                                        |
+|                         [Stream FEC](#stream-fec-segments) | Optional FEC data for stream data.                                                                    |
+|                            [User data](#user-data-packets) | Optional user data packets.                                                                           |
+|                            [End of stream](#end-of-stream) | Finalizes a stream or session.                                                                        |
 
 Each packet MUST be prefixed with a descriptor to identify it. Below is a table
 of how they're allocated.
@@ -132,7 +132,7 @@ of how they're allocated.
 |---------------------:|:-----------------------------------------------------------|
 |               0x4156 | [Session start](#session-start-packets)                    |
 |                  0x2 | [Stream registration](#stream-registration-packets)        |
-|           0x3 to 0x7 | [Stream initialization data](#init-data-packets)           |
+|           0x3 to 0x7 | [Stream initialization data](#stream-initialization-data)  |
 |                  0x8 | [Video information](#video-info-packets)                   |
 |                  0x9 | [Index packets](#index-packets)                            |
 |           0xA to 0xE | [Metadata](#metadata-packets)                              |
@@ -153,6 +153,9 @@ of how they're allocated.
 |               0xF002 | [Feedback](#feedback)                                      |
 |               0xF003 | [Resend](#resend)                                          |
 |               0xF004 | [Stream control](#stream-control)                          |
+
+Anything not specified in the table is reserved and must not be used. Future additions
+will require a version bump of the protocol.
 
 ## Packet description
 
@@ -273,10 +276,10 @@ for the stream to be correctly decoded and presented. It MUST be interpreted as 
 |     0x1 | [Metadata packet](#metadata-packets)                                                                                    |
 |     0x2 | [Stream duration packet](#stream-duration-packets)                                                                      |
 |     0x4 | [FEC grouping](#fec-grouping)                                                                                           |
-|     0x8 | [Initialization data packet](#initialization-data-packets)                                                              |
+|     0x8 | [Stream initialization data](#stream-initialization-data)                                                               |
 |    0x10 | [Video info packet](#video-info-packets)                                                                                |
 |    0x20 | [Video orientation packet](#video-orientation-packets)                                                                  |
-|    0x40 | [ICC profile packet](#icc-profile-packets)                                                                              |
+|    0x40 | [ICC profile packet](#luticc-profile-packets)                                                                           |
 |    0x80 | [Font data packet](#font-data-packets)                                                                                  |
 
 Implementations MUST wait to parse the packets signalled before exposing the
@@ -313,9 +316,6 @@ but could be sparser or more frequent.
 If bits `0x8`, `0x20`, `0x40`, `0x80`, `0x100`, `0x200` are all unset,
 `related_stream_id` MUST match `stream_id`, otherwise the stream with a related
 *different* ID MUST exist.
-
-Once registered, streams generally need an [init data packet](#init-data-packets),
-unless the `stream_flags & 0x1` bit is set.
 
 ### Generic data packet structure
 
@@ -383,7 +383,7 @@ This MUST always be *greater than zero*.
 The `header_7` field can be used to reconstruct the header of the very first
 packet in order to determine the timestamps and data type.
 
-### Initialization data packets
+### Stream initialization data
 
 Codecs generally require a one-off special piece of data needed to initialize them.<br/>
 To provide this data to receivers, the templates defined in the
@@ -1098,20 +1098,20 @@ This section describes and suggests behavior for realtime AVTransport streams.
 In general, implementations **SHOULD** emit the following packet types
 at the given frequencies.
 
-|                                           Packet type | Suggested frequency  | Reason                                                                                          |
-|------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
-|               [Session start](#session-start-packets) | Target startup delay | To identify a stream as AVTransport without ambiguity.                                          |
-| [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
-|   [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
-|      [Stream initialization data](#init-data-packets) | Target startup delay | To initialize decoding of stream packets.                                                       |
-|              [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
-|            [LUT/ICC profile](#luticc-profile-packets) | Target startup delay | Optional LUT/ICC profile for correct video presentation.                                        |
-|       [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
-|                         [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
-|                        Stream data or segment packets | Always               |                                                                                                 |
-|                    [Stream FEC](#stream-fec-segments) | FEC length           | Optional FEC data for stream data.                                                              |
-|                       [User data](#user-data-packets) | As necessary         | Optional user data packets.                                                                     |
-|                       [End of stream](#end-of-stream) | Once                 | Finalizes a stream.                                                                             |
+|                                                Packet type | Suggested frequency  | Reason                                                                                          |
+|-----------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
+|                    [Session start](#session-start-packets) | Target startup delay | To identify a stream as AVTransport without ambiguity.                                          |
+|      [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
+|        [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
+|  [Stream initialization data](#stream-initialization-data) | Target startup delay | To initialize decoding of stream packets.                                                       |
+|                   [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
+|                 [LUT/ICC profile](#luticc-profile-packets) | Target startup delay | Optional LUT/ICC profile for correct video presentation.                                        |
+|            [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
+|                              [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
+|                             Stream data or segment packets | Always               |                                                                                                 |
+|                         [Stream FEC](#stream-fec-segments) | FEC length           | Optional FEC data for stream data.                                                              |
+|                            [User data](#user-data-packets) | As necessary         | Optional user data packets.                                                                     |
+|                            [End of stream](#end-of-stream) | Once                 | Finalizes a stream.                                                                             |
 
 In particular, [time synchronization](#time-synchronization-packets) packets should
 be sent as often as necessary if timestamp jitter avoidance is a requirement.
@@ -1333,7 +1333,7 @@ For Opus encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x4F707573 (`Opus`).
 
-The payload in the [stream initialization data](#init-data-packets) MUST be
+The payload of the [stream initialization data](#stream-initialization-data) packets MUST be
 laid out in the following way:
 
 | Data    | Name              | Fixed value                     | Description                                                                           |
@@ -1366,7 +1366,7 @@ For AAC encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x41414300 (`AAC\0`).
 
-The [stream initialization data](#init-data-packets) payload MUST be the
+The [stream initialization data packet](#stream-initialization-data) payload MUST be the
 codec's `AudioSpecificConfig`, as defined in MPEG-4.
 
 The `packet_data` MUST contain regular AAC ADTS packtes. Note that `LATM` is
@@ -1382,7 +1382,7 @@ For AV1 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x41563031 (`AV01`).
 
-The [stream initialization data](#init-data-packets) payload MUST be the
+The [stream initialization data packet](#stream-initialization-data) payload MUST be the
 codec's so-called `uncompressed header`. For information on its syntax,
 consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
@@ -1399,7 +1399,7 @@ The `packet_data` MUST contain the following elements, in order:
    frame should be input into a synchronous 1-in-1-out decoder.
  - `Annex-B` formatted NAL units, with startcode emulation bits included.
 
-[Stream initialization data](#init-data-packets) packets MAY be sent, to
+A [stream initialization data packet](#stream-initialization-data) MAY be sent, to
 speed up stream initialization. If they are present, they MUST contain an
 `AVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 14496-15`.
 
@@ -1416,7 +1416,7 @@ The `packet_data` MUST contain the following elements, in order:
 
 `Annex-B` formatted packets MUST be used, with startcode emulation bits included.
 
-[Stream initialization data](#init-data-packets) packets MAY be sent, to
+A [stream initialization data packet](#stream-initialization-data) MAY be sent, to
 speed up stream initialization. If they are present, they MUST contain an
 `HEVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 23008`.
 
@@ -1426,9 +1426,7 @@ For Dirac or VC-2 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x42424344 (`BBCD`).
 
-Dirac streams require no [stream initialization data](#init-data-packets)
-packets, hence [Stream registration](#stream-registration-packets) `stream_flags`
-MUST have bit `0x1` set.
+Dirac streams require no [stream initialization data packets](#stream-initialization-data).
 
 The `packet_data` MUST contain raw sequences,
 with one sequence being a picture.
@@ -1453,7 +1451,7 @@ ASS contains 3 important sections:
 
 First, all data MUST be converted to UTF-8.<br/>
 
-The [stream initialization data](#init-data-packets) payload MUST contain
+The [stream initialization data packet](#stream-initialization-data) payload MUST contain
 the `[Script Info]` and `[V4 Styles]` sections as a string, unmodified.
 
 Events listed in ASS files MUST be modified in the following way:
@@ -1483,7 +1481,7 @@ For raw audio encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x52414141 (`RAAA`).
 
-The payload in the [stream initialization data](#init-data-packets) MUST be
+The payload in the [stream initialization data packet](#stream-initialization-data) MUST be
 laid out in the following way:
 
 | Data               | Name             | Description                                                                            |
@@ -1530,7 +1528,7 @@ For raw video encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x52415656 (`RAVV`).
 
-The payload in the [stream initialization data](#init-data-packets) MUST be
+The payload in the [stream initialization data packet](#stream-initialization-data) MUST be
 laid out in the following way:
 
 | Data                  | Name               | Description                                                                                                                             |
@@ -1593,7 +1591,7 @@ For custom encapsulation, the `codec_id` in
 MUST be 0x433f\*\*\*\* (`C?**`), where the bottom 2 bytes can be any value between
 0x30 to 0x39 (`0` to `9` in ASCII) and 0x61 to 0x7a (`a` to `z` in ASCII).
 
-The [stream initialization data](#init-data-packets) packet can be any length
+The [stream initialization data packet](#stream-initialization-data) payload can be any length
 and contain any sequence of data.
 
 The `packet_data` field can be any length and contain any sequence of data.
@@ -1607,14 +1605,19 @@ This normative annex shall cover the usage of LDPC within AVTransport.
 The LDPC variant to be used is **irregular**, systematic, with no subblocks.
 The full block, along with the check data, shall be sent to an LDPC decoder.
 
+To ease implementations, only three different lengths are used:
+ - 168-bit message, 64-bit parity
+ - 224-bit message, 64-bit parity
+ - 2016-bit message, 768-bit parity
+
 For reference, the following code MAY be used to compute the LDPC parity data:
 ```c
 To be done
 ```
 
 The following **H** matrices below shall be used for encoding (via the pseudocode above) and decoding.
-
 Implementations are free to convert them to G matrices and use conventional encoding methods.
+The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
 
 #### ldpc_168_64
 ```
