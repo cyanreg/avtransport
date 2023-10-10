@@ -54,6 +54,7 @@ and rigid overseeing organizations.
     - [Codec encapsulation](#codec-encapsulation)
       - [Opus encapsulation](#opus-encapsulation)
       - [AAC encapsulation](#aac-encapsulation)
+      - [AC-3](#ac-3-encapsulation)
       - [AV1 encapsulation](#av1-encapsulation)
       - [VP9 encapsulation](#vp9-encapsulation)
       - [H264 encapsulation](#h264-encapsulation)
@@ -1343,6 +1344,7 @@ definitions.
 
  - [Opus](#opus-encapsulation)
  - [AAC](#aac-encapsulation)
+ - [AC-3](#ac-3-encapsulation)
  - [AV1](#av1-encapsulation)
  - [VP9](#vp9-encapsulation)
  - [H.264](#h264-encapsulation)
@@ -1404,6 +1406,17 @@ explicitly unsupported.
 Implementations **MUST** set the first stream packet's `pts` value to a negative
 value as defined in [data packets](#data-packets) to remove the required number
 of prepended samples.
+
+#### AC-3 encapsulation
+
+For AAC encapsulation, the `codec_id` in
+[stream registration packets](#stream-registration-packets)
+MUST be 0x41432d33 (`AC-3`).
+
+AC-3 streams require no [stream initialization data packets](#stream-initialization-data).
+
+THe `packet_data` MUST contain regular AC-3 OR E-AC-3 frames, starting from the
+`syncinfo` header defined in the specifications.
 
 #### AV1 encapsulation
 
