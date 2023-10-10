@@ -607,8 +607,8 @@ regular data segments.
 
 ### Index packets
 
-The index packet contains available byte offsets of nearby keyframes and the
-distance to the next index packet.
+The index packet contains available byte offsets of nearby keyframes, reconfiguration packets
+or metadata changes, and the distance to the next index packet.
 
 | Data               | Name               |  Fixed value | Description                                                                                                                                                                    |
 |:-------------------|:-------------------|-------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -620,10 +620,16 @@ distance to the next index packet.
 | `u(32)`            | `nb_indices`       |              | The total number of indices present in this packet.                                                                                                                            |
 | `b(64)`            | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                                                                                                                 |
 | `L(224, 64)`       | `ldpc_224_64`      |              | LDPC data to correct and verify the last 224 bits of the packet.                                                                                                               |
-| `i(nb_indices*64)` | `pkt_pts`          |              | The presentation timestamp of the index.                                                                                                                                       |
+| `u(nb_indices*16)` | `pkt_type`         |              | Type of the packet at the given position.                                                                                                                                      |
+| `i(nb_indices*64)` | `pkt_pts`          |              | The presentation timestamp of the index, if applicable.                                                                                                                        |
 | `u(nb_indices*32)` | `pkt_seq`          |              | The sequence number of the packet pointed to by `pkt_pos`. MUST be ignored if `pkt_pos` is 0.                                                                                  |
 | `i(nb_indices*32)` | `pkt_pos`          |              | The offset of a decodable index relative to the current position in bytes. MAY be 0 if unavailable or not applicable.                                                          |
 | `u(nb_indices*16)` | `pkt_chapter`      |              | If a value is greater than 0, demarks the start of a chapter with an index equal to the value.                                                                                 |
+
+If index packets are present, an index packet MUST be sent for any stream
+reconfiguration packets, or metadata changes. No future index packets must be signalled
+or sent, until all the packets needed to correctly reinitialize streams have been sent.
+The exception to this is if a newer reinitialization has begun.
 
 If valid, `prev_idx`, `next_idx` and `pkt_pos` offsets MUST point to the start of
 a packet. In other words, the byte pointed to by the offsets MUST contain the
