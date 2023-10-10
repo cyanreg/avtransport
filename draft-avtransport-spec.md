@@ -69,7 +69,6 @@ and rigid overseeing organizations.
       - [Custom codec encapsulation](#custom-codec-encapsulation)
   - [Annex](#annex)
     - [Annex A: LDPC](#annex-a-ldpc)
-      - [ldpc_168_64](#ldpc_168_64)
       - [ldpc_224_64](#ldpc_224_64)
       - [ldpc_2016_768](#ldpc_2016_768)
     - [Annex B: Informative muxer behaviour](#annex-b-informative-muxer-behaviour)
@@ -250,22 +249,23 @@ This packet is used to signal stream registration.
 
 The layout of the data is as follows:
 
-| Data         | Name                | Fixed value | Description                                                                                               |
-|:-------------|:--------------------|------------:|:----------------------------------------------------------------------------------------------------------|
-| `b(16)`      | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                                                           |
-| `b(16)`      | `stream_id`         |             | Indicates the stream ID for the new stream.                                                               |
-| `u(32)`      | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.                                             |
-| `b(16)`      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.                                              |
-| `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.                                           |
-| `u(64)`      | `bandwidth`         |             | Average bitrate in bits per second. MAY be 0 to indicate VBR or unknown.                                  |
-| `b(16)`      | `init_packets`      |             | Flags to indicate which packets SHOULD be received before decoding or presenting any stream data packets. |
-| `b(48)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                                            |
-| `L(224, 64)` | `ldpc_224_64`       |             | LDPC data to correct and verify the previous 224 bits of the packet.                                      |
-| `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                                                 |
-| `R(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                                           |
-| `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.                                    |
-| `u(64)`      | `skip_preroll`      |             | Amount of time to skip immediately after seeking or reinitializing (algorithmic delay).                   |
-| `L(168, 64)` | `ldpc_168_64`       |             | LDPC to correct the leftover previous 168 bits.                                                           |
+| Data         | Name                | Fixed value | Description                                                                                                  |
+|:-------------|:--------------------|------------:|:-------------------------------------------------------------------------------------------------------------|
+| `b(16)`      | `reg_descriptor`    |         0x2 | Indicates this is a stream registration packet.                                                              |
+| `b(16)`      | `stream_id`         |             | Indicates the stream ID for the new stream.                                                                  |
+| `u(32)`      | `global_seq`        |             | Monotonically incrementing per-packet global sequence number.                                                |
+| `b(16)`      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.                                                 |
+| `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.                                              |
+| `u(64)`      | `bandwidth`         |             | Average bitrate in bits per second. MAY be 0 to indicate VBR or unknown.                                     |
+| `b(64)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                                               |
+| `L(224, 64)` | `ldpc_224_64`       |             | LDPC data to correct and verify the previous 224 bits of the packet.                                         |
+| `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                                                    |
+| `R(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                                              |
+| `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.                                       |
+| `u(64)`      | `skip_preroll`      |             | Amount of time in `timebase` units to skip immediately after seeking or reinitializing (algorithmic delay).  |
+| `b(16)`      | `init_packets`      |             | Flags to indicate which packets SHOULD be received before decoding or presenting any stream data packets.    |
+| `b(40)`      | `padding`           |             | Padding, reserved for future use. MUST be 0x0.                                                               |
+| `L(224, 64)` | `ldpc_224_64`       |             | LDPC to correct the leftover previous 224 bits.                                                              |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
@@ -1687,8 +1687,7 @@ This normative annex shall cover the usage of LDPC within AVTransport.
 The LDPC variant to be used is **irregular**, systematic, with no subblocks.
 The full block, along with the check data, shall be sent to an LDPC decoder.
 
-To ease implementations, only three different lengths are used:
- - 168-bit message, 64-bit parity
+To ease implementations, only two different lengths are used:
  - 224-bit message, 64-bit parity
  - 2016-bit message, 768-bit parity
 
@@ -1700,11 +1699,6 @@ To be done
 The following **H** matrices below shall be used for encoding (via the pseudocode above) and decoding.
 Implementations are free to convert them to G matrices and use conventional encoding methods.
 The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
-
-#### ldpc_168_64
-```
-To be optimized
-```
 
 #### ldpc_224_64
 ```
