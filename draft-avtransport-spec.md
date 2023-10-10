@@ -663,20 +663,25 @@ The actual metadata MUST be stored using CBOR, as standardized in IETF RFC 8878.
 
 The following string keys SHOULD be used:
 
-|           Name |                        Type |                                                       Description |
-|---------------:|----------------------------:|------------------------------------------------------------------:|
-|        `title` |                 text string |                                          Full name of the stream. |
-|    `stream_id` |            unsigned integer |  Stream ID for which to apply the tags under the current section. |
-|     `language` |                 text string |                         Language name subtag, as per IETF BPC 47. |
-|         `date` |                 text string |                                                  Date of release. |
-|        `track` |            unsigned integer |                  Track number, if the stream is part of an album. |
-|       `tracks` |            unsigned integer |            Total number of tracks, if stream is part of an album. |
-|       `artist` |                 text string |                 Full name of the performing artist on this track. |
-| `album_artist` |                 text string | Full name of the album's artist. MUST be the same for each track. |
-|        `album` |                 text string |                                           Full name of the album. |
+|              Name |                        Type |                                                                                                     Description |
+|------------------:|----------------------------:|----------------------------------------------------------------------------------------------------------------:|
+|           `title` |                 text string |                                                                                        Full name of the stream. |
+|       `stream_id` |            unsigned integer |                                                Stream ID for which to apply the tags under the current section. |
+|        `language` |                 text string |                                                                       Language name subtag, as per IETF BPC 47. |
+|    `language_tab` |                 text string |  More concise language information, including regional variants, as defined by `Language-Tag` in IETF RFC 5646. |
+|            `date` |                 text string |                                                  Date of release. MUST be formatted according to IETF RFC 3339. |
+|           `track` |            unsigned integer |                                                                Track number, if the stream is part of an album. |
+|          `tracks` |            unsigned integer |                                                          Total number of tracks, if stream is part of an album. |
+|          `artist` |                 text string |                                                               Full name of the performing artist on this track. |
+|    `album_artist` |                 text string |                                               Full name of the album's artist. MUST be the same for each track. |
+|           `album` |                 text string |                                                                                         Full name of the album. |
+|         `comment` |                 text string |                                                                                      Arbitrary release details. |
+|            `disc` |            unsigned integer |                                                                    Disc number, in case of multi-disc releases. |
+|      `totaldiscs` |            unsigned integer |                                                          Total number of discs, in case of multi-disc releases. |
+|      `media_type` |                 text string |                                                                             Original media type of the release. |
+|            `isrc` |                 text string |                                                       International Standard Recording Code of the given track. |
 
 Implementations are free to insert any other tags.
-
 Each `stream_id` value in a section MUST be unique.
 
 Each name key CAN be encountered multiple times. Implementations MUST
@@ -692,6 +697,10 @@ Metadata can be updated by sending new metadata packets with new values.
 
 The `language` field MUST be formatted as a **subtag**, according to the
 [IETF BPC 47](https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry).
+
+The `language_tag` field MUST be formatted as described in IETF RFC 5646, section
+`2.1. Syntax`. It provides more detailed information than the `language` field,
+including regional variation and script.
 
 The `date` field MUST be formatted according to the
 [IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
@@ -806,7 +815,7 @@ stream after decoding.
 | `u(32)`         | `global_seq`              |              | Monotonically incrementing per-packet global sequence number.                                                                                 |
 | `u(32)`         | `width`                   |              | Indicates the presentable video width in pixels.                                                                                              |
 | `u(32)`         | `height`                  |              | Indicates the presentable video height in pixels.                                                                                             |
-| `R(64)`         | `signal_aspect`           |              | Indicates the signal aspect ratio of the image.                                                                                               |
+| `R(64)`         | `signal_aspect`           |              | Indicates the sample aspect ratio of the image.                                                                                               |
 | `u(8)`          | `chroma_subsampling`      |              | Indicates the chroma subsampling being used. MUST be interpreted using the `subsampling` table below.                                         |
 | `u(8)`          | `colorspace`              |              | Indicates the kind of colorspace the video is in. MUST be interpreted using the `colorspace` table below.                                     |
 | `u(8)`          | `bit_depth`               |              | Number of bits per pixel value.                                                                                                               |
