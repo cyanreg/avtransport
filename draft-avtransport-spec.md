@@ -879,19 +879,35 @@ To illustrate:
 
 A standardized way to transmit orientation information is as follows:
 
-| Data                    | Name               | Fixed value  | Description                                                                                  |
-|:------------------------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------|
-| `b(16)`                 | `ori_descriptor`   |         0x40 | Indicates this is a video orientation packet.                                                |
-| `b(16)`                 | `stream_id`        |              | The stream ID for which to associate the video information with.                             |
-| `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                |
-| `R(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.        |
-| `b(96)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                               |
-| `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                         |
+| Data                    | Name               | Fixed value  | Description                                                                                             |
+|:------------------------|:-------------------|-------------:|:--------------------------------------------------------------------------------------------------------|
+| `b(16)`                 | `ori_descriptor`   |         0x40 | Indicates this is a video orientation packet.                                                           |
+| `b(16)`                 | `stream_id`        |              | The stream ID for which to associate the video information with.                                        |
+| `u(32)`                 | `global_seq`       |              | Monotonically incrementing per-packet global sequence number.                                           |
+| `u(64)`                 | `timestamp`        |              | Timestamp at which this orientation packet has to be applied at.                                        |
+| `u(8)`                  | `reflection`       |              | A fixed transposition that MUST occur before any arbitrary rotation, interpreted using the table below. |
+| `R(64)`                 | `rotation`         |              | A fixed-point rational number to indicate rotation in radians once multiplied by `π`.                   |
+| `i(24)`                 | `padding`          |              | Padding, reserved for future use. MUST be 0x0.                                                          |
+| `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                                    |
 
-Video orientation packets SHOULD be taken into account and be applied upon
-the next video packet in the bitstream, but not before.
-The value MUST persist until a new orientation packet is sent, OR the stream
-is reinitialized.
+The `reflection` table is as follows:
+| Value | Name            | Description                                                                                                                       |
+|------:|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `normal`        | Video is not flipped or transposed.                                                                                               |
+|   0x1 | `mirror`        | Video must be mirrored for correct presentation (flipped horizontally).                                                           |
+|   0x2 | `flip`          | Video must be flipped upside-down for correct presentation (essentially clockwise/counter-clockwise rotation twice).              |
+|   0x3 | `flip_mirror`   | Video must be mirrored and flipped upside-down for correct presentation (essentially clockwise/counter-clockwise rotation twice). |
+|   0x4 | `clock`         | Video must be rotated clockwise for correct presentation.                                                                         |
+|   0x5 | `clock_mirror`  | Video must be mirrored and rotated clockwise for correct presentation.                                                            |
+|   0x6 | `cclock`        | Video must be rotated counter-clockwise for correct presentation.                                                                 |
+|   0x7 | `cclock_mirror` | Video must be mirrored and rotated counter-clockwise for correct presentation.                                                    |
+
+The effects of video orientation packets MUST persist from the `timestamp` value given,
+until a new orientation packet is sent, OR the stream is reinitialized.
+
+`reflection` and `rotation` CAN overlap. However, they MUST be applied sequentially - first,
+`reflection`, then `rotation`. Users SHOULD consider both and convert them to simple `reflection`
+where possible.
 
 The actual rotation in radians is given by `π * (rotation.num/rotation.den)`.
 
