@@ -1304,6 +1304,8 @@ The following packet MAY be sent from the receiver to the sender.
 | `u(32)` | `dropped_packets`  |              | Indicates the total number of dropped packets.                                                                                                                                                                                                      |
 
 Receivers SHOULD send out a new statistics packet every time a count was updated.
+Additionally, receivers SHOULD send new feedback packets often enough to prevent
+UDP NAT from timing out.
 
 If the descriptor of the dropped packed is known, receivers SHOULD set it
 in `dropped_type`, and senders SHOULD resend it as soon as possible.
