@@ -60,6 +60,8 @@ and rigid overseeing organizations.
       - [Dirac/VC-2](#diracvc-2)
       - [ASS encapsulation](#ass-encapsulation)
       - [DNG/TIFF encapsulation](#dngtiff-encapsulation)
+      - [JPEG encapsulation](#jpeg-encapsulation)
+      - [PNG encapsulation](#png-encapsulation)
       - [Raw audio encapsulation](#raw-audio-encapsulation)
       - [Raw video encapsulation](#raw-video-encapsulation)
       - [Custom codec encapsulation](#custom-codec-encapsulation)
@@ -1323,6 +1325,8 @@ definitions.
  - [Dirac/VC-2](#diracvc-2)
  - [ASS](#ass-encapsulation)
  - [DNG/TIFF](#dngtiff-encapsulation)
+ - [JPEG encapsulation](#jpeg-encapsulation)
+ - [PNG encapsulation](#png-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
@@ -1474,6 +1478,27 @@ MUST be 0x54494646 (`TIFF`).
 
 The `packet_data` MUST contain a raw TIFF file,
 with one packet being a single picture.
+
+#### JPEG encapsulation
+
+For JPEG and Motion JPEG, the `codec_id` in the
+[stream registration packets](#stream-registration-packets)
+MUST be 0x4a504547 (`JPEG`).
+
+The `packet_data` MUST contain a raw JPEG file, with
+one packet being a single picture.
+
+#### PNG encapsulation
+
+For PNG, the `codec_id` in the
+[stream registration packets](#stream-registration-packets)
+MUST be 0x504e4730 (`PNG0`).
+
+The `packet_data` MUST contain a raw PNG file.
+No support for Animated PNG is defined yet, but simply not
+flagging the still picture flag (`stream_flags & 0x04`) and sending
+a single picture per frame is sufficient to animate PNG, as this is
+allowed for any codec.
 
 #### Raw audio encapsulation
 
