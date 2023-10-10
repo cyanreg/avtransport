@@ -1162,8 +1162,9 @@ Data packets MAY be padded by appending random data or zeroes after the `packet_
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
 
-If [reverse signalling](#reverse-signalling) is used, same port number an method MUST
-be used for reverse signalling as the sender's.
+If [reverse signalling](#reverse-signalling) is used, the receiver MUST
+send packets over to the sender using the same port number that the receiver
+is listening on.
 
 ### UDP-Lite
 
