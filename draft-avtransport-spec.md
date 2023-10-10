@@ -55,6 +55,7 @@ and rigid overseeing organizations.
       - [Opus encapsulation](#opus-encapsulation)
       - [AAC encapsulation](#aac-encapsulation)
       - [AV1 encapsulation](#av1-encapsulation)
+      - [VP9 encapsulation](#vp9-encapsulation)
       - [H264 encapsulation](#h264-encapsulation)
       - [H265 encapsulation](#h265-encapsulation)
       - [Dirac/VC-2](#diracvc-2)
@@ -1343,6 +1344,7 @@ definitions.
  - [Opus](#opus-encapsulation)
  - [AAC](#aac-encapsulation)
  - [AV1](#av1-encapsulation)
+ - [VP9](#vp9-encapsulation)
  - [H.264](#h264-encapsulation)
  - [H.265](#h265-encapsulation)
  - [Dirac/VC-2](#diracvc-2)
@@ -1414,6 +1416,19 @@ codec's so-called `uncompressed header`. For information on its syntax,
 consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
+
+#### VP9 encapsulation
+
+For VP9 encapsulation, the `codec_id` in
+[stream registration packets](#stream-registration-packets)
+MUST be 0x56503039 (`VP09`).
+
+The [stream initialization data packet](#stream-initialization-data) payload MUST be the
+codec's so-called `uncompressed header`. For information on its syntax,
+consult the specifications, section `6.2 Uncompressed header syntax`.
+
+The `packet_data` MUST contain raw **superframe** packets, as defined in `Annex B` of the
+VP9 specifications.
 
 #### H264 encapsulation
 
