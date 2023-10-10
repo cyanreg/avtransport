@@ -54,12 +54,12 @@ and rigid overseeing organizations.
     - [Codec encapsulation](#codec-encapsulation)
       - [Opus encapsulation](#opus-encapsulation)
       - [AAC encapsulation](#aac-encapsulation)
-      - [AC-3](#ac-3-encapsulation)
+      - [AC-3 encapsulation](#ac-3-encapsulation)
       - [AV1 encapsulation](#av1-encapsulation)
       - [VP9 encapsulation](#vp9-encapsulation)
       - [H264 encapsulation](#h264-encapsulation)
       - [H265 encapsulation](#h265-encapsulation)
-      - [Dirac/VC-2](#diracvc-2)
+      - [Dirac/VC-2 encapsulation](#diracvc-2-encapsulation)
       - [ASS encapsulation](#ass-encapsulation)
       - [DNG/TIFF encapsulation](#dngtiff-encapsulation)
       - [JPEG encapsulation](#jpeg-encapsulation)
@@ -1352,8 +1352,8 @@ definitions.
  - [Dirac/VC-2](#diracvc-2)
  - [ASS](#ass-encapsulation)
  - [DNG/TIFF](#dngtiff-encapsulation)
- - [JPEG encapsulation](#jpeg-encapsulation)
- - [PNG encapsulation](#png-encapsulation)
+ - [JPEG](#jpeg-encapsulation)
+ - [PNG](#png-encapsulation)
  - [Raw audio](#raw-audio-encapsulation)
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
@@ -1475,7 +1475,7 @@ A [stream initialization data packet](#stream-initialization-data) MAY be sent, 
 speed up stream initialization. If they are present, they MUST contain an
 `HEVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 23008`.
 
-#### Dirac/VC-2
+#### Dirac/VC-2 encapsulation
 
 For Dirac or VC-2 encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
