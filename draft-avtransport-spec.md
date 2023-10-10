@@ -256,19 +256,23 @@ The layout of the data is as follows:
 | `b(16)`      | `related_stream_id` |             | Indicates the stream ID for which this stream is related to.                                              |
 | `b(16)`      | `derived_stream_id` |             | Indicates the stream ID from which this stream is derived from.                                           |
 | `u(64)`      | `bandwidth`         |             | Average bitrate in bits per second. MAY be 0 to indicate VBR or unknown.                                  |
-| `b(64)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                                            |
+| `b(16)`      | `init_packets`      |             | Flags to indicate which packets SHOULD be received before decoding or presenting any stream data packets. |
+| `b(48)`      | `stream_flags`      |             | Flags to signal what sort of a stream this is.                                                            |
 | `L(224, 64)` | `ldpc_224_64`       |             | LDPC data to correct and verify the previous 224 bits of the packet.                                      |
 | `b(32)`      | `codec_id`          |             | Signals the codec ID for the data packets in this stream.                                                 |
 | `R(64)`      | `timebase`          |             | Signals the timebase of the timestamps present in data packets.                                           |
 | `b(8)`       | `ts_clock_id`       |             | An 8-bit clock ID identifier to associate a stream with a given clock.                                    |
-| `b(16)`      | `init_packets`      |             | Flags to indicate which packets SHOULD be received before decoding or presenting any stream data packets. |
-| `b(48)`      | `reserved`          |             | Reserved for future use. MUST be 0x0.                                                                     |
+| `u(64)`      | `skip_preroll`      |             | Amount of time to skip immediately after seeking or reinitializing (algorithmic delay).                   |
 | `L(168, 64)` | `ldpc_168_64`       |             | LDPC to correct the leftover previous 168 bits.                                                           |
 
 This packet MAY BE sent for an already-initialized stream. The `bandwidth` field
 and the `stream_flags` fields MAY change, however the `codec_id`, `timebase`
 AND `related_stream_id` fields MUST remain the same. If the latter are to change
 an [end of stream](#end-of-stream) packet MUST be sent first.
+
+The `skip_preroll` field is a duration **in timebase units** to signal how much to skip
+after reinitializing or seeking. The duration of negative timestamps at the start of streams
+MUST be at least as long as the `skip_preroll`.
 
 The `init_packets` field indicates which packets are required, and will be transmitted,
 for the stream to be correctly decoded and presented. It MUST be interpreted as follows:
