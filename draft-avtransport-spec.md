@@ -912,23 +912,16 @@ A standardized way to transmit orientation information is as follows:
 | `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                                    |
 
 The `reflection` table is as follows:
-| Value | Name            | Description                                                                                                                       |
-|------:|:----------------|:----------------------------------------------------------------------------------------------------------------------------------|
-|   0x0 | `normal`        | Video is not flipped or transposed.                                                                                               |
-|   0x1 | `mirror`        | Video must be mirrored for correct presentation (flipped horizontally).                                                           |
-|   0x2 | `flip`          | Video must be flipped upside-down for correct presentation (essentially clockwise/counter-clockwise rotation twice).              |
-|   0x3 | `flip_mirror`   | Video must be mirrored and flipped upside-down for correct presentation (essentially clockwise/counter-clockwise rotation twice). |
-|   0x4 | `clock`         | Video must be rotated clockwise for correct presentation.                                                                         |
-|   0x5 | `clock_mirror`  | Video must be mirrored and rotated clockwise for correct presentation.                                                            |
-|   0x6 | `cclock`        | Video must be rotated counter-clockwise for correct presentation.                                                                 |
-|   0x7 | `cclock_mirror` | Video must be mirrored and rotated counter-clockwise for correct presentation.                                                    |
+| Value | Name            | Description                                                              |
+|------:|:----------------|:-------------------------------------------------------------------------|
+|   0x0 | `normal`        | Video is not flipped.                                                    |
+|   0x1 | `mirror`        | Video must be mirrored for correct presentation (flipped horizontally).  |
+|   0x2 | `flip`          | Video must be flipped upside-down for correct presentation.              |
+
+`reflection` MUST be applied first, before `rotation`.
 
 The effects of video orientation packets MUST persist from the `timestamp` value given,
 until a new orientation packet is sent, OR the stream is reinitialized.
-
-`reflection` and `rotation` CAN overlap. However, they MUST be applied sequentially - first,
-`reflection`, then `rotation`. Users SHOULD consider both and convert them to simple `reflection`
-where possible.
 
 The actual rotation in radians is given by `π * (rotation.num/rotation.den)`.
 
