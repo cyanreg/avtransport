@@ -1649,15 +1649,15 @@ The components MUST be given in the order they appear in the stream.
 
 The `rv_flags` field MUST be interpreted in the following way:
 
-| Bit position set | Description                                                                                                  |
-|-----------------:|:-------------------------------------------------------------------------------------------------------------|
-|              0x1 | Video is RGB                                                                                                 |
-|              0x2 | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
-|              0x4 | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
-|              0x8 | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
-|             0x16 | At least one pixel component is not sharing a plane, e.g. video is *planar*.                                 |
-|             0x32 | Video's components are packed, e.g. video is *bitpacked*.                                                    |
-|             0x64 | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+| Bit position set | Name                     | Description                                                                                                  |
+|-----------------:|:-------------------------|:-------------------------------------------------------------------------------------------------------------|
+|              0x1 | `rv_rgb`                 | Video is RGB                                                                                                 |
+|              0x2 | `rv_float`               | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
+|              0x4 | `rv_alpha`               | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
+|              0x8 | `rv_alpha_premultiplied` | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
+|             0x16 | `rv_planar`              |  At least one pixel component is not sharing a plane, e.g. video is *planar*.                                |
+|             0x32 | `rv_bitpacked`           |  Video's components are packed, e.g. video is *bitpacked*.                                                   |
+|             0x64 | `rv_big_endian`          | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
 
 The `packet_data` field MUST contain `rv_planes`, with each plane having
 `rv_plane_stride` bytes per line. The number of horizontal lines being given by
