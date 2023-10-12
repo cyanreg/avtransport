@@ -71,18 +71,18 @@ enum PQPacketType {
     /* Indicates the 8 least significant bits are a mask */
     AVT_PKT_FLAG_LSB_MASK = (1 << 31),
 
-    AVT_PKT_SESSION_START = 0x5170,
-    AVT_PKT_TIME_SYNC = 0x1,
+    AVT_PKT_SESSION_START = 0x4156,
+
     AVT_PKT_STREAM_REG = 0x2,
 
-    AVT_PKT_STREAM_INIT = 0x3,
+    AVT_PKT_STREAM_INIT     = 0x3,
     AVT_PKT_STREAM_INIT_PRT = 0x4,
     AVT_PKT_STREAM_INIT_SEG = 0x5,
     AVT_PKT_STREAM_INIT_END = 0x6,
     AVT_PKT_STREAM_INIT_FEC = 0x7,
 
     AVT_PKT_VIDEO_INFO = 0x8,
-    AVT_PKT_INDEX = 0x9,
+    AVT_PKT_INDEX      = 0x9,
 
     AVT_PKT_METADATA = 0xA,
     AVT_PKT_METADATA_PRT = 0xB,

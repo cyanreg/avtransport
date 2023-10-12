@@ -11,6 +11,7 @@ to solve issues with current other containers, like timestamp rounding, lack of 
 inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
 and rigid overseeing organizations.
 
+
 ## Table of Contents
 
 - [AVTransport protocol](#avtransport-protocol)
@@ -68,11 +69,13 @@ and rigid overseeing organizations.
       - [Raw video encapsulation](#raw-video-encapsulation)
       - [Custom codec encapsulation](#custom-codec-encapsulation)
   - [Annex](#annex)
-    - [Annex A: LDPC](#annex-a-ldpc)
+    - [Annex A: Informative muxer behaviour](#annex-b-informative-muxer-behaviour)
+    - [Annex B: Informative demuxer behaviour](#annex-c-informative-demuxer-behaviour)
+    - [Annex C-Y: Reserved](#annex-c-y-reserved)
+    - [Annex Z: LDPC](#annex-a-ldpc)
       - [ldpc_224_64](#ldpc_224_64)
       - [ldpc_2016_768](#ldpc_2016_768)
-    - [Annex B: Informative muxer behaviour](#annex-b-informative-muxer-behaviour)
-    - [Annex C: Informative demuxer behaviour](#annex-c-informative-demuxer-behaviour)
+
 
 ### Specification conventions
 
@@ -100,6 +103,7 @@ interval `[-1.0, 1.0]`.
 The `global_seq` number SHOULD start at 0, and MUST be incremented by 1 each time
 after a packet has been sent. Once at `0xffffffff`, it MUST overflow back to `0x0`.
 This overflow MUST be handled by the receiver.
+
 
 ### Protocol overview
 
@@ -160,6 +164,7 @@ of how they're allocated.
 Anything not specified in the table is reserved and must not be used. Future additions
 will require a version bump of the protocol.
 
+
 ## Packet description
 
 This section lists the syntax of each individual packet type and specifies its purpose,
@@ -167,6 +172,7 @@ and rules about its usage.
 
 Special considerations and suggestions which need to be taken into account in a streaming
 scenario are described in the [streaming](#streaming) section.
+
 
 ### Session start packets
 
@@ -191,12 +197,13 @@ bytewise-identical.
 
 The `session_flags` field MUST be interpreted in the following way:
 
-| Bit position set | Description                                                                                                  |
-|-----------------:|:-------------------------------------------------------------------------------------------------------------|
-|              0x1 | Indicates session is capable and ready to receive [reverse signalling](#reverse-signalling) data packets.    |
+| Bit position set | Name                           | Description                                                                                               |
+|-----------------:|:-------------------------------|:----------------------------------------------------------------------------------------------------------|
+|              0x1 | `SESSION_REVERSE_SIGNAL_READY` | Indicates session is capable and ready to receive [reverse signalling](#reverse-signalling) data packets. |
 
 Implementations are allowed to test the first 4 bytes to detect a AVTransport stream.<br/>
 The LDPC data is, like for all packets, allowed to be ignored by receivers.
+
 
 ### Time synchronization packets
 
@@ -242,6 +249,7 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970
 ([Unix time](https://en.wikipedia.org/wiki/Unix_time)).
 
 The possible applications of the `epoch` field are described in the [epoch](#epoch) section.
+
 
 ### Stream registration packets
 
@@ -295,24 +303,24 @@ new stream and decoding/presenting packets from it.
 
 The `stream_flags` field MUST be interpreted as such:
 
-| Bit set | Description                                                                                                             |
-|--------:|:------------------------------------------------------------------------------------------------------------------------|
-|     0x1 | Reserved.                                                                                                               |
-|     0x2 | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
-|     0x4 | Stream is a still picture and only a single decodable frame will be sent.                                               |
-|     0x8 | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
-|    0x10 | Stream is a lower quality version of the stream signalled in `derived_stream_id`.                                       |
-|    0x20 | Stream is a dubbed version of the stream signalled in `related_stream_id`.                                              |
-|    0x40 | Stream is a commentary track to the stream signalled in `related_stream_id`.                                            |
-|    0x80 | Stream is a lyrics track to the stream signalled in `related_stream_id`.                                                |
-|   0x100 | Stream is a karaoke track to the stream signalled in `related_stream_id`.                                               |
-|   0x200 | Stream is intended for hearing impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.  |
-|   0x400 | Stream is intended for visually impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in. |
-|   0x800 | Stream contains music and sound effects without voice.                                                                  |
-|  0x1000 | Stream contains non-diegetic audio. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.                 |
-|  0x2000 | Stream contains textual or spoken descriptions to the stream signalled in `related_stream_id`.                          |
-|  0x4000 | Stream contains timed metadata and is not intended to be directly presented to the user.                                |
-|  0x8000 | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
+| Bit set | Name                       | Description                                                                                                             |
+|--------:|:---------------------------|:------------------------------------------------------------------------------------------------------------------------|
+|     0x1 | `STREAM_RESERVED`          | Reserved.                                                                                                               |
+|     0x2 | `STREAM_DEFAULT`           | Stream SHOULD be chosen by default amongst other streams of the same type, unless the user has specified otherwise.     |
+|     0x4 | `STREAM_STILL_PICTURE`     | Stream is a still picture and only a single decodable frame will be sent.                                               |
+|     0x8 | `STREAM_COVER_ART`         | Stream is a cover art picture for the stream signalled in `related_stream_id`.                                          |
+|    0x10 | `STREAM_LQ`                | Stream is a lower quality version of the stream signalled in `derived_stream_id`.                                       |
+|    0x20 | `STREAM_DUB`               | Stream is a dubbed version of the stream signalled in `related_stream_id`.                                              |
+|    0x40 | `STREAM_COMMENTARY`        | Stream is a commentary track to the stream signalled in `related_stream_id`.                                            |
+|    0x80 | `STREAM_LYRICS`            | Stream is a lyrics track to the stream signalled in `related_stream_id`.                                                |
+|   0x100 | `STREAM_KARAOKE`           | Stream is a karaoke track to the stream signalled in `related_stream_id`.                                               |
+|   0x200 | `STREAM_HEARING_IMPAIRED`  | Stream is intended for hearing impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.  |
+|   0x400 | `STREAM_VISUALLY_IMPAIRED` | Stream is intended for visually impaired audiences. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in. |
+|   0x800 | `STREAM_NO_DIALOGUE`       | Stream contains music and sound effects without voice.                                                                  |
+|  0x1000 | `STREAM_NON_DIEGETIC`      | Stream contains non-diegetic audio. If `related_stream_id` is not `stream_id`, both SHOULD be mixed in.                 |
+|  0x2000 | `STREAM_DESCRIPTIONS`      | Stream contains textual or spoken descriptions to the stream signalled in `related_stream_id`.                          |
+|  0x4000 | `STREAM_TIMING_METADATA`   | Stream contains timed metadata and is not intended to be directly presented to the user.                                |
+|  0x8000 | `STREAM_THUMBNAILS`        | Stream contains sparse thumbnails to the stream signalled in `related_stream_id`.                                       |
 
 Several streams can be **chained** with the `0x10` bit set to indicate
 progressively lower quality/bitrate versions of the same stream. The very first
@@ -321,9 +329,11 @@ stream in the chain MUST NOT have bit `0x10` set.
 Sparse thumbnail streams MAY exactly match chapters from `related_stream_id`,
 but could be sparser or more frequent.
 
-If bits `0x8`, `0x20`, `0x40`, `0x80`, `0x100`, `0x200` are all unset,
-`related_stream_id` MUST match `stream_id`, otherwise the stream with a related
-*different* ID MUST exist.
+If bits `STREAM_COVER_ART`, `STREAM_DUB`, `STREAM_COMMENTARY`, `STREAM_LYRICS`,
+`STREAM_KARAOKE`, `STREAM_HEARING_IMPAIRED` are all unset, then
+`related_stream_id` MUST match `stream_id`, otherwise the stream with a
+related *different* ID MUST exist.
+
 
 ### Generic data packet structure
 
@@ -391,6 +401,7 @@ This MUST always be *greater than zero*.
 The `header_7` field can be used to reconstruct the header of the very first
 packet in order to determine the timestamps and data type.
 
+
 ### Stream initialization data
 
 Codecs generally require a one-off special piece of data needed to initialize them.<br/>
@@ -415,6 +426,7 @@ An implementation MAY error out in case it cannot handle the data in the payload
 If so, when reading a file, it MUST stop, otherwise in a live scenario,
 it MUST send an `unsupported` [control data](#control-data), if such a
 connection is open.
+
 
 ### Stream data packets
 
@@ -451,16 +463,17 @@ terminate the packet. A packet with an `0x40` flag MUST NOT have a `data_length`
 to 0.
 
 The `frame_type` table is as follows:
-| Value | Name   | Description                                                   |
-|------:|:-------|:--------------------------------------------------------------|
-|   0x0 | `KEY`  | Packet data contains a keyframe, able to be decoded standalone.                                   |
-|   0x1 | `S`    | Packet data contains a scalable frame, able to be decoded standalone with acceptable degradation. |
+| Value | Name              | Description                                                                                       |
+|------:|:------------------|:--------------------------------------------------------------------------------------------------|
+|   0x0 | `FRAME_TYPE_KEY`  | Packet data contains a keyframe, able to be decoded standalone.                                   |
+|   0x1 | `FRAME_TYPE_S`    | Packet data contains a scalable frame, able to be decoded standalone with acceptable degradation. |
 
 The `data_compression` table is as follows:
-| Value | Name   | Description                                                   |
-|------:|:-------|:--------------------------------------------------------------|
-|   0x0 | `NONE` | Packet data is uncompressed.                                  |
-|   0x1 | `ZSTD` | Packet data is compressed with Zstandard from IETF RFC 8878.  |
+| Value | Name                 | Description                                                            |
+|------:|:---------------------|:-----------------------------------------------------------------------|
+|   0x0 | `DATA_COMPRESS_NONE` | Packet data is uncompressed.                                           |
+|   0x1 | `DATA_COMPRESS_ZSTD` | Packet data is compressed with Zstandard from IETF RFC 8878.           |
+
 
 ### Stream data segmentation
 
@@ -493,6 +506,7 @@ but SHOULD use [FEC grouping](#fec-grouping) or
 Implementations SHOULD discard any packets and segments that arrive after their
 presentation time. Implementations SHOULD drop any packets and segments
 that arrive with unrealistically far away presentation times.
+
 
 ### FEC grouping
 
@@ -580,6 +594,7 @@ If there are no more valid packets to reference, the sender **MUST** start repea
 To perform FEC, first, concatenate the payload of each packet referenced into each source block, in order of the source symbol ID.
 Then, perform the procedure to apply FEC as described by [RFC 6330 Section 4.4.1. Source Block COnstruction](https://datatracker.ietf.org/doc/html/rfc6330#section-4.4.1).
 
+
 ### Stream FEC segments
 
 Stream data packets and segments MAY be backed by FEC data packets.
@@ -604,6 +619,7 @@ set in the `fec_covered` field. This MUST be greater than zero, unless
 
 The same lifetime and duplication rules apply for FEC segments as they do for
 regular data segments.
+
 
 ### Index packets
 
@@ -643,6 +659,7 @@ matches or exceeds the PTS, then it MUST be included. This is to permit
 correct subtitle presentation, or long duration still pictures like slideshows.
 
 When streaming, `idx_pos`, `prev_idx` and `next_idx` MUST be `0`.
+
 
 ### Metadata packets
 
@@ -705,6 +722,7 @@ including regional variation and script.
 The `date` field MUST be formatted according to the
 [IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
 
+
 ### LUT/ICC profile packets
 
 Embedding of color lookup tables (LUTs) and ICC profiles for accurate color reproduction is supported.<br/>
@@ -740,22 +758,23 @@ segmentation and FEC packets is via the following
 If the `lut_descriptor` is `0x11`, then at least one `0x13` segment MUST be received.
 
 The `lut_type` table is as follows:
-| Value | Name   | Description                                |
-|------:|:-------|:-------------------------------------------|
-|   0x0 | `ICC`  | Data contains a regular ICC profile.       |
-|   0x1 | `CUBE` | Data contains an Adobe .cube file.         |
+| Value | Name         | Description                               |
+|------:|:-------------|:------------------------------------------|
+|   0x0 | `CLUT_ICC`  | Data contains a regular ICC profile.       |
+|   0x1 | `CLUT_CUBE` | Data contains an Adobe .cube file.         |
 
 The `lut_compression` table is as follows:
-| Value | Name   | Description                                |
-|------:|:-------|:-------------------------------------------|
-|   0x0 | `NONE` | Data is uncompressed.                      |
-|   0x1 | `ZSTD` | Data is compressed with Zstandard.         |
+| Value | Name                 | Description                                |
+|------:|:---------------------|:-------------------------------------------|
+|   0x0 | `CLUT_COMPRESS_NONE` | Data is uncompressed.                      |
+|   0x1 | `CLUT_COMPRESS_ZSTD` | Data is compressed with Zstandard.         |
 
 **NOTE**: Lookup tables and ICC profiles MUST take precedence over the primaries and transfer
 characteristics values in [video info packets](#video-info-packets). The matrix
 coefficients are still required for RGB conversion.
 
 **NOTE**: BOTH an ICC profile and a color lookup table may be applied for a single stream.
+
 
 ### Font data packets
 
@@ -789,19 +808,20 @@ The syntax for font segments and FEC packets is via the following
 If the `font_descriptor` is `0x21`, then at least one `0x23` segment MUST be received.
 
 The `font_type` table is as follows:
-| Value | Name    | Description                                 |
-|------:|:--------|:--------------------------------------------|
-|   0x0 | `OTF`   | Font data is an OpenType font.              |
-|   0x1 | `TTF`   | Font data is a TrueType font.               |
-|   0x2 | `WOFF2` | Font data contains Web Open Font Format 2.  |
+| Value | Name         | Description                                 |
+|------:|:-------------|:--------------------------------------------|
+|   0x0 | `FONT_OTF`   | Font data is an OpenType font.              |
+|   0x1 | `FONT_TTF`   | Font data is a TrueType font.               |
+|   0x2 | `FONT_WOFF2` | Font data contains Web Open Font Format 2.  |
+
+`FONT_WOFF` fonts SHOULD NOT be compressed, as they're already compressed.
 
 The `font_compression` table is as follows:
-| Value | Name   | Description                                 |
-|------:|:-------|:--------------------------------------------|
-|   0x0 | `NONE` | Font data is uncompressed.                  |
-|   0x1 | `ZSTD` | Font data is compressed with Zstandard.     |
+| Value | Name                 | Description                                 |
+|------:|:---------------------|:--------------------------------------------|
+|   0x0 | `FONT_COMPRESS_NONE` | Font data is uncompressed.                  |
+|   0x1 | `FONT_COMPRESS_ZSTD` | Font data is compressed with Zstandard.     |
 
-*WOFF2* fonts SHOULD NOT be compressed, as they're already compressed.
 
 ### Video info packets
 
@@ -847,47 +867,47 @@ Similarly, `limited range` also has many synonyms - `TV range`, `limited swing`,
 `studio swing` and `MPEG range`.
 
 The `colorspace` table is as follows:
-| Value | Name        | Description                                                                                                              |
-|------:|:------------|:-------------------------------------------------------------------------------------------------------------------------|
-|   0x0 | `MONO`      | Video contains no chroma data.                                                                                           |
-|   0x1 | `RGB`       | Video data contains some form of RGB.                                                                                    |
-|   0x2 | `YUV`       | Video contains some form of YUV (YCbCr).                                                                                 |
-|   0x3 | `YCOCGR`    | Video contains a reversible form of YCoCg.                                                                               |
-|   0x4 | `YCGCOR`    | Same as `YCOCGR`, with swapped planes.                                                                                   |
-|   0x5 | `XYZ`       | Video contains XYZ color data.                                                                                           |
-|   0x6 | `XYB`       | Video contains XYB color data. **NOTE**: `matrix` MUST be equal to 0xFF and the matrix in `custom_matrix` MUST be valid. |
-|   0x7 | `ICTCP`     | Video contains ICtCp color data.                                                                                         |
+| Value | Name            | Description                                                                                                              |
+|------:|:----------------|:-------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `CSP_MONO`      | Video contains no chroma data.                                                                                           |
+|   0x1 | `CSP_RGB`       | Video data contains some form of RGB.                                                                                    |
+|   0x2 | `CSP_YUV`       | Video contains some form of YUV (YCbCr).                                                                                 |
+|   0x3 | `CSP_YCOCGR`    | Video contains a reversible form of YCoCg.                                                                               |
+|   0x4 | `CSP_YCGCOR`    | Same as `YCOCGR`, with swapped planes.                                                                                   |
+|   0x5 | `CSP_XYZ`       | Video contains XYZ color data.                                                                                           |
+|   0x6 | `CSP_XYB`       | Video contains XYB color data. **NOTE**: `matrix` MUST be equal to 0xFF and the matrix in `custom_matrix` MUST be valid. |
+|   0x7 | `CSP_ICTCP`     | Video contains ICtCp color data.                                                                                         |
 
 The `subsampling` table is as follows:
-| Value | Name        | Description                                                                                        |
-|------:|:------------|:---------------------------------------------------------------------------------------------------|
-|   0x0 | `444`       | Chromatic data is not subsampled, or subsampling does not apply.                                   |
-|   0x1 | `420`       | Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data. |
-|   0x2 | `422`       | Chromatic data is subsampled at half the vertical resolution of the luminance data.                |
+| Value | Name         | Description                                                                                        |
+|------:|:-------------|:---------------------------------------------------------------------------------------------------|
+|   0x0 | `CHROMA_444` | Chromatic data is not subsampled, or subsampling does not apply.                                   |
+|   0x1 | `CHROMA_420` | Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data. |
+|   0x2 | `CHROMA_422` | Chromatic data is subsampled at half the vertical resolution of the luminance data.                |
 
 The `interlacing` table is as follows:
-| Value | Name        | Description                                                                                                                                                                                                      |
-|------:|:------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x0 | `PROG`      | Video contains progressive data, or interlacing does not apply.                                                                                                                                                  |
-|   0x1 | `TFF`       | Video is interlaced. One [data packet](#stream-data-packets) per field. If the data packet's `pkt_flags & 0x20` bit is **unset**, indicates the field contained is the **top** field, otherwise it's the bottom. |
-|   0x2 | `BFF`       | Same as `TFF`, with reversed polarity, such that packets with `pkt_flags & 0x20` bit **set** contain the **top** field, otherwise it's the bottom.                                                               |
-|   0x3 | `TW`        | Video is interlaced. The [data packet](#stream-data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.                                                         |
-|   0x4 | `BW`        | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                                                                                   |
+| Value | Name         | Description                                                                                                                                                                                                      |
+|------:|:-------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `ILACE_PROG` | Video contains progressive data, or interlacing does not apply.                                                                                                                                                  |
+|   0x1 | `ILACE_TFF`  | Video is interlaced. One [data packet](#stream-data-packets) per field. If the data packet's `pkt_flags & 0x20` bit is **unset**, indicates the field contained is the **top** field, otherwise it's the bottom. |
+|   0x2 | `ILACE_BFF`  | Same as `TFF`, with reversed polarity, such that packets with `pkt_flags & 0x20` bit **set** contain the **top** field, otherwise it's the bottom.                                                               |
+|   0x3 | `ILACE_TW`   | Video is interlaced. The [data packet](#stream-data-packets) contains **both** fields, weaved together, with the **top** field being on every even line.                                                         |
+|   0x4 | `ILACE_BW`   | Same as `TW`, but with reversed polarity, such that the **bottom** field is encountered first.                                                                                                                   |
 
-The `TFF` and `TW`, as well as the `BFF` and `BW` values MAY be interchanged if
-it's possible to output one or the other, depending on the setting used, if
-the codec supports this.
+The `ILACE_TFF` and `ILACE_TW`, as well as the `ILACE_BFF` and `ILACE_BW` values
+MAY be interchanged if it's possible to output one or the other, depending on
+the setting used, if the codec supports this.
 
 The `chroma_pos_val` table is as follows:
-| Value | Name         | Description                                                                                              |
-|------:|:-------------|----------------------------------------------------------------------------------------------------------|
-|   0x0 | `UNSPEC`     | Chroma position not specified or does not apply.                                                         |
-|   0x1 | `LEFT`       | Chroma position is between 2 luma samples on different lines. (MPEG-2/4 422, H.264 420)                  |
-|   0x2 | `CENTER`     | Chroma position is in the middle between all neighbouring luma samples on 2 lines. (JPEG 420, H.263 420) |
-|   0x3 | `TOPLEFT`    | Chroma position coincides with top left's luma sample position. (MPEG-2 422)                             |
-|   0x4 | `TOP`        | Chroma position is between 2 luma samples on the same top line.                                          |
-|   0x5 | `BOTTOMLEFT` | Chroma position coincides with bottom left's luma sample position.                                       |
-|   0x6 | `BOTTOM`     | Chroma position is between 2 luma samples on the same bottom line.                                       |
+| Value | Name         | Description                                                                                                         |
+|------:|:-------------|---------------------------------------------------------------------------------------------------------------------|
+|   0x0 | `CHROMA_POS_UNSPEC`     | Chroma position not specified or does not apply.                                                         |
+|   0x1 | `CHROMA_POS_LEFT`       | Chroma position is between 2 luma samples on different lines. (MPEG-2/4 422, H.264 420)                  |
+|   0x2 | `CHROMA_POS_CENTER`     | Chroma position is in the middle between all neighbouring luma samples on 2 lines. (JPEG 420, H.263 420) |
+|   0x3 | `CHROMA_POS_TOPLEFT`    | Chroma position coincides with top left's luma sample position. (MPEG-2 422)                             |
+|   0x4 | `CHROMA_POS_TOP`        | Chroma position is between 2 luma samples on the same top line.                                          |
+|   0x5 | `CHROMA_POS_BOTTOMLEFT` | Chroma position coincides with bottom left's luma sample position.                                       |
+|   0x6 | `CHROMA_POS_BOTTOM`     | Chroma position is between 2 luma samples on the same bottom line.                                       |
 
 To illustrate:
 | Luma line number |         Luma row 1 | Between rows |   Luma row 2 |
@@ -895,6 +915,7 @@ To illustrate:
 |                1 | `Luma pixel` **3** |        **4** | `Luma pixel` |
 |    Between lines |              **1** |        **2** |              |
 |                2 | `Luma pixel` **5** |        **6** | `Luma pixel` |
+
 
 ### Video orientation packets
 
@@ -912,11 +933,11 @@ A standardized way to transmit orientation information is as follows:
 | `L(224, 64)`            | `ldpc_224_64`      |              | LDPC data to correct and verify the previous 224 bits of the packet.                                    |
 
 The `reflection` table is as follows:
-| Value | Name            | Description                                                              |
-|------:|:----------------|:-------------------------------------------------------------------------|
-|   0x0 | `normal`        | Video is not flipped.                                                    |
-|   0x1 | `mirror`        | Video must be mirrored for correct presentation (flipped horizontally).  |
-|   0x2 | `flip`          | Video must be flipped upside-down for correct presentation.              |
+| Value | Name             | Description                                                              |
+|------:|:-----------------|:-------------------------------------------------------------------------|
+|   0x0 | `REFLECT_NORMAL` | Video is not flipped.                                                    |
+|   0x1 | `REFLECT_MIRROR` | Video must be mirrored for correct presentation (flipped horizontally).  |
+|   0x2 | `REFLECT_FLIP`   | Video must be flipped upside-down for correct presentation.              |
 
 `reflection` MUST be applied first, before `rotation`.
 
@@ -930,6 +951,7 @@ BY the receiver, in order to permit simple transposition for presentation rather
 than rotation.
 
 Rotation SHOULD be applied after all other transformations have been performed on the image, including cropping via the `presentation_width/height` fields.
+
 
 ### User data packets
 
@@ -947,6 +969,7 @@ The user-specific data packet is laid out as follows:
 
 If the user data needs FEC and segmentation, users SHOULD instead use the
 [custom codec packets](#custom-codec-encapsulation).
+
 
 ### Stream duration packets
 
@@ -976,6 +999,7 @@ Any negative duration MUST be excluded.
 
 The duration MUST be treated as metadata rather than a hard limit.
 
+
 ### End of stream
 
 The EOS packet is laid out as follows:
@@ -999,6 +1023,7 @@ allowed to gracefully wait for a reconnection.
 
 If encountered in a file, the implementation MAY regard any data present afterwards
 as padding and ignore it. AVTransport files MUST NOT be concatenated.
+
 
 ## Timestamps
 
@@ -1035,6 +1060,7 @@ For subtitle frames, the `duration` field's definition is different. It specifie
 time during which the contents of the current packet MUST be presented. It MAY not
 match a video frame's duration.
 
+
 ### Jitter compensation
 
 Implementations SHOULD use the derived `ts_clock_freq` field from
@@ -1066,6 +1092,7 @@ On every received packet:
 This is a very simple example which depends on the local receiver oscillator simply being
 *more precise* than the transmitter's oscillator.
 
+
 ### Negative times
 
 The time `t` of a `pts` MAY be negative. Packets with a negative timestamps
@@ -1083,6 +1110,7 @@ in which case they MUST present the data required for that duration.<br/>
 This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
 all dependencies (other frames) required for their presentation.
+
 
 ### Epoch
 
@@ -1123,6 +1151,7 @@ clocks. This protocol does not guarantee, nor specify this, as this is outside i
 Network Time Protocol (NTP), specified in IETF RFC 5905, or any other protocol to synchronize clocks, or
 simply assume all device are already synchronized.
 
+
 ## Streaming
 
 This section describes and suggests behavior for realtime AVTransport streams.
@@ -1147,6 +1176,7 @@ at the given frequencies.
 
 In particular, [time synchronization](#time-synchronization-packets) packets should
 be sent as often as necessary if timestamp jitter avoidance is a requirement.
+
 
 ### UDP
 
@@ -1176,6 +1206,7 @@ If [reverse signalling](#reverse-signalling) is used, the receiver MUST
 send packets over to the sender using the same port number that the receiver
 is listening on.
 
+
 ### UDP-Lite
 
 UDP-Lite (IETF RFC 3828) SHOULD be preferred to UDP, if support for it is
@@ -1190,6 +1221,7 @@ correct data with it, as packet integrity guarantees are off.
 
 If [reverse signalling](#reverse-signalling) is used, same port number an method MUST
 be used for reverse signalling as the sender's.
+
 
 ### QUIC
 
@@ -1213,6 +1245,7 @@ Jumbograms MAY be used where supported to reduce overhead and increase efficienc
 
 [Reverse signalling](#reverse-signalling) is natively supported on QUIC.
 
+
 ### Packetized networks
 
 AVTransport is a series of individual packets with no overarching data structure.
@@ -1229,6 +1262,7 @@ This specification does not specify how linking or transmission is performed - o
 that the AVTransport packets remain compliant with their definition here, and the
 stream as a whole remains compliant.
 
+
 ### Serial
 
 AVTransport explicitly carries the size of the contained data. This makes it suitable
@@ -1239,6 +1273,7 @@ and, optionally, LDPC data to synchronize with the source.
 
 The specification contains no recommendation on how the data is transported. Users
 SHOULD, if necessary, use FEC and other reliability features.
+
 
 ## Reverse signalling
 
@@ -1254,6 +1289,7 @@ Receivers **MUST** receive a [session start](#session-start-packets) packet
 from a transmitter, with bit `0x1` set in the `session_flags` bitmask before
 they are allowed to send packets back. The only exception is for receivers
 who.
+
 
 ### Control data
 
@@ -1299,6 +1335,7 @@ The following error values are allowed:
 |   0x1 | Generic error.                                                                                                                                                                                                                                                                                                |
 |   0x2 | Unsupported data. May be sent after the sender sends a [stream registration packet](#stream-registration-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
 
+
 ### Feedback
 
 The following packet MAY be sent from the receiver to the sender.
@@ -1320,6 +1357,7 @@ UDP NAT from timing out.
 If the descriptor of the dropped packed is known, receivers SHOULD set it
 in `dropped_type`, and senders SHOULD resend it as soon as possible.
 
+
 ### Resend
 
 The following packet MAY be sent to ask the client to resend a recent packet
@@ -1330,6 +1368,7 @@ that was likely dropped.
 | `b(16)` | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
 | `b(16)` | `reserved`          |              | Reserved for future use.                                              |
 | `u(32)` | `global_seq`        |              | The sequence number of the packet that is missing.                    |
+
 
 ### Stream control
 
@@ -1344,7 +1383,11 @@ The receiver can use this type to subscribe or unsubscribe from streams.
 This can be used to save bandwidth. If previously `disabled` and then `enabled`,
 all packets necessary to initialize the stream MUST be resent.
 
+
 ## Addendum
+
+This section expands on certain aspects of the specification.
+
 
 ### Codec encapsulation
 The following section lists the supported codecs, along with their encapsulation
@@ -1366,8 +1409,8 @@ definitions.
  - [Raw video](#raw-video-encapsulation)
  - [Custom](#custom-codec-encapsulation)
 
-#### Opus encapsulation
 
+#### Opus encapsulation
 For Opus encapsulation, the `codec_id` in
 [stream registration packets](#stream-registration-packets)
 MUST be 0x4F707573 (`Opus`).
@@ -1399,6 +1442,7 @@ Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the
 first stream packet's `pts` value to a negative value as defined in
 [data packets](#data-packets) to remove the required number of prepended samples.
 
+
 #### AAC encapsulation
 
 For AAC encapsulation, the `codec_id` in
@@ -1415,6 +1459,7 @@ Implementations **MUST** set the first stream packet's `pts` value to a negative
 value as defined in [data packets](#data-packets) to remove the required number
 of prepended samples.
 
+
 #### AC-3 encapsulation
 
 For AAC encapsulation, the `codec_id` in
@@ -1425,6 +1470,7 @@ AC-3 streams require no [stream initialization data packets](#stream-initializat
 
 THe `packet_data` MUST contain regular AC-3 OR E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.
+
 
 #### AV1 encapsulation
 
@@ -1438,6 +1484,7 @@ consult the specifications, section `5.9.2. Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw, separated `OBU`s.
 
+
 #### VP9 encapsulation
 
 For VP9 encapsulation, the `codec_id` in
@@ -1450,6 +1497,7 @@ consult the specifications, section `6.2 Uncompressed header syntax`.
 
 The `packet_data` MUST contain raw **superframe** packets, as defined in `Annex B` of the
 VP9 specifications.
+
 
 #### H264 encapsulation
 
@@ -1465,6 +1513,7 @@ The `packet_data` MUST contain the following elements, in order:
 A [stream initialization data packet](#stream-initialization-data) MAY be sent, to
 speed up stream initialization. If they are present, they MUST contain an
 `AVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 14496-15`.
+
 
 #### H265 encapsulation
 
@@ -1483,6 +1532,7 @@ A [stream initialization data packet](#stream-initialization-data) MAY be sent, 
 speed up stream initialization. If they are present, they MUST contain an
 `HEVCDecoderConfigurationRecord` structure, as defined in `ISO/IEC 23008`.
 
+
 #### Dirac/VC-2 encapsulation
 
 For Dirac or VC-2 encapsulation, the `codec_id` in
@@ -1493,6 +1543,7 @@ Dirac streams require no [stream initialization data packets](#stream-initializa
 
 The `packet_data` MUST contain raw sequences,
 with one sequence being a picture.
+
 
 #### ASS encapsulation
 
@@ -1529,6 +1580,7 @@ order in which to reconstruct the original ASS file.
 
 Multiple packets with the same `pts` and `dts` ARE permitted.
 
+
 #### DNG/TIFF encapsulation
 
 For DNG/TIFF encapsulation, the `codec_id` in
@@ -1538,6 +1590,7 @@ MUST be 0x54494646 (`TIFF`).
 The `packet_data` MUST contain a raw TIFF file,
 with one packet being a single picture.
 
+
 #### JPEG encapsulation
 
 For JPEG and Motion JPEG, the `codec_id` in the
@@ -1546,6 +1599,7 @@ MUST be 0x4a504547 (`JPEG`).
 
 The `packet_data` MUST contain a raw JPEG file, with
 one packet being a single picture.
+
 
 #### PNG encapsulation
 
@@ -1558,6 +1612,7 @@ No support for Animated PNG is defined yet, but simply not
 flagging the still picture flag (`stream_flags & 0x04`) and sending
 a single picture per frame is sufficient to animate PNG, as this is
 allowed for any codec.
+
 
 #### Raw audio encapsulation
 
@@ -1606,6 +1661,7 @@ The size of each sample MUST be `ra_bits`, and MUST be aligned to the nearest
 **power of two**, with the padding in the **least significant bits**. That means
 that 24 bit samples are coded as 32 bits, with the data contained in the topmost 24 bits.
 
+
 #### Raw video encapsulation
 
 For raw video encapsulation, the `codec_id` in
@@ -1644,24 +1700,25 @@ The `rv_flags` field MUST be interpreted in the following way:
 
 | Bit position set | Name                     | Description                                                                                                  |
 |-----------------:|:-------------------------|:-------------------------------------------------------------------------------------------------------------|
-|              0x1 | `rv_rgb`                 | Video is RGB                                                                                                 |
-|              0x2 | `rv_float`               | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
-|              0x4 | `rv_alpha`               | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
-|              0x8 | `rv_alpha_premultiplied` | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
-|             0x16 | `rv_planar`              |  At least one pixel component is not sharing a plane, e.g. video is *planar*.                                |
-|             0x32 | `rv_bitpacked`           |  Video's components are packed, e.g. video is *bitpacked*.                                                   |
-|             0x64 | `rv_big_endian`          | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+|              0x1 | `RV_RGB`                 | Video is RGB                                                                                                 |
+|              0x2 | `RV_FLOAT`               | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
+|              0x4 | `RV_ALPHA`               | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
+|              0x8 | `RV_ALPHA_PREMULTIPLIED` | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
+|             0x16 | `RV_PLANAR`              |  At least one pixel component is not sharing a plane, e.g. video is *planar*.                                |
+|             0x32 | `RV_BITPACKED`           |  Video's components are packed, e.g. video is *bitpacked*.                                                   |
+|             0x64 | `RV_BIG_ENDIAN`          | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
 
 The `packet_data` field MUST contain `rv_planes`, with each plane having
 `rv_plane_stride` bytes per line. The number of horizontal lines being given by
 `rc_height` for plane number 0, and `rc_height >> rv_ver_subsample` for all other
 planes. The actual lines MUST be filled in according to `rc_offset` and `rc_stride`.
 
-`rv_flags` MUST NOT signal both `0x4` AND `0x8`. Such a combination of flags is
-unsupported.
+`rv_flags` MUST NOT signal both `RV_ALPHA` AND `RV_ALPHA_PREMULTIPLIED`.
+Such a combination of flags is undefined.
 
 This structure is flexible enough to permit zero-copy or one-copy streaming
 of video from most sources.
+
 
 #### Custom codec encapsulation
 
@@ -1680,13 +1737,34 @@ and contain any sequence of data.
 
 The `packet_data` field can be any length and contain any sequence of data.
 
+
 ## Annex
 
-### Annex A: LDPC
+Additional data or recommendations for the AVTransport specification is listed here.
 
-This normative annex shall cover the usage of LDPC within AVTransport.
 
-The LDPC variant to be used is **irregular**, systematic, with no subblocks.
+### Annex A: Informative muxer behaviour
+
+This annex covers recommended practices for muxers, particularly with regards to avoiding stream starvation.
+
+
+### Annex B: Informative demuxer behaviour
+
+This annex covers recommended practices for demuxers, mainly with packet lifetime,
+buffering, and reordering.
+
+
+### Annex C-Y: Reserved
+
+This range is reserved for future expansion.
+
+
+### Annex Z: LDPC
+
+This normative annex shall cover the usage and operation of LDPC within AVTransport.
+
+The LDPC variant to be used is **irregular** (each row of each matrix has a non-constant
+amount of bits set to 1), systematic (parity data is separate from message data), with no subblocks.
 The full block, along with the check data, shall be sent to an LDPC decoder.
 
 To ease implementations, only two different lengths are used:
@@ -1694,6 +1772,7 @@ To ease implementations, only two different lengths are used:
  - 2016-bit message, 768-bit parity
 
 For reference, the following code MAY be used to compute the LDPC parity data:
+
 ```c
 To be done
 ```
@@ -1702,21 +1781,24 @@ The following **H** matrices below shall be used for encoding (via the pseudocod
 Implementations are free to convert them to G matrices and use conventional encoding methods.
 The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
 
+As required by LDPC, matrices are of size (`m`x`m+k`), thus:
+ - 64x288
+ - 768x2784
+
+As each value of a matrix is purely boolean, **64 rows are represented as 64-bit unsigned integers**,
+in big endian format, hence row 1 is the most significant bit, row 2 is the second most significant bit,
+and so on. This is the format that the reference function above expects.
+
+
 #### ldpc_224_64
+
 ```
 To be optimized
 ```
+
 
 #### ldpc_2016_768
+
 ```
 To be optimized
 ```
-
-### Annex B: Informative muxer behaviour
-
-This annex covers recommended practices for muxers, particularly with regards to avoiding stream starvation.
-
-### Annex C: Informative demuxer behaviour
-
-This annex covers recommended practices for demuxers, mainly with packet lifetime,
-buffering, and reordering.
