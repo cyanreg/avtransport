@@ -676,7 +676,7 @@ with the following descriptors:
 |        0xD | `generic_segment_structure` |     Final segment for incomplete metadata |
 |        0xE |     `generic_fec_structure` |              FEC segment for the metadata |
 
-The actual metadata MUST be stored using CBOR, as standardized in IETF RFC 8878.
+The actual metadata MUST be stored using CBOR, as standardized in IETF RFC 8949.
 
 The following string keys SHOULD be used:
 
@@ -721,6 +721,10 @@ including regional variation and script.
 
 The `date` field MUST be formatted according to the
 [IETF RFC 3339](https://datatracker.ietf.org/doc/html/rfc3339).
+
+Metadata MAY be padded by appending zeroed bytes to the end. This MUST
+be accounted by the payload value. Implementations MAY do this to write
+metadata after starting and outputting a packet.
 
 
 ### LUT/ICC profile packets
@@ -1418,15 +1422,24 @@ MUST be 0x4F707573 (`Opus`).
 The payload of the [stream initialization data](#stream-initialization-data) packets MUST be
 laid out in the following way:
 
-| Data    | Name              | Fixed value                     | Description                                                                           |
-|:--------|:------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
-| `b(64)` | `opus_descriptor` | 0x4F70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
-| `b(8)`  | `opus_init_ver`   |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
-| `u(8)`  | `opus_channels`   |                                 | Number of audio channels.                                                             |
-| `u(16)` | `opus_prepad`     |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
-| `b(32)` | `opus_rate`       |                                 | Samplerate of the data. MUST be 48000.                                                |
-| `i(16)` | `opus_gain`       |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
-| `u(32)` | `opus_ch_family`  |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
+| Data                 | Name                   | Fixed value                     | Description                                                                           |
+|:---------------------|:-----------------------|--------------------------------:|:--------------------------------------------------------------------------------------|
+| `b(64)`              | `opus_descriptor`      | 0x4F70757348656164 (`OpusHead`) | Opus magic string.                                                                    |
+| `b(8)`               | `opus_init_ver`        |                             0x1 | Version of the extradata. MUST be 0x1.                                                |
+| `u(8)`               | `opus_channels`        |                                 | Number of audio channels.                                                             |
+| `u(16)`              | `opus_prepad`          |                                 | Number of samples to discard from the start of decoding (encoder delay).              |
+| `b(32)`              | `opus_rate`            |                                 | Samplerate of the data. MUST be 48000.                                                |
+| `i(16)`              | `opus_gain`            |                                 | Volume adjustment of the stream. May be 0 to preserve the volume.                     |
+| `u(32)`              | `opus_ch_family`       |                                 | Opus channel mapping family. Consult IETF RFC 7845 and RFC 8486.                      |
+| `u(8)`               | `opus_stream_count`    |                                 | Optional, only available if `opus_ch_family` is NOT `0`.                              |
+| `u(8)`               | `opus_coupled_count`   |                                 | Optional, only available if `opus_ch_family` is NOT `0`.                              |
+| `u(opus_channels*8)` | `opus_channel_mapping` |                                 | Optional, only available if `opus_ch_family` is NOT `0`.                              |
+
+The meaning of each field is defined by IETF RFC 7845.
+
+Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the
+first stream packet's `pts` value to a negative value as defined in
+[data packets](#data-packets) to remove the required number of prepended samples.
 
 The `packet_data` MUST contain regular Opus packets with their front uncompressed
 header intact.
@@ -1437,10 +1450,6 @@ in coding order of all channels' packets.
 In case the Opus bitstream contains native Opus FEC data, the FEC data MUST be
 appended to the packet as-is, and no [FEC packets](#fec-packets) must be present
 in regards to this stream.
-
-Implementations **MUST NOT** use the `opus_prepad` field, but **MUST** set the
-first stream packet's `pts` value to a negative value as defined in
-[data packets](#data-packets) to remove the required number of prepended samples.
 
 
 #### AAC encapsulation
