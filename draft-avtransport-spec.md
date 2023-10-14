@@ -87,8 +87,7 @@ A special notation is used to describe sequences of bits:
  - `u(N)`: specifies the data that follows is an unsigned integer of N bits.
  - `i(N)`: the same, but the data describes a signed integer is signed.
  - `b(N)`: the data is an opaque sequence of N bits that clients MUST NOT interpret as anything else.
- - `R(N*2)`: the data is a rational number, with a numerator of `i(N)` and
-   following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
+ - `R(N*2)`: the data is a rational number, with a numerator of `i(N)` and following that, a denominator of `i(N)`. The denominator MUST be greater than `0`.
  - `L(k, m)`: LDPC parity data, `m` bits long, generated from the previous `k` bits signalled in the packet.
 
 Applying LDPC error correction is optional for receiver implementations.
@@ -209,12 +208,8 @@ The LDPC data is, like for all packets, allowed to be ignored by receivers.
 
 Time synchronization packets are optional dual-purpose packets which signal:
 
- - A context for all timestamps in all streams, using a field called `epoch`,
-   which denotes an absolute basis in time, to allow for optional receiver
-   synchronization.
- - A device clock counter (`ts_clock_seq`) and clock frequency (`ts_clock_freq`),
-   to allow for accurate clock cycle synchronization of packet timestamps,
-   stream synchronization, and to enable clock drift and jitter compensation.
+ - A context for all timestamps in all streams, using a field called `epoch`, which denotes an absolute basis in time, to allow for optional receiver synchronization.
+ - A device clock counter (`ts_clock_seq`) and clock frequency (`ts_clock_freq`), to allow for accurate clock cycle synchronization of packet timestamps, stream synchronization, and to enable clock drift and jitter compensation.
 
 The structure of the data in a `time_sync` packet is as follows:
 
@@ -1515,8 +1510,7 @@ For H264 encapsulation, the `codec_id` in
 MUST be 0x48323634 (`H264`).
 
 The `packet_data` MUST contain the following elements, in order:
- - A single `b(64)` element with the `dts`, the time, which indicates when a
-   frame should be input into a synchronous 1-in-1-out decoder.
+ - A single `b(64)` element with the `dts`, the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
  - `Annex-B` formatted NAL units, with startcode emulation bits included.
 
 A [stream initialization data packet](#stream-initialization-data) MAY be sent, to
@@ -1531,8 +1525,7 @@ For H265 encapsulation, the `codec_id` in
 MUST be 0x48323635 (`H265`).
 
 The `packet_data` MUST contain the following elements, in order:
- - A single `b(64)` element with the `dts`, the time, which indicates when a
-   frame should be input into a synchronous 1-in-1-out decoder.
+ - A single `b(64)` element with the `dts`, the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
  - `Annex-B` formatted NAL units, with startcode emulation bits included.
 
 `Annex-B` formatted packets MUST be used, with startcode emulation bits included.
@@ -1578,10 +1571,8 @@ The [stream initialization data packet](#stream-initialization-data) payload MUS
 the `[Script Info]` and `[V4 Styles]` sections as a string, unmodified.
 
 Events listed in ASS files MUST be modified in the following way:
- - Start and end timestamps, stored in the `Marked` field, MUST be mapped to the
-   packet's `pts`, `dts` and `duration` fields, and MUST be ommitted from the data.
- - All other fields MUST be stored in the `packet_data` field as a string, in the
-   followin order: `ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text`.
+ - Start and end timestamps, stored in the `Marked` field, MUST be mapped to the packet's `pts`, `dts` and `duration` fields, and MUST be ommitted from the data.
+ - All other fields MUST be stored in the `packet_data` field as a string, in the followin order: `ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text`.
  - Comments MAY be left as-is after all the fields.
 
 The `ReadOrder` field is a monotonically incrementing field to identify the correct
