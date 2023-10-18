@@ -3,5 +3,6 @@ build
 *.av
 *.avt
 *.avts
+*.html
 .github/_build
 .github/_install

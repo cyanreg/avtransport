@@ -1,0 +1,3471 @@
+<pre class='metadata'>
+Title: AVTransport
+Editor: Lynne, dev@lynne.ee
+Repository: cyanreg/avtransport
+Shortname: avtransport
+URL: https://cyanreg.github.io/avtransport/
+Date: 2023-10-18
+Status: LD
+Group: FFmpeg
+Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
+</pre>
+
+
+<pre class='biblio'>
+{
+    "UNIX-time": {
+        "title": "Unix time",
+        "href": "https://en.wikipedia.org/wiki/Unix_time"
+    },
+    "FFmpeg": {
+        "title": "FFmpeg",
+        "href": "https://ffmpeg.org"
+    },
+    "LDPC": {
+        "title": "Near Shannon Limit Performance of Low Density Parity Check Codes",
+        "authors": [
+            "David J.C. MacKay",
+            "Radford M. Neal"
+        ],
+        "published-by": "Electronics Letters",
+        "date": "July 1996",
+        "href": "https://www.csie.ntu.edu.tw/~mku/research/LDPC/asset/papers/General/LDPC_MacKay.pdf"
+    },
+    "ISO18181": {
+        "title": "JPEG XL image coding system — Part 1: Core coding system",
+        "published-by": "International Standards Organization",
+        "date": "March 2022",
+        "href": "https://www.iso.org/standard/77977.html"
+    },
+    "BT2100": {
+        "title": "BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange",
+        "published-by": "International Telecommunication Union",
+        "date": "July 2018",
+        "href": "https://www.itu.int/rec/R-REC-BT.2100"
+    },
+    "H.273": {
+        "title": "Coding-independent code points for video signal type identification",
+        "published-by": "International Telecommunication Union",
+        "date": "September 2023",
+        "href": "https://www.itu.int/rec/T-REC-H.273/en"
+    },
+    "CIE1931": {
+        "title": "Commission internationale de l'Eclairage proceedings",
+        "published-by": "International Commission on Illumination",
+        "date": "1931"
+    },
+    "MATROSKA-ASS": {
+        "title": "Matroska specifications, SSA/ASS Subtitles",
+        "href": "https://matroska.org/technical/subtitles.html#ssaass-subtitles"
+    }
+}
+</pre>
+
+
+# AVTransport protocol # {#avtransport-protocol}
+
+The AVTransport protocol is a new standardized mechanism for multimedia transport and
+storage. This protocol aims to be a simple, reliable and robust low-overhead method
+that borrows design decisions from other protocols and aims to be generic,
+rather than specialized for certain use-cases. With minimal changes, it can be
+processed as a stream or saved to a file as an intermediate step or for post-processing.
+
+Rather than just being a new container and protocol filling a niche, this also attempts
+to solve issues with current other containers, like timestamp rounding, lack of DTS,
+inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
+and rigid overseeing organizations.
+
+
+## Overview ## {#overview}
+
+On a high-level, AVTransport is a packetized wrapper around codec, metadata and
+user packets and provides context and error resilience, as well as defining a
+standardized way to transmit such data between clients.
+
+AVTransport is based on **packets**.
+
+As a simple example, a possible structure of packets in a general AVTransport session could be:
+
+<figure id="table-Overview" class="table">
+    <table class="complex data longlastcol" dfn-for="#overview">
+        <tr>
+            <th>Packet type</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>[[#session-start-packets]]</td>
+            <td>Starts the session with a signature. May be used to identify the stream as an AVTransport session.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-registration-packets]]</td>
+            <td>Register a new stream.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-configuration-packets]]</td>
+            <td>Configuration data for the new stream.</td>
+        </tr>
+        <tr>
+            <td>[[#video-information-packets]]</td>
+            <td>Information about a video stream.</td>
+        </tr>
+        <tr>
+            <td>[[#metadata-packets]]</td>
+            <td>Stream or session metadata.</td>
+        </tr>
+        <tr>
+            <td>[[#index-packets]]</td>
+            <td>Optional index packets to enable fast seeking.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-data-packets]]</td>
+            <td>Stream data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-data-segment-packets]]</td>
+            <td>Segmented stream data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#user-data-packets]]</td>
+            <td>Optional user data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#end-of-stream-packets]]</td>
+            <td>Finalizes a stream or session.</td>
+        </tr>
+    </table>
+</figure>
+
+
+## Packet descriptor ## {#packet-descriptor}
+
+Each packet MUST be prefixed with a 2-bytes <dfn>descriptor</dfn> to identify it.
+Below is a table of how they're allocated:
+
+<figure id="table-DescriptorList" class="table">
+    <table class="complex data longlastcol" dfn-for="#packet-descriptor">
+        <tr>
+            <th>Descriptor values</th>
+            <th>Packet</th>
+        </tr>
+        <tr>
+            <td>''0x4156''</td>
+            <td>[[#session-start-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0002''</td>
+            <td>[[#stream-registration-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0003'' to ''0x0007''</td>
+            <td>[[#stream-configuration-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0008''</td>
+            <td>[[#video-information-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0009''</td>
+            <td>[[#index-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0010'' to ''0x0014''</td>
+            <td>[[#lut-icc-profile-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0020'' to ''0x0024''</td>
+            <td>[[#font-data-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0030'' to ''0x0031''</td>
+            <td>[[#fec-grouping-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0040''</td>
+            <td>[[#video-orientation-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0050''</td>
+            <td>[[#stream-duration-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x00FE'' to ''0x00FF''</td>
+            <td>[[#stream-data-parity-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0100'' to ''0x01FF''</td>
+            <td>[[#stream-data-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0300'' to ''0x03FF''</td>
+            <td>[[#time-synchronization-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0500'' to ''0x0602''</td>
+            <td>[[#user-data-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0FFF''</td>
+            <td>[[#end-of-stream-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x8000'' to ''0x80FF''</td>
+            <td>Reserved for [[#reverse-signalling]]</td>
+        </tr>
+        <tr>
+            <td>''0xF001''</td>
+            <td>[[#control-data-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0xF002''</td>
+            <td>[[#feedback-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0xF003''</td>
+            <td>[[#resend-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0xF004''</td>
+            <td>[[#stream-control-packets]]</td>
+        </tr>
+    </table>
+</figure>
+
+Anything not specified in the table is reserved and must not be used. Future additions
+will require a version bump of the protocol.
+
+
+## Specification conventions ## {#specification-conventions}
+
+Throughout all of this document, bit sequences are always **big-endian**, and numbers
+are always **two's complement**.
+
+A special notation is used to describe sequences of bits:
+ - <code>u(N)</code> : specifies the data that follows is an unsigned integer of ''N'' bits.
+ - <code>i(N)</code> : the same, but the data describes a signed integer is signed.
+ - <code>b(N)</code> : the data is an opaque sequence of ''N'' bits that clients must not interpret.
+ - <code>R(N)</code> : the data is a rational number, with a numerator of <code>i(N/2)</code> and following that, a denominator of <code>i(N/2)</code>. The denominator must be greater than ''0''.
+
+All packets are at least 36 bytes long (288 bits), and always have an 8 byte
+(64 bits) [[#ldpc]] code after the first 28 bytes to verify and correct their data.
+
+Identification of the packet is always possible via the first two bytes
+(the [=descriptor=]).
+
+All floating point samples and pixels are always **normalized** to fit within the
+interval <code>[-1.0, 1.0]</code>.
+
+Padding may be present in some packets (<dfn>padding</dfn>). Unless otherwise indicated,
+the data in padding must be ''0x0''.
+
+
+## LDPC ## {#ldpc}
+
+To improve reliability, and make the protocol general-purpose, a small amount of
+parity data is added to each header, in the form of [[LDPC]] codes. These codes highly
+improve reliability when transmitting over [[#udp-lite-streaming]].
+
+They also help in the event of a file desynchronization or corruption, by being able
+to quickly verify whether an arbitrary byte has a valid packet, thus avoiding presentation
+of damaged or invalid stream data.
+
+Finally, for long-term archival on tape, or when transmitting over a noisy [[#serial-transmission]] or
+radio connection, they help correct bitflips.
+
+Their theory of operation and specifications are detailed in [[#annex-c-ldpc]].
+
+To simplify implementations, two different lengths are used:
+ - <dfn>ldpc_288_224</dfn>: specified in [=LDPC(288, 224)=]
+ - <dfn>ldpc_2784_2016</dfn>: specified in [=LDPC(2784, 2016)=]
+
+Note: Applying LDPC error correction is optional for receiver implementations.</br>
+Senders MUST implement it.
+
+
+## Global sequence ## {#global-sequence}
+
+The <dfn>global_seq</dfn> is a **32-bit unsigned integer**, incremented by ''1'' each time
+after a packet has been sent. Once at ''0xffffffff'', it MUST overflow back to ''0x0''.
+This overflow MUST be handled by the receiver.
+
+Note: [=global_seq=] should start at ''0x0'', but receivers MUST be prepared for any starting offset.
+
+
+## Stream ID ## {#stream-id}
+
+<dfn>stream_id</dfn> is a **16-bit unsigned integer**, uniquely identifying each stream
+contained within an [TITLE] stream.
+
+Note: senders should never reuse [=stream_id=] indices, but receivers should be prepared
+to deal with this scenario.
+
+
+## Timestamps ## {#timestamps}
+
+AVTransport supports high resolution timestamps, with a maximum resolution of
+465.66129 **picoseconds**. Furthermore, the reliability of the timestamps
+can be assured through optional [[#jitter-compensation]].
+
+**All** time-related fields ([=pts=], [=dts=], [=duration=], and [=skip_preroll=])
+have a corresponding [=timebase=] field with which to interpret them.
+
+The mathematical expression to calculate the time <code>t</code>, in seconds, of a timestamp
+or duration <code>v</code> and a *rational* timebase <code>b</code> is the following:
+
+<code>t = v * b.num / b.den</code>
+
+Note: all mathematical operations on timestamps should be done in the integer domain,
+as floating-point operations may be inaccurate and inconsistent.
+
+The timebase of [[#stream-data-packets]], [[#stream-duration-packets]],
+or any other packets with an explicit [=stream_id=] field is given in the
+[[#stream-registration-packets]] packets for the appropriate stream.
+
+The time <code>t</code> of a <dfn>pts</dfn> field corresponds to the exact time when a packet must be
+instantaneously released from a decoding buffer, and instantaneously presented.
+
+The time <code>t</code> of a <dfn>dts</dfn> field corresponds to the exact time when a packet must be
+input into a synchronous 1-in-1-out decoder. The [=dts=] field is defined as part
+of the payload when necessary ([[#codec-encapsulation]]).
+
+The time <code>t</code> of a <dfn>duration</dfn> field corresponds to the exact time difference between
+two **consecutive** frames of audio or video. If the field is non-zero, this assertion
+MUST hold. If this condition is violated, the behavior is **unspecified**.
+
+For subtitle frames, the [=duration=] field's definition is different. It specifies the
+time during which the contents of the current packet must be presented. It may not
+match a video frame's duration.
+
+
+### Jitter compensation ### {#jitter-compensation}
+
+Implementations should use the derived [=ts_clock_freq=] field from
+[[#time-synchronization-packets]] packets to perform jitter compensation
+of stream timestamps.
+
+The <dfn>ts_clock_id</dfn> is a unique 8-bit identifier for the clock.
+It allows to associate a clock with a given stream.
+
+The [=ts_clock_id=]of the [[#stream-registration-packets]] packets
+is matched up to the [=ts_clock_id=] of [[#time-synchronization-packets]]
+packets. If a match is not found, then no processing must be done.
+
+Note: The only valid targets to perform timestamp jitter compensation are
+streams with the same timebase, which must be equal to the inverse of [=ts_clock_freq=].
+Jitter compensation is otherwise undefined.
+
+As the [=ts_clock_freq=] field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=],
+which atomically increments a counter, [=ts_clock_seq=] on the **rising** edge of the waveform, this
+can be used to compensate the [=pts=], [=dts=] and [=duration=] values of stream packets.
+
+The following is a suggestion for implementations:
+ - Initialize a phase-locked loop, with a frequency equal to [=ts_clock_freq=].
+ - Initialize a counter, ''local_ts_clock_seq'', to be equal to [=ts_clock_seq=].
+ - Increment the ''local_ts_clock_seq'' on the **rising** edge of the local oscillator's waveform.
+
+On every received packet:
+ - Measure the difference ''Δ'' between [=pts=] and ''local_ts_clock_seq''.
+ - If ''Δ'' is small, assume [=pts=] has jitter, and replace it with ''local_ts_clock_seq''
+ - Otherwise, add ''Δ'' to ''local_ts_clock_seq''.
+
+This is a very simple example which depends on the local receiver oscillator simply being
+*more precise* than the transmitter's oscillator.
+
+
+### Negative times ### {#negative-times}
+
+The time <code>t</code> of a [=pts=] may be negative. Packets with a negative timestamps
+must be decoded, but not presented.
+
+For audio packets, this corresponds to the internal algorithmic delay between
+the first output sample and the correct sample being available.</br>
+For audio, the time between <code>t</code> and <code>0</code> may not be a multiple of the
+audio data's [=duration=] of a packet. Implementations must nevertheless remove any
+decoded samples with a negative time.
+
+Negative [=pts=] values are allowed, and implementations must decode such frames,
+however must not present any such frames unless <code>[=pts=] + [=duration=]</code>
+is greater than 0, in which case they must present the data required for that duration.<br/>
+This enables removal of extra samples added during audio compression, as well
+as permitting video segments taken out of context from a stream to bundle
+all dependencies (other frames) required for their presentation.
+
+
+### Epoch definition ### {#epoch-definition}
+
+The <dfn>epoch</dfn> field of [[#time-synchronization-packets]] packets
+is an optional field.
+
+If non-zero, it MUST signal the exact time, in nanoseconds, since
+00:00:00 UTC on 1 January 1970, according to the transmitter's wall clock time,
+**of the stream starting**. If a start time is not known, it MUST be zero.
+Once a stream has started, it MUST NOT be changed.
+
+The user is allowed to handle the field in the following ways:
+
+<figure id="table-EpochOptions" class="table">
+    <table class="complex data longlastcol" dfn-for="#epoch-definition">
+        <tr>
+            <th>Action</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>Use as metadata</td>
+            <td>The [=epoch=] field is used to override [[#metadata-packets]] packet's {{date}} field.</td>
+        </tr>
+        <tr>
+            <td>Ignore</td>
+            <td>The field is completely ignored.</td>
+        </tr>
+        <tr>
+            <td>Stream duration</td>
+            <td>The field is used to measure the total time the stream has been operational.</td>
+        </tr>
+        <tr>
+            <td>Stream latency</td>
+            <td>The field is used to measure latency.</td>
+        </tr>
+        <tr>
+            <td>Synchronization</td>
+            <td>The field is used to synchronize several unconnected receivers.</td>
+        </tr>
+    </table>
+</figure>
+
+By default, implementations must use the field as metadata, if present. Otherwise, they should ignore it.
+
+Users are free to use the field to measure the stream duration by converting the ''t'' of the [=pts=]
+field of any stream's packet to nanoseconds (multiply by ''1000000000''), rounding it, and subtracting
+it from the [=epoch=] time (<code>''t'' - [=epoch=]</code>).
+
+Users are also free to measure the latency in a similar way, by measuring their current wallclock time
+''t''`, and using <code>Δ = t' - t - epoch</code>. ''Δ'' will be the delay in nanoseconds.
+
+Finally, if **explicitly requested**, implementations are allowed to *delay* presentation by interpreting
+a negative latency value of ''Δ'' as a delay.
+
+Note: packets which had a negative timestamp before must still be dropped to permit for correct decoding
+and presentation.
+
+Note: The ''stream latency'' and ''synchronization'' actions depend on all devices having accurately synchronized
+clocks. This protocol does not guarantee, nor specify this, as this is outside its scope. Users can use the
+Network Time Protocol (NTP), specified in [[RFC5905]], or any other protocol to synchronize clocks, or
+simply assume all device are already synchronized.
+
+
+# Packet structure # {#packet-structure}
+
+This section lists the syntax of each individual packet type and specifies its purpose,
+and rules about its usage.
+
+Special considerations and suggestions which need to be taken into account in a streaming
+scenario are described in the [[#streaming]] section.
+
+
+## Session start ## {#session-start-packets}
+
+Session start packets allow receivers to plausibly identify a stream of bytes
+as an AVTransport session. The syntax is as follows:
+
+<figure id="table-SessionData" class="table">
+    <table class="complex data longlastcol" dfn-for="#session-start-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn export>session_descriptor</dfn></td>
+            <td>''0x4156''</td>
+            <td>Indicates this is a AVTransport session (`AV`).</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn export>session_version</dfn></td>
+            <td>''0x5430''</td>
+            <td>Indicates the session version. This document describes version `21552` (`T0`).</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>session_flags</dfn></td>
+            <td>enum {{SessionFlags}}</td>
+            <td>Session flags.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn export>producer_name_len</dfn></td>
+            <td></td>
+            <td>Length of the string in [=producer_name=]. Must be less than or equal to 12.</td>
+        </tr>
+        <tr>
+            <td><code>b(96)</code></td>
+            <td><dfn>producer_name</dfn></td>
+            <td>zero-terminated string</td>
+            <td>12-byte [[RFC3629|UTF-8]] string, containing the name of the producer.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn export>producer_major</dfn></td>
+            <td></td>
+            <td>Major version of the producer.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn export>producer_minor</dfn></td>
+            <td></td>
+            <td>Minor version of the producer.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn export>producer_micro</dfn></td>
+            <td></td>
+            <td>Micro version of the producer.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+Multiple session packets may be present in a session, but must remain
+bytewise-identical.
+
+## Stream Session Flags Enumeration (enum <dfn enum>SessionFlags</dfn>) ## {#enum-SessionFlags}
+
+The [=session_flags=] field must be interpreted in the following way:
+
+<div dfn-type="enum-value" dfn-for="#enum-SessionFlags">
+    : <dfn>SESSION_REVERSE_SIGNAL_READY</dfn> = 0x1
+      :: Indicates session is capable and ready to receive [[#reverse-signalling]] packets.
+</div>
+
+Implementations can test the first 4 bytes to detect a [TITLE] stream.
+
+The LDPC data is, like for all packets, allowed to be ignored by receivers.
+
+
+## Time synchronization ## {#time-synchronization-packets}
+
+Time synchronization packets are optional dual-purpose packets which signal:
+
+ - A context for all timestamps in all streams, using a field called [=epoch=], which denotes an absolute basis in time, to allow for optional receiver synchronization.
+ - A device clock counter ([=ts_clock_seq=]) and clock frequency ([=ts_clock_freq=]), to allow for accurate clock cycle synchronization of packet timestamps, stream synchronization, and to enable clock drift and jitter compensation.
+
+The structure of the data in a [[#time-synchronization-packets]] packet is as follows:
+
+<figure id="table-TimeData" class="table">
+    <table class="complex data longlastcol" dfn-for="#time-synchronization-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>time_descriptor</dfn></td>
+            <td>''0x03**''</td>
+            <td>Indicates this is a Indicates this is a time synchronization packet. The lower 8 bits are used as the [=ts_clock_id=] field.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>ts_clock_hz2</dfn></td>
+            <td></td>
+            <td>Value, in multiples of 1/65536 Hz, to be added to [=ts_clock_hz=] to make [=ts_clock_freq=].</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td>[=epoch=]</td>
+            <td></td>
+            <td>Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970. [[UNIX-time]]</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>ts_clock_seq</dfn></td>
+            <td></td>
+            <td>Monotonically incrementing counter, incremented once for each cycle of the device clock, at a rate of [=ts_clock_freq=] per second.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>ts_clock_hz</dfn></td>
+            <td></td>
+            <td>Hertz value of the device clock. MAY be set to zero to indicate the source is unclocked.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+The <dfn>ts_clock_freq</dfn> field is equal to `ts_clock_freq = [=ts_clock_hz=] + [=ts_clock_hz2=]/65536`.
+Implementations should prefer to use integer math, and instead have the [=ts_clock_freq=] in increments of 1/65536 Hz.
+
+The field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=], which atomically increments a counter,
+[=ts_clock_seq=] on the **rising** edge of the waveform.
+
+To interpret the clock, read the [[#jitter-compensation]] section. Senders should send time synchronization
+packets as often as necessary to prevent clock drift and jitter.
+
+In case of a zero [=ts_clock_hz=], the sender must be assumed to not provide a clock signal reference, and the timestamps
+MUST be interpreted as being, in the receiver's understanding, realtime.
+
+The [=epoch=] is a global, *optional* field that receivers may interpret.<br/>
+The [=epoch=] value must not change between packets.<br/>
+The [=epoch=] is an absolute starting point, for all timestamps in
+all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([[UNIX-time]]).
+
+The possible applications of the [=epoch=] field are described in the [[#epoch-definition]] section.
+
+
+## Stream registration ## {#stream-registration-packets}
+
+This packet is used to signal stream registration.
+
+The layout of the data is as follows:
+
+<figure id="table-StreamRegisterData" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-registration-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>reg_descriptor</dfn></td>
+            <td>''0x0002''</td>
+            <td>Indicates this is a Indicates this is a stream registration packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for the new stream to be registered.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>related_stream_id</dfn></td>
+            <td></td>
+            <td>Indicates the stream ID for which this stream is related to.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>derived_stream_id</dfn></td>
+            <td></td>
+            <td>Indicates the stream ID for which this stream is derived from.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>bandwidth</dfn></td>
+            <td></td>
+            <td>Average bitrate in bits per second. MAY be 0 to indicate VBR or unknown.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td><dfn>stream_flags</dfn></td>
+            <td>enum {{StreamFlags}}</td>
+            <td>Flags to indicate the type of stream.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td><dfn>codec_id</dfn></td>
+            <td></td>
+            <td>Indicates the codec ID for the data packets in this stream.</td>
+        </tr>
+        <tr>
+            <td>R(64)</code></td>
+            <td><dfn>timebase</dfn></td>
+            <td></td>
+            <td>Signals the timebase of the timestamps present in the [[#stream-data-packets]] packets.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td>[=ts_clock_id=]</td>
+            <td></td>
+            <td>An 8-bit clock ID identifier to associate a stream with a given clock.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>skip_preroll</dfn></td>
+            <td></td>
+            <td>Amount of time in `timebase` units to skip immediately after seeking or reinitializing (algorithmic delay).</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>init_packets</dfn></td>
+            <td>enum {{StreamInitPackets}}</td>
+            <td>Flags to indicate which packets should be received before decoding or presenting any stream data packets.</td>
+        </tr>
+        <tr>
+            <td><code>b(40)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+This packet may be sent for an already-initialized stream. The [=bandwidth=] field
+and the [=stream_flags=] fields may change, however the [=codec_id=], [=timebase=]
+AND [=related_stream_id=] fields must remain the same. If the latter are to change
+an [[#end-of-stream-packets]] packet must be sent first.
+
+The [=skip_preroll=] field is a duration **in timebase units** to signal how much to skip
+after reinitializing or seeking. The duration of negative timestamps at the start of streams
+must be at least as long as the [=skip_preroll=].
+
+
+### Stream Init Packets Enumeration (enum <dfn enum>StreamInitPackets</dfn>) ### {#enum-StreamInitPackets}
+
+The [=init_packets=] field indicates which packets are required, and will be transmitted,
+for the stream to be correctly decoded and presented. It MUST be interpreted as follows:
+
+<div dfn-type="enum-value" dfn-for="#enum-StreamInitPackets">
+    : <dfn>STREAM_INIT_PKT_METADATA</dfn> = 0x1
+      :: Stream requires a [[#metadata-packets]] packet in order to be fully initialized.
+
+    : <dfn>STREAM_INIT_PKT_STREAM_DURATION</dfn> = 0x2
+      :: Stream requires a [[#stream-duration-packets]] packet in order to be fully initialized.
+
+    : <dfn>STREAM_INIT_PKT_CONFIG_DATA</dfn> = 0x4
+      :: Stream requires a [[#stream-configuration-packets]] packet in order to be fully initialized.
+
+    : <dfn>STREAM_INIT_PKT_VIDEO_INFO</dfn> = 0x8
+      :: Stream requires a [[#video-information-packets]] packet in order to be fully initialized.
+
+    : <dfn>STREAM_INIT_PKT_LUT_ICC</dfn> = 0x10
+      :: Stream requires a [[#lut-icc-profile-packets]] packet in order to be fully initialized.
+
+    : <dfn>STREAM_INIT_PKT_FONT_DATA</dfn> = 0x20
+      :: Stream requires a [[#font-data-packets]] packet in order to be fully initialized.
+</div>
+
+Implementations MUST wait to parse the packets signalled before exposing the
+new stream and decoding/presenting packets from it.
+
+
+### Stream Flags Enumeration (enum <dfn enum>StreamFlags</dfn>) ### {#enum-StreamFlags}
+
+The [=stream_flag=] field provides context for the stream. It MUST be interpreted
+in the following manner:
+
+<div dfn-type="enum-value" dfn-for="#enum-StreamFlags">
+    :  <dfn>STREAM_RESERVED</dfn> = 0x1
+      :: Reserved for future use.
+
+    : <dfn>STREAM_DEFAULT</dfn> = 0x2
+      :: Stream SHOULD be chosen by default amongst other streams of the same type,
+         unless the user has specified otherwise.
+
+    : <dfn noexport>STREAM_STILL_PICTURE</dfn> = 0x4
+      :: Stream is a still picture and only a single decodable frame will be sent.
+
+    : <dfn>STREAM_COVER_ART</dfn> = 0x8
+      :: Stream is a cover art picture for the stream signalled in [=related_stream_id=].
+
+    : <dfn>SESSION_LOW_QUALITY</dfn> = 0x10
+      :: Stream is a lower quality version of the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_DUB</dfn> = 0x20
+      :: Stream is a dubbed version of the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_COMMENTARY</dfn> = 0x40
+      :: Stream is a commentary track to the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_LYRICS</dfn> = 0x80
+      :: Stream is a lyrics track to the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_KARAOKE</dfn> = 0x100
+      :: Stream is a karaoke track to the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_HEARING_IMPAIRED</dfn> = 0x200
+      :: Stream is intended for hearing impaired audiences.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+
+    : <dfn>STREAM_VISUALLY_IMPAIRED</dfn> = 0x400
+      :: Stream is intended for visually impaired audiences.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+
+    : <dfn>STREAM_NO_DIALOGUE</dfn> = 0x800
+      :: Stream contains music and sound effects without voice.
+
+    : <dfn>STREAM_NON_DIEGETIC</dfn> = 0x1000
+      :: Stream contains non-diegetic audio.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+
+    : <dfn>STREAM_DESCRIPTIONS</dfn> = 0x2000
+      :: Stream contains textual or spoken descriptions to the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_TIMING_METADATA</dfn> = 0x4000
+      :: Stream contains timed metadata and is not intended to be directly presented to the user.
+
+    : <dfn>STREAM_THUMBNAILS</dfn> = 0x8000
+      :: Stream contains temporally sparse thumbnails to the stream signalled in [=related_stream_id=].
+</div>
+
+Several streams can be **chained** with the {{SESSION_LOW_QUALITY}} bit set to indicate
+progressively lower quality/bitrate versions of the same stream. The very first
+stream in the chain MUST NOT have bit {{SESSION_LOW_QUALITY}} set.
+
+Sparse thumbnail streams may exactly match chapters from [=related_stream_id=],
+but could be sparser or more frequent.
+
+If bits {{STREAM_COVER_ART}}, {{STREAM_DUB}}, {{STREAM_COMMENTARY}}, {{STREAM_LYRICS}},
+{{STREAM_KARAOKE}}, {{STREAM_HEARING_IMPAIRED}} are all unset, then
+[=related_stream_id=] must match [=stream_id=], otherwise the stream with a
+related *different* ID must exist.
+
+
+## Generic data ## {#generic-data-packets}
+
+To ease parsing, the specification defines a common template for data that
+requires no special treatment, but only differs by [=descriptor=].
+
+This way, *any* generic data can share a common code path, have parity data and be a part
+of an [[#fec-grouping-packets]] packet.
+
+The following template shall be used for generic data packets:
+
+<figure id="table-GenericData" class="table">
+    <table class="complex data longlastcol" dfn-for="#generic-data-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>generic_descriptor</dfn></td>
+            <td>as specified</td>
+            <td>Indicates the data packet type. Defined in later sections.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is applicable.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>payload_length</dfn></td>
+            <td></td>
+            <td>The size of the data in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(128)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=payload_length=]*32)</code></td>
+            <td><dfn>generic_payload</dfn></td>
+            <td></td>
+            <td>The packet data itself.</td>
+        </tr>
+    </table>
+</figure>
+
+
+### Generic data segmentation ### {#generic-data-segment-packets}
+
+In case the data needs to be segmented, the following template
+has to be used for segments that follow the above:
+
+<figure id="table-GenericSegmentData" class="table">
+    <table class="complex data longlastcol" dfn-for="#generic-data-segment-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>generic_segment_descriptor</dfn></td>
+            <td>as specified</td>
+            <td>Indicates the segment type. Defined in later sections along with [=generic_descriptor=].</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is applicable.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td><dfn>target_seq</dfn></td>
+            <td></td>
+            <td>The sequence number of the starting [[#generic-data-packets]] packet.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>pkt_total_data</dfn></td>
+            <td></td>
+            <td>Total number of data bytes, including the first data packet's, and ending segment's.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>seg_offset</dfn></td>
+            <td></td>
+            <td>The offset since the start of the data where the segment starts.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>seg_length</dfn></td>
+            <td></td>
+            <td>The size of the data segment.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td><dfn>header_7</dfn></td>
+            <td></td>
+            <td>A seventh of the starting [[#generic-data-packets]] header. The part taken is determined by <code>[=global_seq=] % 7</code>.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=seg_length=]*32)</code></td>
+            <td><dfn>generic_segment_payload</dfn></td>
+            <td></td>
+            <td>The data for the segment.</td>
+        </tr>
+    </table>
+</figure>
+
+If the data in a [[#generic-data-packets]] packet is to be segmented, it will have
+a different descriptor. The [=generic_segment_descriptor=] shall
+be different for segments that finalize the data.
+
+The [=header_7=] field can be used to reconstruct the header of the very first
+packet in order to determine the timestamps and data type.
+
+
+### Generic data parity ### {#generic-data-parity-packets}
+
+Finally, in case the data requires parity data (FEC, but only on the current packet),
+the following [[#generic-data-packets]] structure is to be used:
+
+<figure id="table-GenericParityData" class="table">
+    <table class="complex data longlastcol" dfn-for="#generic-data-parity-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>generic_parity_descriptor</dfn></td>
+            <td>as specified</td>
+            <td>Indicates this packet carries parity. Defined in later sections along with [=generic_descriptor=].</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is applicable.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=target_seq=]</td>
+            <td></td>
+            <td>The sequence number of the starting [[#generic-data-packets]] packet.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>parity_data_offset</dfn></td>
+            <td></td>
+            <td>The byte offset for the RaptorQ parity data for this parity data packet protects.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>parity_data_length</dfn></td>
+            <td></td>
+            <td>The length of the RaptorQ data in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>parity_total</dfn></td>
+            <td></td>
+            <td>The total amount of payload bytes across all parity data packets.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=header_7=]</td>
+            <td></td>
+            <td>A seventh of the starting [[#generic-data-packets]] header. The part taken is determined by <code>[=global_seq=] % 7</code>.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=seg_length=]*32)</code></td>
+            <td><dfn>parity_data_payload</dfn></td>
+            <td></td>
+            <td>The RaptorQ parity data that can be used to check or correct the previous data packet's payload.</td>
+        </tr>
+    </table>
+</figure>
+
+The data in an parity packet MUST be systematic RaptorQ, as per [[RFC6330]].<br/>
+Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC
+Object Transmission Information as described in the document are *never* used.
+
+The symbol size MUST be 32-bits.
+
+The [=header_7=] field can be used to reconstruct the header of the very first
+packet in order to determine the timestamps and data type.
+
+
+## Stream configuration ## {#stream-configuration-packets}
+
+Codecs generally require a one-off special piece of data needed to initialize them.
+
+To provide this data to receivers, the templates defined in the  MUST be used,
+with the following descriptors:
+
+<figure id="table-StreamConfiguration" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-configuration-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x0003''</td>
+            <td>[[#generic-data-packets]]</td>
+            <td>Non-segmented codec initialization data.</td>
+        </tr>
+        <tr>
+            <td>''0x0004''</td>
+            <td>[[#generic-data-packets]]</td>
+            <td>First segment from a segmented codec configuration data, requiring more segments to be complete.</td>
+        </tr>
+        <tr>
+            <td>''0x0005''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented codec configuration.</td>
+        </tr>
+        <tr>
+            <td>''0x0006''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of a segmented codec configuration.</td>
+        </tr>
+        <tr>
+            <td>''0x0007''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data for codec configuration data.</td>
+        </tr>
+    </table>
+</figure>
+
+For more information on the layout of the specific data, consult the
+[[#codec-encapsulation]] addendum.
+
+However, in general, the data follows the same layout as what
+[[FFmpeg]]'s ''libavcodec'' produces and requires.
+
+An implementation may error out in case it cannot handle the data in the payload.
+If so, when reading a file, it must stop, otherwise in a live scenario,
+it must send an '''unsupported'' [[#control-data-packets]] packet, if such a
+connection is open.
+
+
+## Stream Data ## {#stream-data-packets}
+
+The data packets indicate the start of a stream packet, which may be fragmented into
+more [[#stream-data-segment-packets]]. It is laid out as follows:
+
+<figure id="table-StreamData" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-data-packet">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>data_descriptor</dfn></td>
+            <td>''0x01**''</td>
+            <td dfn-for="StreamData/data_descriptor">
+                Indicates the packet is a stream data packet.
+                 - Bits 15-8: MUST be set to ''0x01''
+                 - Bits 5-7: MUST be interpreted as <dfn>frame_type</dfn>, using the [[#enum-FrameType]] definition.
+                 - Bit 4: Indicates packet is incomplete and extra [[#stream-data-segment-packets]] packets are required.
+                 - Bit 3: Indicates packet is part of an [[#fec-grouping-packets]] and **MUST** be retained.
+                 - Bit 2: If [=interlaced=] is equal to {{ILACE_TFF}} or {{ILACE_BFF}}, this is the <dfn>field_id</dfn> bit. Otherwise, this field is free to use by users.
+                 - Bit 1-0: MUST be interpreted as <dfn>data_compression</dfn>, using the [[#enum-DataCompression]] definition.
+            </td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is applicable.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the [[#timestamps]] section.</td>
+        </tr>
+        <tr>
+            <td><code>i(64)</code></td>
+            <td>[=duration=]</td>
+            <td></td>
+            <td>The duration of this packet in stream timebase unis.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>data_length</dfn></td>
+            <td></td>
+            <td>The size of the data in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=data_length=]*32)</code></td>
+            <td><dfn>packet_data</dfn></td>
+            <td></td>
+            <td>The packet data itself.</td>
+        </tr>
+    </table>
+</figure>
+
+For information on the layout of the specific codec-specific packet data, consult
+the [[#codec-encapsulation]] addenda.
+
+
+### Frame Type Enumeration (enum <dfn enum>FrameType</dfn>) ### {#enum-FrameType}
+
+<div dfn-type="enum-value" dfn-for="#enum-FrameType">
+    : <dfn>FRAME_TYPE_KEY</dfn> = 0x0
+      :: Packet data contains a keyframe, able to be decoded standalone.
+    : <dfn>FRAME_TYPE_S</dfn> = 0x1
+      :: Packet data contains a scalable/switch frame, able to be decoded standalone with acceptable degradation.
+    : <dfn>FRAME_TYPE_P</dfn> = 0x2
+      :: Packet data contains an **inter** frame, requiring additional reference frames in order to be validly decoded.
+</div>
+
+
+### Data Compression Enumeration (enum <dfn enum>DataCompression</dfn>) ### {#enum-DataCompression}
+
+<div dfn-type="enum-value" dfn-for="#enum-DataCompression">
+    : <dfn>DATA_COMPRESSION_NONE</dfn> = 0x0
+      :: Packet data is uncompressed
+    : <dfn>DATA_COMPRESSION_ZSTD</dfn> = 0x1,
+      :: Packet data is compressed with Zstandard, defined in IETF [[RFC8878]].
+</div>
+
+Any undefined values are hereby reserved and must not be present in a compliant
+AVTransport stream with this version.
+
+
+### Stream data segmentation ### {#stream-data-segment-packets}
+
+Packets can be split up into separate chunks that may be received out of order
+and assembled. This allows transmission over switched networks with a limited MTU,
+or prevents very large packets from one stream interfering with another stream.
+The packet structure used for segments is the [[#generic-data-segment-packets]] from
+[[#generic-data-packets]], with the following descriptors:
+
+<figure id="table-StreamDataSegmentation" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-data-segment-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x00FF''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented codec configuration.</td>
+        </tr>
+        <tr>
+            <td>''0x00FE''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of a segmented codec configuration.</td>
+        </tr>
+    </table>
+</figure>
+
+The size of the final assembled packet is the sum of all [=seg_length=] fields,
+plus the [=data_length=] field from the [[#stream-data-packets]].
+
+Data segments and packets may arrive out of order and be duplicated.
+Implementations must reorder them, deduplicate them and assemble them into
+complete packets.
+
+Implementations may try to decode incomplete data packets with missing segments
+due to latency concerns.
+
+Senders may send duplicate segments to compensate for packet loss,
+but should use [[#fec-grouping-packets]] or [[#stream-data-parity-packets]] instead.
+
+Implementations SHOULD discard any packets and segments that arrive after their
+presentation time. Implementations should drop any packets and segments
+that arrive with unrealistically far away presentation times.
+
+
+## FEC grouping ## {#fec-grouping-packets}
+
+Whilst it's possible to send uncontextualized FEC data backing individual
+packets, for most applications, this is only feasible for very high bitrate
+single streams, as modern FEC algorithms are highly optimized for packet erasure
+recovery.
+
+FEC grouping allows for multiple buffered packets and segments from multiple
+streams to be FEC corrected in order to ensure no stream is starved of data.
+
+FEC grouped streams MUST be registered first via a special packet:
+
+<figure id="table-FECGrouping" class="table">
+    <table class="complex data longlastcol" dfn-for="#fec-grouping-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>fec_group_descriptor</dfn></td>
+            <td>''0x0030''</td>
+            <td>Indicates this is an FEC grouping packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>group_id</dfn></td>
+            <td></td>
+            <td>
+                Indicates the ID for this FEC grouping.</br>
+                Note: Must not overlap with [=stream_id=].
+            </td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>fec_grouping_streams</dfn></td>
+            <td></td>
+            <td>Number of streams in the FEC group. Must be less than or equal to 16.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td><dfn>fec_common_oti</dfn></td>
+            <td>[[RFC6330#section-3.3.2]]</td>
+            <td>[[RFC6330]], RaptorQ Common FEC Object Transmission Information.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td><dfn>fec_scheme_oti</dfn></td>
+            <td>[[RFC6330#section-3.3.3]]</td>
+            <td>[[RFC6330]], RaptorQ Scheme-Specific FEC Object Transmission Information.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>fec_start_global_seq</dfn></td>
+            <td></td>
+            <td>The global sequence number of the very first packet in the FEC group.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>16*u(32)</code></td>
+            <td><dfn>fec_nb_packets</dfn></td>
+            <td></td>
+            <td>Total number of packets for each stream in the FEC group.</td>
+        </tr>
+        <tr>
+            <td><code>16*u(32)</code></td>
+            <td><dfn>fec_seq_number</dfn></td>
+            <td></td>
+            <td>The sequence number of the first packet for the stream to be included in the group./td>
+        </tr>
+        <tr>
+            <td><code>b(480)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be ''0x0''.</td>
+        </tr>
+        <tr>
+            <td><code>b(768)</code></td>
+            <td>[=ldpc_2784_2016=]</td>
+            <td>[=LDPC(2784, 2016)=]</td>
+            <td>768-bits of LDPC parity data to correct the previous 2016 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+It is **hightly recommended** that the common OTI parameters never change once transmitted. This lets implementations attempt to apply FEC if they miss a `fec_group_descriptor` packet.
+
+The `fec_scheme_oti` field MUST be interpreted as the following, given in [RFC 6330 Section 3.2.3. Common](https://datatracker.ietf.org/doc/html/rfc6330#section-3.3.3):
+
+All streams in an FEC group **MUST** have timestamps that cover the same period
+of time.
+
+A stream may only be part of a single FEC group at any one time. Sending
+a new grouping that includes an already grouped stream will destroy the
+previous grouping.
+
+To end a grouping prematurely, one can send an end of stream packet with the group's ID.
+
+FEC groups use a different packet for the FEC data.
+
+<figure id="table-FECGroupingData" class="table">
+    <table class="complex data longlastcol" dfn-for="#fec-grouping-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>fec_group_data_descriptor</dfn></td>
+            <td>''0x0031''</td>
+            <td>Indicates this is an FEC group data packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=group_id=]</td>
+            <td></td>
+            <td>Indicates the FEC grouping for which this packet has data for.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>fec_data_offset</dfn></td>
+            <td></td>
+            <td>The byte offset for the FEC data for this FEC packet protects.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>fec_data_length</dfn></td>
+            <td></td>
+            <td>The length of the FEC data in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>fec_total_data_length</dfn></td>
+            <td></td>
+            <td>The total amount of bytes in the FEC grouping data.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td><dfn>fec_source_1</dfn></td>
+            <td>[[#struct-FECSource]]</td>
+            <td>Provides a single source packet which contains data to be forward error corrected.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>3*b(64)</code></td>
+            <td><dfn>fec_source_234</dfn></td>
+            <td>[[#struct-FECSource]]</td>
+            <td>Provides another three source packet which contains data to be forward error corrected.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be ''0x0''.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>[=fec_data_length=]*b(8)</code></td>
+            <td><dfn>fec_data</dfn></td>
+            <td></td>
+            <td>The FEC data that can be used to check or correct the previous data packet's payload.</td>
+        </tr>
+    </table>
+</figure>
+
+The `fec_source` data is defined as follows:
+
+### FEC Group Source ### {#struct-FECSource}
+
+<figure id="table-FECSource" class="table">
+    <table class="complex data longlastcol" dfn-for="#struct-FECSource">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>fec_source_seq</dfn></td>
+            <td></td>
+            <td>Indicates a single packet's [=global_seq=] which is to be backed by this FEC group.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>fec_source_blk</dfn></td>
+            <td></td>
+            <td>Indicates the FEC source block to which the signaled packet belongs to.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>fec_symbol_id</dfn></td>
+            <td></td>
+            <td>Indicates the symbol ID of the packet for the source block.</td>
+        </tr>
+    </table>
+</figure>
+
+Each [[#struct-FECSource]] structure MUST reference a valid packet, in transmission order.
+If there are no more valid packets to reference, the sender **MUST** start repeating from the very first FEC source.
+
+To perform FEC, first, concatenate the payload of each packet referenced into each source block,
+in order of the source symbol ID.
+Then, perform the procedure to apply FEC as described by [[RFC6330#section-4.4.1]].
+
+
+## Stream data parity ## {#stream-data-parity-packets}
+
+Stream data packets and segments may **individually** be backed by data packets.
+The structure used for segments follows the [[#generic-data-parity-packets]] template
+from the [[#generic-data-packets]] section, with the following descriptor:
+
+<figure id="table-StreamDataParity" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-data-parity-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x00FD''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data segment for individual stream data packets.</td>
+        </tr>
+    </table>
+</figure>
+
+Implementations may discard the FEC data, or may delay the previous packet's
+decoding to correct it with the FEC data, or may attempt to decode the uncorrected
+packet data, and if failed, retry with the corrected data packet.
+
+The data in an FEC packet must be RaptorQ, as per [[RFC6330]].
+The symbol size must be 32-bits.
+
+The same lifetime and duplication rules apply for parity packets as they do for
+regular data segments.
+
+
+## Index ## {#index-packets}
+
+The index packet contains available byte offsets of nearby keyframes, reconfiguration packets
+or metadata changes, and the distance to the next index packet.
+
+<figure id="table-IndexData" class="table">
+    <table class="complex data longlastcol" dfn-for="#index-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>index_descriptor</dfn></td>
+            <td>''0x0009''</td>
+            <td>Indicates this is an index packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>prev_idx</dfn></td>
+            <td></td>
+            <td>Negative offset of the previous index packet, if any, in bytes, relative to the current position. If exactly ''0'', indicates no such index is available, or is out of scope.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>next_index</dfn></td>
+            <td></td>
+            <td>Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>nb_indices</dfn></td>
+            <td></td>
+            <td>The total number of indices present in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>[=nb_indices=]*b(16)</code></td>
+            <td>[=descriptor=]</td>
+            <td></td>
+            <td>[[#packet-descriptor|Descriptor]] of the packet that each index points to.</td>
+        </tr>
+        <tr>
+            <td><code>[=nb_indices=]*i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Timestamp of the packet that each index points to.</td>
+        </tr>
+        <tr>
+            <td><code>[=nb_indices=]*u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Sequence number of the packet pointed to by each index.</td>
+        </tr>
+        <tr>
+            <td><code>[=nb_indices=]*i(32)</code></td>
+            <td><dfn>pkt_offset</dfn></td>
+            <td></td>
+            <td>The offset of a decodable index relative to the current position in bytes. May be ''0'' if unavailable or not applicable.</td>
+        </tr>
+        <tr>
+            <td><code>[=nb_indices=]*u(16)</code></td>
+            <td><dfn>pkt_chapter</dfn></td>
+            <td></td>
+            <td>If a value is greater than ''0'', demarks the start of a chapter with an index equal to the value.</td>
+        </tr>
+    </table>
+</figure>
+
+If index packets are present, an index packet must be sent for any stream
+reconfiguration packets, or metadata changes. No future index packets must be signalled
+or sent, until all the packets needed to correctly reinitialize streams have been sent.
+The exception to this is if a newer reinitialization has begun.
+
+If valid, [=prev_idx=], [=next_idx=] and [=pkt_pos=] offsets must point to the start of
+a packet. In other words, the byte pointed to by the offsets must contain the
+first, most significant byte of the descriptor of the pointed packet.
+
+If [=stream_id=] is ''0xFFFF'', the timebase used for [=idx_pts=] must be assumed to be
+**1 nanosecond**, numerator of ''1'', denominator of ''1000000000''.
+
+If a packet starts before the value of [=pkt_pts=] but has a duration that
+matches or exceeds the PTS, then it must be included. This is to permit
+correct subtitle presentation, or long duration still pictures like slideshows.
+
+When streaming, [=idx_pos=], [=prev_idx=] and [=next_idx=] must be ''0''.
+
+
+## Metadata ## {#metadata-packets}
+
+The metadata packets can be sent for the overall session, or for a specific
+`stream_id` substream. The data is contained in structures templated in the
+[[#generic-data-packets]] structures, with the following descriptors:
+
+<figure id="table-Metadata" class="table">
+    <table class="complex data longlastcol" dfn-for="#metadata-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x000A''</td>
+            <td>[[#generic-data-packets]]</td>
+            <td>Non-segmented metadata.</td>
+        </tr>
+        <tr>
+            <td>''0x000B''</td>
+            <td>[[#generic-data-packets]]</td>
+            <td>First segment from segmented metadata, requiring more segments to be complete.</td>
+        </tr>
+        <tr>
+            <td>''0x000C''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented metadata.</td>
+        </tr>
+        <tr>
+            <td>''0x000D''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of segmented metadata.</td>
+        </tr>
+        <tr>
+            <td>''0x000E''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data for metadata.</td>
+        </tr>
+    </table>
+</figure>
+
+The actual metadata must be stored using CBOR, as standardized in [[RFC8949]].
+
+### Common Metadata Keys ### {#enum-CommonMetadataKeys}
+
+The following string keys should be used:
+
+<div dfn-type="enum-value" dfn-for="#enum-CommonMetadataKeys">
+    : <dfn>title</dfn> — ''text string''
+      :: Full name of the stream.
+    : <dfn>language</dfn> — ''text string''
+      :: Language name subtag, as per [[bcp47]].
+    : <dfn>language_tag</dfn> — ''text string''
+      :: More concise language information, including regional variants, as defined by [[RFC5646#section-2.1]].
+    : <dfn>date</dfn> — ''text string''
+      :: Date of release. MUST be formatted according to [[RFC3339]].
+    : <dfn>track</dfn> — ''unsigned integer''
+      :: Track number, if the stream is part of an album.
+    : <dfn>tracks</dfn> — ''unsigned integer''
+      :: Total number of tracks, if stream is part of an album.
+    : <dfn>artist</dfn> — ''text string''
+      :: Full name of the performing artist on this track.
+    : <dfn>album_artist</dfn> — ''text string''
+      :: Full name of the album's artist.
+    : <dfn>album</dfn> — ''text string''
+      :: Full name of the album.
+    : <dfn>comment</dfn> — ''text string''
+      :: Arbitrary release details.
+    : <dfn>disc</dfn> — ''unsigned integer''
+      :: Disc number, in case of multi-disc releases.
+    : <dfn>discs</dfn> — ''unsigned integer''
+      :: Total number of discs, in case of multi-disc releases.
+    : <dfn>media_type</dfn> — ''text string''
+      :: Original media type of the release.
+    : <dfn>isrc</dfn> — ''text string''
+      :: International Standard Recording Code of the given track.
+    : <dfn>mcn</dfn> — ''text string''
+      :: Media Catalog Number for the album, if available.
+</div>
+
+Implementations are free to insert any other tags.
+
+Each name key can be encountered multiple times. Implementations must
+discard the old value associated with the key and update the metadata.
+
+If [=stream_id=] is equal to ''0xFFFF'', the metadata applies for the session as a whole.
+
+If [=stream_id=] is not ''0xFFFF'', the metadata is a separate set of values that just
+describe a single stream. Tags from other streams, or the general file
+metadata must not overwrite each other.
+
+Metadata can be updated by sending new metadata packets with new values.
+
+The {{language}} field must be formatted as a **subtag**, according to the [[bcp47]].
+
+The {{language_tag}} field must be formatted as described in [[RFC5646#section-2.1]].
+It provides more detailed information than the {{language}} field,
+including regional variation and script.
+
+The {{date}} field must be formatted according to [[RFC3339]].
+
+Metadata may be padded by appending zeroed bytes to the end. This must
+be accounted by the payload value. Implementations may do this to write
+metadata after starting and outputting a packet.
+
+
+## LUT/ICC profile ## {#lut-icc-profile-packets}
+
+Embedding of color lookup tables (LUTs) and ICC profiles for accurate color reproduction is supported.<br/>
+The following structure MUST be followed:
+
+<figure id="table-LUTData" class="table">
+    <table class="complex data longlastcol" dfn-for="#time-synchronization-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>lut_descriptor</dfn></td>
+            <td>''0x0010'' or ''0x0011''</td>
+            <td>Indicates this packet contains a complete LUT or ICC profile (''0x0010'') or the start of a segmented one (''0x0011'').</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>The stream ID for which to apply the LUT/ICC profile.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>lut_type</dfn></td>
+            <td>enum {{LUTType}}</td>
+            <td>The data type contained in the [=lut_data=].</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>lut_major_ver</dfn></td>
+            <td></td>
+            <td>Major version of the file. Currently only applies to ICC profiles.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>lut_minor_ver</dfn></td>
+            <td></td>
+            <td>Minor version of the file. Currently only applies to ICC profiles.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>lut_compression</dfn></td>
+            <td>enum {{DataCompression}}</td>
+            <td>LUT/ICC data compression.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>lut_name_length</dfn></td>
+            <td></td>
+            <td>The length of the LUT/ICC profile name.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>lut_data_length</dfn></td>
+            <td></td>
+            <td>The length of the LUT/ICC profile.</td>
+        </tr>
+        <tr>
+            <td><code>b(104)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=lut_name_length=]*8)</code></td>
+            <td><dfn>lut_name</dfn></td>
+            <td>zero-terminated string</td>
+            <td>The full name of the LUT/ICC profile.</td>
+        </tr>
+        <tr>
+            <td><code>b([=lut_data_length=]*8)</code></td>
+            <td><dfn>lut_data</dfn></td>
+            <td></td>
+            <td>The LUT/ICC profile data</td>
+        </tr>
+    </table>
+</figure>
+
+Often, LUT/ICC profiles may be too large to fit, hence they can be segmented
+in the same way as data packets, as well as have parity data. The syntax for
+segmentation and parity packets is via the following [[#generic-data-packets]] templates:
+
+<figure id="table-LUTGenericData" class="table">
+    <table class="complex data longlastcol" dfn-for="#lut-icc-profile-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x0012''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented LUT/ICC profile.</td>
+        </tr>
+        <tr>
+            <td>''0x0013''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of a segmented LUT/ICC profile.</td>
+        </tr>
+        <tr>
+            <td>''0x0014''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data for LUT/ICC profile.</td>
+        </tr>
+    </table>
+</figure>
+
+If the [=lut_descriptor=] is ''0x0011'', then at least one ''0x0013'' segment must be received.
+
+
+## LUT/ICC Profile Type Enumeration (enum <dfn enum>LUTType</dfn>) ## {#enum-LUTType}
+
+The [=lut_type=] field must be interpreted in the following way:
+
+<div dfn-type="enum-value" dfn-for="#enum-LUTType">
+    : <dfn>CLUT_ICC_PROFILE</dfn> = 0x1
+      :: Indicates that tata contains a regular ICC profile, with version <code>[=lut_major_ver=].[=lut_minor_ver=]</code>.
+    : <dfn>CLUT_ADOBE_CUBE</dfn> = 0x2
+      :: Indicates that tata contains an Adobe CUBEE file.
+</div>
+
+Note: Lookup tables and ICC profiles must take precedence over the primaries and transfer
+characteristics values in [[#video-information-packets]]. The matrix coefficients are still
+required for RGB conversion.
+
+Note: Both an ICC profile and a color lookup table may be applied for a single stream.
+
+
+## Font data ## {#font-data-packets}
+
+Subtitles may often require custom fonts. AVTransport supports embedding of fonts
+for use by subtitles.<br/>
+
+Currently, this only applies for ASS streams ([[#ass-encapsulation]]). Once parsed,
+these fonts must be made available for the ASS stream.
+
+The following structure MUST be followed:
+
+<figure id="table-FontData" class="table">
+    <table class="complex data longlastcol" dfn-for="#font-data-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>font_descriptor</dfn></td>
+            <td>''0x0020'' or ''0x0021''</td>
+            <td>Indicates this packet contains a complete font file (''0x0020'') or the start of a segmented one (''0x0021'').</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>
+                The stream ID for which to make the font available.
+                Note: may be set to ''0xffff'' to make the font available for all streams.
+            </td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>font_type</dfn></td>
+            <td>enum {{FontType}}</td>
+            <td>The data type contained in the [=font_data=].</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>font_compression</dfn></td>
+            <td>enum {{DataCompression}}</td>
+            <td>Font data compression.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>font_name_length</dfn></td>
+            <td></td>
+            <td>The length of the font file name.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>font_data_length</dfn></td>
+            <td></td>
+            <td>The length of the font file data.</td>
+        </tr>
+        <tr>
+            <td><code>b(96)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>b([=font_name_length=]*8)</code></td>
+            <td><dfn>font_name</dfn></td>
+            <td>zero-terminated string</td>
+            <td>The name of the font file.</td>
+        </tr>
+        <tr>
+            <td><code>b([=font_data_length=]*8)</code></td>
+            <td><dfn>font_data</dfn></td>
+            <td></td>
+            <td>The font data.</td>
+        </tr>
+    </table>
+</figure>
+
+Font data can too be segmented in the same way as data packets, as well as have parity data.
+The syntax for segmentation and parity packets is via the following [[#generic-data-packets]]
+templates:
+
+<figure id="table-FontGenericData" class="table">
+    <table class="complex data longlastcol" dfn-for="#font-data-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x0022''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented font file.</td>
+        </tr>
+        <tr>
+            <td>''0x0023''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of a segmented font file.</td>
+        </tr>
+        <tr>
+            <td>''0x0024''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data for a font file.</td>
+        </tr>
+    </table>
+</figure>
+
+If the [=font_descriptor=] is ''0x21'', then at least one ''0x23'' segment must be received.
+
+
+## Font Type Enumeration (enum <dfn enum>FontType</dfn>) ## {#enum-FontType}
+
+The [=font_type=] field must be interpreted in the following way:
+
+<div dfn-type="enum-value" dfn-for="#enum-FontType">
+    : <dfn>FONT_OTF</dfn> = 0x0
+      :: Indicates that the font data contained is an [[OpenType]] font.
+    : <dfn>FONT_TTF</dfn> = 0x1
+      :: Indicates that tata contains a [[TrueType]] font.
+    : <dfn>FONT_WOFF2</dfn> = 0x2
+      :: Indicates that tata contains a [[WOFF2]] (Web Open Font Format 2) font.
+</div>
+
+Note: {{FONT_WOFF2}} fonts SHOULD NOT be compressed, as they're already compressed.
+
+
+## Video information ## {#video-information-packets}
+
+Video info packets contain everything needed to correctly interpret a video
+stream after decoding.
+
+<figure id="table-VideoInformation" class="table">
+    <table class="complex data longlastcol" dfn-for="#time-synchronization-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>video_info_descriptor</dfn></td>
+            <td>''0x0008''</td>
+            <td>Indicates this packet contains video information.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>The stream ID for which to apply the video information to.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>width</dfn></td>
+            <td></td>
+            <td>Indicates the video width in pixels, before any cropping.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>height</dfn></td>
+            <td></td>
+            <td>Indicates the video height in pixels, before any cropping</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>signal_aspect</dfn></td>
+            <td></td>
+            <td>Indicates the sample aspect ratio of the image.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>chroma_subsampling</dfn></td>
+            <td>enum {{ChromaSubsampling}}</td>
+            <td>Indicates the chroma subsampling being used.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>colorspace_type</dfn></td>
+            <td>enum {{Colorspace}}</td>
+            <td>Indicates the kind of colorspace the video is in.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>bit_depth</dfn></td>
+            <td></td>
+            <td>Number of bits per output video sample.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>interlaced</dfn></td>
+            <td>enum {{Interlacing}}</td>
+            <td>Indicates the video interleaving.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>gamma</dfn></td>
+            <td></td>
+            <td>Indicates the gamma power curve for the video sample values.</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>framerate</dfn></td>
+            <td></td>
+            <td>Indicates the framerate of the video. If it's variable, may be used to indicate the average bitrate. If the video is [=interlaced=]], indicates the field rate.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>output_range</dfn></td>
+            <td>enum {{ColorRange}}</td>
+            <td>Indicates the range for the output video samples.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>chroma_pos</dfn></td>
+            <td>enum {{ChromaPosition}}</td>
+            <td>Chroma sample alignment for subsampled chroma.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>primaries</dfn></td>
+            <td>[[H.273]] ''ColourPrimaries''</td>
+            <td>Video color primaries. Must be interpreted according to ITU Standard [[H.273]], ''ColourPrimaries'' field.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>transfer</dfn></td>
+            <td>[[H.273]], ''TransferCharacteristics''</td>
+            <td>Video transfer characteristics. Must be interpreted according to ITU Standard [[H.273]], ''TransferCharacteristics'' field.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>matrix</dfn></td>
+            <td>[[H.273]], ''MatrixCoefficients''</td>
+            <td>Video matrix coefficients. Must be interpreted according to ITU Standard [[H.273]], ''MatrixCoefficients'' field.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>has_mastering_primaries</dfn></td>
+            <td></td>
+            <td>If ''1'', indicates that the following [=mastering_primaries=] and [=mastering_white_point=] contain valid data. Other values are reserved.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>has_luminance</dfn></td>
+            <td></td>
+            <td>If ''1'', indicates that the following [=min_luminance=] and [=max_luminance=] contain valid data. Other values are reseved.</td>
+        </tr>
+        <tr>
+            <td><code>16*R(64)</code></td>
+            <td><dfn>custom_matrix</dfn></td>
+            <td></td>
+            <td>If the color [=matrix=] value is equal to ''0xFF'', use this custom matrix instead. Top left to bottom right, in "raster-order". Otherwise, must be set to ''0''.</td>
+        </tr>
+        <tr>
+            <td><code>6*R(64)</code></td>
+            <td><dfn>mastering_primaries</dfn></td>
+            <td></td>
+            <td>[[CIE1931]] X/Y chromacity coordinates of the color primaries, <code>x</code> value, then <code>y</code> value, for each <code>r</code>, <code>g</code>, <code>b</code>, in order.</td>
+        </tr>
+        <tr>
+            <td><code>2*R(64)</code></td>
+            <td><dfn>mastering_white_point</dfn></td>
+            <td></td>
+            <td>[[CIE1931]] X/Y chromacity coordinates of the white point, <code>x</code> value, then <code>y</code> value.</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>min_luminance</dfn></td>
+            <td></td>
+            <td>Minimal luminance of the mastering display, in cd/m<sup>2</sup>.</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>max_luminance</dfn></td>
+            <td></td>
+            <td>Maximum luminance of the mastering display, in cd/m<sup>2</sup>.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>cropped_width</dfn></td>
+            <td></td>
+            <td>Indicates the presentable video width in samples.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>cropped_height</dfn></td>
+            <td></td>
+            <td>Indicates the presentable video height in samples.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>crop_x_offset</dfn></td>
+            <td></td>
+            <td>X offset for the location of the final presentation box.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>crop_y_offset</dfn></td>
+            <td></td>
+            <td>Y offset for the location of the final presentation box.</td>
+        </tr>
+        <tr>
+            <td><code>b(40)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be ''0x0''.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_2784_2016=]</td>
+            <td>[=LDPC(2784, 2016)=]</td>
+            <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+
+## Colorspace Enumeration (enum <dfn enum>Colorspace</dfn>) ## {#enum-Colorspace}
+
+The [=colorspace=] field must be interpreted in the following way:
+
+<div dfn-type="enum-value" dfn-for="#enum-Colorspace">
+    : <dfn>CSP_MONO</dfn> = 0x0
+      :: Video contains no chroma data.
+    : <dfn>CSP_RGB</dfn> = 0x1
+      :: Video data contains a form of RGB.
+    : <dfn>CSP_YUV</dfn> = 0x2
+      :: Video contains a form of YUV (YCbCr).
+    : <dfn>CSP_YCOCGR</dfn> = 0x3
+      :: Video contains a **reversible** form of YCoCg, as defined by [[H.273]], equations 47-50.
+    : <dfn>CSP_YCGCOR</dfn> = 0x4
+      :: Video contains a **reversible** form of YCgCo (same as above, with swapped chroma planes).
+    : <dfn>CSP_XYZ</dfn> = 0x5
+      :: Video contains [[CIE1931]] XYZ color data.
+    : <dfn>CSP_XYB</dfn> = 0x6
+      :: Video contains XYB color data, as defined by [[ISO18181]].
+         Note: [matrix] must be equal to ''0xFF'' and the [=custom_matrix=] must be a valid matrix to transform XYB into RGB.
+    : <dfn>CSP_ICTCP</dfn> = 0x5
+      :: Video contains [[BT2100]] ICtCp color data.
+</div>
+
+
+## Color Range Enumeration (enum <dfn enum>ColorRange</dfn>) ## {#enum-ColorRange}
+
+<div dfn-type="enum-value" dfn-for="#enum-ColorRange">
+    : <dfn>COLOR_RANGE_FULL</dfn> = 0x0
+      :: Video sample values contains the full range of the [=bit_depth=].
+    : <dfn>COLOR_RANGE_LIMITED</dfn> = 0x1
+      :: Video sample values contains the limited range of the [=bit_depth=].
+
+          Note: this describes the *cannonical* limited range representation:
+               <code>(219 * E + 16) * 2<sup>([=bit_depth=]-8)</sup></code>,
+               where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for *luma* planes and
+               ''-0.5'' to ''0.5'' for *chroma* planes. This means, for 8-bits, the luma
+               range is 16-235 and the chroma range is 16-240.
+</div>
+
+
+## Chroma Subsampling Enumeration (enum <dfn enum>ChromaSubsampling</dfn>) ## {#enum-ChromaSubsampling}
+
+<div dfn-type="enum-value" dfn-for="#enum-ChromaSubsampling">
+    : <dfn>CHROMA_444</dfn> = 0x0
+      :: Chromatic data is not subsampled, or subsampling does not apply.
+    : <dfn>CHROMA_420</dfn> = 0x1
+      :: Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data.
+    : <dfn>CHROMA_422</dfn> = 0x2
+      :: Chromatic data is subsampled at half the vertical resolution of the luminance data.
+</div>
+
+
+## Interlacing Enumeration (enum <dfn enum>Interlacing</dfn>) ## {#enum-Interlacing}
+
+<div dfn-type="enum-value" dfn-for="#enum-Interlacing">
+    : <dfn>ILACE_PROG</dfn> = 0x0
+      :: Video contains progressive data, or interlacing does not apply.
+    : <dfn>ILACE_TFF</dfn> = 0x1
+      :: Video is interlaced. One [[#stream-data-packets]] packet per *field*. If the data packet's [=field_id=] bit is **unset**, indicates the field contained is the **top** field, otherwise it's the *bottom* field.
+    : <dfn>ILACE_BFF</dfn> = 0x2
+      :: Same as above, with reversed polarity, such that packets with [=field_id=] bit **set** contain the **top** field, otherwise it's the bottom.
+    : <dfn>ILACE_TW</dfn> = 0x3
+      :: Video is interlaced. The [[#stream-data-packets]] packet contains **both** fields, weaved together, with the **top** field being on every even line.
+    : <dfn>ILACE_BW</dfn> = 0x4
+      :: Same as above, but with reversed polarity, such that the **bottom** field is encountered first.
+</div>
+
+The [=ILACE_TFF=] and [=ILACE_TW=], as well as the [=ILACE_BFF=] and [=ILACE_BW=] values
+may be interchanged if it's possible to output one or the other, depending on
+the setting used, if the codec supports this.
+
+
+## Chroma Position Enumeration (enum <dfn enum>ChromaPosition</dfn>) ## {#enum-ChromaPosition}
+
+<div dfn-type="enum-value" dfn-for="#enum-ChromaPosition">
+    : <dfn>CHROMA_POS_UNSPEC</dfn> = 0x0
+      :: Chroma position not specified or does not apply.
+    : <dfn>CHROMA_POS_LEFT</dfn> = 0x1
+      :: Chroma position is between 2 luma samples on different lines.
+
+      Note: This is the default chroma position for MPEG-2, H.263 with {{CHROMA_422}}, and H.264 with {{CHROMA_420}}.
+
+    : <dfn>CHROMA_POS_CENTER</dfn> = 0x2
+      :: Chroma position is in the middle between all neighbouring luma samples on 2 lines.
+
+      Note: This is the default chroma position for JPEG with {{CHROMA_420}}, and H.263 with {{CHROMA_420}}.
+
+    : <dfn>CHROMA_POS_TOPLEFT</dfn> = 0x3
+      :: Chroma position coincides with top left's luma sample position.
+
+      Note: This is the default chroma position for MPEG-2 with {{CHROMA_422}}.
+
+    : <dfn>CHROMA_POS_TOP</dfn> = 0x4
+      :: Chroma position is between 2 luma samples on the same top line.
+    : <dfn>CHROMA_POS_BOTTOMLEFT</dfn> = 0x5
+      :: Chroma position coincides with bottom left's luma sample position.
+    : <dfn>CHROMA_POS_BOTTOM</dfn> = 0x6
+      :: Chroma position is between 2 luma samples on the same bottom line.
+</div>
+
+To illustrate:
+
+<figure id="table-ChromaPosition" class="table">
+    <table class="complex data longlastcol" dfn-for="#enum-ChromaPosition">
+        <tr>
+            <th>Luma line number</th>
+            <th>Luma row   1</th>
+            <th>Between rows</th>
+            <th>Luma row   3</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td style="text-align: right;">''Luma pixel''    **{{CHROMA_POS_TOPLEFT|0x3}}**</td>
+            <td style="text-align: right;">                  **{{CHROMA_POS_TOP|0x4}}**    </td>
+            <td style="text-align: right;">''Luma pixel''                                  </td>
+        </tr>
+        <tr>
+            <td>Between lines</td>
+            <td style="text-align: right;">                     **{{CHROMA_POS_LEFT|0x1}}**</td>
+            <td style="text-align: right;">                   **{{CHROMA_POS_CENTER|0x2}}**</td>
+            <td style="text-align: right;">                                                </td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td style="text-align: right;">''Luma pixel'' **{{CHROMA_POS_BOTTOMLEFT|0x5}}**</td>
+            <td style="text-align: right;">                   **{{CHROMA_POS_BOTTOM|0x6}}**</td>
+            <td style="text-align: right;">''Luma pixel''                                  </td>
+        </tr>
+    </table>
+</figure>
+
+
+## Video orientation ## {#video-orientation-packets}
+
+A standardized way to transmit orientation information is as follows:
+
+<figure id="table-VideoOrientationData" class="table">
+    <table class="complex data longlastcol" dfn-for="#video-orientation-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>orientation_descriptor</dfn></td>
+            <td>''0x0040''</td>
+            <td>Indicates this is a video orientation packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>The stream ID for which to associate the video information with.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Timestamp (in stream [=timebase=] units) at which this orientation packet has to be applied at.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>reflection</dfn></td>
+            <td>enum {{VideoReflection}}</td>
+            <td>A fixed transposition that must occur before any arbitrary rotation.</td>
+        </tr>
+        <tr>
+            <td><code>R(64)</code></td>
+            <td><dfn>rotation</dfn></td>
+            <td></td>
+            <td>A fixed-point rational number to indicate rotation in radians once multiplied by ''π''.</td>
+        </tr>
+        <tr>
+            <td><code>b(24)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+The effects of video orientation packets MUST persist from the [=pts=] value given,
+until a new orientation packet is sent, or the stream is reinitialized.
+
+
+## Video Reflection Enumeration (enum <dfn enum>VideoReflection</dfn>) ## {#enum-VideoReflection}
+
+<div dfn-type="enum-value" dfn-for="#enum-VideoReflection">
+    : <dfn>VIDEO_REFLECT_NONE</dfn> = 0x0
+      :: Video is not flipped.
+    : <dfn>VIDEO_REFLECT_MIRROR</dfn> = 0x1
+      :: Video must be mirrored for correct presentation (flipped horizontally).
+    : <dfn>VIDEO_REFLECT_FLIP</dfn> = 0x2
+      :: Video must be flipped upside-down for correct presentation.
+</div>
+
+[=reflection=] must be applied first, before [=rotation=].
+
+The actual rotation in radians is given by <code>π * ([=rotation=].num/[=rotation=].den)</code>.
+
+Rotation should be applied after all other transformations have been performed on the image,
+including cropping via the [=cropped_width=]/[=cropped_height=] fields in
+[[#video-information-packets]] packets.
+
+
+## User data ## {#user-data-packets}
+
+The user-specific data packet is laid out as follows:
+
+<figure id="table-UserData" class="table">
+    <table class="complex data longlastcol" dfn-for="#user-data-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>userdata_descriptor</dfn></td>
+            <td>''0x0500'' to ''0x05FF''</td>
+            <td>Indicates this is an opaque user-specific data. The bottom byte is included and free to use.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>user_field</dfn></td>
+            <td></td>
+            <td>A free to use field for user data.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>userdata_segmented</dfn></td>
+            <td></td>
+            <td>If set to ''1'', indicates that userdata is segmented, and additional packets will follow.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>userdata_length</dfn></td>
+            <td></td>
+            <td>The length of the user data in this packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(120)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr>
+            <td><code>[=userdata_length=]*b(8)</code></td>
+            <td><dfn>userdata</dfn></td>
+            <td></td>
+            <td>The user data itself.</td>
+        </tr>
+    </table>
+</figure>
+
+User data may be segmented:
+
+<figure id="table-UserGenericData" class="table">
+    <table class="complex data longlastcol" dfn-for="#user-data-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>''0x0600''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented user data.</td>
+        </tr>
+        <tr>
+            <td>''0x0601''</td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Final segment of segmented user data.</td>
+        </tr>
+        <tr>
+            <td>''0x0602''</td>
+            <td>[[#generic-data-parity-packets]]</td>
+            <td>Parity data for user data.</td>
+        </tr>
+    </table>
+</figure>
+
+
+## Stream duration ## {#stream-duration-packets}
+
+If the session length is well-known, implementations can reserve space up-front
+at the start of files to notify implementations of stream lengths.
+
+<figure id="table-StreamDuration" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-duration-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>duration_descriptor</dfn></td>
+            <td>''0x0050''</td>
+            <td>Indicates this is a stream duration packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>i(64)</code></td>
+            <td><dfn>total_duration</dfn></td>
+            <td></td>
+            <td>The total duration of the stream(s).</td>
+        </tr>
+        <tr>
+            <td><code>b(96)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+If [=stream_id=] is ''0xFFFF'', the timebase used for [=idx_pts=] must be assumed to be
+**1 nanosecond**, numerator of ''1'', denominator of ''1000000000''.
+
+If the value of [=total_duration=] is 0, the entire packet must be ignored.
+In such cases, implementations are free to attempt to measure stream duration
+via other methods.<br/>
+This makes it possible to write stream duration packets at the start of
+streams, and amend them later.
+
+The duration must be the total amount of time the stream will be presented.<br/>
+Any negative duration MUST be excluded.
+
+The duration must be treated as metadata rather than a hard limit.
+
+
+## End of stream ## {#end-of-stream-packets}
+
+The EOS packet is laid out as follows:
+
+<figure id="table-EOS" class="table">
+    <table class="complex data longlastcol" dfn-for="#end-of-stream-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>eos_descriptor</dfn></td>
+            <td>''0x0FFF''</td>
+            <td>Indicates this is a stream duration packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr>
+            <td><code>b(160)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+The [=stream_id=] field may be used to indicate that a specific stream will no longer
+receive any packets, and implementations are free to unload decoding and free up
+any used resources.
+
+The [=stream_id=] may be reused afterwards, but this is not recommended.
+
+If not encountered in a stream, and the connection was cut, then the receiver is
+allowed to gracefully wait for a reconnection.
+
+If encountered in a file, the implementation may regard any data present afterwards
+as padding and ignore it. AVTransport files should not be concatenated.
+
+
+# Addendum # {#addendum}
+
+This section expands on certain aspects of the specification.
+
+
+## Codec encapsulation ## {#codec-encapsulation}
+The following section lists the supported codecs, along with their encapsulation
+definitions.
+
+
+### Opus encapsulation ### {#opus-encapsulation}
+
+For [[RFC6716|Opus]] encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be 0x4F707573 (`Opus`).
+
+The payload of the [[#stream-configuration-packets]] packets MUST be
+laid out in the following way:
+
+<figure id="table-OpusConfig" class="table">
+    <table class="complex data longlastcol" dfn-for="#opus-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(64)</code></td>
+            <td><dfn>opus_id</dfn></td>
+            <td>''0x4F70757348656164'' (''OpusHead'')</td>
+            <td>Opus magic string.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>opus_init_ver</dfn></td>
+            <td></td>
+            <td>Version of the config data. Must be 0x1.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>opus_channels</dfn></td>
+            <td></td>
+            <td>Number of audio channels.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>opus_prepad</dfn></td>
+            <td></td>
+            <td>Number of samples to discard from the start of decoding (encoder delay).</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>opus_rate</dfn></td>
+            <td></td>
+            <td>Samplerate of the data. Must be 48000.</td>
+        </tr>
+        <tr>
+            <td><code>i(16)</code></td>
+            <td><dfn>opus_gain</dfn></td>
+            <td></td>
+            <td>Volume adjustment of the stream. May be 0 to preserve the volume.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>opus_ch_family</dfn></td>
+            <td></td>
+            <td>Opus channel mapping family. Consult [[RFC7845]] and [[RFC8486]].</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>opus_stream_count</dfn></td>
+            <td></td>
+            <td>Optional, only available if [=opus_ch_family=] is not ''0''.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>opus_coupled_count</dfn></td>
+            <td></td>
+            <td>Optional, only available if [=opus_ch_family=] is not ''0''.</td>
+        </tr>
+        <tr>
+            <td><code>[=opus_channels=]*u(8)</code></td>
+            <td><dfn>opus_channel_mapping</dfn></td>
+            <td></td>
+            <td>Optional, only available if [=opus_ch_family=] is not ''0''.</td>
+        </tr>
+    </table>
+</figure>
+
+The meaning of each field is defined by [[RFC7845]].
+
+Implementations must not use the [=opus_prepad=] field, but must set the
+first stream packet's [=pts=] value to a negative value as defined in
+[[#negative-times]] to remove the required number of prepended samples.
+
+The [=packet_data=] MUST contain regular Opus packets with their front uncompressed
+header intact.
+
+In case of multiple channels, the packets MUST contain the concatenated contents
+in coding order of all channels' packets.
+
+In case the Opus bitstream contains native Opus FEC data, the FEC data must be
+appended to the packet as-is, and no [[#stream-data-parity-packets]] packets must
+be present for this stream.
+
+
+### AAC encapsulation ### {#aac-encapsulation}
+
+For AAC encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be 0x41414300 (''AAC0'').
+
+The [[#stream-configuration-packets]] payload MUST be the
+codec's ''AudioSpecificConfig'', as defined in MPEG-4.
+
+The [=packet_data=] MUST contain regular AAC ADTS packtes. Note that ''LATM'' is
+explicitly unsupported.
+
+Implementations must set the first stream packet's ''pts'' value to a negative
+value as defined in [[#stream-data-packets]] to remove the required number
+of prepended samples.
+
+
+### AC-3 encapsulation ### {#ac-3-encapsulation}
+
+For AAC encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x41432d33'' (''AC-3'').
+
+AC-3 streams require no [[#stream-configuration-packets]].
+
+THe `packet_data` MUST contain regular AC-3 OR E-AC-3 frames, starting from the
+`syncinfo` header defined in the specifications.
+
+
+### AV1 encapsulation ### {#av1-encapsulation}
+
+For [[AV1]] encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x41563031'' (''AV01'').
+
+The [[#stream-configuration-packets]] payload MUST be the
+codec's so-called ''uncompressed header''. For information on its syntax,
+consult the specifications, section ''5.9.2. Uncompressed header syntax''.
+
+The [=packet_data=] MUST contain raw, separated ''OBU''s.
+
+
+### VP9 encapsulation ### {#vp9-encapsulation}
+
+For VP9 encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x56503039'' (''VP09'').
+
+The [[#stream-configuration-packets]] payload must be the
+codec's so-called ''uncompressed header''. For information on its syntax,
+consult the specifications, section ''6.2 Uncompressed header syntax''.
+
+The [=packet_data=] MUST contain raw **superframe** packets, as defined in ''Annex B'' of the
+VP9 specifications.
+
+
+### H264 encapsulation ### {#h264-encapsulation}
+
+For H264 encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x48323634'' (''H264'').
+
+The [=packet_data=] MUST contain the following elements, in order:
+ - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
+ - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
+
+A [[#stream-configuration-packets]] MAY be sent, to
+speed up stream initialization. If they are present, they MUST contain an
+`AVCDecoderConfigurationRecord` structure, as defined in ''ISO/IEC 14496-15''.
+
+
+### H265 encapsulation ### {#h265-encapsulation}
+
+For H265 encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x48323635'' (''H265'').
+
+The [=packet_data=] MUST contain the following elements, in order:
+ - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
+ - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
+
+''Annex-B'' formatted packets MUST be used, with startcode emulation bits included.
+
+A [[#stream-configuration-packets]] MAY be sent, to
+speed up stream initialization. If they are present, they MUST contain an
+''HEVCDecoderConfigurationRecord'' structure, as defined in ''ISO/IEC 23008''.
+
+
+### Dirac/VC-2 encapsulation ### {#dirac-vc-2-encapsulation}
+
+For Dirac or VC-2 encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x42424344'' (''BBCD'').
+
+Dirac streams require no [[#stream-configuration-packets).
+
+The [=packet_data=] MUST contain raw sequences,
+with one sequence being a picture.
+
+
+### ASS encapsulation ### {#ass-encapsulation}
+
+For ASS encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be 0x41535334 (`ASS4`).
+
+ASS is a popular subtitle format with great presentation capabilities.
+Although it was not designed to be streamed or packetized, doing so is possible
+with the following specifications.
+These match to how Matroska handles [[MATROSKA-ASS]] encapsulation.
+
+ASS contains 3 important sections:
+ - Script information, in <code>[Script Info]</code>
+ - Styles, in <code>[V4 Styles]</code>
+ - Events, in <code>[Events]</code>
+ - All other sections MUST be stripped.
+
+First, all data MUST be converted to UTF-8.<br/>
+
+The [[#stream-configuration-packets]] payload MUST contain
+the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string, unmodified.
+
+Events listed in ASS files MUST be modified in the following way:
+ - Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet's [=pts=], [=dts=] and [=duration=] fields, and must be ommitted from the data.
+ - All other fields MUST be stored in the [=packet_data=] field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.
+ - Comments MAY be left as-is after all the fields.
+
+The <code>ReadOrder</code> field is a monotonically incrementing field to identify the correct
+order in which to reconstruct the original ASS file.
+
+Multiple packets with the same [=pts=] are permitted.
+
+
+### DNG/TIFF encapsulation ### {#dng-tiff-encapsulation}
+
+For DNG/TIFF encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x54494646'' (''TIFF'').
+
+The [=packet_data=] must contain a raw TIFF file,
+with one packet being a single picture.
+
+
+### JPEG encapsulation ### {#jpeg-encapsulation}
+
+For JPEG and Motion JPEG, the [=codec_id=] in the
+[[#stream-registration-packets]]
+must be ''0x4a504547'' (''JPEG'').
+
+The [=packet_data=] must contain a raw JPEG file, with
+one packet being a single picture.
+
+
+### PNG encapsulation ### {#png-encapsulation}
+
+For PNG, the [=codec_id=] in the
+[[#stream-registration-packets]]
+must be ''0x504e4730'' (''PNG0'').
+
+The [=packet_data=] must contain a raw PNG file.
+No support for Animated PNG is defined, but simply not
+flagging the still picture flag (`stream_flags & 0x04`) and sending
+a single picture per frame is sufficient to animate PNG, as this is
+allowed for any codec.
+
+
+### Raw audio encapsulation ### {#raw-audio-encapsulation}
+
+For raw audio encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x52414141'' (''RAAA'').
+
+The payload in the [[#stream-configuration-packets]] must be
+laid out in the following way:
+
+<figure id="table-RawAudioConfig" class="table">
+    <table class="complex data longlastcol" dfn-for="#raw-audio-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>ra_channels</dfn></td>
+            <td></td>
+            <td>The number of channels contained.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>ra_bits</dfn></td>
+            <td></td>
+            <td>The number of bits for each sample.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>ra_float</dfn></td>
+            <td></td>
+            <td>If non-zero, data is floating-point.</td>
+        </tr>
+    </table>
+</figure>
+
+
+The [=packet_data=] MUST contain the concatenated stream of **interleaved** samples
+for all channels.
+
+The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and
+full-range *signed* if they're integers.
+
+The size of each sample MUST be [=ra_bits=], and must be aligned to the nearest
+**power of two**, with the padding in the **least significant bits**. That means
+that 24-bit samples are coded as 32-bits, with the data contained in the topmost 24 bits.
+
+
+### Raw video encapsulation ### {#raw-video-encapsulation}
+
+For raw video encapsulation, the [=codec_id=] in [[#stream-registration-packets]]
+MUST be ''0x52415656'' (''RAVV'').
+
+The payload in the [[#stream-configuration-packets]] MUST be
+laid out in the following way:
+
+<figure id="table-RawVideoConfig" class="table">
+    <table class="complex data longlastcol" dfn-for="#raw-video-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>rv_width</dfn></td>
+            <td></td>
+            <td>The number of horizontal pixels the video stream contains.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>rv_height</dfn></td>
+            <td></td>
+            <td>The number of vertical pixels the video stream contains.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>rv_components</dfn></td>
+            <td></td>
+            <td>The number of components the video stream contains.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>rv_planes</dfn></td>
+            <td></td>
+            <td>The number of planes the video components are placed in.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>rv_bpp</dfn></td>
+            <td></td>
+            <td>The number of bits for each **individual** component pixel.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>rv_hor_subsample</dfn></td>
+            <td></td>
+            <td>Horizontal subsampling factor. Indicates how many bits to shift from [=rv_width=] to get the plane height. Must be 0 if video is RGB.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>rv_ver_subsample</dfn></td>
+            <td></td>
+            <td>Vertical subsampling factor. Indicates how many bits to shift from [=rv_height=] to get the plane height. Must be 0 if video is RGB.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>rv_flags</dfn></td>
+            <td>enum {{RawVideoFlags}}</td>
+            <td>Flags for the video stream.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_planes=]*u(8)</code></td>
+            <td><dfn>rv_plane_stride</dfn></td>
+            <td></td>
+            <td>Specifies the plane index that the component belongs in.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_components=]*u(8)</code></td>
+            <td><dfn>rv_plane</dfn></td>
+            <td></td>
+            <td>Specifies the plane index that the component belongs in.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_components=]*u(8)</code></td>
+            <td><dfn>rv_stride</dfn></td>
+            <td></td>
+            <td>Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_components=]*u(8)</code></td>
+            <td><dfn>rv_offset</dfn></td>
+            <td></td>
+            <td>Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_components=]*i(8)</code></td>
+            <td><dfn>rv_shift</dfn></td>
+            <td></td>
+            <td>Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.</td>
+        </tr>
+        <tr>
+            <td><code>[=rv_components=]*u(8)</code></td>
+            <td><dfn>rv_bits</dfn></td>
+            <td></td>
+            <td>Specifies the total number of bits the component's value will contain.</td>
+        </tr>
+    </table>
+</figure>
+
+|                       |                    | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
+| `i(rv_components*32)` | `rc_range_low`     | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
+| `i(rv_components*32)` | `rc_range_high`    | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
+
+The purpose of the `rc_offset` field is to allow differentiation between
+different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will
+be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
+The components MUST be given in the order they appear in the stream.
+
+The `rv_flags` field MUST be interpreted in the following way:
+
+| Bit position set | Name                     | Description                                                                                                  |
+|-----------------:|:-------------------------|:-------------------------------------------------------------------------------------------------------------|
+|              0x1 | `RV_RGB`                 | Video is RGB                                                                                                 |
+|              0x2 | `RV_FLOAT`               | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
+|              0x4 | `RV_ALPHA`               | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
+|              0x8 | `RV_ALPHA_PREMULTIPLIED` | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
+|             0x16 | `RV_PLANAR`              |  At least one pixel component is not sharing a plane, e.g. video is *planar*.                                |
+|             0x32 | `RV_BITPACKED`           |  Video's components are packed, e.g. video is *bitpacked*.                                                   |
+|             0x64 | `RV_BIG_ENDIAN`          | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
+
+The `packet_data` field MUST contain `rv_planes`, with each plane having
+`rv_plane_stride` bytes per line. The number of horizontal lines being given by
+`rc_height` for plane number 0, and `rc_height >> rv_ver_subsample` for all other
+planes. The actual lines MUST be filled in according to `rc_offset` and `rc_stride`.
+
+`rv_flags` MUST NOT signal both `RV_ALPHA` AND `RV_ALPHA_PREMULTIPLIED`.
+Such a combination of flags is undefined.
+
+This structure is flexible enough to permit zero-copy or one-copy streaming
+of video from most sources.
+
+
+### Custom codec encapsulation ### {#custom-codec-encapsulation}
+
+A special section is dedicated for custom codec storage. While potentially useful
+for experimentation and for specialized usecases, users of such are invited to submit
+an addendum to this document to formalize such containerization. This field MUST NOT be
+used if the codec being contained already has a formal definition in this spec.
+
+For custom encapsulation, the [=codec_id=] in [[#stream-registration-packets]] must be
+''0x433f****'' (''C?**''), where the bottom 2 bytes can be any value between
+''0x30'' to ''0x39'' (<code>0</code> to <code>9</code> in ASCII) and
+''0x61'' to ''0x7a'' (<code>a</codE> to <code>z</code> in ASCII).
+
+The [[#stream-configuration-packets]] payload can be any length
+and contain any sequence of data.
+
+The [=packet_data=] field can be any length and contain any sequence of data.
+
+
+## Streaming ## {#streaming}
+
+This section describes and suggests behavior for realtime AVTransport streams.
+
+In general, implementations **SHOULD** emit the following packet types
+at the given frequencies.
+
+|                                                Packet type | Suggested frequency  | Reason                                                                                          |
+|-----------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
+|                    [Session start](#session-start-packets) | Target startup delay | To identify a stream as AVTransport without ambiguity.                                          |
+|      [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
+|        [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
+|  [Stream initialization data](#stream-initialization-data) | Target startup delay | To initialize decoding of stream packets.                                                       |
+|                   [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
+|                 [LUT/ICC profile]luticc-profile-packets | Target startup delay | Optional LUT/ICC profile for correct video presentation.                                        |
+|            [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
+|                              [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
+|                             Stream data or segment packets | Always               |                                                                                                 |
+|                         [Stream FEC](#stream-fec-segments) | FEC length           | Optional FEC data for stream data.                                                              |
+|                            [User data](#user-data-packets) | As necessary         | Optional user data packets.                                                                     |
+|                            [End of stream](#end-of-stream) | Once                 | Finalizes a stream.                                                                             |
+
+In particular, [time synchronization](#time-synchronization-packets) packets should
+be sent as often as necessary if timestamp jitter avoidance is a requirement.
+
+
+### UDP ### {#udp-streaming}
+
+To adapt AVTransport for streaming over [[RFC768|UDP]] is trivial - simply send the data packets
+as-is specified, with no changes required. The sender implementation should
+resent packets at the frequencies listed in [[#session-start-packets]]
+to permit for implementations that didn't catch on the start of the stream begin
+decoding.
+
+UDP mode is unidirectional, but the implementations are free to use the
+[[#reverse-signalling]] data if they negotiate it themselves.<br/>
+Reverse signalling should not be used if the connection is public.
+
+Implementations MUST segment the data such that the network MTU is never
+exceeded and no packet fragmentation occurs.<br/>
+The **minimum** network MTU required for the protocol is **384 bytes**,
+as to allow [[#video-information-packets]] or any future large
+packets to be sent without fragmentation.
+
+Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
+
+Data packets MAY be padded by appending random data or zeroes after the `packet_data`
+field up to the maximum MTU size. This permits constant bitrate operation,
+as well as preventing metadata leakage in the form of a packet size.
+
+If [[#reverse-signalling]] is used, the receiver must send packets over to the
+sender using the same port number that the receiver is listening on.
+
+
+### UDP-Lite ### {#udp-lite-streaming}
+
+UDP-Lite ([[RFC3828]]) should be preferred to [[RFC768|UDP]], if support for it is
+available throughout the network.<br/>
+When using UDP-Lite, the same considerations as UDP apply.
+
+As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
+coverage must be used, where only the UDP-Lite header (8 bytes) is checksummed.
+
+Implementations should insert adequate FEC information, and receivers should
+correct data with it, as packet integrity guarantees are off.
+
+If [[#reverse-signalling]] is used, same port number an method must
+be used for reverse signalling as the sender's.
+
+
+### QUIC ### {#quic-streaming}
+
+AVTransport tries to use as much of the modern conveniences of [[RFC9000/QUIC]]
+as possible. As such, it uses both reliable and unreliable streams, as well
+as bidirectionality features of the transport mechanism.
+
+All data packets with descriptors ''0x01**'', ''0xFF'', ''0xFE'', ''0xFD'' and ''0xFC''
+MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
+[[RFC9221]].
+
+All other packets must be sent over a reliable steam. FEC data for those packets
+SHOULD NOT be signalled.
+
+Implementations must segment the data such that the network MTU is never
+exceeded and no packet fragmentation occurs.
+
+The **minimum** network MTU required for the protocol is **384 bytes**,
+as to allow [[#video-information-packets]] or any future large packets to be sent
+without fragmentation.
+
+Jumbograms may be used where supported to reduce overhead and increase efficiency.
+
+[[#reverse-signalling]] is natively supported on QUIC.
+
+
+### Packetized networks ### {#packetized-network-streaming}
+
+AVTransport is a series of individual packets with no overarching data structure.
+This allows for it to be contained over any protocol or transmitted over any packetized
+network.
+
+The built-in resilience in each data structure makes the protocol suitable even over
+connections with a high bit error rate.
+
+Poor connection reliability can be largely overcome by using
+[[#fec-grouping-packets]].
+
+This specification does not specify how linking or transmission is performed - only
+that the AVTransport packets remain compliant with their definition here, and the
+stream as a whole remains compliant.
+
+
+### Serial ### {#serial-transmission}
+
+AVTransport explicitly carries the size of the contained data. This makes it suitable
+for not only packetized networks, but also serial links.
+
+Users must track the start of each AVTransport packet themselves, using the packet headers
+and, optionally, LDPC data to synchronize with the source.
+
+The specification contains no recommendation on how the data is transported. Users
+should, if necessary, use FEC and other reliability features.
+
+
+## Reverse signalling ## {#reverse-signalling}
+
+AVTransport supports bidirectional connections. Implementing this part of the
+specification is fully optional.
+
+**All** packets send back from a receiver to the transmitter MUST have bit
+''0x8000'' set in their descriptors. This means that the receiver can send back
+the same type of packets that the transmitter can, with a number of extra
+packets for control.
+
+Receivers **MUST** receive a [[#session-start-packets]] packet
+from a transmitter, with bit {{SESSION_REVERSE_SIGNAL_READY}} set in the [=session_flags=]
+bitmask before they are allowed to send packets back.
+
+
+### Control data ### {#control-data-packets}
+
+The receiver can use this type to return errors and more to the sender in a
+one-to-one transmission. The following syntax is used:
+
+| Data     | Name               | Fixed value  | Description                                                                                              |
+|:---------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
+| `b(16)`  | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
+| `b(8)`   | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
+| `b(8)`   | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
+| `u(32)`  | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
+| `b(128)` | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
+| `b(16)`  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
+| `b(8)`   | `seek`             |              | If `1`, Asks the sender to seek to the position given by `seek_pts` and/or `seek_seq`.                   |
+| `i(64)`  | `seek_pts`         |              | The PTS value to seek to, as given by [index packets](#index-packets).                                   |
+| `u(32)`  | `seek_seq`         |              | The sequence number of the packet to seek to, as given by [index packets](#index-packets).               |
+
+If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
+do not match, the sender **MUST** cease this connection, reopen a new connection
+with the given `uplink_ip`, and resend all packets needed to begin decoding
+to the new destination.
+
+The `seek` request asks the sender to begin sending old data that is still
+available. The sender MAY not comply if that data suddenly becomes unavailable.
+If the value of `seek` is equal to `0`, then the receiver MUST comply
+and always start sending the newest data.
+
+When seeking, BOTH `seek_pts` and `seek_seq` MUST be valid, and MUST have come
+from an index packet.
+
+If the `resent_init` flag is set to a non-zero value, senders SHOULD flush all encoders
+such that the receiver can begin decoding as soon as possible.
+
+If operating over QUIC, then any old data **MUST** be served
+over a *reliable* stream, as latency isn't critical. If the receiver asks again
+for the newsest available data, that data's payload is once again sent over an
+*unreliable* stream.
+
+The following error values are allowed:
+| Value | Description                                                                                                                                                                                                                                                                                                   |
+|------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|   0x1 | Generic error.                                                                                                                                                                                                                                                                                                |
+|   0x2 | Unsupported data. May be sent after the sender sends a [stream registration packet](#stream-registration-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
+
+
+### Feedback ### {#feedback-packets}
+
+The following packet MAY be sent from the receiver to the sender.
+
+| Data    | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
+|:--------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `b(16)` | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
+| `b(16)` | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be `0xFFFF` to indicate all streams.                                                                                                                                              |
+| `b(64)` | `epoch_offset`     |              | Time since `epoch`. MAY be 0. Can be used to estimate the latency.                                                                                                                                                                                  |
+| `b(64)` | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
+| `u(32)` | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
+| `u(32)` | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
+| `u(32)` | `dropped_packets`  |              | Indicates the total number of dropped packets.                                                                                                                                                                                                      |
+
+Receivers SHOULD send out a new statistics packet every time a count was updated.
+Additionally, receivers SHOULD send new feedback packets often enough to prevent
+UDP NAT from timing out.
+
+If the descriptor of the dropped packed is known, receivers SHOULD set it
+in `dropped_type`, and senders SHOULD resend it as soon as possible.
+
+
+### Resend ### {#resend-packets}
+
+The following packet MAY be sent to ask the client to resend a recent packet
+that was likely dropped.
+
+| Data    | Name                | Fixed value  | Description                                                           |
+|:--------|:--------------------|-------------:|:----------------------------------------------------------------------|
+| `b(16)` | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
+| `b(16)` | `reserved`          |              | Reserved for future use.                                              |
+| `u(32)` | `global_seq`        |              | The sequence number of the packet that is missing.                    |
+
+
+### Stream control ### {#stream-control-packets}
+
+The receiver can use this type to subscribe or unsubscribe from streams.
+
+| Data    | Name               | Fixed value  | Description                                                                      |
+|:--------|:-------------------|-------------:|:---------------------------------------------------------------------------------|
+| `b(16)` | `strm_descriptor`  |       0x8004 | Indicates this is a stream control data packet.                                  |
+| `b(16)` | `stream_id`        |              | The stream ID for which this packet applies to. MUST NOT be `0xFFFF`.            |
+| `b(8)`  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
+
+This can be used to save bandwidth. If previously `disabled` and then `enabled`,
+all packets necessary to initialize the stream MUST be resent.
+
+## Informative muxer behaviour ## {#informative-muxer-behaviour}
+
+This annex covers recommended practices for muxers, particularly with regards to avoiding stream starvation.
+
+
+## Informative demuxer behaviour ## {#informative-demuxer-behaviour}
+
+This annex covers recommended practices for demuxers, mainly with packet lifetime,
+buffering, and reordering.
+
+
+# Annex # {#annex}
+
+Additional data or recommendations for the AVTransport specification is listed here.
+
+## Annex A: LDPC ## {#annex-c-ldpc}
+
+This normative annex shall cover the usage and operation of [[LDPC]] within AVTransport.
+
+The LDPC variant to be used is **irregular** (each row of each matrix has a non-constant
+amount of bits set to 1), systematic (parity data is separate from message data), with no subblocks.
+The full block, along with the check data, shall be sent to an LDPC decoder.
+
+To ease implementations, only two different lengths are used:
+ - <dfn>LDPC(288, 224)</dfn>
+     :: 224-bit message, 64-bit parity, rate of <code>2/9</code>, [[#ldpc_h_matrix_288_224|H₆₄ₓ₂₈₈-matrix]]
+ - <dfn>LDPC(2784, 2016)</dfn>
+     :: 2016-bit message, 768-bit parity, rate of <code>8/29</code>, [[#ldpc_h_matrix_2784_2016|H₇₆₈ₓ₂₇₈₄-matrix]]
+
+For reference, the following code MAY be used to compute the LDPC parity data:
+
+<code line-numbers highlight="c">
+To be done
+</code>
+
+
+### LDPC H-matrices ### {#ldpc-h-matrices}
+
+The following **H** matrices below shall be used for encoding (via the pseudocode above) and decoding.
+Implementations are free to convert them to G matrices and use conventional encoding methods.
+The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
+
+As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:
+ - 64x288
+ - 768x2784
+
+As each value of a matrix is purely boolean, **64 rows are represented as 64-bit unsigned integers**,
+in big endian format, hence row 1 is the most significant bit, row 2 is the second most significant bit,
+and so on. In other words, **GF(2⁶)**. This is the format that the reference function above expects.
+
+
+#### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224}
+
+<code line-numbers highlight="c">
+To be optimized
+</code>
+
+
+#### ldpc_h_matrix_2784_2016 #### {#ldpc_h_matrix_2784_2016}
+
+<code line-numbers highlight="c">
+To be optimized
+</code>
