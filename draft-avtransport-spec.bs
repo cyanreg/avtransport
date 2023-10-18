@@ -4,10 +4,13 @@ Editor: Lynne, dev@lynne.ee
 Repository: cyanreg/avtransport
 Shortname: avtransport
 URL: https://cyanreg.github.io/avtransport/
+Repository: https://github.com/cyanreg/avtransport
+Inline Github Issues: no
 Date: 2023-10-18
 Status: LD
 Group: FFmpeg
 Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
+Markup Shorthands: http no, markup no
 </pre>
 
 
@@ -82,7 +85,7 @@ On a high-level, AVTransport is a packetized wrapper around codec, metadata and
 user packets and provides context and error resilience, as well as defining a
 standardized way to transmit such data between clients.
 
-AVTransport is based on **packets**.
+AVTransport is based on <b>packets</b>.
 
 As a simple example, a possible structure of packets in a general AVTransport session could be:
 
@@ -236,8 +239,8 @@ will require a version bump of the protocol.
 
 ## Specification conventions ## {#specification-conventions}
 
-Throughout all of this document, bit sequences are always **big-endian**, and numbers
-are always **two's complement**.
+Throughout all of this document, bit sequences are always <b>big-endian</b>, and numbers
+are always <b>two's complement</b>.
 
 A special notation is used to describe sequences of bits:
  - <code>u(N)</code> : specifies the data that follows is an unsigned integer of ''N'' bits.
@@ -251,7 +254,7 @@ All packets are at least 36 bytes long (288 bits), and always have an 8 byte
 Identification of the packet is always possible via the first two bytes
 (the [=descriptor=]).
 
-All floating point samples and pixels are always **normalized** to fit within the
+All floating point samples and pixels are always <b>normalized</b> to fit within the
 interval <code>[-1.0, 1.0]</code>.
 
 Padding may be present in some packets (<dfn>padding</dfn>). Unless otherwise indicated,
@@ -283,7 +286,7 @@ Senders MUST implement it.
 
 ## Global sequence ## {#global-sequence}
 
-The <dfn>global_seq</dfn> is a **32-bit unsigned integer**, incremented by ''1'' each time
+The <dfn>global_seq</dfn> is a <b>32-bit unsigned integer</b>, incremented by ''1'' each time
 after a packet has been sent. Once at ''0xffffffff'', it MUST overflow back to ''0x0''.
 This overflow MUST be handled by the receiver.
 
@@ -292,7 +295,7 @@ Note: [=global_seq=] should start at ''0x0'', but receivers MUST be prepared for
 
 ## Stream ID ## {#stream-id}
 
-<dfn>stream_id</dfn> is a **16-bit unsigned integer**, uniquely identifying each stream
+<dfn>stream_id</dfn> is a <b>16-bit unsigned integer</b>, uniquely identifying each stream
 contained within an [TITLE] stream.
 
 Note: senders should never reuse [=stream_id=] indices, but receivers should be prepared
@@ -302,14 +305,14 @@ to deal with this scenario.
 ## Timestamps ## {#timestamps}
 
 AVTransport supports high resolution timestamps, with a maximum resolution of
-465.66129 **picoseconds**. Furthermore, the reliability of the timestamps
+465.66129 <b>picoseconds</b>. Furthermore, the reliability of the timestamps
 can be assured through optional [[#jitter-compensation]].
 
-**All** time-related fields ([=pts=], [=dts=], [=duration=], and [=skip_preroll=])
+<b>All</b> time-related fields ([=pts=], [=dts=], [=duration=], and [=skip_preroll=])
 have a corresponding [=timebase=] field with which to interpret them.
 
 The mathematical expression to calculate the time <code>t</code>, in seconds, of a timestamp
-or duration <code>v</code> and a *rational* timebase <code>b</code> is the following:
+or duration <code>v</code> and a <i>rational</i> timebase <code>b</code> is the following:
 
 <code>t = v * b.num / b.den</code>
 
@@ -328,8 +331,8 @@ input into a synchronous 1-in-1-out decoder. The [=dts=] field is defined as par
 of the payload when necessary ([[#codec-encapsulation]]).
 
 The time <code>t</code> of a <dfn>duration</dfn> field corresponds to the exact time difference between
-two **consecutive** frames of audio or video. If the field is non-zero, this assertion
-MUST hold. If this condition is violated, the behavior is **unspecified**.
+two <b>consecutive</b> frames of audio or video. If the field is non-zero, this assertion
+MUST hold. If this condition is violated, the behavior is <b>unspecified</b>.
 
 For subtitle frames, the [=duration=] field's definition is different. It specifies the
 time during which the contents of the current packet must be presented. It may not
@@ -354,13 +357,13 @@ streams with the same timebase, which must be equal to the inverse of [=ts_clock
 Jitter compensation is otherwise undefined.
 
 As the [=ts_clock_freq=] field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=],
-which atomically increments a counter, [=ts_clock_seq=] on the **rising** edge of the waveform, this
+which atomically increments a counter, [=ts_clock_seq=] on the <b>rising</b> edge of the waveform, this
 can be used to compensate the [=pts=], [=dts=] and [=duration=] values of stream packets.
 
 The following is a suggestion for implementations:
  - Initialize a phase-locked loop, with a frequency equal to [=ts_clock_freq=].
  - Initialize a counter, ''local_ts_clock_seq'', to be equal to [=ts_clock_seq=].
- - Increment the ''local_ts_clock_seq'' on the **rising** edge of the local oscillator's waveform.
+ - Increment the ''local_ts_clock_seq'' on the <b>rising</b> edge of the local oscillator's waveform.
 
 On every received packet:
  - Measure the difference ''Δ'' between [=pts=] and ''local_ts_clock_seq''.
@@ -397,7 +400,7 @@ is an optional field.
 
 If non-zero, it MUST signal the exact time, in nanoseconds, since
 00:00:00 UTC on 1 January 1970, according to the transmitter's wall clock time,
-**of the stream starting**. If a start time is not known, it MUST be zero.
+<b>of the stream starting</b>. If a start time is not known, it MUST be zero.
 Once a stream has started, it MUST NOT be changed.
 
 The user is allowed to handle the field in the following ways:
@@ -440,7 +443,7 @@ it from the [=epoch=] time (<code>''t'' - [=epoch=]</code>).
 Users are also free to measure the latency in a similar way, by measuring their current wallclock time
 ''t''`, and using <code>Δ = t' - t - epoch</code>. ''Δ'' will be the delay in nanoseconds.
 
-Finally, if **explicitly requested**, implementations are allowed to *delay* presentation by interpreting
+Finally, if <b>explicitly requested</b>, implementations are allowed to <i>delay</i> presentation by interpreting
 a negative latency value of ''Δ'' as a delay.
 
 Note: packets which had a negative timestamp before must still be dropped to permit for correct decoding
@@ -620,7 +623,7 @@ The <dfn>ts_clock_freq</dfn> field is equal to `ts_clock_freq = [=ts_clock_hz=] 
 Implementations should prefer to use integer math, and instead have the [=ts_clock_freq=] in increments of 1/65536 Hz.
 
 The field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=], which atomically increments a counter,
-[=ts_clock_seq=] on the **rising** edge of the waveform.
+[=ts_clock_seq=] on the <b>rising</b> edge of the waveform.
 
 To interpret the clock, read the [[#jitter-compensation]] section. Senders should send time synchronization
 packets as often as necessary to prevent clock drift and jitter.
@@ -628,7 +631,7 @@ packets as often as necessary to prevent clock drift and jitter.
 In case of a zero [=ts_clock_hz=], the sender must be assumed to not provide a clock signal reference, and the timestamps
 MUST be interpreted as being, in the receiver's understanding, realtime.
 
-The [=epoch=] is a global, *optional* field that receivers may interpret.<br/>
+The [=epoch=] is a global, <i>optional</i> field that receivers may interpret.<br/>
 The [=epoch=] value must not change between packets.<br/>
 The [=epoch=] is an absolute starting point, for all timestamps in
 all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 ([[UNIX-time]]).
@@ -748,7 +751,7 @@ and the [=stream_flags=] fields may change, however the [=codec_id=], [=timebase
 AND [=related_stream_id=] fields must remain the same. If the latter are to change
 an [[#end-of-stream-packets]] packet must be sent first.
 
-The [=skip_preroll=] field is a duration **in timebase units** to signal how much to skip
+The [=skip_preroll=] field is a duration <b>in timebase units</b> to signal how much to skip
 after reinitializing or seeking. The duration of negative timestamps at the start of streams
 must be at least as long as the [=skip_preroll=].
 
@@ -841,7 +844,7 @@ in the following manner:
       :: Stream contains temporally sparse thumbnails to the stream signalled in [=related_stream_id=].
 </div>
 
-Several streams can be **chained** with the {{SESSION_LOW_QUALITY}} bit set to indicate
+Several streams can be <b>chained</b> with the {{SESSION_LOW_QUALITY}} bit set to indicate
 progressively lower quality/bitrate versions of the same stream. The very first
 stream in the chain MUST NOT have bit {{SESSION_LOW_QUALITY}} set.
 
@@ -851,7 +854,7 @@ but could be sparser or more frequent.
 If bits {{STREAM_COVER_ART}}, {{STREAM_DUB}}, {{STREAM_COMMENTARY}}, {{STREAM_LYRICS}},
 {{STREAM_KARAOKE}}, {{STREAM_HEARING_IMPAIRED}} are all unset, then
 [=related_stream_id=] must match [=stream_id=], otherwise the stream with a
-related *different* ID must exist.
+related <i>different</i> ID must exist.
 
 
 ## Generic data ## {#generic-data-packets}
@@ -859,7 +862,7 @@ related *different* ID must exist.
 To ease parsing, the specification defines a common template for data that
 requires no special treatment, but only differs by [=descriptor=].
 
-This way, *any* generic data can share a common code path, have parity data and be a part
+This way, <i>any</i> generic data can share a common code path, have parity data and be a part
 of an [[#fec-grouping-packets]] packet.
 
 The following template shall be used for generic data packets:
@@ -1080,7 +1083,7 @@ the following [[#generic-data-packets]] structure is to be used:
 
 The data in an parity packet MUST be systematic RaptorQ, as per [[RFC6330]].<br/>
 Common FEC Object Transmission Information (OTI) format and Scheme-Specific FEC
-Object Transmission Information as described in the document are *never* used.
+Object Transmission Information as described in the document are <i>never</i> used.
 
 The symbol size MUST be 32-bits.
 
@@ -1164,7 +1167,7 @@ more [[#stream-data-segment-packets]]. It is laid out as follows:
                  - Bits 15-8: MUST be set to ''0x01''
                  - Bits 5-7: MUST be interpreted as <dfn>frame_type</dfn>, using the [[#enum-FrameType]] definition.
                  - Bit 4: Indicates packet is incomplete and extra [[#stream-data-segment-packets]] packets are required.
-                 - Bit 3: Indicates packet is part of an [[#fec-grouping-packets]] and **MUST** be retained.
+                 - Bit 3: Indicates packet is part of an [[#fec-grouping-packets]] and must be retained.
                  - Bit 2: If [=interlaced=] is equal to {{ILACE_TFF}} or {{ILACE_BFF}}, this is the <dfn>field_id</dfn> bit. Otherwise, this field is free to use by users.
                  - Bit 1-0: MUST be interpreted as <dfn>data_compression</dfn>, using the [[#enum-DataCompression]] definition.
             </td>
@@ -1226,7 +1229,7 @@ the [[#codec-encapsulation]] addenda.
     : <dfn>FRAME_TYPE_S</dfn> = 0x1
       :: Packet data contains a scalable/switch frame, able to be decoded standalone with acceptable degradation.
     : <dfn>FRAME_TYPE_P</dfn> = 0x2
-      :: Packet data contains an **inter** frame, requiring additional reference frames in order to be validly decoded.
+      :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
 </div>
 
 
@@ -1387,11 +1390,12 @@ FEC grouped streams MUST be registered first via a special packet:
     </table>
 </figure>
 
-It is **hightly recommended** that the common OTI parameters never change once transmitted. This lets implementations attempt to apply FEC if they miss a `fec_group_descriptor` packet.
+It is hightly recommended that the common OTI parameters never change once transmitted.
+This lets implementations attempt to apply FEC if they miss a [[#fec-grouping-packets]] packet.
 
 The `fec_scheme_oti` field MUST be interpreted as the following, given in [RFC 6330 Section 3.2.3. Common](https://datatracker.ietf.org/doc/html/rfc6330#section-3.3.3):
 
-All streams in an FEC group **MUST** have timestamps that cover the same period
+All streams in an FEC group must have timestamps that cover the same period
 of time.
 
 A stream may only be part of a single FEC group at any one time. Sending
@@ -1519,7 +1523,7 @@ The `fec_source` data is defined as follows:
 </figure>
 
 Each [[#struct-FECSource]] structure MUST reference a valid packet, in transmission order.
-If there are no more valid packets to reference, the sender **MUST** start repeating from the very first FEC source.
+If there are no more valid packets to reference, the sender must start repeating from the very first FEC source.
 
 To perform FEC, first, concatenate the payload of each packet referenced into each source block,
 in order of the source symbol ID.
@@ -1528,7 +1532,7 @@ Then, perform the procedure to apply FEC as described by [[RFC6330#section-4.4.1
 
 ## Stream data parity ## {#stream-data-parity-packets}
 
-Stream data packets and segments may **individually** be backed by data packets.
+Stream data packets and segments may individually be backed by data packets.
 The structure used for segments follows the [[#generic-data-parity-packets]] template
 from the [[#generic-data-packets]] section, with the following descriptor:
 
@@ -1597,7 +1601,7 @@ or metadata changes, and the distance to the next index packet.
         </tr>
         <tr>
             <td><code>u(32)</code></td>
-            <td><dfn>next_index</dfn></td>
+            <td><dfn>next_idx</dfn></td>
             <td></td>
             <td>Positive offset of the next index packet, if any, in bytes, relative to the current position. May be inexact, specifying the minimum distance to one. Users may search for it.</td>
         </tr>
@@ -1657,18 +1661,18 @@ reconfiguration packets, or metadata changes. No future index packets must be si
 or sent, until all the packets needed to correctly reinitialize streams have been sent.
 The exception to this is if a newer reinitialization has begun.
 
-If valid, [=prev_idx=], [=next_idx=] and [=pkt_pos=] offsets must point to the start of
+If valid, [=prev_idx=], [=next_idx=] and [=pkt_offset=] offsets must point to the start of
 a packet. In other words, the byte pointed to by the offsets must contain the
 first, most significant byte of the descriptor of the pointed packet.
 
-If [=stream_id=] is ''0xFFFF'', the timebase used for [=idx_pts=] must be assumed to be
-**1 nanosecond**, numerator of ''1'', denominator of ''1000000000''.
+If [=stream_id=] is ''0xFFFF'', the timebase used for [=pts=] must be assumed to be
+<b>1 nanosecond</b>, numerator of ''1'', denominator of ''1000000000''.
 
-If a packet starts before the value of [=pkt_pts=] but has a duration that
+If a packet starts before the value of [=pts=] but has a duration that
 matches or exceeds the PTS, then it must be included. This is to permit
 correct subtitle presentation, or long duration still pictures like slideshows.
 
-When streaming, [=idx_pos=], [=prev_idx=] and [=next_idx=] must be ''0''.
+When streaming, [=prev_idx=] and [=next_idx=] must be ''0''.
 
 
 ## Metadata ## {#metadata-packets}
@@ -1764,7 +1768,7 @@ metadata must not overwrite each other.
 
 Metadata can be updated by sending new metadata packets with new values.
 
-The {{language}} field must be formatted as a **subtag**, according to the [[bcp47]].
+The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
 
 The {{language_tag}} field must be formatted as described in [[RFC5646#section-2.1]].
 It provides more detailed information than the {{language}} field,
@@ -2116,7 +2120,7 @@ stream after decoding.
         </tr>
         <tr>
             <td><code>u(8)</code></td>
-            <td><dfn>colorspace_type</dfn></td>
+            <td><dfn>colorspace</dfn></td>
             <td>enum {{Colorspace}}</td>
             <td>Indicates the kind of colorspace the video is in.</td>
         </tr>
@@ -2274,9 +2278,9 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>CSP_YUV</dfn> = 0x2
       :: Video contains a form of YUV (YCbCr).
     : <dfn>CSP_YCOCGR</dfn> = 0x3
-      :: Video contains a **reversible** form of YCoCg, as defined by [[H.273]], equations 47-50.
+      :: Video contains a <b>reversible</b> form of YCoCg, as defined by [[H.273]], equations 47-50.
     : <dfn>CSP_YCGCOR</dfn> = 0x4
-      :: Video contains a **reversible** form of YCgCo (same as above, with swapped chroma planes).
+      :: Video contains a <b>reversible</b> form of YCgCo (same as above, with swapped chroma planes).
     : <dfn>CSP_XYZ</dfn> = 0x5
       :: Video contains [[CIE1931]] XYZ color data.
     : <dfn>CSP_XYB</dfn> = 0x6
@@ -2295,10 +2299,10 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>COLOR_RANGE_LIMITED</dfn> = 0x1
       :: Video sample values contains the limited range of the [=bit_depth=].
 
-          Note: this describes the *cannonical* limited range representation:
+          Note: this describes the <i>cannonical</i> limited range representation:
                <code>(219 * E + 16) * 2<sup>([=bit_depth=]-8)</sup></code>,
-               where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for *luma* planes and
-               ''-0.5'' to ''0.5'' for *chroma* planes. This means, for 8-bits, the luma
+               where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for <i>luma</i> planes and
+               ''-0.5'' to ''0.5'' for <i>chroma</i> planes. This means, for 8-bits, the luma
                range is 16-235 and the chroma range is 16-240.
 </div>
 
@@ -2321,16 +2325,16 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>ILACE_PROG</dfn> = 0x0
       :: Video contains progressive data, or interlacing does not apply.
     : <dfn>ILACE_TFF</dfn> = 0x1
-      :: Video is interlaced. One [[#stream-data-packets]] packet per *field*. If the data packet's [=field_id=] bit is **unset**, indicates the field contained is the **top** field, otherwise it's the *bottom* field.
+      :: Video is interlaced. One [[#stream-data-packets]] packet per <i>field</i>. If the data packet's [=field_id=] bit is <b>unset</b>, indicates the field contained is the <b>top</b> field, otherwise it's the <i>bottom</i> field.
     : <dfn>ILACE_BFF</dfn> = 0x2
-      :: Same as above, with reversed polarity, such that packets with [=field_id=] bit **set** contain the **top** field, otherwise it's the bottom.
+      :: Same as above, with reversed polarity, such that packets with [=field_id=] bit <b>set</b> contain the <b>top</b> field, otherwise it's the <i>bottom</i>.
     : <dfn>ILACE_TW</dfn> = 0x3
-      :: Video is interlaced. The [[#stream-data-packets]] packet contains **both** fields, weaved together, with the **top** field being on every even line.
+      :: Video is interlaced. The [[#stream-data-packets]] packet contains <b>both</b> fields, weaved together, with the <b>top</b> field being on every even line.
     : <dfn>ILACE_BW</dfn> = 0x4
-      :: Same as above, but with reversed polarity, such that the **bottom** field is encountered first.
+      :: Same as above, but with reversed polarity, such that the <b>bottom</b> field is encountered first.
 </div>
 
-The [=ILACE_TFF=] and [=ILACE_TW=], as well as the [=ILACE_BFF=] and [=ILACE_BW=] values
+The {{ILACE_TFF}} and {{ILACE_TW}}, as well as the {{ILACE_BFF}} and {{ILACE_BW}} values
 may be interchanged if it's possible to output one or the other, depending on
 the setting used, if the codec supports this.
 
@@ -2375,21 +2379,21 @@ To illustrate:
         </tr>
         <tr>
             <td>1</td>
-            <td style="text-align: right;">''Luma pixel''    **{{CHROMA_POS_TOPLEFT|0x3}}**</td>
-            <td style="text-align: right;">                  **{{CHROMA_POS_TOP|0x4}}**    </td>
-            <td style="text-align: right;">''Luma pixel''                                  </td>
+            <td style="text-align: right;">''Luma pixel''    <b>{{CHROMA_POS_TOPLEFT|0x3}}</b></td>
+            <td style="text-align: right;">                  <b>{{CHROMA_POS_TOP|0x4}}</b>    </td>
+            <td style="text-align: right;">''Luma pixel''                                     </td>
         </tr>
         <tr>
             <td>Between lines</td>
-            <td style="text-align: right;">                     **{{CHROMA_POS_LEFT|0x1}}**</td>
-            <td style="text-align: right;">                   **{{CHROMA_POS_CENTER|0x2}}**</td>
-            <td style="text-align: right;">                                                </td>
+            <td style="text-align: right;">                     <b>{{CHROMA_POS_LEFT|0x1}}</b></td>
+            <td style="text-align: right;">                   <b>{{CHROMA_POS_CENTER|0x2}}</b></td>
+            <td style="text-align: right;">                                                   </td>
         </tr>
         <tr>
             <td>2</td>
-            <td style="text-align: right;">''Luma pixel'' **{{CHROMA_POS_BOTTOMLEFT|0x5}}**</td>
-            <td style="text-align: right;">                   **{{CHROMA_POS_BOTTOM|0x6}}**</td>
-            <td style="text-align: right;">''Luma pixel''                                  </td>
+            <td style="text-align: right;">''Luma pixel'' <b>{{CHROMA_POS_BOTTOMLEFT|0x5}}</b></td>
+            <td style="text-align: right;">                   <b>{{CHROMA_POS_BOTTOM|0x6}}</b></td>
+            <td style="text-align: right;">''Luma pixel''                                     </td>
         </tr>
     </table>
 </figure>
@@ -2625,8 +2629,8 @@ at the start of files to notify implementations of stream lengths.
     </table>
 </figure>
 
-If [=stream_id=] is ''0xFFFF'', the timebase used for [=idx_pts=] must be assumed to be
-**1 nanosecond**, numerator of ''1'', denominator of ''1000000000''.
+If [=stream_id=] is ''0xFFFF'', the timebase used for [=total_duration=] must be assumed to be
+<b>1 nanosecond</b>, numerator of ''1'', denominator of ''1000000000''.
 
 If the value of [=total_duration=] is 0, the entire packet must be ignored.
 In such cases, implementations are free to attempt to measure stream duration
@@ -2857,7 +2861,7 @@ The [[#stream-configuration-packets]] payload must be the
 codec's so-called ''uncompressed header''. For information on its syntax,
 consult the specifications, section ''6.2 Uncompressed header syntax''.
 
-The [=packet_data=] MUST contain raw **superframe** packets, as defined in ''Annex B'' of the
+The [=packet_data=] must contain raw <b>superframe</b> packets, as defined in ''Annex B'' of the
 VP9 specifications.
 
 
@@ -2867,11 +2871,11 @@ For H264 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x48323634'' (''H264'').
 
-The [=packet_data=] MUST contain the following elements, in order:
+The [=packet_data=] must contain the following elements, in order:
  - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
  - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
 
-A [[#stream-configuration-packets]] MAY be sent, to
+A [[#stream-configuration-packets]] may be sent, to
 speed up stream initialization. If they are present, they MUST contain an
 `AVCDecoderConfigurationRecord` structure, as defined in ''ISO/IEC 14496-15''.
 
@@ -2880,15 +2884,15 @@ speed up stream initialization. If they are present, they MUST contain an
 
 For H265 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
-MUST be ''0x48323635'' (''H265'').
+must be ''0x48323635'' (''H265'').
 
-The [=packet_data=] MUST contain the following elements, in order:
+The [=packet_data=] must contain the following elements, in order:
  - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
  - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
 
-''Annex-B'' formatted packets MUST be used, with startcode emulation bits included.
+''Annex-B'' formatted packets must be used, with startcode emulation bits included.
 
-A [[#stream-configuration-packets]] MAY be sent, to
+A [[#stream-configuration-packets]] may be sent, to
 speed up stream initialization. If they are present, they MUST contain an
 ''HEVCDecoderConfigurationRecord'' structure, as defined in ''ISO/IEC 23008''.
 
@@ -3010,14 +3014,14 @@ laid out in the following way:
 </figure>
 
 
-The [=packet_data=] MUST contain the concatenated stream of **interleaved** samples
+The [=packet_data=] must contain the concatenated stream of <b>interleaved</b> samples
 for all channels.
 
-The samples MUST be **normalized** between **[-1.0, 1.0]** if they're float, and
-full-range *signed* if they're integers.
+The samples must be <b>normalized</b> between <b>[-1.0, 1.0]</b> if they're float, and
+full-range <i>signed</i> if they're integers.
 
-The size of each sample MUST be [=ra_bits=], and must be aligned to the nearest
-**power of two**, with the padding in the **least significant bits**. That means
+The size of each sample must be [=ra_bits=], and must be aligned to the nearest
+<b>power of two</b>, with the padding in the <b>least significant bits</b>. That means
 that 24-bit samples are coded as 32-bits, with the data contained in the topmost 24 bits.
 
 
@@ -3065,7 +3069,7 @@ laid out in the following way:
             <td><code>u(8)</code></td>
             <td><dfn>rv_bpp</dfn></td>
             <td></td>
-            <td>The number of bits for each **individual** component pixel.</td>
+            <td>The number of bits for each <b>individual</b> component pixel.</td>
         </tr>
         <tr>
             <td><code>u(8)</code></td>
@@ -3086,71 +3090,75 @@ laid out in the following way:
             <td>Flags for the video stream.</td>
         </tr>
         <tr>
-            <td><code>[=rv_planes=]*u(8)</code></td>
+            <td><code>[=rv_planes=]*u(32)</code></td>
             <td><dfn>rv_plane_stride</dfn></td>
             <td></td>
-            <td>Specifies the plane index that the component belongs in.</td>
+            <td>For each plane, the total number of bytes <b>per horizontal line</b>, including any padding.</td>
         </tr>
         <tr>
             <td><code>[=rv_components=]*u(8)</code></td>
-            <td><dfn>rv_plane</dfn></td>
+            <td><dfn>rc_plane</dfn></td>
             <td></td>
-            <td>Specifies the plane index that the component belongs in.</td>
+            <td>Specifies the plane index that each component belongs in.</td>
         </tr>
         <tr>
             <td><code>[=rv_components=]*u(8)</code></td>
-            <td><dfn>rv_stride</dfn></td>
+            <td><dfn>rc_stride</dfn></td>
             <td></td>
-            <td>Specifies the distance between 2 horizontally consequtive pixels of this component, in bits for bitpacked video, otherwise bytes.</td>
+            <td>Specifies the distance between 2 horizontally consequtive pixels for each component, in bits for bitpacked video, otherwise bytes.</td>
         </tr>
         <tr>
             <td><code>[=rv_components=]*u(8)</code></td>
-            <td><dfn>rv_offset</dfn></td>
+            <td><dfn>rc_offset</dfn></td>
             <td></td>
-            <td>Specifies the number of elements before the component, in bits for bitpacked video, otherwise bytes.</td>
+            <td>Specifies the number of elements before each component, in bits for bitpacked video, otherwise bytes.</td>
         </tr>
         <tr>
             <td><code>[=rv_components=]*i(8)</code></td>
-            <td><dfn>rv_shift</dfn></td>
+            <td><dfn>rc_shift</dfn></td>
             <td></td>
             <td>Specifies the number of bits to shift right (if negative) or shift left (is positive) to get the final value.</td>
         </tr>
         <tr>
             <td><code>[=rv_components=]*u(8)</code></td>
-            <td><dfn>rv_bits</dfn></td>
+            <td><dfn>rc_bits</dfn></td>
             <td></td>
             <td>Specifies the total number of bits the component's value will contain.</td>
         </tr>
     </table>
 </figure>
 
-|                       |                    | Additionally, if `rv_flags & 0x2` is *UNSET*, e.g. video doesn't contain floats, the following additional fields **MUST** be present.   |
-| `i(rv_components*32)` | `rc_range_low`     | Specifies the lowest possible value for the component. MUST be less than `rc_range_high`.                                               |
-| `i(rv_components*32)` | `rc_range_high`    | Specifies the highest posssible value for the component. MUST be less than or equal to `(1 << rc_bits) - 1`.                            |
-
-The purpose of the `rc_offset` field is to allow differentiation between
-different orderings of pixels in an RGB video, e.g. `rgb`'s `rc_offset`s will
-be `[0, 1, 2]`, whilst `bgr`'s will be `[2, 1, 0]`.
+The purpose of the [=rc_offset=] field is to allow differentiation between
+different orderings of pixels in an RGB video, e.g. ''RGB'''s `rc_offset`s will
+be <code>[0, 1, 2]</code>, whilst ''BGR'''s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.
 
-The `rv_flags` field MUST be interpreted in the following way:
+The [=packet_data=] field MUST contain [=rv_planes=], with each plane having
+[=rv_plane_stride=] bytes per line. The number of horizontal lines being given by
+[=rv_height=] for plane number ''0'', and <code>[=rv_height=] >> [=rv_ver_subsample=]</code>
+for all other planes. The actual lines must be filled in according to [=rc_offset=] and [=rc_stride=].
 
-| Bit position set | Name                     | Description                                                                                                  |
-|-----------------:|:-------------------------|:-------------------------------------------------------------------------------------------------------------|
-|              0x1 | `RV_RGB`                 | Video is RGB                                                                                                 |
-|              0x2 | `RV_FLOAT`               | Video contains IEEE-754 **normalized** floating point values. Precision is determined by the `rv_bpp` value. |
-|              0x4 | `RV_ALPHA`               | Video contains a straight, non-premultiplied alpha channel. Alpha is always the last component.              |
-|              0x8 | `RV_ALPHA_PREMULTIPLIED` | Video contains a premultiplied alpha channel. Alpha is always the last component.                            |
-|             0x16 | `RV_PLANAR`              |  At least one pixel component is not sharing a plane, e.g. video is *planar*.                                |
-|             0x32 | `RV_BITPACKED`           |  Video's components are packed, e.g. video is *bitpacked*.                                                   |
-|             0x64 | `RV_BIG_ENDIAN`          | Video's values are **big-endian**. If unset, values are *little-endian*.                                     |
 
-The `packet_data` field MUST contain `rv_planes`, with each plane having
-`rv_plane_stride` bytes per line. The number of horizontal lines being given by
-`rc_height` for plane number 0, and `rc_height >> rv_ver_subsample` for all other
-planes. The actual lines MUST be filled in according to `rc_offset` and `rc_stride`.
+## Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ## {#enum-RawVideoFlags}
 
-`rv_flags` MUST NOT signal both `RV_ALPHA` AND `RV_ALPHA_PREMULTIPLIED`.
+The [=rv_flags=] field must be interpreted in the following way:
+
+<div dfn-type="enum-value" dfn-for="#enum-RawVideoFlags">
+    : <dfn>RAW_VIDEO_FLOAT</dfn> = 0x1
+      :: Video contains [[IEEE-754]] <b>normalized</b> floating point values. Size is determined by the [=rv_bpp=] value.
+    : <dfn>RAW_VIDEO_ALPHA</dfn> = 0x2
+      :: Video contains a stright, non-premultiplied alpha. Alpha is always the last component.
+    : <dfn>RAW_VIDEO_ALPHA_PREMULTIPLIED</dfn> = 0x4
+      :: Video contains a premultiplied alpha channel. Alpha is always the last component.
+    : <dfn>RAW_VIDEO_PLANAR</dfn> = 0x8
+      :: At least one pixel component is not sharing a plane, e.g. video is <i>planar</i>.
+    : <dfn>RAW_VIDEO_BITPACKED</dfn> = 0x10
+      :: Video's components are tightly packed, e.g. video is <i>bitpacked</i>.
+    : <dfn>RAW_VIDEO_BIG_ENDIAN</dfn> = 0x20
+      :: Video's values are <b>big-endian</b>. If unset, values are <i>little-endian</i>.
+</div>
+
+Note: [=rv_flags=] must not signal both {{RAW_VIDEO_ALPHA}} and {{RAW_VIDEO_ALPHA_PREMULTIPLIED}}.
 Such a combination of flags is undefined.
 
 This structure is flexible enough to permit zero-copy or one-copy streaming
@@ -3179,25 +3187,80 @@ The [=packet_data=] field can be any length and contain any sequence of data.
 
 This section describes and suggests behavior for realtime AVTransport streams.
 
-In general, implementations **SHOULD** emit the following packet types
+In general, implementations should emit the following packet types
 at the given frequencies.
 
-|                                                Packet type | Suggested frequency  | Reason                                                                                          |
-|-----------------------------------------------------------:|:---------------------|:------------------------------------------------------------------------------------------------|
-|                    [Session start](#session-start-packets) | Target startup delay | To identify a stream as AVTransport without ambiguity.                                          |
-|      [Time synchronization](#time-synchronization-packets) | Target startup delay | Optional time synchronization field to establish an epoch and do timestamp jitter compensation. |
-|        [Stream registration](#stream-registration-packets) | Target startup delay | Register streams to permit packet processing.                                                   |
-|  [Stream initialization data](#stream-initialization-data) | Target startup delay | To initialize decoding of stream packets.                                                       |
-|                   [Video information](#video-info-packets) | Target startup delay | To correctly present any video packets.                                                         |
-|                 [LUT/ICC profile]luticc-profile-packets | Target startup delay | Optional LUT/ICC profile for correct video presentation.                                        |
-|            [Video orientation](#video-orientation-packets) | Target startup delay | Video orientation.                                                                              |
-|                              [Metadata](#metadata-packets) | Target startup delay | Stream metadata.                                                                                |
-|                             Stream data or segment packets | Always               |                                                                                                 |
-|                         [Stream FEC](#stream-fec-segments) | FEC length           | Optional FEC data for stream data.                                                              |
-|                            [User data](#user-data-packets) | As necessary         | Optional user data packets.                                                                     |
-|                            [End of stream](#end-of-stream) | Once                 | Finalizes a stream.                                                                             |
+<figure id="table-Streaming" class="table">
+    <table class="complex data longlastcol" dfn-for="#streaming">
+        <tr>
+            <th>Packet type</th>
+            <th>Suggested frequency</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>[[#session-start-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To identify a stream as AVTransport without ambiguity.</td>
+        </tr>
+        <tr>
+            <td>[[#time-synchronization-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Optional time synchronization field to establish an epoch and do timestamp jitter compensation.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-registration-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Register streams to permit packet processing.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-configuration-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To initialize decoding of stream packets.</td>
+        </tr>
+        <tr>
+            <td>[[#video-information-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To correctly present any video packets.</td>
+        </tr>
+        <tr>
+            <td>[[#lut-icc-profile-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Optional LUT/ICC profile for correct video presentation.</td>
+        </tr>
+        <tr>
+            <td>[[#video-orientation-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Video orientation packets, when needed.</td>
+        </tr>
+        <tr>
+            <td>[[#metadata-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Session metadata.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-data-packets]]</td>
+            <td>Always</td>
+            <td>Stream data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#fec-grouping-packets]]</td>
+            <td>Appropriate for the packet loss</td>
+            <td>Optional FEC data.</td>
+        </tr>
+        <tr>
+            <td>[[#user-data-packets]]</td>
+            <td>As often as necessary</td>
+            <td>Optional user data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#end-of-stream-packets]]</td>
+            <td>Once</td>
+            <td>Finalizes a stream or session.</td>
+        </tr>
+    </table>
+</figure>
 
-In particular, [time synchronization](#time-synchronization-packets) packets should
+In particular, [[#time-synchronization-packets]] packets should
 be sent as often as necessary if timestamp jitter avoidance is a requirement.
 
 
@@ -3213,15 +3276,15 @@ UDP mode is unidirectional, but the implementations are free to use the
 [[#reverse-signalling]] data if they negotiate it themselves.<br/>
 Reverse signalling should not be used if the connection is public.
 
-Implementations MUST segment the data such that the network MTU is never
+Implementations must segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.<br/>
-The **minimum** network MTU required for the protocol is **384 bytes**,
+The <b>minimum</b> network MTU required for the protocol is <b>384 bytes</b>,
 as to allow [[#video-information-packets]] or any future large
 packets to be sent without fragmentation.
 
-Jumbograms MAY be used where supported to reduce overhead and increase efficiency.
+[[RFC2675|Jumbograms]] may be used where supported to reduce overhead and increase efficiency.
 
-Data packets MAY be padded by appending random data or zeroes after the `packet_data`
+Data packets may be padded by appending random data or zeroes after the [=packet_data=]
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
 
@@ -3235,7 +3298,7 @@ UDP-Lite ([[RFC3828]]) should be preferred to [[RFC768|UDP]], if support for it 
 available throughout the network.<br/>
 When using UDP-Lite, the same considerations as UDP apply.
 
-As UDP-Lite allows for variable checksum coverage, the **minimum** checksum
+As UDP-Lite allows for variable checksum coverage, the <b>minimum</b> checksum
 coverage must be used, where only the UDP-Lite header (8 bytes) is checksummed.
 
 Implementations should insert adequate FEC information, and receivers should
@@ -3252,7 +3315,7 @@ as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.
 
 All data packets with descriptors ''0x01**'', ''0xFF'', ''0xFE'', ''0xFD'' and ''0xFC''
-MUST be sent over in an *unreliable* QUIC DATAGRAM stream, as per
+MUST be sent over in an <i>unreliable</i> QUIC DATAGRAM stream, as per
 [[RFC9221]].
 
 All other packets must be sent over a reliable steam. FEC data for those packets
@@ -3261,7 +3324,7 @@ SHOULD NOT be signalled.
 Implementations must segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.
 
-The **minimum** network MTU required for the protocol is **384 bytes**,
+The <b>minimum</b> network MTU required for the protocol is <b>384 bytes</b>,
 as to allow [[#video-information-packets]] or any future large packets to be sent
 without fragmentation.
 
@@ -3304,12 +3367,12 @@ should, if necessary, use FEC and other reliability features.
 AVTransport supports bidirectional connections. Implementing this part of the
 specification is fully optional.
 
-**All** packets send back from a receiver to the transmitter MUST have bit
+<b>All</b> packets send back from a receiver to the transmitter must have bit
 ''0x8000'' set in their descriptors. This means that the receiver can send back
 the same type of packets that the transmitter can, with a number of extra
 packets for control.
 
-Receivers **MUST** receive a [[#session-start-packets]] packet
+Receivers must receive a [[#session-start-packets]] packet
 from a transmitter, with bit {{SESSION_REVERSE_SIGNAL_READY}} set in the [=session_flags=]
 bitmask before they are allowed to send packets back.
 
@@ -3319,66 +3382,162 @@ bitmask before they are allowed to send packets back.
 The receiver can use this type to return errors and more to the sender in a
 one-to-one transmission. The following syntax is used:
 
-| Data     | Name               | Fixed value  | Description                                                                                              |
-|:---------|:-------------------|-------------:|:---------------------------------------------------------------------------------------------------------|
-| `b(16)`  | `ctrl_descriptor`  |       0x8001 | Indicates this is a control data packet.                                                                 |
-| `b(8)`   | `cease`            |              | If not equal to `0x0`, indicates a fatal error, and senders MUST NOT sent any more data.                 |
-| `b(8)`   | `resend_init`      |              | If nonzero, asks the sender to resend `time_sync` and all stream `init_data` packets.                    |
-| `u(32)`  | `error`            |              | Indicates an error code, if not equal to `0x0`.                                                          |
-| `b(128)` | `uplink_ip`        |              | Reports the upstream address to stream to.                                                               |
-| `b(16)`  | `uplink_port`      |              | Reports the upstream port to stream on to the `uplink_ip`.                                               |
-| `b(8)`   | `seek`             |              | If `1`, Asks the sender to seek to the position given by `seek_pts` and/or `seek_seq`.                   |
-| `i(64)`  | `seek_pts`         |              | The PTS value to seek to, as given by [index packets](#index-packets).                                   |
-| `u(32)`  | `seek_seq`         |              | The sequence number of the packet to seek to, as given by [index packets](#index-packets).               |
+<figure id="table-ControlData" class="table">
+    <table class="complex data longlastcol" dfn-for="#control-data-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>ctrl_descriptor</dfn></td>
+            <td>''0x8001''</td>
+            <td>Indicates this is a control data packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>cease</dfn></td>
+            <td></td>
+            <td>If not equal to ''0x0'', indicates a fatal error, and senders MUST NOT sent any more data.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>resend_init</dfn></td>
+            <td></td>
+            <td>If nonzero, asks the sender to resend all [[#time-synchronization-packets]], all [[#stream-registration-packets]] and all required packets for them.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>error</dfn></td>
+            <td>enum {{ErrorCode}}</td>
+            <td>Indicates an error code, if not equal to ''0x0''.</td>
+        </tr>
+        <tr>
+            <td><code>b(128)</code></td>
+            <td><dfn>uplink_ip</dfn></td>
+            <td></td>
+            <td>Reports the upstream address to stream to.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>uplink_port</dfn></td>
+            <td></td>
+            <td>Reports the upstream port to stream on to the [=uplink_ip=].</td>
+        </tr>
+        <tr>
+            <td><code>b(8)</code></td>
+            <td><dfn>seek</dfn></td>
+            <td></td>
+            <td>If ''1'', Asks the sender to seek to the position given by [=seek_pts=] and/or [=seek_seq=].</td>
+        </tr>
+        <tr>
+            <td><code>i(64)</code></td>
+            <td><dfn>seek_pts</dfn></td>
+            <td></td>
+            <td>The [=pts=] value to seek to.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>seek_seq</dfn></td>
+            <td></td>
+            <td>The sequence number of the packet to seek to.</td>
+        </tr>
+    </table>
+</figure>
 
-If the sender gets such a packet, and either its `uplink_ip` or its `uplink_port`
-do not match, the sender **MUST** cease this connection, reopen a new connection
-with the given `uplink_ip`, and resend all packets needed to begin decoding
+If the sender gets such a packet, and either its [=uplink_ip=] or its [=uplink_port=]
+do not match, the sender must cease this connection, reopen a new connection
+with the given [=uplink_ip=], and resend all packets needed to begin decoding
 to the new destination.
 
-The `seek` request asks the sender to begin sending old data that is still
-available. The sender MAY not comply if that data suddenly becomes unavailable.
-If the value of `seek` is equal to `0`, then the receiver MUST comply
+The [=seek=] request asks the sender to begin sending old data that is still
+available. The sender may not comply if that data suddenly becomes unavailable.
+If the value of [=seek=] is equal to ''0'', then the receiver must comply
 and always start sending the newest data.
 
-When seeking, BOTH `seek_pts` and `seek_seq` MUST be valid, and MUST have come
-from an index packet.
-
-If the `resent_init` flag is set to a non-zero value, senders SHOULD flush all encoders
+If the [=resend_init=] flag is set to a non-zero value, senders should flush all encoders
 such that the receiver can begin decoding as soon as possible.
 
-If operating over QUIC, then any old data **MUST** be served
-over a *reliable* stream, as latency isn't critical. If the receiver asks again
+If operating over QUIC, then any old data must be served
+over a <i>reliable</i> stream, as latency isn't critical. If the receiver asks again
 for the newsest available data, that data's payload is once again sent over an
 *unreliable* stream.
 
 The following error values are allowed:
-| Value | Description                                                                                                                                                                                                                                                                                                   |
-|------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-|   0x1 | Generic error.                                                                                                                                                                                                                                                                                                |
-|   0x2 | Unsupported data. May be sent after the sender sends a [stream registration packet](#stream-registration-packets) to indicate that the receiver does not support this codec. The sender MAY send another packet of this type with the same `stream_id` to attempt reinitialization with different parameters. |
+
+
+## Error Code Enumeration (enum <dfn enum>ErrorCode</dfn>) ## {#enum-ErrorCode}
+
+<div dfn-type="enum-value" dfn-for="#enum-ErrorCode">
+    : <dfn>ERROR_CODE_GENERIC</dfn> = 0x1
+      :: Signals a generic error.
+    : <dfn>ERROR_CODE_UNSUPPORTED</dfn> = 0x2
+      :: Unsupported data. May be sent after the sender sends a [[#stream-registration-packets]] to indicate that the receiver does not support this codec. The sender may send another packet of this type with the same [=stream_id=] to attempt reinitialization with different parameters.
+</div>
 
 
 ### Feedback ### {#feedback-packets}
 
 The following packet MAY be sent from the receiver to the sender.
 
-| Data    | Name               | Fixed value  | Description                                                                                                                                                                                                                                         |
-|:--------|:-------------------|-------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `b(16)` | `stats_descriptor` |       0x8002 | Indicates this is a statistics packet.                                                                                                                                                                                                              |
-| `b(16)` | `stream_id`        |              | Indicates the stream ID for which this packet is relevant to. MAY be `0xFFFF` to indicate all streams.                                                                                                                                              |
-| `b(64)` | `epoch_offset`     |              | Time since `epoch`. MAY be 0. Can be used to estimate the latency.                                                                                                                                                                                  |
-| `b(64)` | `bandwidth`        |              | Hint that indicates the available receiver bandwith, in bits per second. MAY be 0, in which case *infinite* MUST be assumed. Senders SHOULD respect it. The figure should include all headers and associated overhead.                              |
-| `u(32)` | `fec_corrections`  |              | A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).                                                                                                                                   |
-| `u(32)` | `corrupt_packets`  |              | Indicates the total number of corrupt packets. If FEC was enabled for the stream, this MUST be set to the total number of packets which FEC was not able to repair.                                                                                 |
-| `u(32)` | `dropped_packets`  |              | Indicates the total number of dropped packets.                                                                                                                                                                                                      |
+<figure id="table-Feedback" class="table">
+    <table class="complex data longlastcol" dfn-for="#feedback-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>feedback_descriptor</dfn></td>
+            <td>''0x8002''</td>
+            <td>Indicates this is a statistics packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is relevant to. May be ''0xFFFF'' to indicate all streams.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>epoch_offset</dfn></td>
+            <td></td>
+            <td>Time since [=epoch=]. May be 0. Can be used to estimate the latency.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td>[=bandwidth=]</td>
+            <td></td>
+            <td>Hint that indicates the available receiver bandwith, in bits per second. May be 0, in which case <i>infinite</i> must be assumed. Senders should respect it. The figure should include all headers and associated overhead.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>fec_corrections</dfn></td>
+            <td></td>
+            <td>A counter that indicates the total amount of repaired packets (packets with errors that FEC was able to correct).</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>corrupt_packets</dfn></td>
+            <td></td>
+            <td>Indicates the total number of corrupt packets. This also counts corrupt packets FEC was not able to correct.</td>
+        </tr>
+        <tr>
+            <td><code>u(64)</code></td>
+            <td><dfn>dropped_packets</dfn></td>
+            <td></td>
+            <td>Indicates the total number of dropped packets.</td>
+        </tr>
+    </table>
+</figure>
 
-Receivers SHOULD send out a new statistics packet every time a count was updated.
-Additionally, receivers SHOULD send new feedback packets often enough to prevent
+Receivers should send out a new statistics packet every time a count was updated.
+Additionally, receivers should send new feedback packets often enough to prevent
 UDP NAT from timing out.
-
-If the descriptor of the dropped packed is known, receivers SHOULD set it
-in `dropped_type`, and senders SHOULD resend it as soon as possible.
 
 
 ### Resend ### {#resend-packets}
@@ -3386,25 +3545,72 @@ in `dropped_type`, and senders SHOULD resend it as soon as possible.
 The following packet MAY be sent to ask the client to resend a recent packet
 that was likely dropped.
 
-| Data    | Name                | Fixed value  | Description                                                           |
-|:--------|:--------------------|-------------:|:----------------------------------------------------------------------|
-| `b(16)` | `resend_descriptor` |       0x8003 | Indicates this is a stream control data packet.                       |
-| `b(16)` | `reserved`          |              | Reserved for future use.                                              |
-| `u(32)` | `global_seq`        |              | The sequence number of the packet that is missing.                    |
+<figure id="table-Resend" class="table">
+    <table class="complex data longlastcol" dfn-for="#resend-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>resend_descriptor</dfn></td>
+            <td>''0x8003''</td>
+            <td>Indicates this is a stream data resend packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be 0x0.</td>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>The sequence number of the packet that is missing.</td>
+        </tr>
+    </table>
+</figure>
 
 
 ### Stream control ### {#stream-control-packets}
 
 The receiver can use this type to subscribe or unsubscribe from streams.
 
-| Data    | Name               | Fixed value  | Description                                                                      |
-|:--------|:-------------------|-------------:|:---------------------------------------------------------------------------------|
-| `b(16)` | `strm_descriptor`  |       0x8004 | Indicates this is a stream control data packet.                                  |
-| `b(16)` | `stream_id`        |              | The stream ID for which this packet applies to. MUST NOT be `0xFFFF`.            |
-| `b(8)`  | `disable`          |              | If `1`, asks the sender to not send any packets relating to `stream_id` streams. |
+<figure id="table-StreamControl" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-control-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>stream_ctrl_descriptor</dfn></td>
+            <td>''0x8004''</td>
+            <td>Indicates this is a stream control data packet.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>The stream ID for which this packet applies to. MUST NOT be ''0xFFFF''.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>If `1`, asks the sender to not send any packets relating to [=stream_id=] streams.</td>
+        </tr>
+    </table>
+</figure>
 
-This can be used to save bandwidth. If previously `disabled` and then `enabled`,
+This can be used to save bandwidth. If previously disabled and then enabled,
 all packets necessary to initialize the stream MUST be resent.
+
 
 ## Informative muxer behaviour ## {#informative-muxer-behaviour}
 
@@ -3425,7 +3631,7 @@ Additional data or recommendations for the AVTransport specification is listed h
 
 This normative annex shall cover the usage and operation of [[LDPC]] within AVTransport.
 
-The LDPC variant to be used is **irregular** (each row of each matrix has a non-constant
+The LDPC variant to be used is <b>irregular</b> (each row of each matrix has a non-constant
 amount of bits set to 1), systematic (parity data is separate from message data), with no subblocks.
 The full block, along with the check data, shall be sent to an LDPC decoder.
 
@@ -3444,7 +3650,7 @@ To be done
 
 ### LDPC H-matrices ### {#ldpc-h-matrices}
 
-The following **H** matrices below shall be used for encoding (via the pseudocode above) and decoding.
+The following <b>H</b> matrices below shall be used for encoding (via the pseudocode above) and decoding.
 Implementations are free to convert them to G matrices and use conventional encoding methods.
 The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
 
@@ -3452,9 +3658,9 @@ As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:
  - 64x288
  - 768x2784
 
-As each value of a matrix is purely boolean, **64 rows are represented as 64-bit unsigned integers**,
+As each value of a matrix is purely boolean, <b>64 rows are represented as 64-bit unsigned integers</b>,
 in big endian format, hence row 1 is the most significant bit, row 2 is the second most significant bit,
-and so on. In other words, **GF(2⁶)**. This is the format that the reference function above expects.
+and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the reference function above expects.
 
 
 #### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224}
