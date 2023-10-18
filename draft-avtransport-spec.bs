@@ -60,6 +60,11 @@ Markup Shorthands: http no, markup no
     "MATROSKA-ASS": {
         "title": "Matroska specifications, SSA/ASS Subtitles",
         "href": "https://matroska.org/technical/subtitles.html#ssaass-subtitles"
+    },
+    "CUBE": {
+        "title": "Cube LUT Specification Version 1.0",
+        "published-by": "Adobe",
+        "href": "https://kono.phpage.fr/images/a/a1/Adobe-cube-lut-specification-1.0.pdf"
     }
 }
 </pre>
@@ -795,7 +800,7 @@ in the following manner:
       :: Reserved for future use.
 
     : <dfn>STREAM_DEFAULT</dfn> = 0x2
-      :: Stream SHOULD be chosen by default amongst other streams of the same type,
+      :: Stream should be chosen by default amongst other streams of the same type,
          unless the user has specified otherwise.
 
     : <dfn noexport>STREAM_STILL_PICTURE</dfn> = 0x4
@@ -821,18 +826,18 @@ in the following manner:
 
     : <dfn>STREAM_HEARING_IMPAIRED</dfn> = 0x200
       :: Stream is intended for hearing impaired audiences.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_VISUALLY_IMPAIRED</dfn> = 0x400
       :: Stream is intended for visually impaired audiences.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_NO_DIALOGUE</dfn> = 0x800
       :: Stream contains music and sound effects without voice.
 
     : <dfn>STREAM_NON_DIEGETIC</dfn> = 0x1000
       :: Stream contains non-diegetic audio.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both SHOULD be mixed in.
+         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_DESCRIPTIONS</dfn> = 0x2000
       :: Stream contains textual or spoken descriptions to the stream signalled in [=related_stream_id=].
@@ -1188,7 +1193,7 @@ more [[#stream-data-segment-packets]]. It is laid out as follows:
             <td><code>i(64)</code></td>
             <td>[=pts=]</td>
             <td></td>
-            <td>Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the [[#timestamps]] section.</td>
+            <td>Indicates the presentation timestamp for when this frame should be presented at. To interpret the value, read the [[#timestamps]] section.</td>
         </tr>
         <tr>
             <td><code>i(64)</code></td>
@@ -1287,7 +1292,7 @@ due to latency concerns.
 Senders may send duplicate segments to compensate for packet loss,
 but should use [[#fec-grouping-packets]] or [[#stream-data-parity-packets]] instead.
 
-Implementations SHOULD discard any packets and segments that arrive after their
+Implementations should discard any packets and segments that arrive after their
 presentation time. Implementations should drop any packets and segments
 that arrive with unrealistically far away presentation times.
 
@@ -1915,7 +1920,7 @@ The [=lut_type=] field must be interpreted in the following way:
     : <dfn>CLUT_ICC_PROFILE</dfn> = 0x1
       :: Indicates that tata contains a regular ICC profile, with version <code>[=lut_major_ver=].[=lut_minor_ver=]</code>.
     : <dfn>CLUT_ADOBE_CUBE</dfn> = 0x2
-      :: Indicates that tata contains an Adobe CUBEE file.
+      :: Indicates that tata contains an Adobe [[CUBE]] file.
 </div>
 
 Note: Lookup tables and ICC profiles must take precedence over the primaries and transfer
@@ -2060,7 +2065,7 @@ The [=font_type=] field must be interpreted in the following way:
       :: Indicates that tata contains a [[WOFF2]] (Web Open Font Format 2) font.
 </div>
 
-Note: {{FONT_WOFF2}} fonts SHOULD NOT be compressed, as they're already compressed.
+Note: {{FONT_WOFF2}} fonts should not be compressed, as they're already compressed.
 
 
 ## Video information ## {#video-information-packets}
@@ -3319,7 +3324,7 @@ MUST be sent over in an <i>unreliable</i> QUIC DATAGRAM stream, as per
 [[RFC9221]].
 
 All other packets must be sent over a reliable steam. FEC data for those packets
-SHOULD NOT be signalled.
+should not be signalled.
 
 Implementations must segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.
