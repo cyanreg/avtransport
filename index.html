@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="c74644f828e10d9f3482df31e1e64e13ce09df8e" name="document-revision">
+  <meta content="6571751a386c6172dc825478949895c812e47c9c" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2812,7 +2812,7 @@ in the following manner:</p>
       <p>Reserved for future use.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_default"><code>STREAM_DEFAULT</code><a class="self-link" href="#dom-enum-streamflags-stream_default"></a></dfn> = 0x2
      <dd data-md>
-      <p>Stream SHOULD be chosen by default amongst other streams of the same type,
+      <p>Stream should be chosen by default amongst other streams of the same type,
  unless the user has specified otherwise.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-streamflags-stream_still_picture"><code>STREAM_STILL_PICTURE</code><a class="self-link" href="#dom-enum-streamflags-stream_still_picture"></a></dfn> = 0x4
      <dd data-md>
@@ -2838,18 +2838,18 @@ in the following manner:</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_hearing_impaired"><code>STREAM_HEARING_IMPAIRED</code></dfn> = 0x200
      <dd data-md>
       <p>Stream is intended for hearing impaired audiences.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑦">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id③">stream_id</a>, both SHOULD be mixed in.</p>
+ Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑦">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id③">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_visually_impaired"><code>STREAM_VISUALLY_IMPAIRED</code><a class="self-link" href="#dom-enum-streamflags-stream_visually_impaired"></a></dfn> = 0x400
      <dd data-md>
       <p>Stream is intended for visually impaired audiences.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑧">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id④">stream_id</a>, both SHOULD be mixed in.</p>
+ Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑧">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id④">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_no_dialogue"><code>STREAM_NO_DIALOGUE</code><a class="self-link" href="#dom-enum-streamflags-stream_no_dialogue"></a></dfn> = 0x800
      <dd data-md>
       <p>Stream contains music and sound effects without voice.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_non_diegetic"><code>STREAM_NON_DIEGETIC</code><a class="self-link" href="#dom-enum-streamflags-stream_non_diegetic"></a></dfn> = 0x1000
      <dd data-md>
       <p>Stream contains non-diegetic audio.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑨">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id⑤">stream_id</a>, both SHOULD be mixed in.</p>
+ Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑨">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id⑤">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_descriptions"><code>STREAM_DESCRIPTIONS</code><a class="self-link" href="#dom-enum-streamflags-stream_descriptions"></a></dfn> = 0x2000
      <dd data-md>
       <p>Stream contains textual or spoken descriptions to the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①⓪">related_stream_id</a>.</p>
@@ -3139,7 +3139,7 @@ more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation<
        <td><code>i(64)</code>
        <td><a data-link-type="dfn" href="#pts" id="ref-for-pts⑧">pts</a>
        <td>
-       <td>Indicates the presentation timestamp for when this frame SHOULD be presented at. To interpret the value, read the <a href="#timestamps">§ 1.7 Timestamps</a> section.
+       <td>Indicates the presentation timestamp for when this frame should be presented at. To interpret the value, read the <a href="#timestamps">§ 1.7 Timestamps</a> section.
       <tr>
        <td><code>i(64)</code>
        <td><a data-link-type="dfn" href="#duration" id="ref-for-duration⑤">duration</a>
@@ -3222,7 +3222,7 @@ complete packets.</p>
 due to latency concerns.</p>
    <p>Senders may send duplicate segments to compensate for packet loss,
 but should use <a href="#fec-grouping-packets">§ 2.8 FEC grouping</a> or <a href="#stream-data-parity-packets">§ 2.9 Stream data parity</a> instead.</p>
-   <p>Implementations SHOULD discard any packets and segments that arrive after their
+   <p>Implementations should discard any packets and segments that arrive after their
 presentation time. Implementations should drop any packets and segments
 that arrive with unrealistically far away presentation times.</p>
    <h3 class="heading settled" data-level="2.8" id="fec-grouping-packets"><span class="secno">2.8. </span><span class="content">FEC grouping</span><a class="self-link" href="#fec-grouping-packets"></a></h3>
@@ -3740,7 +3740,7 @@ segmentation and parity packets is via the following <a href="#generic-data-pack
       <p>Indicates that tata contains a regular ICC profile, with version <code><a data-link-type="dfn" href="#time-synchronization-packets-lut_major_ver" id="ref-for-time-synchronization-packets-lut_major_ver">lut_major_ver</a>.<a data-link-type="dfn" href="#time-synchronization-packets-lut_minor_ver" id="ref-for-time-synchronization-packets-lut_minor_ver">lut_minor_ver</a></code>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-LUTType" data-dfn-type="enum-value" data-export id="dom-enum-luttype-clut_adobe_cube"><code>CLUT_ADOBE_CUBE</code><a class="self-link" href="#dom-enum-luttype-clut_adobe_cube"></a></dfn> = 0x2
      <dd data-md>
-      <p>Indicates that tata contains an Adobe CUBEE file.</p>
+      <p>Indicates that tata contains an Adobe <a data-link-type="biblio" href="#biblio-cube" title="Cube LUT Specification Version 1.0">[CUBE]</a> file.</p>
     </dl>
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> Lookup tables and ICC profiles must take precedence over the primaries and transfer
@@ -3858,7 +3858,7 @@ The syntax for segmentation and parity packets is via the following <a href="#ge
       <p>Indicates that tata contains a <a data-link-type="biblio" href="#biblio-woff2" title="WOFF File Format 2.0">[WOFF2]</a> (Web Open Font Format 2) font.</p>
     </dl>
    </div>
-   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="#dom-enum-fonttype-font_woff2" id="ref-for-dom-enum-fonttype-font_woff2">FONT_WOFF2</a></code> fonts SHOULD NOT be compressed, as they’re already compressed.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> <code class="idl"><a data-link-type="idl" href="#dom-enum-fonttype-font_woff2" id="ref-for-dom-enum-fonttype-font_woff2">FONT_WOFF2</a></code> fonts should not be compressed, as they’re already compressed.</p>
    <h3 class="heading settled" data-level="2.16" id="video-information-packets"><span class="secno">2.16. </span><span class="content">Video information</span><a class="self-link" href="#video-information-packets"></a></h3>
    <p>Video info packets contain everything needed to correctly interpret a video
 stream after decoding.</p>
@@ -4846,7 +4846,7 @@ be used for reverse signalling as the sender’s.</p>
 as bidirectionality features of the transport mechanism.</p>
    <p>All data packets with descriptors <span class="css">0x01**</span>, <span class="css">0xFF</span>, <span class="css">0xFE</span>, <span class="css">0xFD</span> and <span class="css">0xFC</span> MUST be sent over in an <i>unreliable</i> QUIC DATAGRAM stream, as per <a data-link-type="biblio" href="#biblio-rfc9221" title="An Unreliable Datagram Extension to QUIC">[RFC9221]</a>.</p>
    <p>All other packets must be sent over a reliable steam. FEC data for those packets
-SHOULD NOT be signalled.</p>
+should not be signalled.</p>
    <p>Implementations must segment the data such that the network MTU is never
 exceeded and no packet fragmentation occurs.</p>
    <p>The <b>minimum</b> network MTU required for the protocol is <b>384 bytes</b>,
@@ -5562,6 +5562,8 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <dd><a href="https://www.itu.int/rec/R-REC-BT.2100"><cite>BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange</cite></a>. July 2018. URL: <a href="https://www.itu.int/rec/R-REC-BT.2100">https://www.itu.int/rec/R-REC-BT.2100</a>
    <dt id="biblio-cie1931">[CIE1931]
    <dd><cite>Commission internationale de l'Eclairage proceedings</cite>. 1931. 
+   <dt id="biblio-cube">[CUBE]
+   <dd><a href="https://kono.phpage.fr/images/a/a1/Adobe-cube-lut-specification-1.0.pdf"><cite>Cube LUT Specification Version 1.0</cite></a>. URL: <a href="https://kono.phpage.fr/images/a/a1/Adobe-cube-lut-specification-1.0.pdf">https://kono.phpage.fr/images/a/a1/Adobe-cube-lut-specification-1.0.pdf</a>
    <dt id="biblio-ffmpeg">[FFmpeg]
    <dd><a href="https://ffmpeg.org"><cite>FFmpeg</cite></a>. URL: <a href="https://ffmpeg.org">https://ffmpeg.org</a>
    <dt id="biblio-h273">[H.273]
