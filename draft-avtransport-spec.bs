@@ -624,7 +624,7 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
     </table>
 </figure>
 
-The <dfn>ts_clock_freq</dfn> field is equal to `ts_clock_freq = [=ts_clock_hz=] + [=ts_clock_hz2=]/65536`.
+The <dfn>ts_clock_freq</dfn> field is equal to <code>[=ts_clock_freq=] = [=ts_clock_hz=] + [=ts_clock_hz2=]/65536</code>.
 Implementations should prefer to use integer math, and instead have the [=ts_clock_freq=] in increments of 1/65536 Hz.
 
 The field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=], which atomically increments a counter,
@@ -2918,7 +2918,7 @@ with one sequence being a picture.
 
 For ASS encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
-MUST be 0x41535334 (`ASS4`).
+MUST be 0x41535334 (''ASS4'').
 
 ASS is a popular subtitle format with great presentation capabilities.
 Although it was not designed to be streamed or packetized, doing so is possible
@@ -3134,7 +3134,7 @@ laid out in the following way:
 </figure>
 
 The purpose of the [=rc_offset=] field is to allow differentiation between
-different orderings of pixels in an RGB video, e.g. ''RGB'''s `rc_offset`s will
+different orderings of pixels in an RGB video, e.g. ''RGB'''s [=rc_offset=]s will
 be <code>[0, 1, 2]</code>, whilst ''BGR'''s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.
 
@@ -3142,6 +3142,9 @@ The [=packet_data=] field MUST contain [=rv_planes=], with each plane having
 [=rv_plane_stride=] bytes per line. The number of horizontal lines being given by
 [=rv_height=] for plane number ''0'', and <code>[=rv_height=] >> [=rv_ver_subsample=]</code>
 for all other planes. The actual lines must be filled in according to [=rc_offset=] and [=rc_stride=].
+
+Note: [[#video-information-packets]] packets must be present. The information in this structure
+is only sufficient to parse data, not enough to present it.
 
 
 ## Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ## {#enum-RawVideoFlags}
