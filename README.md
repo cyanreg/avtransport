@@ -38,12 +38,12 @@ You can talk about the project and get in touch with developers on:
  - Stream overhead - ratio between useful data and actually transmitted data
    * AVTransport: Low. Each packet has a 36 byte header.
    * WebRTC: Low to medium. Each packet has typically between 24 bytes and 76 bytes of headers.
-   * RTMP: Medium to high. Each packet has typically 32 bytes of headers.
-   * MPEG-TS: Extremely high. Each media packet is highly segmented due to 188-byte packet limit of MPEG-TS.
-   * RIST: Extremely high, as it encapsulates MPEG-TS.
-   * SRT: Extremely high, as it encapsulates MPEG-TS.
-   * Matroska: Low. It was designed to take the least amount of space possible.
-   * Nut: Low. It was designed to take even less amount of space.
+   * RTMP: Low to medium. Each packet has typically 32 bytes of headers.
+   * MPEG-TS: Very high. Each media packet is highly segmented due to 188-byte packet limit of MPEG-TS.
+   * RIST: Very high, as it encapsulates MPEG-TS.
+   * SRT: Very high, as it encapsulates MPEG-TS.
+   * Matroska: Very low. It was designed to take the least amount of space possible.
+   * Nut: Low. It was designed to not waste space.
  - Error resilience - resilience to receiving incorrect data, bitflips, and desyncs, without using FEC
    * AVTransport: Extremely high. Bitflips in headers are corrected (up to 40% of all bits may be flipped before errors appear). Resynchronization is extremely fast. Senders can send parity data for packets. Receivers can request retransmission of packets.
    * WebRTC: Low. Receivers may request retransmission of packets (which impacts latency).
@@ -121,6 +121,6 @@ You can talk about the project and get in touch with developers on:
    * MPEG-TS: Somewhat rigid. Requests for new codec registrations may take a while. Unextendable, and somewhat incompatible, as all new codecs must fit in previously user-data.
    * RIST: No specifications. Closed source.
    * SRT: Public specifications. Must join an organization.
-   * ISOBMFF/MP4: Very rigid. Must join and organization.
+   * ISOBMFF/MP4: Very rigid. Must join an organization.
    * Matroska: Low rigidity. It takes a while to add new features.
    * NUT: Low rigidity.
