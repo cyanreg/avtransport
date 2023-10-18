@@ -84,6 +84,16 @@ You can talk about the project and get in touch with developers on:
    * Matroska: Yes.
    * ISOBMFF/MP4: Yes.
    * NUT: Yes.
+ - Timestamp precision
+   * AVTransport: 465.66129 picoseconds
+   * WebRTC: 11 microseconds
+   * RTMP: 1 millisecond
+   * MPEG-TS: 11 microseconds
+   * RIST: 11 microseconds
+   * SRT: 11 microseconds
+   * Matroska: 1 millisecond
+   * ISOBMFF/MP4: Variable.
+   * NUT: 1 nanosecond
  - Multicast - whether streams can be transmitted over Multicast
    * AVTransport: Yes.
    * WebRTC: No.
