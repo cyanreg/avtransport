@@ -121,6 +121,6 @@ You can talk about the project and get in touch with developers on:
    * MPEG-TS: Somewhat rigid. Requests for new codec registrations may take a while. Unextendable, and somewhat incompatible, as all new codecs must fit in previously user-data.
    * RIST: No specifications. Closed source.
    * SRT: Public specifications. Must join an organization.
-   * ISOBMFF/MP4: Very rigid. Must join an organization.
+   * ISOBMFF/MP4: Low rigidity. Actively extended, though some features may take time to be stabilized.
    * Matroska: Low rigidity. It takes a while to add new features.
    * NUT: Low rigidity.

@@ -83,6 +83,7 @@ enum PQPacketType {
 
     AVT_PKT_VIDEO_INFO = 0x8,
     AVT_PKT_INDEX      = 0x9,
+    AVT_PKT_TIME_SYNC = 0,
 
     AVT_PKT_METADATA = 0xA,
     AVT_PKT_METADATA_PRT = 0xB,

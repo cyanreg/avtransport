@@ -2157,7 +2157,7 @@ stream after decoding.
             <td><code>R(64)</code></td>
             <td><dfn>framerate</dfn></td>
             <td></td>
-            <td>Indicates the framerate of the video. If it's variable, may be used to indicate the average bitrate. If the video is [=interlaced=]], indicates the field rate.</td>
+            <td>Indicates the framerate of the video. If it's variable, may be used to indicate the average bitrate. If the video is [=interlaced=], indicates the field rate.</td>
         </tr>
         <tr>
             <td><code>u(8)</code></td>
