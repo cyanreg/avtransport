@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="857096d187a247a45e5bfa94f8a86514f8bcbef0" name="document-revision">
+  <meta content="9ca800e4e80b55aac7d5952df7b660700ec52181" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2526,8 +2526,8 @@ Once a stream has started, it MUST NOT be changed.</p>
    </figure>
    <p>By default, implementations must use the field as metadata, if present. Otherwise, they should ignore it.</p>
    <p>Users are free to use the field to measure the stream duration by converting the <span class="css">t</span> of the <a data-link-type="dfn" href="#pts" id="ref-for-pts⑦">pts</a> field of any stream’s packet to nanoseconds (multiply by <span class="css">1000000000</span>), rounding it, and subtracting
-it from the <a data-link-type="dfn" href="#epoch" id="ref-for-epoch①">epoch</a> time (<code><span class="css">t</span> - <a data-link-type="dfn" href="#epoch" id="ref-for-epoch②">epoch</a></code>).</p>
-   <p>Users are also free to measure the latency in a similar way, by measuring their current wallclock time <span class="css">t</span>`, and using <code>Δ = t' - t - epoch</code>. <span class="css">Δ</span> will be the delay in nanoseconds.</p>
+it from the <a data-link-type="dfn" href="#epoch" id="ref-for-epoch①">epoch</a> time (<code>t - <a data-link-type="dfn" href="#epoch" id="ref-for-epoch②">epoch</a></code>).</p>
+   <p>Users are also free to measure the latency in a similar way, by measuring their current wallclock time <span class="css">t</span>, and using <code>Δ = t' - t - epoch</code>. <span class="css">Δ</span> will be the delay in nanoseconds.</p>
    <p>Finally, if <b>explicitly requested</b>, implementations are allowed to <i>delay</i> presentation by interpreting
 a negative latency value of <span class="css">Δ</span> as a delay.</p>
    <p class="note" role="note"><span class="marker">Note:</span> packets which had a negative timestamp before must still be dropped to permit for correct decoding
