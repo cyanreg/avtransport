@@ -443,10 +443,10 @@ By default, implementations must use the field as metadata, if present. Otherwis
 
 Users are free to use the field to measure the stream duration by converting the ''t'' of the [=pts=]
 field of any stream's packet to nanoseconds (multiply by ''1000000000''), rounding it, and subtracting
-it from the [=epoch=] time (<code>''t'' - [=epoch=]</code>).
+it from the [=epoch=] time (<code>t - [=epoch=]</code>).
 
 Users are also free to measure the latency in a similar way, by measuring their current wallclock time
-''t''`, and using <code>Δ = t' - t - epoch</code>. ''Δ'' will be the delay in nanoseconds.
+''t'', and using <code>Δ = t' - t - epoch</code>. ''Δ'' will be the delay in nanoseconds.
 
 Finally, if <b>explicitly requested</b>, implementations are allowed to <i>delay</i> presentation by interpreting
 a negative latency value of ''Δ'' as a delay.
