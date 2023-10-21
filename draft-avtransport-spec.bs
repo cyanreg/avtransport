@@ -172,7 +172,7 @@ Below is a table of how they're allocated:
             <td>[[#video-information-packets]]</td>
         </tr>
         <tr>
-            <td>''0x0009''</td>
+            <td>''0x0051''</td>
             <td>[[#index-packets]]</td>
         </tr>
         <tr>
@@ -1583,7 +1583,7 @@ or metadata changes, and the distance to the next index packet.
         <tr>
             <td><code>b(16)</code></td>
             <td><dfn>index_descriptor</dfn></td>
-            <td>''0x0009''</td>
+            <td>''0x0051''</td>
             <td>Indicates this is an index packet.</td>
         </tr>
         <tr>
