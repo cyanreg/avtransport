@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="5872de93d3f4304f6fbf832dc197a2a0a3467b95" name="document-revision">
+  <meta content="43d3d73b9390112537ed737b9581560daab45041" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -4836,13 +4836,15 @@ flagging the still picture flag (`stream_flags &amp; 0x04`) and sending
 a single picture per frame is sufficient to animate PNG, as this is
 allowed for any codec.</p>
    <h4 class="heading settled" data-level="3.1.13" id="svg-encapsulation"><span class="secno">3.1.13. </span><span class="content">SVG encapsulation</span><a class="self-link" href="#svg-encapsulation"></a></h4>
-   <p>For SVG (Scalable Vector Graphics), the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①③">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x53564730</span> (<span class="css">SVG0</span>).</p>
+   <p>For <a data-link-type="biblio" href="#biblio-svg2" title="Scalable Vector Graphics (SVG) 2">[SVG2]</a> (Scalable Vector Graphics), the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①③">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x53564732</span> (<span class="css">SVG2</span>).</p>
    <p>SVG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①①">packet_data</a> must contain a raw SVG file. Compressed <span class="css">SVGZ</span> are explicitly not supported. Instead, the <a data-link-type="dfn" href="#stream-data-packet-pkt_compression" id="ref-for-stream-data-packet-pkt_compression">pkt_compression</a> field
 must be used if compression is to be used. This is due to DEFLATE
 (<a data-link-type="biblio" href="#biblio-rfc1951" title="DEFLATE Compressed Data Format Specification version 1.3">[RFC1951]</a>) being potentially a bottleneck in decompression.</p>
-   <p>No support for animated SVG is available, or any SVG variant with <span class="css">Javascript</span> embedded. Each SVG packet must be a raw and standalone.
-Embedded images are, however, <b><i>permitted</i></b>.</p>
+   <p>No support for animated SVG (<a href="https://svgwg.org/svg2-draft/conform.html#animated-mode"><cite>SVG 2</cite> § 2.2.3 Animated mode</a>) is available, or any
+SVG variant with <span class="css">Javascript</span> embedded. Each SVG packet must be a raw and
+standalone. Embedded images are, however, <b><i>permitted</i></b>.</p>
+   <p>The <b>width</b> and <b>height</b> dimensions of <a href="#video-information-packets">§ 2.18 Video information</a> shall be a <i>suggested</i> dimension, generally set upon creation time.</p>
    <p class="note" role="note"><span class="marker">Note:</span> SVG streams may be either video streams <b>or</b> used as <i>subtitles</i>.
 The <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_subtitles" id="ref-for-dom-enum-streamflags-stream_subtitles">STREAM_SUBTITLES</a></code> flags must be set if the SVG stream is to be used as
 subtitles.</p>
@@ -5883,6 +5885,8 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <dd>M. Luby; et al. <a href="https://www.rfc-editor.org/rfc/rfc6330"><cite>RaptorQ Forward Error Correction Scheme for Object Delivery</cite></a>. August 2011. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc6330">https://www.rfc-editor.org/rfc/rfc6330</a>
    <dt id="biblio-rfc9000">[RFC9000]
    <dd>J. Iyengar, Ed.; M. Thomson, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc9000"><cite>QUIC: A UDP-Based Multiplexed and Secure Transport</cite></a>. May 2021. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9000">https://www.rfc-editor.org/rfc/rfc9000</a>
+   <dt id="biblio-svg2">[SVG2]
+   <dd>Amelia Bellamy-Royds; et al. <a href="https://svgwg.org/svg2-draft/"><cite>Scalable Vector Graphics (SVG) 2</cite></a>. URL: <a href="https://svgwg.org/svg2-draft/">https://svgwg.org/svg2-draft/</a>
   </dl>
   <h3 class="no-num no-ref heading settled" id="informative"><span class="content">Informative References</span><a class="self-link" href="#informative"></a></h3>
   <dl>
