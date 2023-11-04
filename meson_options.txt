@@ -1,3 +1,5 @@
+option('assert', type: 'integer', min : 0, max : 2, value : 0, description: 'Assert level with which to build the library')
+
 option('output', type: 'feature', value: 'auto', description: 'Build libavtransport with output support')
 option('input', type: 'feature', value: 'auto', description: 'Build libavtransport with input support')
 

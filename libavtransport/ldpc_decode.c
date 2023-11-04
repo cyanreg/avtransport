@@ -24,4 +24,4 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern const char *vcstag;
+#include "ldpc.h"

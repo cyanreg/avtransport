@@ -1,26 +1,27 @@
 /*
- * Copyright © 2022 Lynne
+ * Copyright © 2023, Lynne
+ * All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdlib.h>
@@ -29,45 +30,45 @@
 #include "common.h"
 #include "buffer.h"
 
-typedef struct PQBufEntry {
+typedef struct AVTBufEntry {
     uint32_t seq;
     ptrdiff_t seg_offset;
     size_t    seg_len;
 
     AVTBuffer data;
 
-    struct PQBufEntry *start;
-    struct PQBufEntry *prev;
-    struct PQBufEntry *next;
-} PQBufEntry;
+    struct AVTBufEntry *start;
+    struct AVTBufEntry *prev;
+    struct AVTBufEntry *next;
+} AVTBufEntry;
 
-typedef struct PQReorder {
-    PQBufEntry *stream_data;
+typedef struct AVTReorder {
+    AVTBufEntry *stream_data;
 
-    PQBufEntry **avail;
+    AVTBufEntry **avail;
     int nb_avail;
-    PQBufEntry **used;
+    AVTBufEntry **used;
     int nb_used;
-} PQReorder;
+} AVTReorder;
 
-int pq_reorder_init(AVTContext *ctx, size_t max_buffer)
+int avt_reorder_init(AVTContext *ctx, size_t max_buffer)
 {
-    PQReorder *reorder = ctx->src.rctx = calloc(1, sizeof(PQReorder));
+    AVTReorder *reorder = ctx->src.rctx = calloc(1, sizeof(AVTReorder));
     if (!ctx)
         return AVT_ERROR(ENOMEM);
 
     reorder->nb_avail = 32;
 
-    reorder->avail = calloc(reorder->nb_avail, sizeof(PQBufEntry *));
+    reorder->avail = calloc(reorder->nb_avail, sizeof(AVTBufEntry *));
     if (!reorder->avail)
         return AVT_ERROR(ENOMEM);
 
-    reorder->used = calloc(reorder->nb_avail, sizeof(PQBufEntry *));
+    reorder->used = calloc(reorder->nb_avail, sizeof(AVTBufEntry *));
     if (!reorder->used)
         return AVT_ERROR(ENOMEM);
 
     for (int i = 0; i < reorder->nb_avail; i++) {
-        reorder->avail[i] = calloc(1, sizeof(PQBufEntry));
+        reorder->avail[i] = calloc(1, sizeof(AVTBufEntry));
         if (!reorder->avail[i])
             return AVT_ERROR(ENOMEM);
     }
@@ -75,21 +76,21 @@ int pq_reorder_init(AVTContext *ctx, size_t max_buffer)
     return 0;
 }
 
-static int pq_reorder_alloc(PQReorder *reorder)
+static int avt_reorder_alloc(AVTReorder *reorder)
 {
-    PQBufEntry **atmp = realloc(reorder->avail, (reorder->nb_avail + 1)*sizeof(PQBufEntry *));
+    AVTBufEntry **atmp = realloc(reorder->avail, (reorder->nb_avail + 1)*sizeof(AVTBufEntry *));
     if (!atmp)
         return AVT_ERROR(ENOMEM);
 
     reorder->avail = atmp;
 
-    atmp = realloc(reorder->used, (reorder->nb_used + 1)*sizeof(PQBufEntry *));
+    atmp = realloc(reorder->used, (reorder->nb_used + 1)*sizeof(AVTBufEntry *));
     if (!atmp)
         return AVT_ERROR(ENOMEM);
 
     reorder->used = atmp;
 
-    atmp[reorder->nb_avail] = calloc(1, sizeof(PQBufEntry));
+    atmp[reorder->nb_avail] = calloc(1, sizeof(AVTBufEntry));
     if (!atmp[reorder->nb_avail])
         return AVT_ERROR(ENOMEM);
 
@@ -98,24 +99,23 @@ static int pq_reorder_alloc(PQReorder *reorder)
     return 0;
 }
 
-int pq_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
+int avt_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
                         ptrdiff_t offset, uint32_t seq,
-                        enum PQPacketType type)
+                        enum AVTPktDescriptors pkt)
 {
     int ret;
-    PQReorder *reorder = ctx->src.rctx;
-    PQBufEntry *ins, *tmp, *entry = NULL;
+    AVTReorder *reorder = ctx->src.rctx;
+    AVTBufEntry *ins, *tmp, *entry = NULL;
 
-    if (type == (AVT_PKT_STREAM_DATA & 0xFF00) ||
-        type == (AVT_PKT_STREAM_SEG_DATA) ||
-        type == (AVT_PKT_STREAM_SEG_END))
+    if (pkt == (AVT_PKT_STREAM_DATA & 0xFF00) ||
+        pkt == (AVT_PKT_STREAM_DATA_SEGMENT))
         entry = ctx->src.rctx->stream_data;
 
     while (entry->next && (entry->seq < seq) && (entry->seg_offset < offset))
         entry = entry->next;
 
     if (!reorder->nb_avail) {
-        ret = pq_reorder_alloc(reorder);
+        ret = avt_reorder_alloc(reorder);
         if (ret < 0)
             return ret;
     }
@@ -137,12 +137,12 @@ int pq_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
     return 0;
 }
 
-void pq_reorder_uninit(AVTContext *ctx)
+void avt_reorder_uninit(AVTContext *ctx)
 {
-    PQReorder *reorder = ctx->src.rctx;
+    AVTReorder *reorder = ctx->src.rctx;
 
     for (int i = 0; i < reorder->nb_used; i++) {
-        pq_buffer_quick_unref(&reorder->used[i]->data);
+        avt_buffer_quick_unref(&reorder->used[i]->data);
         free(reorder->used[i]);
     }
     for (int i = 0; i < reorder->nb_avail; i++)

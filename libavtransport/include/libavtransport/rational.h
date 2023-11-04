@@ -24,4 +24,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern const char *vcstag;
+#ifndef LIBAVTRANSPORT_RATIONAL_HEADER
+#define LIBAVTRANSPORT_RATIONAL_HEADER
+
+/* Rational data type structure. */
+typedef struct AVTRational {
+    int num;
+    int den;
+} AVTRational;
+
+#endif

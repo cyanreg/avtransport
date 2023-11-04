@@ -6,7 +6,8 @@ build_opts = [
     '-Wpointer-arith', '-Wno-pointer-sign',
 
     # Warnings to treat as errors
-    '-Werror=implicit-function-declaration',
+    '-Werror=implicit-function-declaration', '-Werror=missing-prototypes',
+    '-Werror=vla',
 ]
 
 # Required dependencies
@@ -18,19 +19,24 @@ dependencies = [
 
 # Headers
 headers = [
-    'common.h',
-    'input.h',
-    'output.h'
+#    'common.h',
+#    'input.h',
+#    'output.h'
 ]
+
+subdir('include/libavtransport')
 
 # Base files
 sources = [
     'common.c',
     'buffer.c',
 
-    'input.c',
-    'output.c',
-    'raptor.c',
+#    'input.c',
+#    'output.c',
+#    'raptor.c',
+
+    conv_spec,
+    conv_spec_headers,
 
     # Version
     vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],
@@ -39,13 +45,13 @@ sources = [
 ]
 
 if get_option('input').auto()
-    sources += 'input_file.c'
+#    sources += 'input_file.c'
     sources += 'reorder.c'
 endif
 
 if get_option('output').auto()
-    sources += 'output_file.c'
-    sources += 'output_socket.c'
+#    sources += 'output_file.c'
+#    sources += 'output_socket.c'
 endif
 
 # Check for wmain support (Windows/MinGW)

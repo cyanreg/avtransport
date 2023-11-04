@@ -1,8 +1,9 @@
 project('libavtransport', 'c',
-    license: 'MIT',
-    default_options: [ 'buildtype=debugoptimized', 'c_std=c99', 'warning_level=1' ],
-    version: '0.0.1',
-    meson_version: '>=0.54.0',
+    license: 'BSD-2-Clause',
+    license_files: ['LICENSE.md'],
+    default_options: [ 'buildtype=debugoptimized', 'c_std=c2x', 'warning_level=1' ],
+    version: '0.0.2',
+    meson_version: '>=1.1.0',
 )
 
 conf = configuration_data()
@@ -37,6 +38,21 @@ else
 endif
 
 cc = meson.get_compiler('c')
+if cc.has_argument('-fvisibility=hidden')
+    add_project_arguments('-fvisibility=hidden', language: 'c')
+else
+    warning('Compiler does not support -fvisibility=hidden, all symbols will be public!')
+endif
+
+pymod = import('python')
+python_exe = pymod.find_installation()
+spec2c = files('tools/spec2c.py')
+spec_file = files('draft-avtransport-spec.bs')
+
+conv_spec = custom_target('packet encode/decode',
+                          input: spec_file,
+                          output: ['packet_encode.h', 'packet_decode.h'],
+                          command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@'])
 
 subdir('libavtransport')
 

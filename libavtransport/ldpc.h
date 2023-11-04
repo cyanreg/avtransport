@@ -24,4 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-extern const char *vcstag;
+#ifndef LIBAVTRANSPORT_LDPC
+#define LIBAVTRANSPORT_LDPC
+
+#endif

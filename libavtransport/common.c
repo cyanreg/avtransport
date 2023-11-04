@@ -1,26 +1,27 @@
 /*
- * Copyright © 2022 Lynne
+ * Copyright © 2023, Lynne
+ * All rights reserved.
  *
- * Permission is hereby granted, free of charge, to any person
- * obtaining a copy of this software and associated documentation
- * files (the “Software”), to deal in the Software without
- * restriction, including without limitation the rights to use,
- * copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following
- * conditions:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- * The above copyright notice and this permission notice shall be
- * included in all copies or substantial portions of the Software.
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
  *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <stdio.h>
@@ -54,18 +55,20 @@ int avt_init(AVTContext **ctx, AVTContextOptions *opts)
 void avt_close(AVTContext **ctx)
 {
     if (ctx) {
-        pq_reorder_uninit(*ctx);
+        avt_reorder_uninit(*ctx);
 
         free(*ctx);
         *ctx = NULL;
     }
 }
 
-int pq_parse_address(const char *path, enum PQProtocolType *proto,
-                     uint8_t dst_ip[16], uint16_t *dst_port)
+int avt_parse_address(const char *path, enum AVTProtocolType *proto,
+                      uint8_t dst_ip[16], uint16_t *dst_port)
 {
+    int native_uri = 0;
+
     /* Zero out output */
-    *proto = PQ_UNKNOWN;
+    *proto = AVT_UNKNOWN;
     dst_ip = (uint8_t [16]){ 0 };
     *dst_port = 0;
 
@@ -74,25 +77,35 @@ int pq_parse_address(const char *path, enum PQProtocolType *proto,
         return AVT_ERROR(ENOMEM);
 
     char *tmp = NULL;
-    char *protocol = strtok_r(dup, ":", &tmp); /* Protocol */
-    if (!strcmp(protocol, "udp")) {
-        *proto = PQ_UDP;
-    } else if (!strcmp(protocol, "quic")) {
-        *proto = PQ_QUIC;
+    char *scheme = strtok_r(dup, ":", &tmp);
+    if (!strcmp(scheme, "avt")) {
+        native_uri = 1;
+    } else if (!strcmp(scheme, "udp")) { /* Unofficial and conflicting, but let's accept it */
+        *proto = AVT_UDP;
+    } else if (!strcmp(scheme, "quic")) { /* Unofficial, but let's accept it */
+        *proto = AVT_QUIC;
     } else {
         free(dup);
         return AVT_ERROR(ENOTSUP);
     }
 
-    char *addr_pre = strtok_r(protocol, ":", &tmp);
+    char *addr_pre = strtok_r(scheme, ":", &tmp);
     if (!strcmp(addr_pre, "//") && (addr_pre[2])) {
         addr_pre += 2;
-    } else {
+    } else { /* Error out if there's no :// */
         free(dup);
         return AVT_ERROR(ENOTSUP);
     }
 
-    if (addr_pre[0] == '[') {
+    if (native_uri) {
+        char *transport = strtok_r(addr_pre, "@", &tmp);
+        char *serv = strtok_r(transport, "@", &tmp);
+        if (!serv)
+            addr_pre = transport;
+    }
+
+    if (addr_pre[0]) {
+    } else if (addr_pre[0] == '[') {
         tmp = NULL;
         char *endb = strtok_r(addr_pre, "]", &tmp);
 
@@ -195,7 +208,7 @@ AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id)
     return ctx->stream[i];
 }
 
-void pq_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
+void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
