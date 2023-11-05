@@ -171,6 +171,8 @@ def iter_data_fields(target_id, struct_name):
                 iter_enum_fields(enum)
             elif data.startswith("struct"):
                 struct = data[7:].strip("{}")
+                if struct.startswith("[[#"):
+                    struct = struct.split("|")[1]
                 if iter_data_fields(struct, struct) == None:
                     print("Unknown struct:", struct)
                     exit(22)
