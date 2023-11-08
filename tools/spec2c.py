@@ -335,7 +335,7 @@ if f_packet_enums != None:
     file_enums.write(copyright_header + "\n")
     file_enums.write(autogenerate_note)
     file_enums.write("#ifndef LIBAVTRANSPORT_PACKET_ENUMS\n")
-    file_enums.write("#define LIBAVTRANSPORT_PACKET_ENUMS\n")
+    file_enums.write("#define LIBAVTRANSPORT_PACKET_ENUMS\n" + "\n")
 
     file_enums.write("enum " + data_prefix + "PktDescriptors {\n")
     for name, desc in descriptors.items():
@@ -365,10 +365,7 @@ if f_packet_data != None:
     file_structs.write("#include <stdint.h>\n")
     file_structs.write("#include <uchar.h>\n")
     file_structs.write("#include <stddef.h>\n\n")
-    if f_packet_enums != None:
-        file_structs.write("#include \"" + f_packet_enums + "\"\n")
-    else:
-        file_structs.write("#include <libavtransport/packet_enums.h>\n")
+    file_structs.write("#include <libavtransport/packet_enums.h>\n")
     file_structs.write("#include <libavtransport/rational.h>\n")
     for struct, fields in packet_structs.items():
         file_structs.write("\ntypedef struct " + struct + " {\n")
@@ -402,17 +399,17 @@ if f_packet_encode != None:
     file_encode = open(f_packet_encode, "w+")
     file_encode.write(copyright_header + "\n")
     file_encode.write(autogenerate_note + "\n")
-    if f_packet_enums != None:
-        file_encode.write("#include \"" + f_packet_data + "\"\n")
-    else:
-        file_encode.write("#include <libavtransport/packet_data.h>\n")
+    file_encode.write("#include <libavtransport/packet_data.h>\n")
+    file_encode.write("#include \"bytestream.h\"\n")
+    file_encode.write("#include \"utils.h\"\n")
+    file_encode.write("#include \"ldpc_encode.h\"\n")
     for struct, fields in packet_structs.items():
         had_bitfield = False
         bitfield = False
         newline_carryover = False;
         bitfield_bit = 0
         indent = "    "
-        file_encode.write("\nint " + fn_prefix + "encode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, " + struct + " *p)" + "\n{\n")
+        file_encode.write("\nstatic void inline " + fn_prefix + "encode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, const " + struct + " *p)" + "\n{\n")
         def wsym(indent, sym, name, field):
             # Start
             if field["struct"] != None:
@@ -432,18 +429,26 @@ if f_packet_encode != None:
                 file_encode.write(" ")
             file_encode.write("(bs")
 
-            # Length
+            # Length or name
+            if sym == bsw["buf"]:
+                if field["struct"] != None:
+                    file_encode.write(", &p->" + name)
+                else:
+                    file_encode.write(", p->" + name)
+            elif sym == bsw["pad"]:
+                file_encode.write(", " + str(field["bytestream"]))
+
+            # Name or length
             if sym == bsw["buf"]:
                 if field["array_len"]:
                     file_encode.write(", p->" + str(field["array_len"]))
                 else:
                     file_encode.write(", " + str(field["bytestream"]))
-            if sym == bsw["pad"]:
-                file_encode.write(", " + str(field["bytestream"]))
-
-            # Name
-            if sym != bsw["pad"] and sym != bsw["ldpc"]:
-                file_encode.write(", p->" + name)
+            elif sym != bsw["pad"] and sym != bsw["ldpc"]:
+                if field["struct"] != None:
+                    file_encode.write(", &p->" + name)
+                else:
+                    file_encode.write(", p->" + name)
 
             # Array index
             if (type(field["array_len"]) == int and field["array_len"] > 1) or \
@@ -472,21 +477,23 @@ if f_packet_encode != None:
             if field["bytestream"] == 0 and bitfield == False: # Setup bitfield writing
                 if had_bitfield == False:
                     file_encode.write(indent + "uint32_t bitfield;\n");
-            bitfield = True
-            had_bitfield = True
-            bitfield_bit = (MAX_BITFIELD_LEN - 1)
+                bitfield = True
+                had_bitfield = True
+                bitfield_bit = (MAX_BITFIELD_LEN - 1)
 
             if bitfield:
                 if bitfield_bit == (MAX_BITFIELD_LEN - 1):
                     file_encode.write(indent + "bitfield  = ")
                 else:
                     file_encode.write(indent + "bitfield |= ")
-                file_encode.write(name + " << (" + str(bitfield_bit) + " - " + str(field["size_bits"]) + ");\n")
+                file_encode.write("p->" + name + " << (" + str(bitfield_bit) + " - " + str(field["size_bits"]) + ");\n")
                 bitfield_bit -= field["size_bits"]
             else:
-                if (type(field["array_len"]) == int and field["array_len"] > 1) or \
-                   (type(field["array_len"]) == str and field["bytestream"] > 1):
+                if (type(field["array_len"]) == int and field["array_len"] > 1):
                     file_encode.write(indent + "for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
+                    indent = indent + "    "
+                if (type(field["array_len"]) == str and field["bytestream"] > 1):
+                    file_encode.write(indent + "for (int i = 0; i < p->" + field["array_len"] + "; i++)\n")
                     indent = indent + "    "
                 wsym(indent, write_sym, name, field)
 

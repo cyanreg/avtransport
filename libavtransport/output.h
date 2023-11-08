@@ -38,7 +38,7 @@ typedef struct AVTOutput {
     enum AVTConnectionType type;
 
     int (*init)(AVTContext *ctx, AVTOutputContext **pc,
-                AVTOutputDestination *dst, AVTOutputOptions *opts);
+                AVTConnection *conn, AVTOutputOptions *opts);
 
     uint32_t (*max_pkt_len)(AVTContext *ctx, AVTOutputContext *pc);
 

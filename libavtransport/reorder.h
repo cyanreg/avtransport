@@ -30,25 +30,89 @@
 #include "common.h"
 #include "buffer.h"
 
-typedef struct AVTPktChain AVTPktChain;
-
-enum AVTPktChainStatus {
-    AVT_PKT_CHAIN_COMPLETE,
-    AVT_PKT_CHAIN_INCOMPLETE,
+enum AVTReorderChainType {
+    AVT_REORDER_CHAIN_SEGMENT,
+    AVT_REORDER_CHAIN_PARITY,
+    AVT_REORDER_CHAIN_FEC_GROUP,
+    AVT_REORDER_CHAIN_GLOBAL,
 };
 
-int avt_reorder_init(AVTContext *ctx, size_t max_buffer);
+typedef struct AVTReorderPkt {
+    uint8_t header[384];
+    AVTBuffer *payload;
+    enum AVTPktDescriptors desc;
+    uint64_t recv_order;
+    uint64_t seq;
 
-int avt_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
-                        ptrdiff_t offset, uint32_t seq,
-                        enum AVTPktDescriptors pkt);
+    /* Segment */
+    struct AVTReorderPkt *prev;
+    struct AVTReorderPkt *next;
 
-enum AVTPktChainStatus avt_chain_get_status(AVTContext *ctx, AVTPktChain *chain);
+    /* Parity */
+    struct AVTReorderPkt *parity_prev;
+    struct AVTReorderPkt *parity_next;
 
-AVTBuffer *avt_chain_get_buffer(AVTContext *ctx, AVTPktChain *chain);
+    /* FEC group */
+    struct AVTReorderPkt *fecg_prev;
+    struct AVTReorderPkt *fecg_next;
 
-void avt_reorder_pop_chain(AVTContext *ctx, AVTPktChain *chain);
+    /* Global */
+    struct AVTReorderPkt *global_prev;
+    struct AVTReorderPkt *global_next;
+} AVTReorderPkt;
 
-void avt_reorder_uninit(AVTContext *ctx);
+typedef struct AVTReorderChain {
+    enum AVTReorderChainType type;
+    AVTReorderPkt *start;
+
+    uint32_t nb_packets; /* Received */
+    uint32_t tot_nb_packets; /* Signalled */
+
+    size_t payload_size; /* Received */
+    size_t tot_payload_size; /* Signalled */
+
+    uint16_t stream_id;
+    uint16_t fec_group_id;
+
+    uint16_t fecg_streams[16];
+    int nb_fecg_streams;
+
+    struct AVTReorderChain *parity;
+    struct AVTReorderChain *fecg;
+} AVTReorderChain;
+
+typedef struct AVTReorderBuffer {
+    /* Buffer for all packet structs */
+    AVTReorderPkt *pkt;
+    uint32_t nb_pkt;
+    uint32_t nb_pkt_allocated;
+
+    /* Buffer for all chains */
+    AVTReorderChain *chain;
+    uint32_t nb_chains;
+    uint32_t nb_chains_allocated;
+
+    AVTReorderChain *global_chain;
+
+    AVTReorderChain **segment_chains;
+    uint32_t nb_segment_chains;
+    uint32_t nb_segment_chains_allocated;
+
+    AVTReorderChain **fecg_chains;
+    uint32_t nb_fecg_chains;
+    uint32_t nb_fecg_chains_allocated;
+
+    size_t max_global_size;
+} AVTReorderBuffer;
+
+int avt_reorder_init(AVTContext *ctx, AVTReorderBuffer *rb,
+                     size_t max_size, uint32_t patience);
+
+int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb, AVTBuffer *data,
+                     uint32_t seq, enum AVTPktDescriptors desc);
+
+int avt_reorder_pop(AVTContext *ctx, AVTReorderChain **chain);
+
+void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb);
 
 #endif

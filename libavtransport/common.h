@@ -30,7 +30,6 @@
 #include <stdatomic.h>
 
 #include <libavtransport/avtransport.h>
-#include <libavtransport/common.h>
 
 enum AVTProtocolType {
     AVT_UNKNOWN,
@@ -44,23 +43,21 @@ typedef struct AVTStreamPriv {
 
 struct AVTContext {
     struct {
-//        AVTOutputDestination dst;
-        const struct AVTOutput *cb;
+        AVTConnection **conn;
+        int nb_conn;
         struct AVTOutputContext *ctx;
         atomic_uint seq;
         uint64_t epoch;
-    } dst;
+    } output;
 
     struct {
-//        AVTInputSource src;
-        const struct AVTInput *cb;
+        AVTConnection *conn;
         struct AVTInputContext *ctx;
-//        AVTInputCallbacks proc;
+        AVTInputCallbacks proc;
         void *cb_opaque;
         atomic_uint seq;
         uint64_t epoch;
-        struct AVTReorder *rctx;
-    } src;
+    } input;
 
     AVTStream **stream;
     int nb_stream;

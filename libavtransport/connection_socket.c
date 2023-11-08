@@ -24,71 +24,51 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <linux/io_uring.h>
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <errno.h>
 
-#include "common.h"
 #include "output.h"
 
 struct PQOutputContext {
-    FILE *f;
+    int fd;
 };
 
-static int file_init(AVTContext *ctx, PQOutputContext **pc,
-                     AVTOutputDestination *dst, AVTOutputOptions *opts)
+static int sock_init(AVTContext *ctx, PQOutputContext **pc,
+                     AVTConnection *dst, AVTOutputOptions *opts)
 {
     PQOutputContext *priv = malloc(sizeof(*priv));
     if (!priv)
         return AVT_ERROR(ENOMEM);
 
-    priv->f = fopen(dst->path, "w+");
-    if (!priv->f) {
-        free(priv);
-        return AVT_ERROR(errno);
-    }
 
     *pc = priv;
 
     return 0;
 }
 
-static int file_output(AVTContext *ctx, PQOutputContext *pc,
+static int sock_output(AVTContext *ctx, PQOutputContext *pc,
                        uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
 {
     size_t len;
-    uint8_t *data = avt_buffer_get_data(buf, &len);
-
-    /* TODO: use io_uring */
-    size_t out = fwrite(hdr, hdr_len, 1, pc->f);
-    if (out != hdr_len)
-        return AVT_ERROR(errno);
-
-    if (buf) {
-        out = fwrite(data, len, 1, pc->f);
-        if (out != len)
-            return AVT_ERROR(errno);
-    }
+    void *data = avt_buffer_get_data(buf, &len);
 
     return 0;
 }
 
-static int file_close(AVTContext *ctx, PQOutputContext **pc)
+static int sock_close(AVTContext *ctx, PQOutputContext **pc)
 {
-    int ret = fclose((*pc)->f);
-    free(*pc);
-    *pc = NULL;
-    if (ret)
-        return AVT_ERROR(errno);
 
     return 0;
 }
 
-const PQOutput pq_output_file = {
+const PQOutput pq_output_socket = {
     .name = "file",
-    .type = AVT_CONNECTION_FILE,
-    .init = file_init,
-    .max_pkt_len = pq_unlim_pkt_len,
-    .output = file_output,
-    .close = file_close,
+    .type = AVT_CONNECTION_SOCKET,
+    .init = sock_init,
+    .output = sock_output,
+    .close = sock_close,
 };

@@ -24,55 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libavtransport/output.h>
-#include <libavtransport/common.h>
+#include "connection_internal.h"
 
-#include <linux/io_uring.h>
+extern const AVTConnectionPrototype avt_connection_file;
+extern const AVTConnectionPrototype avt_connection_socket;
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+static const AVTConnectionPrototype *avt_backends_list[] = {
+    &avt_connection_file,
+    &avt_connection_socket,
 
-#include "common.h"
-#include "output.h"
-
-struct PQOutputContext {
-    int fd;
-};
-
-static int sock_init(AVTContext *ctx, PQOutputContext **pc,
-                     AVTOutputDestination *dst, AVTOutputOptions *opts)
-{
-    PQOutputContext *priv = malloc(sizeof(*priv));
-    if (!priv)
-        return AVT_ERROR(ENOMEM);
-
-
-    *pc = priv;
-
-    return 0;
-}
-
-static int sock_output(AVTContext *ctx, PQOutputContext *pc,
-                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
-{
-    size_t len;
-    void *data = avt_buffer_get_data(buf, &len);
-
-    return 0;
-}
-
-static int sock_close(AVTContext *ctx, PQOutputContext **pc)
-{
-
-    return 0;
-}
-
-const PQOutput pq_output_socket = {
-    .name = "file",
-    .type = AVT_CONNECTION_SOCKET,
-    .init = sock_init,
-    .output = sock_output,
-    .close = sock_close,
+    NULL,
 };

@@ -30,12 +30,12 @@
 #include <assert.h>
 #include "../config.h"
 
-static inline void sp_assert0(int cond)
+static inline void avt_assert0(int cond)
 {
     assert(cond);
 }
 
-static inline void sp_assert1(int cond)
+static inline void avt_assert1(int cond)
 {
 #if CONFIG_ASSERT_LEVEL > 0
     assert(cond);

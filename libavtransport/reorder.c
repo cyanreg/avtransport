@@ -27,130 +27,25 @@
 #include <stdlib.h>
 
 #include "reorder.h"
-#include "common.h"
-#include "buffer.h"
 
-typedef struct AVTBufEntry {
-    uint32_t seq;
-    ptrdiff_t seg_offset;
-    size_t    seg_len;
-
-    AVTBuffer data;
-
-    struct AVTBufEntry *start;
-    struct AVTBufEntry *prev;
-    struct AVTBufEntry *next;
-} AVTBufEntry;
-
-typedef struct AVTReorder {
-    AVTBufEntry *stream_data;
-
-    AVTBufEntry **avail;
-    int nb_avail;
-    AVTBufEntry **used;
-    int nb_used;
-} AVTReorder;
-
-int avt_reorder_init(AVTContext *ctx, size_t max_buffer)
+int avt_reorder_init(AVTContext *ctx, AVTReorderBuffer *rb,
+                     size_t max_size, uint32_t patience)
 {
-    AVTReorder *reorder = ctx->src.rctx = calloc(1, sizeof(AVTReorder));
-    if (!ctx)
-        return AVT_ERROR(ENOMEM);
-
-    reorder->nb_avail = 32;
-
-    reorder->avail = calloc(reorder->nb_avail, sizeof(AVTBufEntry *));
-    if (!reorder->avail)
-        return AVT_ERROR(ENOMEM);
-
-    reorder->used = calloc(reorder->nb_avail, sizeof(AVTBufEntry *));
-    if (!reorder->used)
-        return AVT_ERROR(ENOMEM);
-
-    for (int i = 0; i < reorder->nb_avail; i++) {
-        reorder->avail[i] = calloc(1, sizeof(AVTBufEntry));
-        if (!reorder->avail[i])
-            return AVT_ERROR(ENOMEM);
-    }
-
     return 0;
 }
 
-static int avt_reorder_alloc(AVTReorder *reorder)
+int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb, AVTBuffer *data,
+                     uint32_t seq, enum AVTPktDescriptors desc)
 {
-    AVTBufEntry **atmp = realloc(reorder->avail, (reorder->nb_avail + 1)*sizeof(AVTBufEntry *));
-    if (!atmp)
-        return AVT_ERROR(ENOMEM);
-
-    reorder->avail = atmp;
-
-    atmp = realloc(reorder->used, (reorder->nb_used + 1)*sizeof(AVTBufEntry *));
-    if (!atmp)
-        return AVT_ERROR(ENOMEM);
-
-    reorder->used = atmp;
-
-    atmp[reorder->nb_avail] = calloc(1, sizeof(AVTBufEntry));
-    if (!atmp[reorder->nb_avail])
-        return AVT_ERROR(ENOMEM);
-
-    reorder->nb_avail++;
-
     return 0;
 }
 
-int avt_reorder_push_pkt(AVTContext *ctx, AVTBuffer *data,
-                        ptrdiff_t offset, uint32_t seq,
-                        enum AVTPktDescriptors pkt)
+int avt_reorder_pop(AVTContext *ctx, AVTReorderChain **chain)
 {
-    int ret;
-    AVTReorder *reorder = ctx->src.rctx;
-    AVTBufEntry *ins, *tmp, *entry = NULL;
-
-    if (pkt == (AVT_PKT_STREAM_DATA & 0xFF00) ||
-        pkt == (AVT_PKT_STREAM_DATA_SEGMENT))
-        entry = ctx->src.rctx->stream_data;
-
-    while (entry->next && (entry->seq < seq) && (entry->seg_offset < offset))
-        entry = entry->next;
-
-    if (!reorder->nb_avail) {
-        ret = avt_reorder_alloc(reorder);
-        if (ret < 0)
-            return ret;
-    }
-
-    ins = reorder->avail[reorder->nb_avail - 1];
-    reorder->nb_avail--;
-    reorder->used[reorder->nb_used] = ins;
-    reorder->nb_used++;
-
-    ins->seq = seq;
-    ins->seg_offset = offset;
-    ins->seg_len = avt_buffer_get_data_len(data);
-
-    tmp = entry->next;
-    entry->next = ins;
-    ins->next = tmp;
-    ins->prev = entry;
-
     return 0;
 }
 
-void avt_reorder_uninit(AVTContext *ctx)
+void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb)
 {
-    AVTReorder *reorder = ctx->src.rctx;
 
-    for (int i = 0; i < reorder->nb_used; i++) {
-        avt_buffer_quick_unref(&reorder->used[i]->data);
-        free(reorder->used[i]);
-    }
-    for (int i = 0; i < reorder->nb_avail; i++)
-        free(reorder->avail[i]);
-
-    free(reorder->avail);
-    free(reorder->used);
-
-    free(ctx->src.rctx);
-    ctx->src.rctx = NULL;
 }

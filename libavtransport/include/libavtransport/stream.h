@@ -40,27 +40,25 @@
 
 enum AVTCodecID {
     AVT_CODEC_RAW_VIDEO = 1,
+    AVT_CODEC_FFV1,
     AVT_CODEC_AV1,
+    AVT_CODEC_VP9,
     AVT_CODEC_H264,
+    AVT_CODEC_H265,
     AVT_CODEC_DIRAC,
+    AVT_CODEC_TIFF,
+    AVT_CODEC_PNG,
+    AVT_CODEC_JPEG,
+    AVT_CODEC_SVG,
 
     AVT_CODEC_RAW_AUDIO = 32768,
     AVT_CODEC_OPUS,
     AVT_CODEC_AAC,
+    AVT_CODEC_AC3,
+    AVT_CODEC_FLAC,
 
     AVT_CODEC_ASS = 65536,
 };
-
-#if 0
-enum AVTFrameType {
-    AVT_KEYFRAME = 0x80,
-    AVT_S_FRAME = 0x40,
-};
-
-enum AVTStreamFlags {
-    AVT_STREAM_STILL_PICTURE = 1,
-};
-#endif
 
 typedef struct AVTStream {
     uint32_t id;
@@ -82,7 +80,7 @@ typedef struct AVTStream {
     struct AVTStream *related_to;
     struct AVTStream *derived_from;
 
-    /* libavtransport private stream data. Do not use. */
+    /* libavtransport private stream data. Do not touch or use. */
     struct AVTStreamPriv *private;
 } AVTStream;
 

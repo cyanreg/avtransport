@@ -24,59 +24,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <libavtransport/input.h>
-#include <libavtransport/common.h>
+#ifndef LIBAVTRANSPORT_CONNECTION_INTERNAL
+#define LIBAVTRANSPORT_CONNECTION_INTERNAL
 
 #include "common.h"
-#include "input.h"
+#include "reorder.h"
 
-struct PQInputContext {
-    FILE *f;
+enum AVTConnectionSubtype {
+    /* Start values: AVTConnectionType */
+    AVT_CONNECTION_UDP = 131072,
+    AVT_CONNECTION_UDP_LITE,
+    AVT_CONNECTION_QUIC,
 };
 
-static int file_init(AVTContext *ctx, PQInputContext **pc,
-                     AVTInputSource *src, AVTInputOptions *opts)
-{
-    PQInputContext *priv = malloc(sizeof(*priv));
-    if (!priv)
-        return AVT_ERROR(ENOMEM);
+typedef struct AVTConnectionPrototype {
+    const char *name;
+    enum AVTConnectionSubtype type;
 
-    priv->f = fopen(src->path, "r");
-    if (!priv->f) {
-        free(priv);
-        return AVT_ERROR(errno);
-    }
+    /* Initialize a context */
+    int (*init)(AVTContext *ctx, AVTConnection *conn, AVTConnectionInfo *info);
 
-    *pc = priv;
+    /* Return the maximum packet length */
+    uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTConnection *conn);
 
-    return 0;
-}
+    /* Fetch input, and call the callbacks, or return an error */
+    int (*process_input)(AVTContext *ctx, AVTConnection *conn);
 
-static int file_process(AVTContext *ctx, PQInputContext *pc)
-{
+    /* Send output */
+    int (*send_output)(AVTContext *ctx, AVTConnection *conn,
+                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf);
 
+    /* Seek to a place in the stream */
+    int (*seek)(AVTContext *ctx, AVTConnection *conn,
+                int64_t min_offset, uint32_t target_seq);
 
-    return 0;
-}
+    /* Close */
+    int (*close)(AVTContext *ctx, AVTConnection *conn);
+} AVTConnectionPrototype;
 
-static int file_close(AVTContext *ctx, PQInputContext **pc)
-{
-    int ret = fclose((*pc)->f);
-    free(*pc);
-    *pc = NULL;
-    if (ret)
-        return AVT_ERROR(errno);
+struct AVTConnection {
+    AVTConnectionPrototype *p;
+    AVTReorderBuffer *in_buffer;
 
-    return 0;
-}
+    /* Copy of the info provided to the API */
+    AVTConnectionInfo info;
 
-const PQInput pq_input_file = {
-    .name = "file",
-    .type = AVT_CONNECTION_FILE,
-    .init = file_init,
-    .process = file_process,
-    .close = file_close,
+    /* Private context */
+    struct AVTConnectionContext *ctx;
 };
+
+#endif

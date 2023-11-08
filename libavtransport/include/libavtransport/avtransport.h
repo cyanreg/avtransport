@@ -27,38 +27,9 @@
 #ifndef LIBAVTRANSPORT_VIDEO_HEADER
 #define LIBAVTRANSPORT_VIDEO_HEADER
 
-typedef struct AVTContext  AVTContext;
-typedef struct AVTMetadata AVTMetadata;
-
-#include <libavtransport/common.h>
-
-/* Connection type */
-enum AVTConnectionType {
-    /* URL address in the form of:
-     * avt://[<transport>@]<address>[:<port>]
-     * - <transport> may be either missing (fallback to UDP),
-     *   "udp", "udplite", or "quic"
-     * - <address> of the remote host, or multicast group
-     * - <port> on which to listen to/transmit on
-     */
-    AVT_CONNECTION_URL,
-
-    /* Reverse connectivity for senders/receivers.
-     * The context MUST already have an output or input initialized. */
-    AVT_CONNECTION_REVERSE,
-
-    /* File path */
-    AVT_CONNECTION_FILE,
-
-    /* Socket */
-    AVT_CONNECTION_SOCKET,
-
-    /* File descriptor */
-    AVT_CONNECTION_FD,
-
-    /* Raw reader/writer using callbacks. */
-    AVT_CONNECTION_CALLBACKS,
-};
+#include <libavtransport/connection.h>
+#include <libavtransport/output.h>
+#include <libavtransport/input.h>
 
 enum AVTLogLevel {
     AVT_LOG_QUIET    = -(1 << 0),
@@ -71,7 +42,9 @@ enum AVTLogLevel {
     AVT_LOG_TRACE    = +(1 << 5),
 };
 
+/* Library context-level options */
 typedef struct AVTContextOptions {
+    /* Logging context */
     void *log_opaque;
     void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
                    const char *format, va_list args, int error);

@@ -4,3 +4,13 @@ option('output', type: 'feature', value: 'auto', description: 'Build libavtransp
 option('input', type: 'feature', value: 'auto', description: 'Build libavtransport with input support')
 
 option('tools', type: 'feature', value: 'auto', description: 'Build libavtransport CLI tools')
+
+option(
+  'backends',
+  type : 'array',
+  value : ['auto'],
+  choices : [
+      'auto', 'socket', 'file', 'quic', 'raw', 'null',
+  ],
+  description : 'List of backend types to build with. Auto means build all supported on the platform.'
+)

@@ -27,66 +27,31 @@
 #ifndef LIBAVTRANSPORT_OUTPUT_HEADER
 #define LIBAVTRANSPORT_OUTPUT_HEADER
 
-#include <libavtransport/common.h>
-
-typedef struct AVTOutputDestination {
-    enum AVTConnectionType type;
-    union {
-        int reverse;
-        const char *path;
-        int fd;
-        int (*write_data)(void *opaque, AVTBuffer *buf);
-    };
-
-    void *opaque;
-} AVTOutputDestination;
+#include <libavtransport/connection.h>
+#include <libavtransport/stream.h>
+#include <libavtransport/utils.h>
 
 typedef struct AVTOutputOptions {
-    /**
-     * If the context has an input, include its packets into the output.
-     */
-    int dump_all;
+    /* Period in nanoseconds for sending session_start packets to the receiver.
+     * Default: 250000000 (every 250 milliseconds). */
+    int64_t keepalive_period;
 
-    /**
-     * How often to repeat all stream initialization data, in nanoseconds.
-     * If output is a file, 0 means never.
-     * If output is a stream, 0 means every 5 seconds.
-     * Use -1 to completely disable.
-     */
-    int64_t repeat_init_rate;
-
-    /**
-     * Override the MTU size.
-     * If output is a file, 0 means infinite.
-     * If output is a stream, 0 means 378 until MTU discovery succeeds,
-     * or 1280 if it fails. Must be more than or equal to 378.
-     */
-    size_t mtu_override;
-
-    /**
-     * Buffer to allow receivers to seek and request old packets.
-     * 0 means none (default). Otherwise, the value is in total bytes.
-     */
-    size_t buffer_size;
-
-    /**
-     * Time in nanoseconds to wait on transmission before returning
-     * a timeout.
-     *
-     * Default: infinite.
-     */
-    uint64_t timeout;
+    /* Period in nanoseconds for resending all stream initialization packets.
+     * Default: 10000000000 (every 10 seconds). */
+    int64_t refresh_period;
 } AVTOutputOptions;
 
-/* Open an output and immediately send a stream session packet */
-AVT_API int avt_output_open(AVTContext *ctx, AVTOutputDestination *dst,
-                            AVTOutputOptions *opts);
+/* Open an output and immediately send/write a stream session packet.
+ *
+ * NOTE: Multiple connections may be bound for output to enable
+ * one-to-many streaming or writing */
+AVT_API int avt_output_open(AVTContext *ctx, AVTConnection *conn);
 
 /* Send an epoch packet and set the epoch to use. */
 AVT_API int avt_output_set_epoch(AVTContext *ctx, uint64_t epoch);
 
 /* Register a stream and allocate internal state for it.
- * To automatically assign a stream ID, set id to 65536.
+ * To automatically assign a stream ID, set id to 65535.
  * If there's an existing stream with the same ID, will return NULL. */
 AVT_API AVTStream *avt_output_add_stream(AVTContext *ctx, uint16_t id);
 

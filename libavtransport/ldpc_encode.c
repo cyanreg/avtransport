@@ -24,4 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ldpc.h"
+#include "ldpc_encode.h"
+
+void avt_bsw_ldpc_288_224(AVTBytestream *bs)
+{
+
+}
+
+void avt_bsw_ldpc_2784_2016(AVTBytestream *bs)
+{
+
+}

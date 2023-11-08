@@ -24,4 +24,4 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ldpc.h"
+#include "ldpc_decode.h"

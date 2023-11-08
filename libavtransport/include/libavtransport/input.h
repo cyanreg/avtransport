@@ -27,19 +27,31 @@
 #ifndef LIBAVTRANSPORT_INPUT_HEADER
 #define LIBAVTRANSPORT_INPUT_HEADER
 
-#include <libavtransport/common.h>
+#include <libavtransport/stream.h>
+#include <libavtransport/utils.h>
 
-typedef struct AVTInputSource {
-    enum AVTConnectionType type;
-    union {
-        int reverse;
-        const char *path;
-        int fd;
-        int (*read_data)(void *opaque, AVTBuffer *data, int64_t offset);
-    };
+typedef struct AVTInputOptions {
+    /**
+     * Time in nanoseconds to wait on new data before giving up.
+     * Default: infinite.
+     */
+    uint64_t timeout;
 
-    void *opaque;
-} AVTInputSource;
+    struct {
+        /**
+         * Whether to always check and correct using Raptor codes in the headers.
+         * Default: false
+         */
+        bool always_test_headers;
+
+        /**
+         * Number of decoding steps. Higher values increase performance overhead,
+         * but allow for better correction of errors.
+         * Default: 1
+         */
+        uint8_t iterations;
+    } ldpc;
+} AVTInputOptions;
 
 /* List of callbacks. All are optional. */
 typedef struct AVTInputCallbacks {
@@ -74,21 +86,8 @@ typedef struct AVTInputCallbacks {
                        uint32_t missing_packets);
 } AVTInputCallbacks;
 
-typedef struct AVTInputOptions {
-    /**
-     * Whether to always check and correct using Raptor codes in the headers.
-     */
-    bool always_test_headers;
-
-    /**
-     * Time in nanoseconds to wait on new data before calling the callback.
-     * Default: infinite.
-     */
-    uint64_t timeout;
-} AVTInputOptions;
-
 /* Open an AVTransport stream or a file for reading. */
-AVT_API int avt_input_open(AVTContext *ctx, AVTInputSource *src,
+AVT_API int avt_input_open(AVTContext *ctx, AVTConnection *conn,
                            AVTInputCallbacks *cb, void *cb_opaque,
                            AVTInputOptions *opts);
 
@@ -112,3 +111,4 @@ AVT_API int avt_input_start_thread(AVTContext *ctx);
 AVT_API int avt_input_close(AVTContext *ctx);
 
 #endif
+

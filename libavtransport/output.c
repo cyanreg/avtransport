@@ -24,56 +24,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string.h>
-#include <stdlib.h>
+#include "output.h"
 
-#include <libavtransport/video.h>
 #include "../packet_encode.h"
 
-#include "common.h"
-#include "output.h"
-#include "bytestream.h"
-#include "buffer.h"
-#include "raptor.h"
+extern const AVTOutput avt_output_file;
+extern const AVTOutput avt_output_socket;
 
-extern const PQOutput pq_output_file;
-extern const PQOutput pq_output_socket;
-
-static const PQOutput *pq_output_list[] = {
-    &pq_output_file,
-    &pq_output_socket,
+static const AVTOutput *avt_output_list[] = {
+    &avt_output_file,
+    &avt_output_socket,
 
     NULL,
 };
 
-#if 0
-int avt_output_open(AVTContext *ctx, AVTOutputDestination *dst,
-                   AVTOutputOptions *opts)
+int avt_output_open(AVTContext *ctx, AVTConnection *conn)
 {
-    if (ctx->dst.ctx)
-        return AVT_ERROR(EINVAL);
+    int ret = 0;
 
-    const PQOutput *out;
-    for (out = pq_output_list[0]; out; out++) {
-        if (out->type == dst->type)
-            break;
+    if (!ctx->output.nb_conn) {
+        avt_log(ctx, AVT_LOG_ERROR, "No connections to which to output to!\n");
+        return AVT_ERROR(EINVAL);
     }
 
-    if (!out)
-        return AVT_ERROR(ENOTSUP);
-
-    ctx->dst.cb = out;
-    ctx->dst.dst = *dst;
-
-    int ret = out->init(ctx, &ctx->dst.ctx, dst, opts);
-    if (ret < 0)
-        return ret;
-
+/*
     uint8_t hdr[36];
-    PQ_INIT(bs, hdr, sizeof(hdr))
+    AVT_INIT(bs, hdr, sizeof(hdr))
 
-    PQ_WBL(bs, 16, AVT_PKT_SESSION_START);
-    PQ_WBL(bs, 16, 0x0);
+    AVT_WBL(bs, 16, AVT_PKT_SESSION_START);
+    P_QWBL(bs, 16, 0x0);
     PQ_WBL(bs, 32, atomic_fetch_add_explicit(&ctx->dst.seq, 1, memory_order_relaxed));
     PQ_WBL(bs,  8, AVTMIN(strlen(PROJECT_NAME), 13));
     PQ_WST(bs, 13, PROJECT_NAME);
@@ -81,14 +60,16 @@ int avt_output_open(AVTContext *ctx, AVTOutputDestination *dst,
     PQ_WBL(bs, 16, PROJECT_VERSION_MINOR);
     PQ_WBL(bs, 16, PROJECT_VERSION_MICRO);
     PQ_WBL(bs, 64, pq_calc_raptor_224(PQ_GETLAST(bs, 28)));
+*/
 
-    ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
-    if (ret < 0)
-        ctx->dst.cb->close(ctx, &ctx->dst.ctx);
+//    ret = ctx->dst.cb->output(ctx, ctx->dst.ctx, hdr, PQ_WLEN(bs), NULL);
+//    if (ret < 0)
+//        ctx->dst.cb->close(ctx, &ctx->dst.ctx);
 
     return ret;
 }
 
+#if 0
 int avt_output_set_epoch(AVTContext *ctx, uint64_t epoch)
 {
     if (!ctx->dst.ctx)

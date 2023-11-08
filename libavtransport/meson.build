@@ -19,21 +19,26 @@ dependencies = [
 
 # Headers
 headers = [
-#    'common.h',
-#    'input.h',
-#    'output.h'
+    'avtransport.h',
+    'connection.h',
+    'output.h',
+    'input.h',
+    'stream.h',
+    'rational.h',
+    'utils.h'
 ]
 
 subdir('include/libavtransport')
 
 # Base files
 sources = [
-    'common.c',
+    'avtransport.c',
     'buffer.c',
 
-#    'input.c',
-#    'output.c',
-#    'raptor.c',
+    'ldpc.c',
+    'raptor.c',
+    'connection.c',
+    'connection_file.c',
 
     conv_spec,
     conv_spec_headers,
@@ -44,14 +49,14 @@ sources = [
                       fallback: 'release')
 ]
 
-if get_option('input').auto()
-#    sources += 'input_file.c'
-    sources += 'reorder.c'
+if get_option('output').auto()
+    sources += 'output.c'
+    sources += 'ldpc_encode.c'
 endif
 
-if get_option('output').auto()
-#    sources += 'output_file.c'
-#    sources += 'output_socket.c'
+if get_option('input').auto()
+    sources += 'reorder.c'
+    sources += 'ldpc_decode.c' 
 endif
 
 # Check for wmain support (Windows/MinGW)

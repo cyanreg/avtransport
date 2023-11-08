@@ -29,8 +29,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
-#include <libavtransport/common.h>
+#include <uchar.h>
+#include <errno.h>
 
 /* Any function flagged with AVT_API is exported as a symbol */
 #ifndef AVT_API
@@ -48,6 +48,8 @@
         #endif
     #endif
 #endif
+
+typedef struct AVTContext AVTContext;
 
 typedef struct AVTMetadata AVTMetadata;
 
@@ -84,7 +86,7 @@ AVT_API void avt_buffer_unref(AVTBuffer **buffer);
  * negatives. */
 #define AVT_ERROR(err) (-(err))
 
-#define AVTMIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
-#define AVTMAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
+#define AVT_MIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
+#define AVT_MAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
 
 #endif

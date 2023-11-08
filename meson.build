@@ -37,6 +37,8 @@ else
     conf.set('CONFIG_OUTPUT', 0)
 endif
 
+conf.set('CONFIG_ASSERT_LEVEL', 2)
+
 cc = meson.get_compiler('c')
 if cc.has_argument('-fvisibility=hidden')
     add_project_arguments('-fvisibility=hidden', language: 'c')

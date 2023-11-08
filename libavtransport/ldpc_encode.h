@@ -27,4 +27,10 @@
 #ifndef LIBAVTRANSPORT_LDPC_ENCODE
 #define LIBAVTRANSPORT_LDPC_ENCODE
 
+#include "bytestream.h"
+
+void avt_bsw_ldpc_288_224(AVTBytestream *bs);
+
+void avt_bsw_ldpc_2784_2016(AVTBytestream *bs);
+
 #endif

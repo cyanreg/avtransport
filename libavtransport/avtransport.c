@@ -31,10 +31,9 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include <libavtransport/common.h>
+#include <libavtransport/avtransport.h>
 
 #include "common.h"
-#include "reorder.h"
 
 int avt_init(AVTContext **ctx, AVTContextOptions *opts)
 {
@@ -45,8 +44,8 @@ int avt_init(AVTContext **ctx, AVTContextOptions *opts)
     if (opts)
         tmp->opts = *opts;
 
-    atomic_init(&tmp->dst.seq, 0);
-    atomic_init(&tmp->src.seq, 0);
+    atomic_init(&tmp->output.seq, 0);
+    atomic_init(&tmp->input.seq, 0);
 
     *ctx = tmp;
     return 0;
@@ -55,8 +54,6 @@ int avt_init(AVTContext **ctx, AVTContextOptions *opts)
 void avt_close(AVTContext **ctx)
 {
     if (ctx) {
-        avt_reorder_uninit(*ctx);
-
         free(*ctx);
         *ctx = NULL;
     }
@@ -171,7 +168,7 @@ int avt_parse_address(const char *path, enum AVTProtocolType *proto,
 
 AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id)
 {
-    if (!ctx->dst.ctx)
+    if (!ctx->output.ctx)
         return NULL;
 
     AVTStream *ret = NULL;

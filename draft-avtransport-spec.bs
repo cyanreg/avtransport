@@ -6,7 +6,7 @@ Shortname: avtransport
 URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
-Date: 2023-10-18
+Date: 2023-11-08
 Status: LD
 Group: FFmpeg
 Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
@@ -3031,7 +3031,7 @@ For AAC encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be 0x41414300 (''AAC0'').
 
-The [[#stream-configuration-packets]] payload MUST be the
+The [[#stream-configuration-packets]] payload must be the
 codec's ''AudioSpecificConfig'', as defined in MPEG-4.
 
 The [=packet_data=] MUST contain regular AAC ADTS packtes. Note that ''LATM'' is
@@ -3050,8 +3050,91 @@ must be ''0x41432d33'' (''AC-3'').
 
 AC-3 streams require no [[#stream-configuration-packets]].
 
-THe `packet_data` MUST contain regular AC-3 OR E-AC-3 frames, starting from the
+THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.
+
+
+### FLAC encapsulation ### {#flac-encapsulation}
+
+For FLAC encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x664c6143'' (''fLaC'').
+
+FLAC streams require [[#stream-configuration-packets]] packets,
+to contain the stream info header, which is defined as follows:
+
+<figure id="table-FlacConfig" class="table">
+    <table class="complex data longlastcol" dfn-for="#flac-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>flac_min_blocksize</dfn></td>
+            <td></td>
+            <td>Minimum block size in samples.</td>
+        </tr>
+        <tr>
+            <td><code>u(16)</code></td>
+            <td><dfn>flac_max_blocksize</dfn></td>
+            <td></td>
+            <td>Maximum number of samples in a block. Must be larger than [=flac_min_blocksize=].</td>
+        </tr>
+        <tr>
+            <td><code>u(24)</code></td>
+            <td><dfn>flac_min_framesize</dfn></td>
+            <td></td>
+            <td>Minimum framesize in bytes.</td>
+        </tr>
+        <tr>
+            <td><code>u(24)</code></td>
+            <td><dfn>flac_max_framesize</dfn></td>
+            <td></td>
+            <td>Maximum framesize in bytes. Must be larger than [=flac_min_framesize=].</td>
+        </tr>
+        <tr>
+            <td><code>u(20)</code></td>
+            <td><dfn>flac_samplerate</dfn></td>
+            <td></td>
+            <td>Samplerate of the signal.</td>
+        </tr>
+        <tr>
+            <td><code>u(3)</code></td>
+            <td><dfn>flac_channels</dfn></td>
+            <td></td>
+            <td>Number of channels.</td>
+        </tr>
+        <tr>
+            <td><code>u(5)</code></td>
+            <td><dfn>flac_bitdepth</dfn></td>
+            <td></td>
+            <td>Bit depth of the signal.</td>
+        </tr>
+        <tr>
+            <td><code>u(24)</code></td>
+            <td><dfn>flac_nb_samples_1</dfn></td>
+            <td></td>
+            <td>Top 24 bits of the total number of samples in the stream, if known.</td>
+        </tr>
+        <tr>
+            <td><code>u(12)</code></td>
+            <td><dfn>flac_nb_samples_2</dfn></td>
+            <td></td>
+            <td>Bottom 12 bits of the number of samples in the stream, if known.</td>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn>flac_streaminfo_md5</dfn></td>
+            <td></td>
+            <td>MD5 ([[RFC1321]]) checksum of the previous 34 bytes.</td>
+        </tr>
+    </table>
+</figure>
+
+The `packet_data` must contain raw FLAC frames, with their frame header untouched.
 
 
 ### AV1 encapsulation ### {#av1-encapsulation}
@@ -3092,7 +3175,7 @@ The [=packet_data=] must contain the following elements, in order:
  - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
 
 A [[#stream-configuration-packets]] may be sent, to
-speed up stream initialization. If they are present, they MUST contain an
+speed up stream initialization. If they are present, they must contain an
 `AVCDecoderConfigurationRecord` structure, as defined in ''ISO/IEC 14496-15''.
 
 
@@ -3109,7 +3192,7 @@ The [=packet_data=] must contain the following elements, in order:
 ''Annex-B'' formatted packets must be used, with startcode emulation bits included.
 
 A [[#stream-configuration-packets]] may be sent, to
-speed up stream initialization. If they are present, they MUST contain an
+speed up stream initialization. If they are present, they must contain an
 ''HEVCDecoderConfigurationRecord'' structure, as defined in ''ISO/IEC 23008''.
 
 
@@ -3119,10 +3202,22 @@ For Dirac or VC-2 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be ''0x42424344'' (''BBCD'').
 
-Dirac streams require no [[#stream-configuration-packets).
+Dirac streams require no [[#stream-configuration-packets]].
 
-The [=packet_data=] MUST contain raw sequences,
+The [=packet_data=] must contain raw sequences,
 with one sequence being a picture.
+
+
+### FFv1 encapsulation ### {#ffv1-encapsulation}
+
+For [[RFC9043|FFv1]] encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x46467631'' (''FFv1'').
+
+Stream configuration data is required for FFv1. [[#stream-configuration-packets]] must
+contain a "Parameters" structure, as defined in [[RFC9043#name-parameters]].
+
+The [=packet_data=] must contain raw FFv1 packets.
 
 
 ### ASS encapsulation ### {#ass-encapsulation}
@@ -3436,6 +3531,25 @@ The [=packet_data=] field can be any length and contain any sequence of data.
 
 This section describes and suggests behavior for realtime AVTransport streams.
 
+The protocol supports four different streaming arrangements:
+ - Unidirectional (Sender to Receiver)
+ - Bidirectional (Sender to Receiver and Receiver to Sender)
+ - Multidirectional prompted (Sender to Multiple Active Receivers)
+ - Multicast (Sender to Multiple Receivers)
+
+In the first case (Unidirectional), the sender initializes the session by sending a [[#session-start-packets]]
+to the receiver, and proceeds with sending more packets.
+
+In the second case (Bidirectional), the sender initializes the session by sending a [[#session-start-packets]]
+packet with a {{SESSION_REVERSE_SIGNAL_READY}} flag, and on the same connection, the receiver sends another
+[[#session-start-packets]] packet to initialize reverse connectivity.
+
+In the third case (Multidirectional prompted) case, the sender listens for any [[#session-start-packets]]
+sent by clients on a given port. If received, the server begins to send information back to the client address
+on the same connection it received the session start packet.
+
+In the fourth case (Multicast), the server binds to a multicast UDP address and begins to send data.
+
 In general, implementations should emit the following packet types
 at the given frequencies.
 
@@ -3536,6 +3650,9 @@ packets to be sent without fragmentation.
 Note: Data packets may be padded by appending random data or zeroes after the [=packet_data=]
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
+
+Note: When operating at higher MTUs, implementations should consider adding FEC or parity,
+as the 16-bit UDP datagram CRC may be inadequate to detect errors.
 
 If [[#reverse-signalling]] is used, the receiver must send packets over to the
 sender using the same port number that the receiver is listening on.

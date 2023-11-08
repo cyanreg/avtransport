@@ -27,7 +27,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common.h"
 #include "buffer.h"
 
 AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
