@@ -29,88 +29,85 @@
 #include <errno.h>
 
 #include "connection_internal.h"
-#include "bytestream.h"
 
-typedef struct AVTConnectionContext {
+struct AVTIOCtx {
     FILE *f;
-} AVTConnectionContext;
+};
 
-static int file_init(AVTContext *ctx, AVTConnection *conn,
-                     AVTConnectionInfo *info)
+static int file_init(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr)
 {
-    AVTConnectionContext *priv = malloc(sizeof(*priv));
+    AVTIOCtx *priv = malloc(sizeof(*priv));
     if (!priv)
         return AVT_ERROR(ENOMEM);
 
-    priv->f = fopen(info->path, "w+");
+    priv->f = fopen(addr->path, "w+");
     if (!priv->f) {
         free(priv);
         return AVT_ERROR(errno);
     }
 
-    conn->ctx = priv;
+    *io = priv;
 
     return 0;
 }
 
-static uint32_t file_max_pkt_len(AVTContext *ctx, AVTConnection *conn)
+static uint32_t file_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
 {
     return UINT32_MAX;
 }
 
-static int file_input(AVTContext *ctx, AVTConnection *conn)
+static int file_input(AVTContext *ctx, AVTIOCtx *io, AVTBuffer *buf)
 {
     uint8_t header[36];
-    fread(header, 36, 1, conn->ctx->f);
+    fread(header, 36, 1, io->f);
 
     return 0;
 }
 
-static int file_output(AVTContext *ctx, AVTConnection *conn,
-                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
+static int file_output(AVTContext *ctx, AVTIOCtx *io,
+                       uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                       AVTBuffer *payload)
 {
     size_t len;
-    uint8_t *data = avt_buffer_get_data(buf, &len);
+    uint8_t *data = avt_buffer_get_data(payload, &len);
 
-    /* TODO: use io_uring */
-    size_t out = fwrite(hdr, hdr_len, 1, conn->ctx->f);
+    size_t out = fwrite(hdr, 1, hdr_len, io->f);
     if (out != hdr_len)
         return AVT_ERROR(errno);
 
-    if (buf) {
-        out = fwrite(data, len, 1, conn->ctx->f);
+    if (payload) {
+        out = fwrite(data, len, 1, io->f);
         if (out != len)
             return AVT_ERROR(errno);
     }
+    fflush(io->f);
 
     return 0;
 }
 
-static int file_seek(AVTContext *ctx, AVTConnection *conn,
-                     int64_t min_offset, uint32_t target_seq)
+static int file_seek(AVTContext *ctx, AVTIOCtx *io,
+                     uint64_t off, uint32_t seq,
+                     int64_t ts, bool ts_is_dts)
 {
     return 0;
 }
 
-static int file_close(AVTContext *ctx, AVTConnection *conn)
+static int file_close(AVTContext *ctx, AVTIOCtx **_io)
 {
-    int ret = fclose(conn->ctx->f);
-    if (ret != 0)
-        ret = AVT_ERROR(errno);
-
-    free(conn->ctx);
-    conn->ctx = NULL;
-
-    return 0;
+    AVTIOCtx *io = *_io;
+    int ret = fclose(io->f);
+    free(io);
+    *_io = NULL;
+    return AVT_ERROR(ret);
 }
 
-const AVTConnectionPrototype avt_output_file = {
+const AVTIO avt_io_file = {
     .name = "file",
-    .type = AVT_CONNECTION_FILE,
+    .type = AVT_IO_FILE,
     .init = file_init,
     .get_max_pkt_len = file_max_pkt_len,
-    .process_input = file_input,
-    .send_output = file_output,
+    .read_input = file_input,
+    .write_output = file_output,
     .seek = file_seek,
     .close = file_close,
 };

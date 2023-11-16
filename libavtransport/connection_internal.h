@@ -30,47 +30,114 @@
 #include "common.h"
 #include "reorder.h"
 
-enum AVTConnectionSubtype {
-    /* Start values: AVTConnectionType */
-    AVT_CONNECTION_UDP = 131072,
-    AVT_CONNECTION_UDP_LITE,
-    AVT_CONNECTION_QUIC,
+#include <avtransport/packet_enums.h>
+
+enum AVTProtocolMode {
+    AVT_MODE_DEFAULT,
+    AVT_MODE_PASSIVE,
+    AVT_MODE_ACTIVE,
 };
 
-typedef struct AVTConnectionPrototype {
+typedef struct AVTAddress {
+    enum AVTProtocolType proto;
+    enum AVTProtocolMode mode;
+    uint8_t ip[16]; /* Always mapped to IPv6 */
+    uint16_t port;
+    const char *path;
+    AVTMetadata *params;
+} AVTAddress;
+
+enum AVTIOType {
+    /* Framing guaranteed on inputs, simple IOs */
+    AVT_IO_NULL,
+    AVT_IO_SOCKET,
+    AVT_IO_CALLBACKS,
+
+    /* Will perform framing on inputs */
+    AVT_IO_FILE,
+    AVT_IO_FD,
+};
+
+/* Low level interface */
+typedef struct AVTIOCtx AVTIOCtx;
+typedef struct AVTIO {
     const char *name;
-    enum AVTConnectionSubtype type;
+    enum AVTIOType type;
+
+    int (*init)(AVTContext *ctx, AVTIOCtx **io,
+                AVTAddress *addr);
+
+    uint32_t (*get_max_pkt_len)(AVTContext *ctx, struct AVTIOCtx *io);
+
+    /* If only off is set, get the first packet at/after that offset.
+     * If pts is set, get the stream data packet at/after the pts time
+     * If seq is set, the get first packet at/after that seq */
+    int (*seek)(AVTContext *ctx, AVTIOCtx *io,
+                uint64_t off, uint32_t seq,
+                int64_t ts, bool ts_is_dts);
+
+    int (*read_input)(AVTContext *ctx, AVTIOCtx *io,
+                      AVTBuffer *buf);
+
+    int (*write_output)(AVTContext *ctx, AVTIOCtx *io,
+                        uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                        AVTBuffer *payload);
+
+    /* Flush data written */
+    int (*flush)(AVTContext *ctx, AVTIOCtx *io);
+
+    int (*close)(AVTContext *ctx, AVTIOCtx **io);
+} AVTIO;
+
+#define AVT_PROTOCOL_NOOP 0
+#define AVT_PROTOCOL_PIPE (AVT_PROTOCOL_QUIC + 1)
+#define AVT_PROTOCOL_FILE (AVT_PROTOCOL_PIPE + 1)
+#define AVT_PROTOCOL_FD   (AVT_PROTOCOL_FILE + 1)
+
+/* High level interface */
+typedef struct AVTProtocolCtx AVTProtocolCtx;
+typedef struct AVTProtocol {
+    const char *name;
+    enum AVTProtocolType type;
 
     /* Initialize a context */
-    int (*init)(AVTContext *ctx, AVTConnection *conn, AVTConnectionInfo *info);
+    int (*init)(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr);
+
+    /* Attempt to add a secondary destination, if the underlying implementation supports that */
+    int (*add_dest)(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr);
 
     /* Return the maximum packet length */
-    uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTConnection *conn);
+    uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTProtocolCtx *p);
 
-    /* Fetch input, and call the callbacks, or return an error */
-    int (*process_input)(AVTContext *ctx, AVTConnection *conn);
+    /* Receive a packet */
+    int (*receive_packet)(AVTContext *ctx, AVTProtocolCtx *p,
+                          AVTBuffer *buf);
 
-    /* Send output */
-    int (*send_output)(AVTContext *ctx, AVTConnection *conn,
-                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf);
+    /* Send */
+    int (*send_packet)(AVTContext *ctx, AVTProtocolCtx *p,
+                       uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                       AVTBuffer *buf);
 
     /* Seek to a place in the stream */
-    int (*seek)(AVTContext *ctx, AVTConnection *conn,
-                int64_t min_offset, uint32_t target_seq);
+    int (*seek)(AVTContext *ctx, AVTProtocolCtx *p,
+                uint64_t off, uint32_t seq,
+                int64_t ts, bool ts_is_dts);
 
     /* Close */
-    int (*close)(AVTContext *ctx, AVTConnection *conn);
-} AVTConnectionPrototype;
+    int (*close)(AVTContext *ctx, AVTProtocolCtx **p);
+} AVTProtocol;
 
 struct AVTConnection {
-    AVTConnectionPrototype *p;
+    const AVTProtocol *p;
+    AVTProtocolCtx *p_ctx;
+
     AVTReorderBuffer *in_buffer;
-
-    /* Copy of the info provided to the API */
-    AVTConnectionInfo info;
-
-    /* Private context */
-    struct AVTConnectionContext *ctx;
 };
+
+/* Initialize an IO (protocols-use, mainly) */
+int avt_init_io(AVTContext *ctx, const AVTIO **io, AVTIOCtx **io_ctx,
+                AVTAddress *addr);
+
+
 
 #endif

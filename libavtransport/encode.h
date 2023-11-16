@@ -24,13 +24,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_RATIONAL_HEADER
-#define LIBAVTRANSPORT_RATIONAL_HEADER
+#ifndef LIBAVTRANSPORT_ENCODE
+#define LIBAVTRANSPORT_ENCODE
 
-/* Rational data type structure. */
-typedef struct AVTRational {
-    int num;
-    int den;
-} AVTRational;
+#include "output.h"
+
+int avt_output_session_start(AVTContext *ctx, AVTOutput *out);
+
+int avt_output_time_sync(AVTContext *ctx, AVTOutput *out);
+
+int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
+                               AVTStream *st);
+
+int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
+                           AVTStream *st, AVTPacket *pkt);
+
+int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
+                          AVTStream *st);
+
+int avt_output_video_orientation(AVTContext *ctx, AVTOutput *out,
+                                 AVTStream *st);
 
 #endif

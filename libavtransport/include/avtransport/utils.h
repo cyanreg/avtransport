@@ -24,13 +24,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_UTILS_HEADER
-#define LIBAVTRANSPORT_UTILS_HEADER
+#ifndef LIBAVTRANSPORT_UTILS_H
+#define LIBAVTRANSPORT_UTILS_H
 
 #include <stddef.h>
 #include <stdint.h>
 #include <uchar.h>
 #include <errno.h>
+
+typedef struct AVTContext AVTContext;
+typedef struct AVTMetadata AVTMetadata;
+typedef struct AVTBuffer AVTBuffer;
+
+/* All functions return negative values for errors.
+ * This is a wrapper that's used to convert standard stderr values into
+ * negatives. */
+#define AVT_ERROR(err) (-(err))
+
+#define AVT_MIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
+#define AVT_MAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
+#define AVT_ARRAY_ELEMS(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 /* Any function flagged with AVT_API is exported as a symbol */
 #ifndef AVT_API
@@ -49,11 +62,15 @@
     #endif
 #endif
 
-typedef struct AVTContext AVTContext;
+#if defined(__GNUC__) || defined(__clang__)
+#define avt_printf_format(fmtpos, attrpos) __attribute__((__format__(__printf__, fmtpos, attrpos)))
+#else
+#define avt_printf_format(fmtpos, attrpos)
+#endif
 
-typedef struct AVTMetadata AVTMetadata;
-
-typedef struct AVTBuffer AVTBuffer;
+/* Probe if the sequence of 36 bytes represents a valid AVT packet, or
+ * the start of one. Returns 'true' if so. Result is fully certain. */
+AVT_API bool avt_data_probe(uint8_t data[36]);
 
 /* Create a reference counted buffer from existing data. */
 AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
@@ -80,13 +97,5 @@ AVT_API size_t avt_buffer_get_data_len(AVTBuffer *buffer);
 
 /* Unreference a reference counted buffer. */
 AVT_API void avt_buffer_unref(AVTBuffer **buffer);
-
-/* All functions return negative values for errors.
- * This is a wrapper that's used to convert standard stderr values into
- * negatives. */
-#define AVT_ERROR(err) (-(err))
-
-#define AVT_MIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
-#define AVT_MAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
 
 #endif

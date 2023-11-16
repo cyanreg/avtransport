@@ -24,30 +24,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#ifndef AVTRANSPORT_VERSION_H
+#define AVTRANSPORT_VERSION_H
 
-#include <stdatomic.h>
+#define AVTRANSPORT_API_VERSION_MAJOR @AVTRANSPORT_API_VERSION_MAJOR@
+#define AVTRANSPORT_API_VERSION_MINOR @AVTRANSPORT_API_VERSION_MINOR@
+#define AVTRANSPORT_API_VERSION_MICRO @AVTRANSPORT_API_VERSION_MICRO@
 
-#include <avtransport/utils.h>
+/**
+ * Extract versions from the value returned by
+ * avtransport_version_int()
+ */
+#define AVTRANSPORT_API_MAJOR(v) (((v) >> 16) & 0xFF)
+#define AVTRANSPORT_API_MINOR(v) (((v) >>  8) & 0xFF)
+#define AVTRANSPORT_API_MICRO(v) (((v) >>  0) & 0xFF)
 
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
-
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                        ptrdiff_t offset, int64_t len);
-
-void avt_buffer_quick_unref(AVTBuffer *buf);
-
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+#endif /* AVTRANSPORT_VERSION_H */

@@ -27,27 +27,19 @@
 #ifndef LIBAVTRANSPORT_OUTPUT
 #define LIBAVTRANSPORT_OUTPUT
 
-#include <libavtransport/output.h>
+#include <avtransport/output.h>
 
 #include "common.h"
-
-typedef struct AVTOutputContext AVTOutputContext;
+#include "connection_internal.h"
 
 typedef struct AVTOutput {
-    const char *name;
-    enum AVTConnectionType type;
+    AVTConnection *conn;
 
-    int (*init)(AVTContext *ctx, AVTOutputContext **pc,
-                AVTConnection *conn, AVTOutputOptions *opts);
-
-    uint32_t (*max_pkt_len)(AVTContext *ctx, AVTOutputContext *pc);
-
-    int (*output)(AVTContext *ctx, AVTOutputContext *pc,
-                  uint8_t *hdr, size_t hdr_len, AVTBuffer *buf);
-
-    int (*close)(AVTContext *ctx, AVTOutputContext **pc);
+    atomic_uint_least64_t seq;
+    atomic_uint_least64_t epoch;
 } AVTOutput;
 
-uint32_t avt_unlim_pkt_len(AVTContext *ctx, AVTOutputContext *pc);
+int avt_packet_send(AVTContext *ctx, AVTOutput *out,
+                    uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf);
 
 #endif

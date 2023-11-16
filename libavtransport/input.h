@@ -27,7 +27,7 @@
 #ifndef LIBAVTRANSPORT_INPUT
 #define LIBAVTRANSPORT_INPUT
 
-#include <libavtransport/input.h>
+#include <avtransport/input.h>
 
 #include "common.h"
 

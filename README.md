@@ -1,4 +1,3 @@
-
 # AVTransport
 This repository hosts the AVTransport container/media transmission protocol, and the reference implementation code.
 
@@ -32,7 +31,7 @@ If `transport` is not specified, the *udp* transport method shall be assumed. `t
 Alternatively, for UDP-only, the `udp://<address>:<port>` URI scheme can be used, at the risk of conflict with other protocols (`MPEG-TS`).
 
 ### File extension
-The `.at` or `.avt` file extensions shall be used.
+The `.avt` file extensions should be used.
 
 ## Links
 You can talk about the project and get in touch with developers on:

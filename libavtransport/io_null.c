@@ -24,73 +24,54 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_COMMON_HEADER
-#define LIBAVTRANSPORT_COMMON_HEADER
-
-#include <stdint.h>
-#include <stdarg.h>
-#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include <libavtransport/utils.h>
-#include <libavtransport/rational.h>
-#include <libavtransport/packet_enums.h>
-#include <libavtransport/packet_data.h>
+#include "connection_internal.h"
 
-enum AVTCodecID {
-    AVT_CODEC_RAW_VIDEO = 1,
-    AVT_CODEC_FFV1,
-    AVT_CODEC_AV1,
-    AVT_CODEC_VP9,
-    AVT_CODEC_H264,
-    AVT_CODEC_H265,
-    AVT_CODEC_DIRAC,
-    AVT_CODEC_TIFF,
-    AVT_CODEC_PNG,
-    AVT_CODEC_JPEG,
-    AVT_CODEC_SVG,
+static int null_init(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr)
+{
+    *io = NULL;
+    return 0;
+}
 
-    AVT_CODEC_RAW_AUDIO = 32768,
-    AVT_CODEC_OPUS,
-    AVT_CODEC_AAC,
-    AVT_CODEC_AC3,
-    AVT_CODEC_FLAC,
+static uint32_t null_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
+{
+    return UINT32_MAX;
+}
 
-    AVT_CODEC_ASS = 65536,
+static int null_input(AVTContext *ctx, AVTIOCtx *io, AVTBuffer *buf)
+{
+    return 0;
+}
+
+static int null_output(AVTContext *ctx, AVTIOCtx *io,
+                       uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                       AVTBuffer *payload)
+{
+    return 0;
+}
+
+static int null_seek(AVTContext *ctx, AVTIOCtx *io,
+                     uint64_t off, uint32_t seq,
+                     int64_t ts, bool ts_is_dts)
+{
+    return 0;
+}
+
+static int null_close(AVTContext *ctx, AVTIOCtx **_io)
+{
+    return 0;
+}
+
+const AVTIO avt_io_null = {
+    .name = "null",
+    .type = AVT_IO_NULL,
+    .init = null_init,
+    .get_max_pkt_len = null_max_pkt_len,
+    .read_input = null_input,
+    .write_output = null_output,
+    .seek = null_seek,
+    .close = null_close,
 };
-
-typedef struct AVTStream {
-    uint32_t id;
-    enum AVTCodecID codec_id;
-    AVTMetadata *meta;
-
-    /* Duration in nanoseconds, if known. */
-    uint64_t duration;
-
-    AVTVideoInfo video_info;
-    AVTBuffer *icc_profile;
-
-    enum AVTStreamFlags flags;
-    AVTRational timebase;
-    int64_t bitrate;
-
-    AVTBuffer *init_data;
-
-    struct AVTStream *related_to;
-    struct AVTStream *derived_from;
-
-    /* libavtransport private stream data. Do not touch or use. */
-    struct AVTStreamPriv *private;
-} AVTStream;
-
-typedef struct AVTPacket {
-    AVTBuffer *data;
-
-    enum AVTFrameType type;
-    int64_t pts;
-    int64_t dts;
-    int64_t duration;
-} AVTPacket;
-
-#endif

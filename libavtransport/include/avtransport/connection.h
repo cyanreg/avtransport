@@ -24,10 +24,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_CONNECTION_HEADER
-#define LIBAVTRANSPORT_CONNECTION_HEADER
+#ifndef AVTRANSPORT_CONNECTION_H
+#define AVTRANSPORT_CONNECTION_H
 
-#include <libavtransport/utils.h>
+#include "utils.h"
 
 typedef struct AVTConnection AVTConnection;
 
@@ -35,10 +35,10 @@ typedef struct AVTConnection AVTConnection;
 enum AVTConnectionType {
     /* URL address in the form of:
      *
-     * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>]
+     * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>][/<stream_id>[+<stream_id>][?<param1>=<val1]]
      *
-     * - <transport> may be either missing (fallback to UDP),
-     *   "udp", "udplite", "quic".
+     * - <transport> may be either missing (default: UDP),
+     *   "udp", "udplite", "quic", or "file".
      *
      * - <mode> is an optional setting which has different meanings for
      *   senders and receivers, and transports.
@@ -59,21 +59,27 @@ enum AVTConnectionType {
      *   For a list of options, consult AVTInputOptions for receivers in the
      *   libavtransport/input.h header, and AVTOutputOptions for senders in the
      *   libavtransport/output.h header.
+     *
+     * The library will also accept shorthand notations, such as "udp://",
+     * "udplite://", "quic://" and "file://", but none may be followed by
+     * <transport>:<mode>, only <address>[:<port>]. Using "avt://" is recommended.
      */
-    AVT_CONNECTION_URL = 0,
-
-    /* Reverse connectivity for receivers.
-     * The context MUST already have an output initialized. */
-    AVT_CONNECTION_REVERSE,
+    AVT_CONNECTION_URL = 1,
 
     /* File path */
     AVT_CONNECTION_FILE,
 
-    /* Socket */
+    /* Socket or file descriptor */
     AVT_CONNECTION_SOCKET,
 
-    /* Raw reader/writer using callbacks. */
-    AVT_CONNECTION_CALLBACKS,
+    /* Raw reader/writer using a callback. */
+    AVT_CONNECTION_CALLBACK,
+};
+
+enum AVTProtocolType {
+    AVT_PROTOCOL_UDP = 1,
+    AVT_PROTOCOL_UDP_LITE,
+    AVT_PROTOCOL_QUIC,
 };
 
 typedef struct AVTConnectionInfo {
@@ -81,22 +87,43 @@ typedef struct AVTConnectionInfo {
     enum AVTConnectionType type;
 
     union {
-        /* For AVT_CONNECTION_URL: URL using the syntax described above
-         * For files: file path */
+        /* AVT_CONNECTION_URL:  url using the syntax described above
+         * AVT_CONNECTION_FILE: file path */
         const char *path;
 
-        /* Socket or file descriptor */
-        int socket;
+        /* AVT_CONNECTION_SOCKET: opened and bound socket
+         * AVT_CONNECTION_FILE:   opened file descriptor */
+        struct {
+            /* File descriptor or bound socket */
+            int socket;
+            /* AVT_CONNECTION_SOCKET senders: destination IP (IPv4 in IPv6) */
+            uint8_t dst[16];
+            /* AVT_CONNECTION_SOCKET: use the receiver address instead of dst */
+            bool use_receiver_addr;
+            /* AVT_CONNECTION_SOCKET: which protocol to use */
+            enum AVTProtocolType protocol;
+        } fd;
 
-        /* Reading: callback to be called to give libavtransport a buffer of data.
-         * Writing: callback to be called to receive a buffer from libavtransport. */
-        int (*data)(void *opaque, AVTBuffer *buf);
+        /* AVT_CONNECTION_CALLBACK: structure */
+        struct {
+            /* Called by libavtransport in strictly sequential order,
+             * with no holes, to write data. */
+            int (*write)(void *opaque, AVTBuffer *buf);
+
+            /* Called by libavtransport to retrieve a piece of
+             * data at a particular offset. */
+            int (*read)(void *opaque, AVTBuffer **buf, uint64_t offset);
+
+            /* Opaque pointer which will be used for the data() callback. */
+            void *opaque;
+        } cb;
     };
 
-    /* Opaque pointer which will be used for the data() callback. */
-    void *opaque;
+    /* Input: probe data instead of only initializing the connection.
+     * avt_connection_create() will block until the first packet is received. */
+    bool probe;
 
-    /* Input: seek buffer */
+    /* Input: seek buffer size */
     size_t buffer;
 } AVTConnectionInfo;
 

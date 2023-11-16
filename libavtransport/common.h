@@ -29,19 +29,15 @@
 
 #include <stdatomic.h>
 
-#include <libavtransport/avtransport.h>
-
-enum AVTProtocolType {
-    AVT_UNKNOWN,
-    AVT_UDP,
-    AVT_QUIC,
-};
+#include <avtransport/avtransport.h>
 
 typedef struct AVTStreamPriv {
     enum AVTCodecID codec_id;
 } AVTStreamPriv;
 
 struct AVTContext {
+    struct AVTOutput *out;
+
     struct {
         AVTConnection **conn;
         int nb_conn;
@@ -65,18 +61,7 @@ struct AVTContext {
     AVTContextOptions opts;
 };
 
-int avt_parse_address(const char *path, enum AVTProtocolType *proto,
-                      uint8_t dst_ip[16], uint16_t *dst_port);
-
 AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id);
 AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id);
-
-#if defined(__GNUC__) || defined(__clang__)
-#define avt_printf_format(fmtpos, attrpos) __attribute__((__format__(__printf__, fmtpos, attrpos)))
-#else
-#define avt_printf_format(fmtpos, attrpos)
-#endif
-
-void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...) avt_printf_format(3, 4);
 
 #endif

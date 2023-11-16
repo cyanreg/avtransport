@@ -24,11 +24,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_INPUT_HEADER
-#define LIBAVTRANSPORT_INPUT_HEADER
+#ifndef AVTRANSPORT_INPUT_H
+#define AVTRANSPORT_INPUT_H
 
-#include <libavtransport/stream.h>
-#include <libavtransport/utils.h>
+#include "stream.h"
+#include "utils.h"
 
 typedef struct AVTInputOptions {
     /**

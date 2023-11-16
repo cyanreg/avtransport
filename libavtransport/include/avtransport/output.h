@@ -24,12 +24,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_OUTPUT_HEADER
-#define LIBAVTRANSPORT_OUTPUT_HEADER
+#ifndef AVTRANSPORT_OUTPUT_H
+#define AVTRANSPORT_OUTPUT_H
 
-#include <libavtransport/connection.h>
-#include <libavtransport/stream.h>
-#include <libavtransport/utils.h>
+#include "connection.h"
+#include "stream.h"
+#include "utils.h"
 
 typedef struct AVTOutputOptions {
     /* Period in nanoseconds for sending session_start packets to the receiver.
@@ -39,6 +39,10 @@ typedef struct AVTOutputOptions {
     /* Period in nanoseconds for resending all stream initialization packets.
      * Default: 10000000000 (every 10 seconds). */
     int64_t refresh_period;
+
+    /* Bandwidth available, in bits per second. Will segment and interleave
+     * streams in such a way as to satisfy limited throughput. */
+    uint64_t bandwidth;
 } AVTOutputOptions;
 
 /* Open an output and immediately send/write a stream session packet.

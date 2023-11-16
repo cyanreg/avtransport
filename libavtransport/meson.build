@@ -1,21 +1,26 @@
-build_opts = [
-    '-D_ISOC11_SOURCE', '-D_XOPEN_SOURCE=700', '-U__STRICT_ANSI__',
-
-    # Warnings
-    '-Wundef', '-Wmissing-prototypes', '-Wshadow', '-Wparentheses',
-    '-Wpointer-arith', '-Wno-pointer-sign',
-
-    # Warnings to treat as errors
-    '-Werror=implicit-function-declaration', '-Werror=missing-prototypes',
-    '-Werror=vla',
-]
-
-# Required dependencies
-dependencies = [
-    # misc
-    dependency('threads'),
-    cc.find_library('m', required : true),
-]
+# Copyright © 2023, Lynne
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Headers
 headers = [
@@ -28,7 +33,8 @@ headers = [
     'utils.h'
 ]
 
-subdir('include/libavtransport')
+# Generate additional headers from spec and install them
+subdir('include/avtransport')
 
 # Base files
 sources = [
@@ -37,8 +43,11 @@ sources = [
 
     'ldpc.c',
     'raptor.c',
+
     'connection.c',
-    'connection_file.c',
+    'protocol_noop.c',
+    'io_null.c',
+    'io_file.c',
 
     conv_spec,
     conv_spec_headers,
@@ -51,28 +60,30 @@ sources = [
 
 if get_option('output').auto()
     sources += 'output.c'
+    sources += 'encode.c'
     sources += 'ldpc_encode.c'
 endif
 
 if get_option('input').auto()
     sources += 'reorder.c'
-    sources += 'ldpc_decode.c' 
+    sources += 'ldpc_decode.c'
 endif
 
-# Check for wmain support (Windows/MinGW)
-if cc.links('int wmain() { return 0; }', args: '-municode')
-     conf.set('HAVE_WMAIN', 1)
-     build_opts += '-municode'
+if host_machine.system() == 'windows'
+    avtransport_soversion = ''
+else
+    avtransport_soversion = avtransport_api_version_major
 endif
-
-add_global_arguments(build_opts, language: 'c')
 
 inc = include_directories('./include')
-libavtransport = library('avtransport', sources,
+libavtransport = library('avtransport',
+    sources,
     install: true,
-    dependencies: dependencies,
-    soversion: ver_major,
+
     include_directories: inc,
+    dependencies: lib_deps,
+    version: avtransport_soname_version,
+    soversion: avtransport_soversion,
 )
 
 libavtransport_dep = declare_dependency(

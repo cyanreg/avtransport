@@ -24,37 +24,75 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_VIDEO_HEADER
-#define LIBAVTRANSPORT_VIDEO_HEADER
+#ifndef AVTRANSPORT_STREAM_H
+#define AVTRANSPORT_STREAM_H
 
-#include <libavtransport/connection.h>
-#include <libavtransport/output.h>
-#include <libavtransport/input.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <errno.h>
+#include <stdbool.h>
 
-enum AVTLogLevel {
-    AVT_LOG_QUIET    = -(1 << 0),
-    AVT_LOG_FATAL    =  (0 << 0),
-    AVT_LOG_ERROR    = +(1 << 0),
-    AVT_LOG_WARN     = +(1 << 1),
-    AVT_LOG_INFO     = +(1 << 2),
-    AVT_LOG_VERBOSE  = +(1 << 3),
-    AVT_LOG_DEBUG    = +(1 << 4),
-    AVT_LOG_TRACE    = +(1 << 5),
+#include "utils.h"
+#include "rational.h"
+#include "packet_enums.h"
+#include "packet_data.h"
+
+enum AVTCodecID {
+    AVT_CODEC_RAW_VIDEO = 1,
+    AVT_CODEC_FFV1,
+    AVT_CODEC_AV1,
+    AVT_CODEC_VP9,
+    AVT_CODEC_H264,
+    AVT_CODEC_H265,
+    AVT_CODEC_DIRAC,
+    AVT_CODEC_TIFF,
+    AVT_CODEC_PNG,
+    AVT_CODEC_JPEG,
+    AVT_CODEC_SVG,
+
+    AVT_CODEC_RAW_AUDIO = 32768,
+    AVT_CODEC_OPUS,
+    AVT_CODEC_AAC,
+    AVT_CODEC_AC3,
+    AVT_CODEC_FLAC,
+
+    AVT_CODEC_ASS = 65536,
 };
 
-/* Library context-level options */
-typedef struct AVTContextOptions {
-    /* Logging context */
-    void *log_opaque;
-    void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
-                   const char *format, va_list args, int error);
-} AVTContextOptions;
+typedef struct AVTStream {
+    uint32_t id;
+    enum AVTCodecID codec_id;
+    AVTMetadata *meta;
 
-/* Allocate an AVTransport context with the given context options. */
-AVT_API int avt_init(AVTContext **ctx, AVTContextOptions *opts);
+    /* Duration in nanoseconds, if known. */
+    uint64_t duration;
 
-/* Uninitialize a context, closing all connections and files gracefully,
- * and free all memory used. */
-AVT_API void avt_close(AVTContext **ctx);
+    AVTVideoInfo video_info;
+    AVTVideoOrientation video_orientation;
 
-#endif /* LIBAVTRANSPORT_VIDEO_HEADER */
+    AVTBuffer *icc_profile;
+
+    enum AVTStreamFlags flags;
+    AVTRational timebase;
+    uint64_t bitrate;
+
+    AVTBuffer *init_data;
+
+    struct AVTStream *related_to;
+    struct AVTStream *derived_from;
+
+    /* libavtransport private stream data. Do not touch or use. */
+    struct AVTStreamPriv *priv;
+} AVTStream;
+
+typedef struct AVTPacket {
+    AVTBuffer *data;
+
+    enum AVTFrameType type;
+    int64_t pts;
+    int64_t dts;
+    int64_t duration;
+} AVTPacket;
+
+#endif

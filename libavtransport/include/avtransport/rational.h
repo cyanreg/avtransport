@@ -24,30 +24,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#ifndef AVTRANSPORT_RATIONAL_H
+#define AVTRANSPORT_RATIONAL_H
 
-#include <stdatomic.h>
-
-#include <avtransport/utils.h>
-
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
-
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                        ptrdiff_t offset, int64_t len);
-
-void avt_buffer_quick_unref(AVTBuffer *buf);
-
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
+/* Rational data type structure. */
+typedef struct AVTRational {
+    int num;
+    int den;
+} AVTRational;
 
 #endif

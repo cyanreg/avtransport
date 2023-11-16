@@ -24,30 +24,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#ifndef AVTRANSPORT_H
+#define AVTRANSPORT_H
 
-#include <stdatomic.h>
+#include "connection.h"
+#include "output.h"
+#include "input.h"
 
-#include <avtransport/utils.h>
-
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
+enum AVTLogLevel {
+    AVT_LOG_QUIET    = -(1 << 0),
+    AVT_LOG_FATAL    =  (0 << 0),
+    AVT_LOG_ERROR    = +(1 << 0),
+    AVT_LOG_WARN     = +(1 << 1),
+    AVT_LOG_INFO     = +(1 << 2),
+    AVT_LOG_VERBOSE  = +(1 << 3),
+    AVT_LOG_DEBUG    = +(1 << 4),
+    AVT_LOG_TRACE    = +(1 << 5),
 };
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                        ptrdiff_t offset, int64_t len);
+/* Library context-level options */
+typedef struct AVTContextOptions {
+    /* Logging context */
+    void *log_opaque;
+    void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
+                   const char *format, va_list args, int error);
 
-void avt_buffer_quick_unref(AVTBuffer *buf);
+    char producer_name[13];   /* Name of the project linking to libavtransport */
+    uint16_t producer_ver[3]; /* Major, minor, micro version */
+} AVTContextOptions;
 
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
+/* Allocate an AVTransport context with the given context options. */
+AVT_API int avt_init(AVTContext **ctx, AVTContextOptions *opts);
 
-#endif
+/* Uninitialize a context, closing all connections and files gracefully,
+ * and free all memory used. */
+AVT_API void avt_close(AVTContext **ctx);
+
+/* Main logging function */
+AVT_API void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...) avt_printf_format(3, 4);
+
+#endif /* LIBAVTRANSPORT_VIDEO_HEADER */

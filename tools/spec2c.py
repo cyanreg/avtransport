@@ -70,7 +70,7 @@ with open(f_input) as text:
 desc_list_tab = soup.find(id="descriptors_list")
 desc_pairs = desc_list_tab.find_all('tr')
 
-MAX_BITFIELD_LEN = 8
+MAX_BITFIELD_LEN = 32
 
 # Struct/function prefix
 data_prefix = "AVT"
@@ -126,6 +126,7 @@ def iter_data_fields(target_id, struct_name):
     original_desc_name = None
     original_struct_name = struct_name
     struct_fields = { }
+    bits_since_last_ldpc = 0
     for i in itertools.count():
         field_tab = soup.find(id=target_id + "+" + str(i))
         if field_tab == None:
@@ -144,7 +145,7 @@ def iter_data_fields(target_id, struct_name):
 
         if fields[2].string and fields[2].string.startswith("[[#generic"):
             template_descriptor = int(fields[0].string.strip("'"), 16)
-            descriptors[fields[1].string[:-11].upper()] = template_descriptor
+            descriptors[fields[1].string[:-11]] = template_descriptor
             print("Parsed templated struct", original_struct_name)
             templated_structs[struct_name] = dict({
                 "name": fields[1].string[:-11],
@@ -159,13 +160,20 @@ def iter_data_fields(target_id, struct_name):
         template = None
         struct = None
         string = False
+        payload = False
 
         if len(fields[2]) > 0:
             data = fields[2].string.strip("'[=]")
             if data.startswith("0x"):
                 fixed_number = int(data, 16);
+            elif data == "payload":
+                payload = True
             elif data.startswith("LDPC("):
                 ldpc = [int(x) for x in data[5:-1].split(',')]
+                if bits_since_last_ldpc != ldpc[1]:
+                    print("Mismatching #bits between LDPC:", bits_since_last_ldpc, "vs", ldpc[1])
+                    exit(22)
+                bits_since_last_ldpc = 0
             elif data.startswith("enum"):
                 enum = data[5:].strip("{}")
                 iter_enum_fields(enum)
@@ -241,9 +249,9 @@ def iter_data_fields(target_id, struct_name):
 
         if i == 0 and fixed_number != None: # Descriptor
             if size_bits == 16:
-                descriptors[fields[1].string.upper()[:-11]] = fixed_number
+                descriptors[fields[1].string[:-11]] = fixed_number
             elif size_bits == 8:
-                descriptors[fields[1].string.upper()[:-11]] = (fixed_number << 8) | descriptors["FLAG_LSB_BITMASK"]
+                descriptors[fields[1].string[:-11]] = (fixed_number << 8) | descriptors["FLAG_LSB_BITMASK"]
             elif target_id[0].isdigit():
                 print("Unknown descriptor in:", fields[0])
                 exit(22)
@@ -262,8 +270,14 @@ def iter_data_fields(target_id, struct_name):
             "struct": struct,
             "array_len": array_len,
             "string": string,
+            "payload": payload,
         })
+
+        if type(array_len) == int and array_len > 1:
+            size_bits *= array_len
         total_bits += size_bits
+        if ldpc == None:
+            bits_since_last_ldpc += size_bits
 
     if total_bits == 0:
         return None
@@ -334,8 +348,10 @@ if f_packet_enums != None:
     file_enums = open(f_packet_enums, "w+")
     file_enums.write(copyright_header + "\n")
     file_enums.write(autogenerate_note)
-    file_enums.write("#ifndef LIBAVTRANSPORT_PACKET_ENUMS\n")
-    file_enums.write("#define LIBAVTRANSPORT_PACKET_ENUMS\n" + "\n")
+    file_enums.write("#ifndef AVTRANSPORT_PACKET_ENUMS_H\n")
+    file_enums.write("#define AVTRANSPORT_PACKET_ENUMS_H\n" + "\n")
+
+    file_enums.write("#define AVT_MAX_HEADER_LEN " + str(384) + "\n\n")
 
     file_enums.write("enum " + data_prefix + "PktDescriptors {\n")
     for name, desc in descriptors.items():
@@ -343,7 +359,7 @@ if f_packet_enums != None:
         if desc > descriptors["FLAG_LSB_BITMASK"]:
             desc &= ~descriptors["FLAG_LSB_BITMASK"]
             add_flag = True;
-        file_enums.write("    " + data_prefix + "_PKT_" + name + " = " + "0x" + format(desc, "X"))
+        file_enums.write("    " + data_prefix + "_PKT_" + name.upper() + " = " + "0x" + format(desc, "X"))
         if add_flag:
             file_enums.write(" | AVT_PKT_FLAG_LSB_BITMASK")
         file_enums.write(",\n")
@@ -354,25 +370,26 @@ if f_packet_enums != None:
         for name, val in dfns.items():
             file_enums.write("    " + data_prefix + "_" + name + " = 0x" + format(val, "X") + ",\n")
         file_enums.write("};\n")
-    file_enums.write("\n#endif\n")
+    file_enums.write("\n#endif /* AVTRANSPORT_PACKET_ENUMS_H */\n")
+    file_enums.close()
 
 if f_packet_data != None:
     file_structs = open(f_packet_data, "w+")
     file_structs.write(copyright_header + "\n")
-    file_structs.write("#ifndef LIBAVTRANSPORT_PACKET_DATA\n")
-    file_structs.write("#define LIBAVTRANSPORT_PACKET_DATA\n" + "\n")
+    file_structs.write("#ifndef AVTRANSPORT_PACKET_DATA\n")
+    file_structs.write("#define AVTRANSPORT_PACKET_DATA\n" + "\n")
     file_structs.write(autogenerate_note + "\n")
     file_structs.write("#include <stdint.h>\n")
     file_structs.write("#include <uchar.h>\n")
     file_structs.write("#include <stddef.h>\n\n")
-    file_structs.write("#include <libavtransport/packet_enums.h>\n")
-    file_structs.write("#include <libavtransport/rational.h>\n")
+    file_structs.write("#include <avtransport/packet_enums.h>\n")
+    file_structs.write("#include <avtransport/rational.h>\n")
     for struct, fields in packet_structs.items():
         file_structs.write("\ntypedef struct " + struct + " {\n")
 
         newline_carryover = False;
         for name, field in fields.items():
-            if name == "padding":
+            if name.startswith("padding") or field["fixed"] != None or field["payload"]:
                 continue
             if newline_carryover:
                 file_structs.write("\n")
@@ -393,13 +410,16 @@ if f_packet_data != None:
             file_structs.write(";\n")
 
         file_structs.write("} " + struct + ";\n")
-    file_structs.write("\n#endif\n")
+    file_structs.write("\n#endif /* AVTRANSPORT_PACKET_DATA_H */\n")
+    file_structs.close()
 
 if f_packet_encode != None:
     file_encode = open(f_packet_encode, "w+")
     file_encode.write(copyright_header + "\n")
     file_encode.write(autogenerate_note + "\n")
-    file_encode.write("#include <libavtransport/packet_data.h>\n")
+    file_encode.write("#ifndef AVTRANSPORT_ENCODE_H\n")
+    file_encode.write("#define AVTRANSPORT_ENCODE_H\n" + "\n")
+    file_encode.write("#include <avtransport/packet_data.h>\n")
     file_encode.write("#include \"bytestream.h\"\n")
     file_encode.write("#include \"utils.h\"\n")
     file_encode.write("#include \"ldpc_encode.h\"\n")
@@ -447,26 +467,47 @@ if f_packet_encode != None:
             elif sym != bsw["pad"] and sym != bsw["ldpc"]:
                 if field["struct"] != None:
                     file_encode.write(", &p->" + name)
+                elif field["fixed"] != None:
+                    val = str(field["fixed"])
+                    if name[:-11] in descriptors:
+                        name = name[:-11].upper()
+                        val = ''
+                        if field["size_bits"] == 8:
+                            val += "("
+                        val += data_prefix + "_PKT_" + name
+                        # Workaround/hack for bitfields in descriptors
+                        if field["size_bits"] == 8:
+                            val += " >> 8) & 0xFF"
+                    file_encode.write(", " + val)
                 else:
                     file_encode.write(", p->" + name)
 
             # Array index
-            if (type(field["array_len"]) == int and field["array_len"] > 1) or \
-               (type(field["array_len"]) == str and field["bytestream"] > 1):
+            if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
+                (type(field["array_len"]) == str and field["bytestream"] > 1)) and \
+               sym != bsw["str"]:
                 file_encode.write("[i]")
+
+            if sym == bsw["str"]:
+                file_encode.write(", " + str(field["array_len"]))
+
             file_encode.write(");\n")
 
         for name, field in fields.items():
             indent = "    "
             write_sym = bsw["int"]
-            if field["datatype"] == data_prefix + "Rational":
+            if field["payload"]:
+                continue;
+            elif field["datatype"] == data_prefix + "Rational":
                 write_sym = bsw["rat"]
             elif field["ldpc"] != None:
                 write_sym = bsw["ldpc"]
-            elif name == "padding" and field["bytestream"] > 0:
+            elif name.startswith("padding") and field["bytestream"] > 0:
                 write_sym = bsw["pad"]
             elif (type(field["array_len"]) == str and field["bytestream"] == 1) or field["ldpc"] != None:
                 write_sym = bsw["buf"]
+            elif field["string"]:
+                write_sym = bsw["str"]
 
             if newline_carryover:
                 file_encode.write("\n")
@@ -476,7 +517,7 @@ if f_packet_encode != None:
 
             if field["bytestream"] == 0 and bitfield == False: # Setup bitfield writing
                 if had_bitfield == False:
-                    file_encode.write(indent + "uint32_t bitfield;\n");
+                    file_encode.write(indent + "uint" + str(MAX_BITFIELD_LEN) + "_t bitfield;\n");
                 bitfield = True
                 had_bitfield = True
                 bitfield_bit = (MAX_BITFIELD_LEN - 1)
@@ -486,13 +527,13 @@ if f_packet_encode != None:
                     file_encode.write(indent + "bitfield  = ")
                 else:
                     file_encode.write(indent + "bitfield |= ")
-                file_encode.write("p->" + name + " << (" + str(bitfield_bit) + " - " + str(field["size_bits"]) + ");\n")
+                file_encode.write("p->" + name + " << (" + str(bitfield_bit + 1) + " - " + str(field["size_bits"]) + ");\n")
                 bitfield_bit -= field["size_bits"]
             else:
-                if (type(field["array_len"]) == int and field["array_len"] > 1):
+                if write_sym != bsw["str"] and (type(field["array_len"]) == int and field["array_len"] > 1):
                     file_encode.write(indent + "for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
                     indent = indent + "    "
-                if (type(field["array_len"]) == str and field["bytestream"] > 1):
+                if write_sym != bsw["str"] and (type(field["array_len"]) == str and field["bytestream"] > 1):
                     file_encode.write(indent + "for (int i = 0; i < p->" + field["array_len"] + "; i++)\n")
                     indent = indent + "    "
                 wsym(indent, write_sym, name, field)
@@ -502,15 +543,19 @@ if f_packet_encode != None:
                 file_encode.write(indent + bsw["int"] + "u" + str(MAX_BITFIELD_LEN - bitfield_bit - 1) + "b (bs, bitfield);\n")
                 bitfield = False
         file_encode.write("}\n")
+    file_encode.write("#endif /* AVTRANSPORT_ENCODE_H */\n")
+    file_encode.close()
 
 if f_packet_decode != None:
     file_decode = open(f_packet_decode, "w+")
     file_decode.write(copyright_header + "\n")
     file_decode.write(autogenerate_note + "\n")
+    file_decode.write("#ifndef AVTRANSPORT_DECODE_H\n")
+    file_decode.write("#define AVTRANSPORT_DECODE_H\n" + "\n")
     if f_packet_enums != None:
         file_decode.write("#include \"" + f_packet_data + "\"\n")
     else:
-        file_decode.write("#include <libavtransport/packet_data.h>\n")
+        file_decode.write("#include <avtransport/packet_data.h>\n")
     for struct, fields in packet_structs.items():
         had_bitfield = False
         bitfield = False
@@ -552,9 +597,14 @@ if f_packet_decode != None:
                 file_decode.write(", " + str(field["bytestream"]))
 
             # Array index
-            if (type(field["array_len"]) == int and field["array_len"] > 1) or \
-               (type(field["array_len"]) == str and field["bytestream"] > 1):
+            if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
+                (type(field["array_len"]) == str and field["bytestream"] > 1)) and \
+               sym != bsr["str"]:
                 file_decode.write("[i]")
+
+            if sym == bsr["str"]:
+                file_decode.write(", " + str(field["array_len"]))
+
             file_decode.write(");\n")
 
         for name, field in fields.items():
@@ -564,10 +614,12 @@ if f_packet_decode != None:
                 read_sym = bsr["rat"]
             elif field["ldpc"] != None:
                 read_sym = bsr["ldpc"]
-            elif name == "padding" and field["bytestream"] > 0:
+            elif name.startswith("padding") and field["bytestream"] > 0:
                 read_sym = bsr["pad"]
             elif (type(field["array_len"]) == str and field["bytestream"] == 1) or field["ldpc"] != None:
                 read_sym = bsr["buf"]
+            elif field["string"]:
+                read_sym = bsr["str"]
 
             if newline_carryover:
                 file_decode.write("\n")
@@ -588,8 +640,9 @@ if f_packet_decode != None:
                 bitfield_bit -= field["size_bits"]
                 file_decode.write(indent + name + " = (bitfield >> " + str(bitfield_bit + 1) + ") & ((1 << " + str(field["size_bits"]) + ") - 1);\n")
             else:
-                if (type(field["array_len"]) == int and field["array_len"] > 1) or \
-                   (type(field["array_len"]) == str and field["bytestream"] > 1):
+                if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
+                    (type(field["array_len"]) == str and field["bytestream"] > 1)) and \
+                   read_sym != bsr["str"]:
                     file_decode.write(indent + "for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
                     indent = indent + "    "
                 rsym(indent, read_sym, name, field)
@@ -599,3 +652,5 @@ if f_packet_decode != None:
                 bitfield = False
                 file_decode.write("\n")
         file_decode.write("}\n")
+    file_decode.write("#endif /* AVTRANSPORT_DECODE_H */\n")
+    file_decode.close()

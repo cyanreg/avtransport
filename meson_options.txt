@@ -1,16 +1,57 @@
-option('assert', type: 'integer', min : 0, max : 2, value : 0, description: 'Assert level with which to build the library')
+option('assert',
+    type: 'integer',
+    min : -1,
+    max : 2,
+    value : -1,
+    description: 'Assert level with which to build the library (-1: depending on the build type)'
+)
 
-option('output', type: 'feature', value: 'auto', description: 'Build libavtransport with output support')
-option('input', type: 'feature', value: 'auto', description: 'Build libavtransport with input support')
+option('output',
+    type: 'feature',
+    value: 'auto',
+    description: 'Build libavtransport with output support'
+)
 
-option('tools', type: 'feature', value: 'auto', description: 'Build libavtransport CLI tools')
+option('input',
+    type: 'feature',
+    value: 'auto',
+    description: 'Build libavtransport with input support'
+)
 
-option(
-  'backends',
-  type : 'array',
-  value : ['auto'],
-  choices : [
-      'auto', 'socket', 'file', 'quic', 'raw', 'null',
-  ],
-  description : 'List of backend types to build with. Auto means build all supported on the platform.'
+option('tools',
+    type: 'feature',
+    value: 'auto',
+    description: 'Build libavtransport CLI tools'
+)
+
+option('protocols',
+    type : 'array',
+    value : ['all'],
+    choices : [ 'all' ],
+    description : 'List of protocol types to build with.'
+)
+
+option('io',
+    type : 'array',
+    value : ['all'],
+    choices : [ 'all' ],
+    description : 'List of inputs/outputs to build with.' 
+)
+
+option('ffmpeg',
+    type: 'feature',
+    value: 'auto',
+    description: 'Enable demuxing and muxing of non-avt files via FFmpeg (in CLI tools only)'
+)
+
+option('fuzzing_engine',
+   type: 'combo',
+   choices : ['none', 'libfuzzer', 'oss-fuzz'],
+   value: 'none',
+   description: 'Select the fuzzing engine'
+)
+
+option('fuzzer_ldflags',
+    type: 'string',
+    description: 'Extra LDFLAGS used during linking of fuzzing binaries'
 )

@@ -28,10 +28,10 @@
 
 void avt_bsw_ldpc_288_224(AVTBytestream *bs)
 {
-
+    avt_bsw_zpad(bs, 64);
 }
 
 void avt_bsw_ldpc_2784_2016(AVTBytestream *bs)
 {
-
+    avt_bsw_zpad(bs, 768);
 }

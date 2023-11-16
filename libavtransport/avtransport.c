@@ -28,10 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <arpa/inet.h>
-#include <netdb.h>
-
-#include <libavtransport/avtransport.h>
+#include <avtransport/avtransport.h>
 
 #include "common.h"
 
@@ -59,113 +56,6 @@ void avt_close(AVTContext **ctx)
     }
 }
 
-int avt_parse_address(const char *path, enum AVTProtocolType *proto,
-                      uint8_t dst_ip[16], uint16_t *dst_port)
-{
-    int native_uri = 0;
-
-    /* Zero out output */
-    *proto = AVT_UNKNOWN;
-    dst_ip = (uint8_t [16]){ 0 };
-    *dst_port = 0;
-
-    char *dup = strdup(path);
-    if (!dup)
-        return AVT_ERROR(ENOMEM);
-
-    char *tmp = NULL;
-    char *scheme = strtok_r(dup, ":", &tmp);
-    if (!strcmp(scheme, "avt")) {
-        native_uri = 1;
-    } else if (!strcmp(scheme, "udp")) { /* Unofficial and conflicting, but let's accept it */
-        *proto = AVT_UDP;
-    } else if (!strcmp(scheme, "quic")) { /* Unofficial, but let's accept it */
-        *proto = AVT_QUIC;
-    } else {
-        free(dup);
-        return AVT_ERROR(ENOTSUP);
-    }
-
-    char *addr_pre = strtok_r(scheme, ":", &tmp);
-    if (!strcmp(addr_pre, "//") && (addr_pre[2])) {
-        addr_pre += 2;
-    } else { /* Error out if there's no :// */
-        free(dup);
-        return AVT_ERROR(ENOTSUP);
-    }
-
-    if (native_uri) {
-        char *transport = strtok_r(addr_pre, "@", &tmp);
-        char *serv = strtok_r(transport, "@", &tmp);
-        if (!serv)
-            addr_pre = transport;
-    }
-
-    if (addr_pre[0]) {
-    } else if (addr_pre[0] == '[') {
-        tmp = NULL;
-        char *endb = strtok_r(addr_pre, "]", &tmp);
-
-        struct in6_addr dst_6 = { 0 };
-        int ret = inet_pton(AF_INET6, endb, &dst_6);
-        if (!ret)
-            endb = strtok_r(addr_pre, "]", &tmp);
-
-        if (ret || !endb) {
-            free(dup);
-            return AVT_ERROR(EINVAL);
-        }
-
-        memcpy(dst_ip, dst_6.s6_addr, 16);
-
-        if (addr_pre[0] == ':') {
-            char *res = NULL;
-            *dst_port = strtol(addr_pre + 1, &res, 10);
-            if (res) {
-                free(dup);
-                return AVT_ERROR(EINVAL);
-            }
-        }
-
-        free(dup);
-        return 0;
-    }
-
-    /* Attempt to convert and parse the IP address as IPv4 in IPv6 */
-    char *addr = strtok_r(addr_pre, ":", &tmp);
-    char addr_temp[32] = { "::FFFF:" };
-    memcpy(addr_temp + strlen(addr_temp), addr, strlen(addr));
-    addr_temp[31] = '\0';
-
-    struct in6_addr dst_4 = { 0 };
-    int ret = inet_pton(AF_INET6, addr_temp, &dst_4);
-    if (ret) {
-        int error;
-        struct addrinfo hints = { 0 }, *res = NULL;
-        const char *service = "0";
-
-        char *sport = strtok_r(addr_pre, ":", &tmp);
-        if (sport[0])
-            sport += 1; /* Skip : */
-
-        hints.ai_socktype = SOCK_DGRAM;
-        hints.ai_family   = AF_INET6;
-        hints.ai_flags    = 0;
-        if ((error = getaddrinfo(addr, service, &hints, &res))) {
-            free(dup);
-            return AVT_ERROR(EINVAL);
-        }
-
-        memcpy(dst_ip, res->ai_addr, res->ai_addrlen);
-    } else {
-        memcpy(dst_ip, dst_4.s6_addr, 16);
-    }
-
-    free(dup);
-
-    return 0;
-}
-
 AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id)
 {
     if (!ctx->output.ctx)
@@ -181,8 +71,8 @@ AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id)
     if (!ret)
         return NULL;
 
-    ret->private = calloc(1, sizeof(*ret->private));
-    if (!ret->private) {
+    ret->priv = calloc(1, sizeof(*ret->priv));
+    if (!ret->priv) {
         free(ret);
         return NULL;
     }

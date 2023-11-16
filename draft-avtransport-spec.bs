@@ -6,7 +6,7 @@ Shortname: avtransport
 URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
-Date: 2023-11-08
+Date: 2023-11-16
 Status: LD
 Group: FFmpeg
 Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
@@ -387,6 +387,10 @@ On every received packet:
 This is a very simple example which depends on the local receiver oscillator simply being
 *more precise* than the transmitter's oscillator.
 
+Note: the way receivers handle jitter is intentionally left undefined. As a recommendation,
+implementations <b>should</b> resampple the audio and adjust video frame duration such that
+synchronization is maintained. Otherwise, implementations can drop or duplicate frames.
+
 
 ### Negative times ### {#negative-times}
 
@@ -516,34 +520,34 @@ as an AVTransport session. The syntax is as follows:
             <td>Session flags.</td>
         </tr>
         <tr id="0x4156+4">
-            <td><code>b(8)</code></td>
-            <td><dfn>producer_name_len</dfn></td>
-            <td></td>
-            <td>Length of the string in [=producer_name=]. Must be less than or equal to 12.</td>
-        </tr>
-        <tr id="0x4156+5">
             <td><code>12*b(8)</code></td>
             <td><dfn>producer_name</dfn></td>
-            <td>zero-terminated string</td>
-            <td>12-byte [[RFC3629|UTF-8]] zero-terminated string, containing the name of the producer.</td>
+            <td>fixed-length string</td>
+            <td>12-byte [[RFC3629|UTF-8]] string, containing the name of the producer.</td>
         </tr>
-        <tr id="0x4156+6">
+        <tr id="0x4156+5">
             <td><code>u(16)</code></td>
             <td><dfn>producer_major</dfn></td>
             <td></td>
             <td>Major version of the producer.</td>
         </tr>
-        <tr id="0x4156+7">
+        <tr id="0x4156+6">
             <td><code>u(16)</code></td>
             <td><dfn>producer_minor</dfn></td>
             <td></td>
             <td>Minor version of the producer.</td>
         </tr>
-        <tr id="0x4156+8">
+        <tr id="0x4156+7">
             <td><code>u(16)</code></td>
             <td><dfn>producer_micro</dfn></td>
             <td></td>
             <td>Micro version of the producer.</td>
+        </tr>
+        <tr id="0x4156+8">
+            <td><code>b(8)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. Must be 0x0.</td>
         </tr>
         <tr id="0x4156+9">
             <td><code>b(64)</code></td>
@@ -588,49 +592,49 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
             <th>Data</th>
             <th>Description</th>
         </tr>
-        <tr>
+        <tr id="0x0300+0">
             <td><code>b(8)</code></td>
             <td><dfn>time_sync_descriptor</dfn></td>
             <td>''0x03''</td>
             <td>Indicates this is a time synchronization packet.</td>
         </tr>
-        <tr>
+        <tr id="0x0300+1">
             <td><code>b(8)</code></td>
             <td><dfn>ts_clock_id</dfn></td>
             <td></td>
             <td>Signals the clock ID for this clock.</td>
         </tr>
-        <tr>
+        <tr id="0x0300+2">
             <td><code>u(16)</code></td>
             <td><dfn>ts_clock_hz2</dfn></td>
             <td></td>
             <td>Value, in multiples of 1/65536 Hz, to be added to [=ts_clock_hz=] to make [=ts_clock_freq=].</td>
         </tr>
-        <tr>
+        <tr id="0x0300+3">
             <td><code>b(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
-        <tr>
+        <tr id="0x0300+4">
             <td><code>u(64)</code></td>
             <td>[=epoch=]</td>
             <td></td>
             <td>Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970. [[UNIX-time]]</td>
         </tr>
-        <tr>
+        <tr id="0x0300+5">
             <td><code>u(64)</code></td>
             <td><dfn>ts_clock_seq</dfn></td>
             <td></td>
             <td>Monotonically incrementing counter, incremented once for each cycle of the device clock, at a rate of [=ts_clock_freq=] per second.</td>
         </tr>
-        <tr>
+        <tr id="0x0300+6">
             <td><code>u(32)</code></td>
             <td><dfn>ts_clock_hz</dfn></td>
             <td></td>
-            <td>Hertz value of the device clock. MAY be set to zero to indicate the source is unclocked.</td>
+            <td>Hertz value of the device clock.</td>
         </tr>
-        <tr>
+        <tr id="0x0300+7">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
@@ -641,6 +645,8 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
 
 The <dfn>ts_clock_freq</dfn> field is equal to <code>[=ts_clock_freq=] = [=ts_clock_hz=] + [=ts_clock_hz2=]/65536</code>.
 Implementations should prefer to use integer math, and instead have the [=ts_clock_freq=] in increments of 1/65536 Hz.
+
+Note: if [=ts_clock_freq=] is 0, then the sender should be assumed to be relying entirely on its real-time clock.
 
 The field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=], which atomically increments a counter,
 [=ts_clock_seq=] on the <b>rising</b> edge of the waveform.
@@ -740,19 +746,19 @@ The layout of the data is as follows:
             <td>An 8-bit clock ID identifier to associate a stream with a given clock.</td>
         </tr>
         <tr id="0x0002+11">
-            <td><code>u(64)</code></td>
+            <td><code>i(64)</code></td>
             <td><dfn>skip_preroll</dfn></td>
             <td></td>
-            <td>Amount of time in `timebase` units to skip immediately after seeking or reinitializing (algorithmic delay).</td>
+            <td>Amount of time in `timebase` units to skip immediately after seeking or reinitializing.</td>
         </tr>
         <tr id="0x0002+12">
-            <td><code>u(64)</code></td>
+            <td><code>u(32)</code></td>
             <td><dfn>init_packets</dfn></td>
             <td>enum {{StreamInitPackets}}</td>
             <td>Flags to indicate which packets should be received before decoding or presenting any stream data packets.</td>
         </tr>
         <tr id="0x0002+13">
-            <td><code>b(40)</code></td>
+            <td><code>b(24)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. Must be 0x0.</td>
@@ -1262,7 +1268,7 @@ more [[#stream-data-segment-packets]]. It is laid out as follows:
         <tr id="0x0100+12">
             <td><code>[=data_length=]*b(8)</code></td>
             <td><dfn>packet_data</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The packet data itself.</td>
         </tr>
     </table>
@@ -1406,30 +1412,36 @@ FEC grouped streams MUST be registered first via a special packet:
             <td>The global sequence number of the very first packet in the FEC group.</td>
         </tr>
         <tr id="0x0030+7">
+            <td><code>b(24)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be ''0x0''.</td>
+        </tr>
+        <tr id="0x0030+8">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0030+8">
+        <tr id="0x0030+9">
             <td><code>16*u(32)</code></td>
             <td><dfn>fec_nb_packets</dfn></td>
             <td></td>
             <td>Total number of packets for each stream in the FEC group.</td>
         </tr>
-        <tr id="0x0030+9">
+        <tr id="0x0030+10">
             <td><code>16*u(32)</code></td>
             <td><dfn>fec_seq_number</dfn></td>
             <td></td>
             <td>The sequence number of the first packet for the stream to be included in the group./td>
         </tr>
-        <tr id="0x0030+10">
-            <td><code>b(480)</code></td>
+        <tr id="0x0030+11">
+            <td><code>b(992)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be ''0x0''.</td>
         </tr>
-        <tr id="0x0030+11">
+        <tr id="0x0030+12">
             <td><code>b(768)</code></td>
             <td>[=ldpc_2784_2016=]</td>
             <td>[=LDPC(2784, 2016)=]</td>
@@ -1915,7 +1927,7 @@ The following structure MUST be followed:
             <td>The length of the LUT/ICC profile.</td>
         </tr>
         <tr id="0x0010+10">
-            <td><code>b(96)</code></td>
+            <td><code>b(104)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
@@ -2073,7 +2085,7 @@ The following structure MUST be followed:
             <td>The length of the font file data.</td>
         </tr>
         <tr id="0x0020+9">
-            <td><code>b(80)</code></td>
+            <td><code>b(112)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
@@ -2185,22 +2197,22 @@ stream after decoding.
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
         <tr id="0x0008+3">
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Timestamp (in stream [=timebase=] units) at which this orientation packet has to be applied at.</td>
+        </tr>
+        <tr id="0x0008+4">
             <td><code>u(32)</code></td>
             <td><dfn>width</dfn></td>
             <td></td>
             <td>Indicates the video width in pixels, before any cropping.</td>
         </tr>
-        <tr id="0x0008+4">
+        <tr id="0x0008+5">
             <td><code>u(32)</code></td>
             <td><dfn>height</dfn></td>
             <td></td>
             <td>Indicates the video height in pixels, before any cropping</td>
-        </tr>
-        <tr id="0x0008+5">
-            <td><code>R(64)</code></td>
-            <td><dfn>signal_aspect</dfn></td>
-            <td></td>
-            <td>Indicates the sample aspect ratio of the image.</td>
         </tr>
         <tr id="0x0008+6">
             <td><code>u(8)</code></td>
@@ -2234,120 +2246,126 @@ stream after decoding.
         </tr>
         <tr id="0x0008+11">
             <td><code>R(64)</code></td>
+            <td><dfn>signal_aspect</dfn></td>
+            <td></td>
+            <td>Indicates the sample aspect ratio of the image.</td>
+        </tr>
+        <tr id="0x0008+12">
+            <td><code>R(64)</code></td>
             <td><dfn>gamma</dfn></td>
             <td></td>
             <td>Indicates the gamma power curve for the video sample values.</td>
         </tr>
-        <tr id="0x0008+12">
+        <tr id="0x0008+13">
             <td><code>R(64)</code></td>
             <td><dfn>framerate</dfn></td>
             <td></td>
             <td>Indicates the framerate of the video. If it's variable, may be used to indicate the average bitrate. If the video is [=interlaced=], indicates the field rate.</td>
         </tr>
-        <tr id="0x0008+13">
+        <tr id="0x0008+14">
             <td><code>u(8)</code></td>
             <td><dfn>output_range</dfn></td>
             <td>enum {{ColorRange}}</td>
             <td>Indicates the range for the output video samples.</td>
         </tr>
-        <tr id="0x0008+14">
+        <tr id="0x0008+15">
             <td><code>u(8)</code></td>
             <td><dfn>chroma_pos</dfn></td>
             <td>enum {{ChromaPosition}}</td>
             <td>Chroma sample alignment for subsampled chroma.</td>
         </tr>
-        <tr id="0x0008+15">
+        <tr id="0x0008+16">
             <td><code>u(8)</code></td>
             <td><dfn>primaries</dfn></td>
             <td>enum {{Primaries}}</td>
             <td>Video color primaries. Must be interpreted according to ITU Standard [[H.273]], ''ColourPrimaries'' field.</td>
         </tr>
-        <tr id="0x0008+16">
+        <tr id="0x0008+17">
             <td><code>u(8)</code></td>
             <td><dfn>transfer</dfn></td>
             <td>enum {{Transfer}}</td>
             <td>Video transfer characteristics. Must be interpreted according to ITU Standard [[H.273]], ''TransferCharacteristics'' field.</td>
         </tr>
-        <tr id="0x0008+17">
+        <tr id="0x0008+18">
             <td><code>u(8)</code></td>
             <td><dfn>matrix</dfn></td>
             <td>enum {{Matrix}}</td>
             <td>Video matrix coefficients. Must be interpreted according to ITU Standard [[H.273]], ''MatrixCoefficients'' field.</td>
         </tr>
-        <tr id="0x0008+18">
+        <tr id="0x0008+19">
             <td><code>u(8)</code></td>
             <td><dfn>has_mastering_primaries</dfn></td>
             <td></td>
             <td>If ''1'', indicates that the following [=mastering_primaries=] and [=mastering_white_point=] contain valid data. Other values are reserved.</td>
         </tr>
-        <tr id="0x0008+19">
+        <tr id="0x0008+20">
             <td><code>u(8)</code></td>
             <td><dfn>has_luminance</dfn></td>
             <td></td>
             <td>If ''1'', indicates that the following [=min_luminance=] and [=max_luminance=] contain valid data. Other values are reseved.</td>
         </tr>
-        <tr id="0x0008+20">
+        <tr id="0x0008+21">
             <td><code>16*R(64)</code></td>
             <td><dfn>custom_matrix</dfn></td>
             <td></td>
             <td>If the color [=matrix=] value is equal to ''0xFF'', use this custom matrix instead. Top left to bottom right, in "raster-order". Otherwise, must be set to ''0''.</td>
         </tr>
-        <tr id="0x0008+21">
+        <tr id="0x0008+22">
             <td><code>6*R(64)</code></td>
             <td><dfn>mastering_primaries</dfn></td>
             <td></td>
             <td>[[CIE1931]] X/Y chromacity coordinates of the color primaries, <code>x</code> value, then <code>y</code> value, for each <code>r</code>, <code>g</code>, <code>b</code>, in order.</td>
         </tr>
-        <tr id="0x0008+22">
+        <tr id="0x0008+23">
             <td><code>2*R(64)</code></td>
             <td><dfn>mastering_white_point</dfn></td>
             <td></td>
             <td>[[CIE1931]] X/Y chromacity coordinates of the white point, <code>x</code> value, then <code>y</code> value.</td>
         </tr>
-        <tr id="0x0008+23">
+        <tr id="0x0008+24">
             <td><code>R(64)</code></td>
             <td><dfn>min_luminance</dfn></td>
             <td></td>
             <td>Minimal luminance of the mastering display, in cd/m<sup>2</sup>.</td>
         </tr>
-        <tr id="0x0008+24">
+        <tr id="0x0008+25">
             <td><code>R(64)</code></td>
             <td><dfn>max_luminance</dfn></td>
             <td></td>
             <td>Maximum luminance of the mastering display, in cd/m<sup>2</sup>.</td>
         </tr>
-        <tr id="0x0008+25">
+        <tr id="0x0008+26">
             <td><code>u(32)</code></td>
             <td><dfn>cropped_width</dfn></td>
             <td></td>
             <td>Indicates the presentable video width in samples.</td>
         </tr>
-        <tr id="0x0008+26">
+        <tr id="0x0008+27">
             <td><code>u(32)</code></td>
             <td><dfn>cropped_height</dfn></td>
             <td></td>
             <td>Indicates the presentable video height in samples.</td>
         </tr>
-        <tr id="0x0008+27">
-            <td><code>u(32)</code></td>
+        <tr id="0x0008+28">
+            <td><code>u(16)</code></td>
             <td><dfn>crop_x_offset</dfn></td>
             <td></td>
             <td>X offset for the location of the final presentation box.</td>
         </tr>
-        <tr id="0x0008+28">
-            <td><code>u(32)</code></td>
+        <tr id="0x0008+29">
+            <td><code>u(16)</code></td>
             <td><dfn>crop_y_offset</dfn></td>
             <td></td>
             <td>Y offset for the location of the final presentation box.</td>
         </tr>
-        <tr id="0x0008+29">
-            <td><code>b(40)</code></td>
+        <tr id="0x0008+30">
+            <td><code>b(8)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. Must be ''0x0''.</td>
         </tr>
-        <tr id="0x0008+30">
-            <td><code>b(64)</code></td>
+        <tr id="0x0008+31">
+            <td><code>b(768)</code></td>
             <td>[=ldpc_2784_2016=]</td>
             <td>[=LDPC(2784, 2016)=]</td>
             <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>

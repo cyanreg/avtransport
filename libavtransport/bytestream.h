@@ -24,14 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BYTESTREAM
-#define LIBAVTRANSPORT_BYTESTREAM
+#ifndef AVTRANSPORT_BYTESTREAM
+#define AVTRANSPORT_BYTESTREAM
 
 #include <stdint.h>
 #include <string.h>
 
-#include <libavtransport/utils.h>
-#include <libavtransport/rational.h>
+#include <avtransport/utils.h>
+#include <avtransport/rational.h>
 #include "utils.h"
 
 #ifndef AVT_RB8
@@ -180,7 +180,7 @@
     } while(0)
 #endif
 
-#if CONFIG_BIG_ENDIAN
+#ifdef CONFIG_BIG_ENDIAN
 #define AVT_RN(p, l)    AVT_RB##l(p)
 #define AVT_WN(p, l, v) AVT_WB##l(p, v)
 #else
@@ -195,7 +195,7 @@ typedef struct AVTBytestream {
 } AVTBytestream;
 
 /* Initialize bytestream for reading or writing */
-AVTBytestream inline avt_bs_init(uint8_t *buf, size_t len)
+static AVTBytestream inline avt_bs_init(uint8_t *buf, size_t len)
 {
     return (AVTBytestream) {
         .start = buf,
@@ -270,7 +270,7 @@ static void inline avt_bsw_sbuf(AVTBytestream *bs, char8_t *buf, const size_t le
 /* Write fixed-length zero-terminated string to bytestream */
 static void inline avt_bsw_fstr(AVTBytestream *bs, const char *str, const size_t fixed_len)
 {
-    size_t lens = AVT_MIN(strlen(str), fixed_len - 1);
+    size_t lens = AVT_MIN(strlen(str), fixed_len);
     avt_assert1(((bs->ptr) + fixed_len) <= bs->end);
     memcpy(bs->ptr, str, lens);
     memset(bs->ptr, 0, fixed_len - lens);
@@ -291,7 +291,7 @@ static size_t inline avt_bs_offs(AVTBytestream *bs)
 #define AVT_RDR(base_read, e, len, s)                                 \
 static inline uint ##len## _t avt_bsr_##e##len(AVTBytestream *bs)     \
 {                                                                     \
-    uint ##len## _t v;                                                \
+    uint ##len## _t v = 0;                                            \
     if ((bs)->ptr + (len >> 3) <= (bs)->end) {                        \
         v = base_read##len((bs)->ptr);                                \
         (bs)->ptr += len >> 3;                                        \
