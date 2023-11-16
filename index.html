@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="3937bf70d64360d34ae585d43c6ee349b05c2646" name="document-revision">
+  <meta content="b36328e890620df946606adeda86bcb15a6ebb70" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2555,6 +2555,9 @@ can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pt
    </ul>
    <p>This is a very simple example which depends on the local receiver oscillator simply being
 *more precise* than the transmitter’s oscillator.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> the way receivers handle jitter is intentionally left undefined. As a recommendation,
+implementations <b>should</b> resampple the audio and adjust video frame duration such that
+synchronization is maintained. Otherwise, implementations can drop or duplicate frames.</p>
    <h4 class="heading settled" data-level="1.7.2" id="negative-times"><span class="secno">1.7.2. </span><span class="content">Negative times</span><a class="self-link" href="#negative-times"></a></h4>
    <p>The time <code>t</code> of a <a data-link-type="dfn" href="#pts" id="ref-for-pts④">pts</a> may be negative. Packets with a negative timestamps
 must be decoded, but not presented.</p>
@@ -2645,30 +2648,30 @@ as an AVTransport session. The syntax is as follows:</p>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-sessionflags" id="ref-for-enumdef-sessionflags">SessionFlags</a></code>
        <td>Session flags.
       <tr id="0x4156+4">
-       <td><code>b(8)</code>
-       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_name_len">producer_name_len<a class="self-link" href="#session-start-packets-producer_name_len"></a></dfn>
-       <td>
-       <td>Length of the string in <a data-link-type="dfn" href="#session-start-packets-producer_name" id="ref-for-session-start-packets-producer_name">producer_name</a>. Must be less than or equal to 12.
-      <tr id="0x4156+5">
        <td><code>12*b(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_name">producer_name</dfn>
-       <td>zero-terminated string
-       <td>12-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> zero-terminated string, containing the name of the producer.
-      <tr id="0x4156+6">
+       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_name">producer_name<a class="self-link" href="#session-start-packets-producer_name"></a></dfn>
+       <td>fixed-length string
+       <td>12-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> string, containing the name of the producer.
+      <tr id="0x4156+5">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_major">producer_major<a class="self-link" href="#session-start-packets-producer_major"></a></dfn>
        <td>
        <td>Major version of the producer.
-      <tr id="0x4156+7">
+      <tr id="0x4156+6">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_minor">producer_minor<a class="self-link" href="#session-start-packets-producer_minor"></a></dfn>
        <td>
        <td>Minor version of the producer.
-      <tr id="0x4156+8">
+      <tr id="0x4156+7">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_micro">producer_micro<a class="self-link" href="#session-start-packets-producer_micro"></a></dfn>
        <td>
        <td>Micro version of the producer.
+      <tr id="0x4156+8">
+       <td><code>b(8)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding">padding</a>
+       <td>
+       <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x4156+9">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224">ldpc_288_224</a>
@@ -2706,42 +2709,42 @@ bytewise-identical.</p>
        <th>Name
        <th>Data
        <th>Description
-      <tr>
+      <tr id="0x0300+0">
        <td><code>b(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-time_sync_descriptor">time_sync_descriptor<a class="self-link" href="#time-synchronization-packets-time_sync_descriptor"></a></dfn>
        <td><span class="css">0x03</span>
        <td>Indicates this is a time synchronization packet.
-      <tr>
+      <tr id="0x0300+1">
        <td><code>b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_id">ts_clock_id</dfn>
        <td>
        <td>Signals the clock ID for this clock.
-      <tr>
+      <tr id="0x0300+2">
        <td><code>u(16)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_hz2">ts_clock_hz2</dfn>
        <td>
        <td>Value, in multiples of 1/65536 Hz, to be added to <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_hz" id="ref-for-time-synchronization-packets-ts_clock_hz">ts_clock_hz</a> to make <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq⑥">ts_clock_freq</a>.
-      <tr>
+      <tr id="0x0300+3">
        <td><code>b(32)</code>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②">global_seq</a>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
-      <tr>
+      <tr id="0x0300+4">
        <td><code>u(64)</code>
        <td><a data-link-type="dfn" href="#epoch" id="ref-for-epoch④">epoch</a>
        <td>
        <td>Indicates absolute time, in nanoseconds since 00:00:00 UTC on 1 January 1970. <a data-link-type="biblio" href="#biblio-unix-time" title="Unix time">[UNIX-time]</a>
-      <tr>
+      <tr id="0x0300+5">
        <td><code>u(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_seq">ts_clock_seq</dfn>
        <td>
        <td>Monotonically incrementing counter, incremented once for each cycle of the device clock, at a rate of <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq⑦">ts_clock_freq</a> per second.
-      <tr>
+      <tr id="0x0300+6">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_hz">ts_clock_hz</dfn>
        <td>
-       <td>Hertz value of the device clock. MAY be set to zero to indicate the source is unclocked.
-      <tr>
+       <td>Hertz value of the device clock.
+      <tr id="0x0300+7">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②">LDPC(288, 224)</a>
@@ -2750,7 +2753,8 @@ bytewise-identical.</p>
    </figure>
    <p>The <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="ts_clock_freq">ts_clock_freq</dfn> field is equal to <code><a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq⑧">ts_clock_freq</a> = <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_hz" id="ref-for-time-synchronization-packets-ts_clock_hz①">ts_clock_hz</a> + <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_hz2" id="ref-for-time-synchronization-packets-ts_clock_hz2">ts_clock_hz2</a>/65536</code>.
 Implementations should prefer to use integer math, and instead have the <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq⑨">ts_clock_freq</a> in increments of 1/65536 Hz.</p>
-   <p>The field defines a strictly monotonic clock signal with a rate of <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq①⓪">ts_clock_freq</a>, which atomically increments a counter, <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_seq" id="ref-for-time-synchronization-packets-ts_clock_seq③">ts_clock_seq</a> on the <b>rising</b> edge of the waveform.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> if <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq①⓪">ts_clock_freq</a> is 0, then the sender should be assumed to be relying entirely on its real-time clock.</p>
+   <p>The field defines a strictly monotonic clock signal with a rate of <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq①①">ts_clock_freq</a>, which atomically increments a counter, <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_seq" id="ref-for-time-synchronization-packets-ts_clock_seq③">ts_clock_seq</a> on the <b>rising</b> edge of the waveform.</p>
    <p>To interpret the clock, read the <a href="#jitter-compensation">§ 1.7.1 Jitter compensation</a> section. Senders should send time synchronization
 packets as often as necessary to prevent clock drift and jitter.</p>
    <p>In case of a zero <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_hz" id="ref-for-time-synchronization-packets-ts_clock_hz②">ts_clock_hz</a>, the sender must be assumed to not provide a clock signal reference, and the timestamps
@@ -2825,18 +2829,18 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
        <td>
        <td>An 8-bit clock ID identifier to associate a stream with a given clock.
       <tr id="0x0002+11">
-       <td><code>u(64)</code>
+       <td><code>i(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#stream-registration-packets" data-dfn-type="dfn" data-noexport id="stream-registration-packets-skip_preroll">skip_preroll</dfn>
        <td>
-       <td>Amount of time in `timebase` units to skip immediately after seeking or reinitializing (algorithmic delay).
+       <td>Amount of time in `timebase` units to skip immediately after seeking or reinitializing.
       <tr id="0x0002+12">
-       <td><code>u(64)</code>
+       <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#stream-registration-packets" data-dfn-type="dfn" data-noexport id="stream-registration-packets-init_packets">init_packets</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-streaminitpackets" id="ref-for-enumdef-streaminitpackets">StreamInitPackets</a></code>
        <td>Flags to indicate which packets should be received before decoding or presenting any stream data packets.
       <tr id="0x0002+13">
-       <td><code>b(40)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding">padding</a>
+       <td><code>b(24)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0002+14">
@@ -2991,7 +2995,7 @@ of an <a href="#fec-grouping-packets">§ 2.8 FEC grouping</a> packet.</p>
        <td>The size of the data in this packet.
       <tr id="GenericData+6">
        <td><code>b(32)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding②">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="GenericData+7">
@@ -3253,7 +3257,7 @@ more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation<
       <tr id="0x0100+12">
        <td><code><a data-link-type="dfn" href="#stream-data-packet-data_length" id="ref-for-stream-data-packet-data_length">data_length</a>*b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#stream-data-packet" data-dfn-type="dfn" data-noexport id="stream-data-packet-packet_data">packet_data</dfn>
-       <td>
+       <td>payload
        <td>The packet data itself.
     </table>
    </figure>
@@ -3370,26 +3374,31 @@ streams to be FEC corrected in order to ensure no stream is starved of data.</p>
        <td>
        <td>The global sequence number of the very first packet in the FEC group.
       <tr id="0x0030+7">
+       <td><code>b(24)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding③">padding</a>
+       <td>
+       <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
+      <tr id="0x0030+8">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑧">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑨">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
-      <tr id="0x0030+8">
+      <tr id="0x0030+9">
        <td><code>16*u(32)</code>
        <td><dfn data-dfn-for="#fec-grouping-packets" data-dfn-type="dfn" data-noexport id="fec-grouping-packets-fec_nb_packets">fec_nb_packets<a class="self-link" href="#fec-grouping-packets-fec_nb_packets"></a></dfn>
        <td>
        <td>Total number of packets for each stream in the FEC group.
-      <tr id="0x0030+9">
+      <tr id="0x0030+10">
        <td><code>16*u(32)</code>
        <td><dfn data-dfn-for="#fec-grouping-packets" data-dfn-type="dfn" data-noexport id="fec-grouping-packets-fec_seq_number">fec_seq_number<a class="self-link" href="#fec-grouping-packets-fec_seq_number"></a></dfn>
        <td>
        <td>The sequence number of the first packet for the stream to be included in the group./td> 
-      <tr id="0x0030+10">
-       <td><code>b(480)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding②">padding</a>
+      <tr id="0x0030+11">
+       <td><code>b(992)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding④">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
-      <tr id="0x0030+11">
+      <tr id="0x0030+12">
        <td><code>b(768)</code>
        <td><a data-link-type="dfn" href="#ldpc_2784_2016" id="ref-for-ldpc_2784_2016">ldpc_2784_2016</a>
        <td><a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016①">LDPC(2784, 2016)</a>
@@ -3461,7 +3470,7 @@ previous grouping.</p>
        <td>Provides another three source packet which contains data to be forward error corrected.
       <tr id="0x0031+9">
        <td><code>b(32)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding③">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑤">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
       <tr id="0x0031+10">
@@ -3577,7 +3586,7 @@ or metadata changes, and the distance to the next index packet.</p>
        <td>The total number of indices present in this packet.
       <tr id="0x0051+6">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding④">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑥">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0051+7">
@@ -3793,8 +3802,8 @@ metadata after starting and outputting a packet.</p>
        <td>
        <td>The length of the LUT/ICC profile.
       <tr id="0x0010+10">
-       <td><code>b(96)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑤">padding</a>
+       <td><code>b(104)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑦">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0010+11">
@@ -3923,8 +3932,8 @@ these fonts must be made available for the ASS stream.</p>
        <td>
        <td>The length of the font file data.
       <tr id="0x0020+9">
-       <td><code>b(80)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑥">padding</a>
+       <td><code>b(112)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑧">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0020+10">
@@ -4018,20 +4027,20 @@ stream after decoding.</p>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0008+3">
+       <td><code>i(64)</code>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①③">pts</a>
+       <td>
+       <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase②">timebase</a> units) at which this orientation packet has to be applied at.
+      <tr id="0x0008+4">
        <td><code>u(32)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-width">width<a class="self-link" href="#time-synchronization-packets-width"></a></dfn>
        <td>
        <td>Indicates the video width in pixels, before any cropping.
-      <tr id="0x0008+4">
+      <tr id="0x0008+5">
        <td><code>u(32)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-height">height<a class="self-link" href="#time-synchronization-packets-height"></a></dfn>
        <td>
        <td>Indicates the video height in pixels, before any cropping
-      <tr id="0x0008+5">
-       <td><code>R(64)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-signal_aspect">signal_aspect<a class="self-link" href="#time-synchronization-packets-signal_aspect"></a></dfn>
-       <td>
-       <td>Indicates the sample aspect ratio of the image.
       <tr id="0x0008+6">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-chroma_subsampling">chroma_subsampling<a class="self-link" href="#time-synchronization-packets-chroma_subsampling"></a></dfn>
@@ -4059,101 +4068,106 @@ stream after decoding.</p>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0008+11">
        <td><code>R(64)</code>
+       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-signal_aspect">signal_aspect<a class="self-link" href="#time-synchronization-packets-signal_aspect"></a></dfn>
+       <td>
+       <td>Indicates the sample aspect ratio of the image.
+      <tr id="0x0008+12">
+       <td><code>R(64)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-gamma">gamma<a class="self-link" href="#time-synchronization-packets-gamma"></a></dfn>
        <td>
        <td>Indicates the gamma power curve for the video sample values.
-      <tr id="0x0008+12">
+      <tr id="0x0008+13">
        <td><code>R(64)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-framerate">framerate<a class="self-link" href="#time-synchronization-packets-framerate"></a></dfn>
        <td>
        <td>Indicates the framerate of the video. If it’s variable, may be used to indicate the average bitrate. If the video is <a data-link-type="dfn" href="#time-synchronization-packets-interlaced" id="ref-for-time-synchronization-packets-interlaced">interlaced</a>, indicates the field rate.
-      <tr id="0x0008+13">
+      <tr id="0x0008+14">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-output_range">output_range<a class="self-link" href="#time-synchronization-packets-output_range"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-colorrange" id="ref-for-enumdef-colorrange">ColorRange</a></code>
        <td>Indicates the range for the output video samples.
-      <tr id="0x0008+14">
+      <tr id="0x0008+15">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-chroma_pos">chroma_pos<a class="self-link" href="#time-synchronization-packets-chroma_pos"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-chromaposition" id="ref-for-enumdef-chromaposition">ChromaPosition</a></code>
        <td>Chroma sample alignment for subsampled chroma.
-      <tr id="0x0008+15">
+      <tr id="0x0008+16">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-primaries">primaries<a class="self-link" href="#time-synchronization-packets-primaries"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-primaries" id="ref-for-enumdef-primaries">Primaries</a></code>
        <td>Video color primaries. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">ColourPrimaries</span> field.
-      <tr id="0x0008+16">
+      <tr id="0x0008+17">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-transfer">transfer<a class="self-link" href="#time-synchronization-packets-transfer"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-transfer" id="ref-for-enumdef-transfer">Transfer</a></code>
        <td>Video transfer characteristics. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">TransferCharacteristics</span> field.
-      <tr id="0x0008+17">
+      <tr id="0x0008+18">
        <td><code>u(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-matrix">matrix</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-matrix" id="ref-for-enumdef-matrix">Matrix</a></code>
        <td>Video matrix coefficients. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">MatrixCoefficients</span> field.
-      <tr id="0x0008+18">
+      <tr id="0x0008+19">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-has_mastering_primaries">has_mastering_primaries<a class="self-link" href="#time-synchronization-packets-has_mastering_primaries"></a></dfn>
        <td>
        <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#time-synchronization-packets-mastering_primaries" id="ref-for-time-synchronization-packets-mastering_primaries">mastering_primaries</a> and <a data-link-type="dfn" href="#time-synchronization-packets-mastering_white_point" id="ref-for-time-synchronization-packets-mastering_white_point">mastering_white_point</a> contain valid data. Other values are reserved.
-      <tr id="0x0008+19">
+      <tr id="0x0008+20">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-has_luminance">has_luminance<a class="self-link" href="#time-synchronization-packets-has_luminance"></a></dfn>
        <td>
        <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#time-synchronization-packets-min_luminance" id="ref-for-time-synchronization-packets-min_luminance">min_luminance</a> and <a data-link-type="dfn" href="#time-synchronization-packets-max_luminance" id="ref-for-time-synchronization-packets-max_luminance">max_luminance</a> contain valid data. Other values are reseved.
-      <tr id="0x0008+20">
+      <tr id="0x0008+21">
        <td><code>16*R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-custom_matrix">custom_matrix</dfn>
        <td>
        <td>If the color <a data-link-type="dfn" href="#time-synchronization-packets-matrix" id="ref-for-time-synchronization-packets-matrix">matrix</a> value is equal to <span class="css">0xFF</span>, use this custom matrix instead. Top left to bottom right, in "raster-order". Otherwise, must be set to <span class="css">0</span>.
-      <tr id="0x0008+21">
+      <tr id="0x0008+22">
        <td><code>6*R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-mastering_primaries">mastering_primaries</dfn>
        <td>
        <td><a data-link-type="biblio" href="#biblio-cie1931" title="Commission internationale de l&apos;Eclairage proceedings">[CIE1931]</a> X/Y chromacity coordinates of the color primaries, <code>x</code> value, then <code>y</code> value, for each <code>r</code>, <code>g</code>, <code>b</code>, in order.
-      <tr id="0x0008+22">
+      <tr id="0x0008+23">
        <td><code>2*R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-mastering_white_point">mastering_white_point</dfn>
        <td>
        <td><a data-link-type="biblio" href="#biblio-cie1931" title="Commission internationale de l&apos;Eclairage proceedings">[CIE1931]</a> X/Y chromacity coordinates of the white point, <code>x</code> value, then <code>y</code> value.
-      <tr id="0x0008+23">
+      <tr id="0x0008+24">
        <td><code>R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-min_luminance">min_luminance</dfn>
        <td>
        <td>Minimal luminance of the mastering display, in cd/m<sup>2</sup>.
-      <tr id="0x0008+24">
+      <tr id="0x0008+25">
        <td><code>R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-max_luminance">max_luminance</dfn>
        <td>
        <td>Maximum luminance of the mastering display, in cd/m<sup>2</sup>.
-      <tr id="0x0008+25">
+      <tr id="0x0008+26">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-cropped_width">cropped_width</dfn>
        <td>
        <td>Indicates the presentable video width in samples.
-      <tr id="0x0008+26">
+      <tr id="0x0008+27">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-cropped_height">cropped_height</dfn>
        <td>
        <td>Indicates the presentable video height in samples.
-      <tr id="0x0008+27">
-       <td><code>u(32)</code>
+      <tr id="0x0008+28">
+       <td><code>u(16)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-crop_x_offset">crop_x_offset<a class="self-link" href="#time-synchronization-packets-crop_x_offset"></a></dfn>
        <td>
        <td>X offset for the location of the final presentation box.
-      <tr id="0x0008+28">
-       <td><code>u(32)</code>
+      <tr id="0x0008+29">
+       <td><code>u(16)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-crop_y_offset">crop_y_offset<a class="self-link" href="#time-synchronization-packets-crop_y_offset"></a></dfn>
        <td>
        <td>Y offset for the location of the final presentation box.
-      <tr id="0x0008+29">
-       <td><code>b(40)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑦">padding</a>
+      <tr id="0x0008+30">
+       <td><code>b(8)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑨">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be <span class="css">0x0</span>.
-      <tr id="0x0008+30">
-       <td><code>b(64)</code>
+      <tr id="0x0008+31">
+       <td><code>b(768)</code>
        <td><a data-link-type="dfn" href="#ldpc_2784_2016" id="ref-for-ldpc_2784_2016①">ldpc_2784_2016</a>
        <td><a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016②">LDPC(2784, 2016)</a>
        <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.
@@ -4488,9 +4502,9 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0040+3">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①③">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①④">pts</a>
        <td>
-       <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase②">timebase</a> units) at which this orientation packet has to be applied at.
+       <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase③">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0040+4">
        <td><code>u(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#video-orientation-packets" data-dfn-type="dfn" data-noexport id="video-orientation-packets-reflection">reflection</dfn>
@@ -4503,7 +4517,7 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>A fixed-point rational number to indicate rotation in radians once multiplied by <span class="css">π</span>.
       <tr id="0x0040+6">
        <td><code>b(24)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑧">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0040+7">
@@ -4513,7 +4527,7 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
-   <p>The effects of video orientation packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①④">pts</a> value given,
+   <p>The effects of video orientation packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑤">pts</a> value given,
 until a new orientation packet is sent, or the stream is reinitialized.</p>
    <h3 class="heading settled" data-level="2.28" id="enum-VideoReflection"><span class="secno">2.28. </span><span class="content">Video Reflection Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-videoreflection"><code>VideoReflection</code></dfn>)</span><a class="self-link" href="#enum-VideoReflection"></a></h3>
    <div id="VideoReflection">
@@ -4575,7 +4589,7 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>Opaque data, available to users to set.
       <tr id="0x0600+6">
        <td><code>b(56)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑨">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0600+7">
@@ -4644,7 +4658,7 @@ at the start of files to notify implementations of stream lengths.</p>
        <td>The total duration of the stream(s).
       <tr id="0x0050+4">
        <td><code>b(96)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0050+5">
@@ -4688,7 +4702,7 @@ streams, and amend them later.</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0FFF+3">
        <td><code>b(160)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①③">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0FFF+4">
@@ -4777,7 +4791,7 @@ laid out in the following way:</p>
    </figure>
    <p>The meaning of each field is defined by <a data-link-type="biblio" href="#biblio-rfc7845" title="Ogg Encapsulation for the Opus Audio Codec">[RFC7845]</a>.</p>
    <p>Implementations must not use the <a data-link-type="dfn" href="#opus-encapsulation-opus_prepad" id="ref-for-opus-encapsulation-opus_prepad">opus_prepad</a> field, but must set the
-first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑤">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.7.2 Negative times</a> to remove the required number of prepended samples.</p>
+first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑥">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.7.2 Negative times</a> to remove the required number of prepended samples.</p>
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data">packet_data</a> MUST contain regular Opus packets with their front uncompressed
 header intact.</p>
    <p>In case of multiple channels, the packets MUST contain the concatenated contents
@@ -4934,7 +4948,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    <p>Events listed in ASS files MUST be modified in the following way:</p>
    <ul>
     <li data-md>
-     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑥">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration⑥">duration</a> fields, and must be ommitted from the data.</p>
+     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑦">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration⑥">duration</a> fields, and must be ommitted from the data.</p>
     <li data-md>
      <p>All other fields MUST be stored in the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑧">packet_data</a> field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.</p>
     <li data-md>
@@ -4942,7 +4956,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    </ul>
    <p>The <code>ReadOrder</code> field is a monotonically incrementing field to identify the correct
 order in which to reconstruct the original ASS file.</p>
-   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑦">pts</a> are permitted.</p>
+   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a> are permitted.</p>
    <h4 class="heading settled" data-level="3.1.12" id="dng-tiff-encapsulation"><span class="secno">3.1.12. </span><span class="content">DNG/TIFF encapsulation</span><a class="self-link" href="#dng-tiff-encapsulation"></a></h4>
    <p>For DNG/TIFF encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①②">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x54494646</span> (<span class="css">TIFF</span>).</p>
    <p>DNG/TIFF streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
@@ -5330,7 +5344,7 @@ one-to-one transmission. The following syntax is used:</p>
        <td><code>i(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_pts">seek_pts</dfn>
        <td>
-       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a> value to seek to.
+       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> value to seek to.
       <tr id="0x8001+8">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_seq">seek_seq</dfn>
@@ -5431,7 +5445,7 @@ that was likely dropped.</p>
        <td>Indicates this is a stream data resend packet.
       <tr id="0x8003+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①④">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x8003+2">
@@ -5896,7 +5910,6 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#session-start-packets-producer_micro">producer_micro</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-producer_minor">producer_minor</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-producer_name">producer_name</a><span>, in § 2.1</span>
-   <li><a href="#session-start-packets-producer_name_len">producer_name_len</a><span>, in § 2.1</span>
    <li><a href="#pts">pts</a><span>, in § 1.7</span>
    <li><a href="#raw-audio-encapsulation-ra_bits">ra_bits</a><span>, in § 3.1.16</span>
    <li><a href="#raw-audio-encapsulation-ra_channels">ra_channels</a><span>, in § 3.1.16</span>
@@ -6040,7 +6053,7 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
   <h3 class="no-num no-ref heading settled" id="normative"><span class="content">Normative References</span><a class="self-link" href="#normative"></a></h3>
   <dl>
    <dt id="biblio-av1-avif">[AV1-AVIF]
-   <dd>AV1 Image File Format (AVIF) URL: <a href="https://aomediacodec.github.io/av1-avif/">https://aomediacodec.github.io/av1-avif/</a>
+   <dd><a href="https://aomediacodec.github.io/av1-avif/"><cite>AV1 Image File Format (AVIF)</cite></a>. Editor's Draft. URL: <a href="https://aomediacodec.github.io/av1-avif/">https://aomediacodec.github.io/av1-avif/</a>
    <dt id="biblio-bcp47">[BCP47]
    <dd>A. Phillips, Ed.; M. Davis, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc5646"><cite>Tags for Identifying Languages</cite></a>. September 2009. Best Current Practice. URL: <a href="https://www.rfc-editor.org/rfc/rfc5646">https://www.rfc-editor.org/rfc/rfc5646</a>
    <dt id="biblio-rfc2119">[RFC2119]
@@ -6423,29 +6436,28 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
 window.dfnpanelData = {};
 window.dfnpanelData['ee424399'] = {"dfnID": "ee424399", "url": "https://aomediacodec.github.io/av1-avif/#valdef-av1-image-item-type-av01", "dfnText": "av01", "refSections": [{"refs": [{"id": "ref-for-valdef-av1-image-item-type-av01"}], "title": "3.1.5. AV1 encapsulation"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
-window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2461"}, {"id": "ref-for-padding\u2462"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-padding\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "3.5.2. Resend"}], "external": false};
+window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "3.5.2. Resend"}], "external": false};
 window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}, {"id": "ref-for-ldpc_288_224\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}, {"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.31. End of stream"}], "external": false};
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.18. Video information"}], "external": false};
 window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2462"}], "title": "3.5.3. Stream control"}], "external": false};
 window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}, {"id": "ref-for-stream_id\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2463"}, {"id": "ref-for-stream_id\u2460\u2464"}], "title": "2.11.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}, {"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}, {"id": "ref-for-stream_id\u2461\u2463"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2464"}], "title": "3.5. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2465"}], "title": "3.5.1. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}, {"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.5.3. Stream control"}], "external": false};
-window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}, {"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2463"}, {"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2466"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}, {"id": "ref-for-pts\u2460\u2461"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2462"}, {"id": "ref-for-pts\u2460\u2463"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}, {"id": "ref-for-pts\u2460\u2466"}], "title": "3.1.11. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}], "title": "3.4.1. Session control data"}], "external": false};
+window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}, {"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2463"}, {"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2466"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}, {"id": "ref-for-pts\u2460\u2461"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2462"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}, {"id": "ref-for-pts\u2460\u2464"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2466"}, {"id": "ref-for-pts\u2460\u2467"}], "title": "3.1.11. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2468"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['dts'] = {"dfnID": "dts", "url": "#dts", "dfnText": "dts", "refSections": [{"refs": [{"id": "ref-for-dts"}, {"id": "ref-for-dts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-dts\u2461"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-dts\u2462"}], "title": "3.1.7. H264 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2463"}], "title": "3.1.8. H265 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2464"}], "title": "3.1.11. ASS encapsulation"}], "external": false};
 window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}, {"id": "ref-for-duration\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2461"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2464"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "3.1.11. ASS encapsulation"}], "external": false};
 window.dfnpanelData['epoch'] = {"dfnID": "epoch", "url": "#epoch", "dfnText": "epoch", "refSections": [{"refs": [{"id": "ref-for-epoch"}, {"id": "ref-for-epoch\u2460"}, {"id": "ref-for-epoch\u2461"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-epoch\u2462"}, {"id": "ref-for-epoch\u2463"}, {"id": "ref-for-epoch\u2464"}, {"id": "ref-for-epoch\u2465"}, {"id": "ref-for-epoch\u2466"}, {"id": "ref-for-epoch\u2467"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-epoch\u2468"}], "title": "3.5.1. Feedback"}], "external": false};
 window.dfnpanelData['session-start-packets-session_flags'] = {"dfnID": "session-start-packets-session_flags", "url": "#session-start-packets-session_flags", "dfnText": "session_flags", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-session_flags"}], "title": "2.2. Stream Session Flags Enumeration (enum SessionFlags)"}, {"refs": [{"id": "ref-for-session-start-packets-session_flags\u2460"}], "title": "3.4. Reverse signalling"}], "external": false};
-window.dfnpanelData['session-start-packets-producer_name'] = {"dfnID": "session-start-packets-producer_name", "url": "#session-start-packets-producer_name", "dfnText": "producer_name", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-producer_name"}], "title": "2.1. Session start"}], "external": false};
 window.dfnpanelData['enumdef-sessionflags'] = {"dfnID": "enumdef-sessionflags", "url": "#enumdef-sessionflags", "dfnText": "SessionFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-sessionflags"}], "title": "2.1. Session start"}], "external": false};
 window.dfnpanelData['dom-enum-sessionflags-session_reverse_signal_ready'] = {"dfnID": "dom-enum-sessionflags-session_reverse_signal_ready", "url": "#dom-enum-sessionflags-session_reverse_signal_ready", "dfnText": "SESSION_REVERSE_SIGNAL_READY", "refSections": [{"refs": [{"id": "ref-for-dom-enum-sessionflags-session_reverse_signal_ready"}], "title": "3.3. Streaming"}, {"refs": [{"id": "ref-for-dom-enum-sessionflags-session_reverse_signal_ready\u2460"}], "title": "3.4. Reverse signalling"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-ts_clock_id'] = {"dfnID": "time-synchronization-packets-ts_clock_id", "url": "#time-synchronization-packets-ts_clock_id", "dfnText": "ts_clock_id", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_id"}, {"id": "ref-for-time-synchronization-packets-ts_clock_id\u2460"}, {"id": "ref-for-time-synchronization-packets-ts_clock_id\u2461"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_id\u2462"}], "title": "2.4. Stream registration"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-ts_clock_hz2'] = {"dfnID": "time-synchronization-packets-ts_clock_hz2", "url": "#time-synchronization-packets-ts_clock_hz2", "dfnText": "ts_clock_hz2", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_hz2"}], "title": "2.3. Time synchronization"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-ts_clock_seq'] = {"dfnID": "time-synchronization-packets-ts_clock_seq", "url": "#time-synchronization-packets-ts_clock_seq", "dfnText": "ts_clock_seq", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_seq"}, {"id": "ref-for-time-synchronization-packets-ts_clock_seq\u2460"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_seq\u2461"}, {"id": "ref-for-time-synchronization-packets-ts_clock_seq\u2462"}], "title": "2.3. Time synchronization"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-ts_clock_hz'] = {"dfnID": "time-synchronization-packets-ts_clock_hz", "url": "#time-synchronization-packets-ts_clock_hz", "dfnText": "ts_clock_hz", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-ts_clock_hz"}, {"id": "ref-for-time-synchronization-packets-ts_clock_hz\u2460"}, {"id": "ref-for-time-synchronization-packets-ts_clock_hz\u2461"}], "title": "2.3. Time synchronization"}], "external": false};
-window.dfnpanelData['ts_clock_freq'] = {"dfnID": "ts_clock_freq", "url": "#ts_clock_freq", "dfnText": "ts_clock_freq", "refSections": [{"refs": [{"id": "ref-for-ts_clock_freq"}, {"id": "ref-for-ts_clock_freq\u2460"}, {"id": "ref-for-ts_clock_freq\u2461"}, {"id": "ref-for-ts_clock_freq\u2462"}, {"id": "ref-for-ts_clock_freq\u2463"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-ts_clock_freq\u2464"}, {"id": "ref-for-ts_clock_freq\u2465"}, {"id": "ref-for-ts_clock_freq\u2466"}, {"id": "ref-for-ts_clock_freq\u2467"}, {"id": "ref-for-ts_clock_freq\u2468"}, {"id": "ref-for-ts_clock_freq\u2460\u24ea"}], "title": "2.3. Time synchronization"}], "external": false};
+window.dfnpanelData['ts_clock_freq'] = {"dfnID": "ts_clock_freq", "url": "#ts_clock_freq", "dfnText": "ts_clock_freq", "refSections": [{"refs": [{"id": "ref-for-ts_clock_freq"}, {"id": "ref-for-ts_clock_freq\u2460"}, {"id": "ref-for-ts_clock_freq\u2461"}, {"id": "ref-for-ts_clock_freq\u2462"}, {"id": "ref-for-ts_clock_freq\u2463"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-ts_clock_freq\u2464"}, {"id": "ref-for-ts_clock_freq\u2465"}, {"id": "ref-for-ts_clock_freq\u2466"}, {"id": "ref-for-ts_clock_freq\u2467"}, {"id": "ref-for-ts_clock_freq\u2468"}, {"id": "ref-for-ts_clock_freq\u2460\u24ea"}, {"id": "ref-for-ts_clock_freq\u2460\u2460"}], "title": "2.3. Time synchronization"}], "external": false};
 window.dfnpanelData['stream-registration-packets-related_stream_id'] = {"dfnID": "stream-registration-packets-related_stream_id", "url": "#stream-registration-packets-related_stream_id", "dfnText": "related_stream_id", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-related_stream_id"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-related_stream_id\u2460"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2461"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2462"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2463"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2464"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2465"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2466"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2467"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2468"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2460\u24ea"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2460\u2460"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2460\u2461"}, {"id": "ref-for-stream-registration-packets-related_stream_id\u2460\u2462"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['stream-registration-packets-bandwidth'] = {"dfnID": "stream-registration-packets-bandwidth", "url": "#stream-registration-packets-bandwidth", "dfnText": "bandwidth", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-bandwidth"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-bandwidth\u2460"}], "title": "3.5.1. Feedback"}], "external": false};
 window.dfnpanelData['stream-registration-packets-stream_flags'] = {"dfnID": "stream-registration-packets-stream_flags", "url": "#stream-registration-packets-stream_flags", "dfnText": "stream_flags", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-stream_flags"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-stream_flags\u2460"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['stream-registration-packets-codec_id'] = {"dfnID": "stream-registration-packets-codec_id", "url": "#stream-registration-packets-codec_id", "dfnText": "codec_id", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-codec_id"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2462"}], "title": "3.1.3. AC-3 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2463"}], "title": "3.1.4. FLAC encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2464"}], "title": "3.1.5. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2465"}], "title": "3.1.6. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2466"}], "title": "3.1.7. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2467"}], "title": "3.1.8. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2468"}], "title": "3.1.9. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u24ea"}], "title": "3.1.10. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2460"}], "title": "3.1.11. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2461"}], "title": "3.1.12. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2462"}], "title": "3.1.13. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2463"}], "title": "3.1.14. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2464"}], "title": "3.1.15. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2465"}], "title": "3.1.16. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2466"}], "title": "3.1.17. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2467"}], "title": "3.2.1. Custom codec encapsulation"}], "external": false};
-window.dfnpanelData['stream-registration-packets-timebase'] = {"dfnID": "stream-registration-packets-timebase", "url": "#stream-registration-packets-timebase", "dfnText": "timebase", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-timebase"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2461"}], "title": "2.27. Video orientation"}], "external": false};
+window.dfnpanelData['stream-registration-packets-timebase'] = {"dfnID": "stream-registration-packets-timebase", "url": "#stream-registration-packets-timebase", "dfnText": "timebase", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-timebase"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2461"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2462"}], "title": "2.27. Video orientation"}], "external": false};
 window.dfnpanelData['stream-registration-packets-skip_preroll'] = {"dfnID": "stream-registration-packets-skip_preroll", "url": "#stream-registration-packets-skip_preroll", "dfnText": "skip_preroll", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-skip_preroll"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-skip_preroll\u2460"}, {"id": "ref-for-stream-registration-packets-skip_preroll\u2461"}], "title": "2.4. Stream registration"}], "external": false};
 window.dfnpanelData['stream-registration-packets-init_packets'] = {"dfnID": "stream-registration-packets-init_packets", "url": "#stream-registration-packets-init_packets", "dfnText": "init_packets", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-init_packets"}], "title": "2.4.1. Stream Init Packets Enumeration (enum StreamInitPackets)"}], "external": false};
 window.dfnpanelData['enumdef-streaminitpackets'] = {"dfnID": "enumdef-streaminitpackets", "url": "#enumdef-streaminitpackets", "dfnText": "StreamInitPackets", "refSections": [{"refs": [{"id": "ref-for-enumdef-streaminitpackets"}], "title": "2.4. Stream registration"}], "external": false};
