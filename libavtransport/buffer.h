@@ -44,7 +44,7 @@ struct AVTBuffer {
 };
 
 int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                        ptrdiff_t offset, int64_t len);
+                         ptrdiff_t offset, int64_t len);
 
 void avt_buffer_quick_unref(AVTBuffer *buf);
 

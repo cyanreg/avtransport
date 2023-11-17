@@ -60,6 +60,11 @@ AVT_API int avt_output_write_stream_data(AVTContext *ctx, AVTStream *st,
     return avt_output_stream_data(ctx, ctx->out, st, pkt);
 }
 
+size_t avt_packet_get_max_size(AVTContext *ctx, AVTOutput *out)
+{
+    return out->conn->p->get_max_pkt_len(ctx, out->conn->p_ctx);
+}
+
 int avt_packet_send(AVTContext *ctx, AVTOutput *out,
                     uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf)
 {

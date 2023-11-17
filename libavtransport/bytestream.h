@@ -205,7 +205,7 @@ static AVTBytestream inline avt_bs_init(uint8_t *buf, size_t len)
 }
 
 /* Reset bytestream reader/writer */
-void inline avt_bs_reset(AVTBytestream *bs)
+static void inline avt_bs_reset(AVTBytestream *bs)
 {
     bs->ptr = bs->start;
 }

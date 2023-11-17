@@ -90,26 +90,73 @@ int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
     return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
 }
 
+#include <stdio.h>
+
 int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
                            AVTStream *st, AVTPacket *pkt)
 {
+    int err;
+    size_t seg_len;
+    size_t maxp = avt_packet_get_max_size(ctx, out);
+    size_t payload_size = avt_buffer_get_data_len(pkt->data);
+    size_t pbytes = payload_size;
+    AVTBuffer tmp;
+
+    seg_len = AVT_MIN(pbytes, maxp);
+
+    avt_buffer_quick_ref(&tmp, pkt->data, 0, seg_len);
+
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
-
+    uint32_t init_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
     avt_encode_stream_data(&bs, &(AVTStreamData){
         .frame_type = pkt->type,
-        .pkt_segmented = 0,
+        .pkt_segmented = seg_len < pbytes,
         .pkt_in_fec_group = 0,
         .field_id = 0,
         .pkt_compression = AVT_DATA_COMPRESSION_NONE,
         .stream_id = st->id,
-        .global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX,
+        .global_seq = init_seq,
         .pts = pkt->pts,
         .duration = pkt->duration,
-        .data_length = avt_buffer_get_data_len(pkt->data),
+        .data_length = seg_len,
     });
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), pkt->data);
+    err = avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), &tmp);
+    avt_buffer_quick_unref(&tmp);
+    if (err < 0)
+        return err;
+
+    pbytes -= seg_len;
+
+    uint8_t seg[AVT_MAX_HEADER_LEN];
+    AVTBytestream bss = avt_bs_init(hdr, sizeof(hdr));
+    while (pbytes) {
+        const uint32_t seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
+        const int h7o = 4*(seq % 7);
+        seg_len = AVT_MIN(pbytes, maxp);
+        avt_buffer_quick_ref(&tmp, pkt->data, payload_size - pbytes, seg_len);
+        avt_encode_generic_segment(&bss, &(AVTGenericSegment){
+            .generic_segment_descriptor = AVT_PKT_STREAM_DATA_SEGMENT,
+            .stream_id = st->id,
+            .global_seq = seq,
+            .target_seq = init_seq,
+            .pkt_total_data = payload_size,
+            .seg_offset = payload_size - pbytes,
+            .seg_length = seg_len,
+            .header_7 = { hdr[h7o + 0], hdr[h7o + 1], hdr[h7o + 2], hdr[h7o + 3] },
+        });
+
+        err = avt_packet_send(ctx, out, seg, avt_bs_offs(&bss), &tmp);
+        avt_buffer_quick_unref(&tmp);
+        if (err < 0)
+            break;
+
+        pbytes -= seg_len;
+        avt_bs_reset(&bss);
+    } while (pbytes);
+
+    return err;
 }
 
 int avt_output_video_info(AVTContext *ctx, AVTOutput *out,

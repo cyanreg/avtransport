@@ -76,7 +76,7 @@ static int file_output(AVTContext *ctx, AVTIOCtx *io,
         return AVT_ERROR(errno);
 
     if (payload) {
-        out = fwrite(data, len, 1, io->f);
+        out = fwrite(data, 1, len, io->f);
         if (out != len)
             return AVT_ERROR(errno);
     }

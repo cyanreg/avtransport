@@ -6,7 +6,7 @@ Shortname: avtransport
 URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
-Date: 2023-11-16
+Date: 2023-11-17
 Status: LD
 Group: FFmpeg
 Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
@@ -1015,7 +1015,7 @@ has to be used for segments that follow the above:
             <td>The size of the data segment.</td>
         </tr>
         <tr id="GenericDataSegment+7">
-            <td><code>b(32)</code></td>
+            <td><code>4*b(8)</code></td>
             <td><dfn>header_7</dfn></td>
             <td></td>
             <td>A seventh of the starting [[#generic-data-packets]] header. The part taken is determined by <code>[=global_seq=] % 7</code>.</td>
@@ -1029,7 +1029,7 @@ has to be used for segments that follow the above:
         <tr id="GenericDataSegment+9">
             <td><code>[=seg_length=]*b(8)</code></td>
             <td><dfn>generic_segment_payload</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The data for the segment.</td>
         </tr>
     </table>
@@ -1099,7 +1099,7 @@ the following [[#generic-data-packets]] structure is to be used:
             <td>The total amount of payload bytes across all parity data packets.</td>
         </tr>
         <tr id="GenericDataParity+7">
-            <td><code>b(32)</code></td>
+            <td><code>4*b(8)</code></td>
             <td>[=header_7=]</td>
             <td></td>
             <td>A seventh of the starting [[#generic-data-packets]] header. The part taken is determined by <code>[=global_seq=] % 7</code>.</td>
@@ -1113,7 +1113,7 @@ the following [[#generic-data-packets]] structure is to be used:
         <tr id="GenericDataParity+9">
             <td><code>[=parity_data_length=]*b(8)</code></td>
             <td><dfn>parity_data_payload</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The RaptorQ parity data that can be used to check or correct the previous data packet's payload.</td>
         </tr>
     </table>

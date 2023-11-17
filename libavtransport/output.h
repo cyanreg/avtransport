@@ -42,4 +42,6 @@ typedef struct AVTOutput {
 int avt_packet_send(AVTContext *ctx, AVTOutput *out,
                     uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf);
 
+size_t avt_packet_get_max_size(AVTContext *ctx, AVTOutput *out);
+
 #endif
