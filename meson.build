@@ -93,11 +93,13 @@ endif
 #============================================================================
 threads_dep = dependency('threads', required: true)
 uring_dep = dependency('liburing', required: false)
+zstd_dep = dependency('libzstd', required: false)
 lib_deps = [
     cc.find_library('m', required: true),
     threads_dep,
 
     uring_dep,
+    zstd_dep,
 ]
 
 # Configure file
@@ -114,6 +116,9 @@ conf.set('CONFIG_BIG_ENDIAN', host_machine.endian() == 'big')
 conf.set('CONFIG_INPUT', get_option('input').auto())
 conf.set('CONFIG_OUTPUT', get_option('output').auto()) 
 
+conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
+conf.set('CONFIG_HAVE_LIBZSTD', zstd_dep.found())
+
 if get_option('assert') > -1
     conf.set('CONFIG_ASSERT_LEVEL', get_option('assert'))
 else
@@ -124,12 +129,6 @@ else
     else
         conf.set('CONFIG_ASSERT_LEVEL', 2)
     endif
-endif
-
-if uring_dep.found()
-    conf.set('CONFIG_HAVE_LIBURING', 1)
-else
-    conf.set('CONFIG_HAVE_LIBURING', 0)
 endif
 
 # Check for pthread_setname_np

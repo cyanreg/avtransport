@@ -24,24 +24,3 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_OUTPUT
-#define LIBAVTRANSPORT_OUTPUT
-
-#include <avtransport/output.h>
-
-#include "common.h"
-#include "connection_internal.h"
-
-typedef struct AVTOutput {
-    AVTConnection *conn;
-
-    atomic_uint_least64_t seq;
-    atomic_uint_least64_t epoch;
-} AVTOutput;
-
-int avt_packet_send(AVTContext *ctx, AVTOutput *out,
-                    uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf);
-
-size_t avt_packet_get_max_size(AVTContext *ctx, AVTOutput *out);
-
-#endif

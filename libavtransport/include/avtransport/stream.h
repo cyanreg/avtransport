@@ -71,7 +71,11 @@ typedef struct AVTStream {
     AVTVideoInfo video_info;
     AVTVideoOrientation video_orientation;
 
-    AVTBuffer *icc_profile;
+    AVTLutIcc icc_info;
+    AVTBuffer *icc_data;
+
+    AVTLutIcc lut_info;
+    AVTBuffer *lut_data;
 
     enum AVTStreamFlags flags;
     AVTRational timebase;

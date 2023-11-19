@@ -65,6 +65,7 @@ if get_option('output').auto()
 endif
 
 if get_option('input').auto()
+    sources += 'decode.c'
     sources += 'reorder.c'
     sources += 'ldpc_decode.c'
 endif

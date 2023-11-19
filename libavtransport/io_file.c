@@ -72,13 +72,17 @@ static int file_output(AVTContext *ctx, AVTIOCtx *io,
     uint8_t *data = avt_buffer_get_data(payload, &len);
 
     size_t out = fwrite(hdr, 1, hdr_len, io->f);
-    if (out != hdr_len)
+    if (out != hdr_len) {
+        avt_log(io, AVT_LOG_ERROR, "Error while writing!\n");
         return AVT_ERROR(errno);
+    }
 
     if (payload) {
         out = fwrite(data, 1, len, io->f);
-        if (out != len)
+        if (out != len) {
+            avt_log(io, AVT_LOG_ERROR, "Error while writing!\n");
             return AVT_ERROR(errno);
+        }
     }
     fflush(io->f);
 

@@ -27,22 +27,35 @@
 #ifndef LIBAVTRANSPORT_ENCODE
 #define LIBAVTRANSPORT_ENCODE
 
-#include "output.h"
+#include "output_internal.h"
 
+/* Session start */
 int avt_output_session_start(AVTContext *ctx, AVTOutput *out);
 
+/* Time sync */
 int avt_output_time_sync(AVTContext *ctx, AVTOutput *out);
 
+/* Stream registration and data */
 int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
                                AVTStream *st);
-
 int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
                            AVTStream *st, AVTPacket *pkt);
 
-int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
-                          AVTStream *st);
+/* Generic data */
+int avt_output_generic_data(AVTContext *ctx, AVTOutput *out,
+                            AVTStream *st, AVTBuffer *data, int64_t pts,
+                            uint32_t first_desd, uint32_t seg_desc);
 
+/* LUT/ICC */
+int avt_output_lut_data(AVTContext *ctx, AVTOutput *out,
+                        AVTStream *st, int64_t pts);
+int avt_output_icc_data(AVTContext *ctx, AVTOutput *out,
+                        AVTStream *st, int64_t pts);
+
+/* Video info/orientation */
+int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
+                          AVTStream *st, int64_t pts);
 int avt_output_video_orientation(AVTContext *ctx, AVTOutput *out,
-                                 AVTStream *st);
+                                 AVTStream *st, int64_t pts);
 
 #endif

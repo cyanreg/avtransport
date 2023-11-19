@@ -27,8 +27,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "output.h"
+#include "output_internal.h"
 #include "encode.h"
+
+#include "../config.h"
 
 int avt_output_open(AVTContext *ctx, AVTConnection *conn)
 {
@@ -38,6 +40,12 @@ int avt_output_open(AVTContext *ctx, AVTConnection *conn)
     atomic_store(&out->seq, 0);
     atomic_store(&out->epoch, 0);
     out->conn = conn;
+
+#ifdef CONFIG_HAVE_LIBZSTD
+    out->zstd_ctx = ZSTD_createCCtx();
+    if (!out->zstd_ctx)
+        return AVT_ERROR(ENOMEM);
+#endif
 
     avt_output_session_start(ctx, out);
 

@@ -938,18 +938,24 @@ The following template shall be used for generic data packets:
             <td>The size of the data in this packet.</td>
         </tr>
         <tr id="GenericData+6">
-            <td><code>b(32)</code></td>
+            <td><code>u(8)</code></td>
+            <td><dfn>generic_data_compression</dfn></td>
+            <td>enum {{DataCompression}}</td>
+            <td>Type of data compression used.</td>
+        </tr>
+        <tr id="GenericData+7">
+            <td><code>b(24)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="GenericData+7">
+        <tr id="GenericData+8">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="GenericData+8">
+        <tr id="GenericData+9">
             <td><code>[=payload_length=]*b(8)</code></td>
             <td><dfn>generic_payload</dfn></td>
             <td></td>
@@ -1885,69 +1891,75 @@ The following structure MUST be followed:
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
         <tr id="0x0010+3">
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Timestamp (in stream [=timebase=] units) at which this orientation packet has to be applied at.</td>
+        </tr>
+        <tr id="0x0010+4">
             <td><code>b(8)</code></td>
             <td><dfn>lut_flags</dfn></td>
             <td>enum {{LutFlags}}</td>
             <td>Flags for the LUT/ICC profile packet.</td>
         </tr>
-        <tr id="0x0010+4">
+        <tr id="0x0010+5">
             <td><code>u(8)</code></td>
             <td><dfn>lut_type</dfn></td>
             <td>enum {{LutType}}</td>
             <td>The data type contained in the [=lut_data=].</td>
         </tr>
-        <tr id="0x0010+5">
+        <tr id="0x0010+6">
             <td><code>b(8)</code></td>
             <td><dfn>lut_major_ver</dfn></td>
             <td></td>
             <td>Major version of the file. Currently only applies to ICC profiles.</td>
         </tr>
-        <tr id="0x0010+6">
+        <tr id="0x0010+7">
             <td><code>b(8)</code></td>
             <td><dfn>lut_minor_ver</dfn></td>
             <td></td>
             <td>Minor version of the file. Currently only applies to ICC profiles.</td>
         </tr>
-        <tr id="0x0010+7">
+        <tr id="0x0010+8">
             <td><code>u(8)</code></td>
             <td><dfn>lut_compression</dfn></td>
             <td>enum {{DataCompression}}</td>
             <td>LUT/ICC data compression.</td>
         </tr>
-        <tr id="0x0010+8">
+        <tr id="0x0010+9">
             <td><code>b(8)</code></td>
             <td><dfn>lut_name_length</dfn></td>
             <td></td>
             <td>The length of the LUT/ICC profile name.</td>
         </tr>
-        <tr id="0x0010+9">
+        <tr id="0x0010+10">
             <td><code>b(8)</code></td>
             <td><dfn>lut_data_length</dfn></td>
             <td></td>
             <td>The length of the LUT/ICC profile.</td>
         </tr>
-        <tr id="0x0010+10">
-            <td><code>b(104)</code></td>
+        <tr id="0x0010+11">
+            <td><code>b(40)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="0x0010+11">
+        <tr id="0x0010+12">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0010+12">
+        <tr id="0x0010+13">
             <td><code>[=lut_name_length=]*b(8)</code></td>
             <td><dfn>lut_name</dfn></td>
             <td>zero-terminated string</td>
             <td>The full name of the LUT/ICC profile.</td>
         </tr>
-        <tr id="0x0010+13">
+        <tr id="0x0010+14">
             <td><code>[=lut_data_length=]*b(8)</code></td>
             <td><dfn>lut_data</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The LUT/ICC profile data</td>
         </tr>
     </table>
@@ -2105,7 +2117,7 @@ The following structure MUST be followed:
         <tr id="0x0020+12">
             <td><code>[=font_data_length=]*b(8)</code></td>
             <td><dfn>font_data</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The font data.</td>
         </tr>
     </table>

@@ -41,8 +41,15 @@ typedef struct AVTOutputOptions {
     int64_t refresh_period;
 
     /* Bandwidth available, in bits per second. Will segment and interleave
-     * streams in such a way as to satisfy limited throughput. */
+     * streams in such a way as to satisfy realtime playback on limited
+     * throughput. */
     uint64_t bandwidth;
+
+    /* Enable parallel submission mode by setting a value greater
+     * than one. Mainly useful for very high bitrate streams, especially
+     * when using FEC.
+     * NOTE: packets may be sent out of order. */
+    int threads;
 } AVTOutputOptions;
 
 /* Open an output and immediately send/write a stream session packet.
