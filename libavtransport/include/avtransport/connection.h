@@ -27,7 +27,8 @@
 #ifndef AVTRANSPORT_CONNECTION_H
 #define AVTRANSPORT_CONNECTION_H
 
-#include "utils.h"
+#include <avtransport/packet_enums.h>
+#include <avtransport/utils.h>
 
 typedef struct AVTConnection AVTConnection;
 
@@ -108,11 +109,15 @@ typedef struct AVTConnectionInfo {
         struct {
             /* Called by libavtransport in strictly sequential order,
              * with no holes, to write data. */
-            int (*write)(void *opaque, AVTBuffer *buf);
+            int (*write)(void *opaque,
+                         uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                         AVTBuffer *buf);
 
             /* Called by libavtransport to retrieve a piece of
              * data at a particular offset. */
-            int (*read)(void *opaque, AVTBuffer **buf, uint64_t offset);
+            int (*read)(void *opaque,
+                        uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                        AVTBuffer **buf, uint64_t offset);
 
             /* Opaque pointer which will be used for the data() callback. */
             void *opaque;

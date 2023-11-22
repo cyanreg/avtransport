@@ -24,46 +24,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_COMMON
-#define LIBAVTRANSPORT_COMMON
-
-#include <stdatomic.h>
-
 #include <avtransport/avtransport.h>
 
-typedef struct AVTStreamPriv {
-    enum AVTCodecID codec_id;
+#include "utils_internal.h"
 
-    struct AVTOutput *out;
-} AVTStreamPriv;
+uint64_t avt_get_time_ns(void)
+{
+    struct timespec ts;
 
-struct AVTContext {
-    struct AVTOutput *out;
+    if (!timespec_get(&ts, TIME_UTC)) {
+        avt_log(NULL, AVT_LOG_WARN, "Unable to get current time, assuming zero!\n");
+        return 0;
+    }
 
-    struct {
-        AVTConnection **conn;
-        int nb_conn;
-        struct AVTOutputContext *ctx;
-        atomic_uint seq;
-        uint64_t epoch;
-    } output;
-
-    struct {
-        AVTConnection *conn;
-        struct AVTInputContext *ctx;
-        AVTInputCallbacks proc;
-        void *cb_opaque;
-        atomic_uint seq;
-        uint64_t epoch;
-    } input;
-
-    AVTStream **stream;
-    int nb_stream;
-
-    AVTContextOptions opts;
-};
-
-AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id);
-AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id);
-
-#endif
+    return (ts.tv_sec * 1000000000) + ts.tv_nsec;
+}

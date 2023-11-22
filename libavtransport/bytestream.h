@@ -32,7 +32,7 @@
 
 #include <avtransport/utils.h>
 #include <avtransport/rational.h>
-#include "utils.h"
+#include "utils_internal.h"
 
 #ifndef AVT_RB8
 #define AVT_RB8(x)               \

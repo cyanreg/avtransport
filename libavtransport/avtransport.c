@@ -56,7 +56,7 @@ void avt_close(AVTContext **ctx)
     }
 }
 
-AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id)
+AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id, AVTStream **stl, int *nb_st)
 {
     if (!ctx->output.ctx)
         return NULL;

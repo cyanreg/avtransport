@@ -24,12 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_OUTPUT_H
-#define AVTRANSPORT_OUTPUT_H
+#ifndef AVTRANSPORT_SEND_H
+#define AVTRANSPORT_SEND_H
 
 #include "connection.h"
 #include "stream.h"
 #include "utils.h"
+
+typedef struct AVTOutput AVTOutput;
 
 typedef struct AVTOutputOptions {
     /* Period in nanoseconds for sending session_start packets to the receiver.
@@ -52,48 +54,48 @@ typedef struct AVTOutputOptions {
     int threads;
 } AVTOutputOptions;
 
+/* All functions listed here are thread-safe. */
+
 /* Open an output and immediately send/write a stream session packet.
  *
  * NOTE: Multiple connections may be bound for output to enable
  * one-to-many streaming or writing */
-AVT_API int avt_output_open(AVTContext *ctx, AVTConnection *conn);
+AVT_API int avt_output_open(AVTContext *ctx, AVTOutput **out,
+                            AVTConnection *conn, AVTOutputOptions *opts);
 
-/* Send an epoch packet and set the epoch to use. */
-AVT_API int avt_output_set_epoch(AVTContext *ctx, uint64_t epoch);
+/* Set the epoch to use, as nanoseconds after 00:00:00 UTC on 1 January 1970.
+ * Should be called once, at the start of streaming.
+ * If zero, or not called, the current time will be used. */
+AVT_API int avt_output_set_epoch(AVTOutput *out, uint64_t epoch);
 
 /* Register a stream and allocate internal state for it.
- * To automatically assign a stream ID, set id to 65535.
+ * To automatically assign a stream ID, set id to UINT16_MAX.
  * If there's an existing stream with the same ID, will return NULL. */
-AVT_API AVTStream *avt_output_add_stream(AVTContext *ctx, uint16_t id);
+AVT_API AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id);
 
 /* Update a stream, (re-)emmitting a stream registration packet.
  * The id MUST match the one from avt_output_add_stream(). */
-AVT_API int avt_output_update_stream(AVTContext *ctx, AVTStream *st);
+AVT_API int avt_output_stream_update(AVTOutput *out, AVTStream *st);
 
-AVT_API int avt_output_add_font(AVTContext *ctx, AVTBuffer *data, const char *name);
+/* Attach a font to a stream */
+AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
+                                       const char *filename, enum AVTFontType type);
 
-/* Write data to output. Can be called from multiple threads at once.
- * If compiled with threads, actual output happens in a different thread. */
-AVT_API int avt_output_write_stream_data(AVTContext *ctx, AVTStream *st,
-                                         AVTPacket *pkt);
+/* Write stream data to the output. */
+AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
 
-/* Write user data packets */
-AVT_API int avt_output_write_user_data(AVTContext *ctx, AVTBuffer *data,
-                                       uint8_t descriptor_flags, uint16_t user,
-                                       int prioritize);
+/* Write user data packets. The immediate flag can be used to skip
+ * any potential queueing. */
+AVT_API int avt_output_user_data(AVTOutput *out, AVTBuffer *data,
+                                 uint64_t opaque, int immediate);
 
-AVT_API int avt_output_close_stream(AVTContext *ctx, AVTStream *st);
+/* Immediately refresh all stream data */
+AVT_API int avt_output_refresh(AVTOutput *out);
 
-AVT_API int avt_output_control(AVTContext *ctx, void *opaque, int cease,
-                               int resend_init, int error, uint8_t redirect[16],
-                               uint16_t redirect_port, int seek_requested,
-                               int64_t seek_offset, uint32_t seek_seq);
+/* Close a single stream */
+AVT_API int avt_output_stream_close(AVTStream **st);
 
-AVT_API int avt_output_feedback(AVTContext *ctx, void *opaque, AVTStream *st,
-                                uint64_t epoch_offset, uint64_t bandwidth,
-                                uint32_t fec_corrections, uint32_t corrupt_packets,
-                                uint32_t missing_packets);
-
-AVT_API int avt_output_close(AVTContext *ctx);
+/* Close all streams and free resources */
+AVT_API int avt_output_close(AVTOutput **out);
 
 #endif

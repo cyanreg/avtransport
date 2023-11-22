@@ -40,12 +40,15 @@ subdir('include/avtransport')
 sources = [
     'avtransport.c',
     'buffer.c',
+    'utils.c',
 
     'ldpc.c',
     'raptor.c',
 
     'connection.c',
+
     'protocol_noop.c',
+
     'io_null.c',
     'io_file.c',
 

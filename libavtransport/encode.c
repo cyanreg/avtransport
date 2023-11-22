@@ -36,7 +36,7 @@
 #include <zstd.h>
 #endif
 
-static inline int avt_encode_compress(AVTContext *ctx, AVTOutput *out,
+static inline int avt_encode_compress(AVTOutput *out,
                                       AVTBuffer **data, enum AVTPktDescriptors desc,
                                       enum AVTDataCompression *data_compression)
 {
@@ -52,6 +52,8 @@ static inline int avt_encode_compress(AVTContext *ctx, AVTOutput *out,
         uint8_t *src = avt_buffer_get_data(*data, &src_len);
 
         size_t dst_size = ZSTD_compressBound(src_len);
+
+        /* TODO: use a buffer pool */
         uint8_t *dst = malloc(dst_size);
         if (!dst)
             return AVT_ERROR(ENOMEM);
@@ -91,7 +93,7 @@ static inline int avt_encode_compress(AVTContext *ctx, AVTOutput *out,
     return err;
 }
 
-int avt_output_session_start(AVTContext *ctx, AVTOutput *out)
+int avt_send_session_start(AVTOutput *out)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
@@ -107,10 +109,10 @@ int avt_output_session_start(AVTContext *ctx, AVTOutput *out)
 
     avt_encode_session_start(&bs, &pkt);
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
+    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 
-int avt_output_time_sync(AVTContext *ctx, AVTOutput *out)
+int avt_send_time_sync(AVTOutput *out)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
@@ -124,11 +126,10 @@ int avt_output_time_sync(AVTContext *ctx, AVTOutput *out)
         .ts_clock_hz = 0,
     });
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
+    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 
-int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
-                               AVTStream *st)
+int avt_send_stream_register(AVTOutput *out, AVTStream *st)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
@@ -148,18 +149,18 @@ int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
         .init_packets = 0,
     });
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
+    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 
 #define INIT_SEGMENTED(buf, desc)                                                   \
     int err;                                                                        \
-    size_t maxp = avt_packet_get_max_size(ctx, out);                                \
+    size_t maxp = avt_packet_get_max_size(out);                                     \
     size_t payload_size = avt_buffer_get_data_len(buf);                             \
     size_t pbytes = payload_size;                                                   \
     size_t seg_len = AVT_MIN(pbytes, maxp);                                         \
                                                                                     \
     enum AVTDataCompression data_compression;                                       \
-    err = avt_encode_compress(ctx, out, &buf, desc, &data_compression);             \
+    err = avt_encode_compress(out, &buf, desc, &data_compression);                  \
     if (err < 0)                                                                    \
         return err;                                                                 \
                                                                                     \
@@ -171,7 +172,7 @@ int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
     uint32_t init_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
 
 #define SEGMENT(buf, seg_desc)                                                      \
-    err = avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), &tmp);                   \
+    err = avt_packet_send(out, hdr, avt_bs_offs(&bs), &tmp);                        \
     avt_buffer_quick_unref(&tmp);                                                   \
     if (err < 0)                                                                    \
         return err;                                                                 \
@@ -195,7 +196,7 @@ int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
             .header_7 = { hdr[h7o + 0], hdr[h7o + 1], hdr[h7o + 2], hdr[h7o + 3] }, \
         });                                                                         \
                                                                                     \
-        err = avt_packet_send(ctx, out, seg, avt_bs_offs(&bs), &tmp);               \
+        err = avt_packet_send(out, seg, avt_bs_offs(&bs), &tmp);                    \
         avt_buffer_quick_unref(&tmp);                                               \
         if (err < 0)                                                                \
             break;                                                                  \
@@ -206,8 +207,8 @@ int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
                                                                                     \
     return err;
 
-int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
-                           AVTStream *st, AVTPacket *pkt)
+int avt_send_stream_data(AVTOutput *out,
+                         AVTStream *st, AVTPacket *pkt)
 {
     INIT_SEGMENTED(pkt->data, AVT_PKT_STREAM_DATA)
 
@@ -227,9 +228,9 @@ int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
     SEGMENT(pkt->data, AVT_PKT_STREAM_DATA_SEGMENT)
 }
 
-int avt_output_generic_data(AVTContext *ctx, AVTOutput *out,
-                            AVTStream *st, AVTBuffer *data, int64_t pts,
-                            uint32_t hdr_desc, uint32_t seg_desc)
+int avt_send_generic_data(AVTOutput *out,
+                          AVTStream *st, AVTBuffer *data, int64_t pts,
+                          uint32_t hdr_desc, uint32_t seg_desc)
 {
     INIT_SEGMENTED(data, hdr_desc)
 
@@ -246,8 +247,8 @@ int avt_output_generic_data(AVTContext *ctx, AVTOutput *out,
     SEGMENT(data, seg_desc)
 }
 
-int avt_output_lut_data(AVTContext *ctx, AVTOutput *out,
-                        AVTStream *st, int64_t pts)
+int avt_send_lut_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts)
 {
     INIT_SEGMENTED(st->lut_data, AVT_PKT_LUT_ICC)
 
@@ -262,8 +263,8 @@ int avt_output_lut_data(AVTContext *ctx, AVTOutput *out,
     SEGMENT(st->lut_data, AVT_PKT_STREAM_DATA_SEGMENT)
 }
 
-int avt_output_icc_data(AVTContext *ctx, AVTOutput *out,
-                        AVTStream *st, int64_t pts)
+int avt_send_icc_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts)
 {
     INIT_SEGMENTED(st->icc_data, AVT_PKT_LUT_ICC)
 
@@ -278,8 +279,8 @@ int avt_output_icc_data(AVTContext *ctx, AVTOutput *out,
     SEGMENT(st->icc_data, AVT_PKT_STREAM_DATA_SEGMENT)
 }
 
-int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
-                          AVTStream *st, int64_t pts)
+int avt_send_video_info(AVTOutput *out,
+                        AVTStream *st, int64_t pts)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
@@ -291,11 +292,11 @@ int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
 
     avt_encode_video_info(&bs, &pkt);
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
+    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 
-int avt_output_video_orientation(AVTContext *ctx, AVTOutput *out,
-                                 AVTStream *st, int64_t pts)
+int avt_send_video_orientation(AVTOutput *out,
+                               AVTStream *st, int64_t pts)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
@@ -307,5 +308,5 @@ int avt_output_video_orientation(AVTContext *ctx, AVTOutput *out,
 
     avt_encode_video_orientation(&bs, &pkt);
 
-    return avt_packet_send(ctx, out, hdr, avt_bs_offs(&bs), NULL);
+    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }

@@ -16,6 +16,7 @@
 #ifndef GENOPT_HEADER
 #define GENOPT_HEADER
 
+#include <stdlib.h>
 #include <string.h>
 
 #ifndef GEN_OPT_MAX_ARR

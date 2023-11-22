@@ -24,46 +24,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_COMMON
-#define LIBAVTRANSPORT_COMMON
+#ifndef LIBAVTRANSPORT_UTILS
+#define LIBAVTRANSPORT_UTILS
 
-#include <stdatomic.h>
+#include <assert.h>
+#include <time.h>
+#include <stdint.h>
 
-#include <avtransport/avtransport.h>
+#include "../config.h"
 
-typedef struct AVTStreamPriv {
-    enum AVTCodecID codec_id;
+static inline void avt_assert0(int cond)
+{
+    assert(cond);
+}
 
-    struct AVTOutput *out;
-} AVTStreamPriv;
+static inline void avt_assert1(int cond)
+{
+#if CONFIG_ASSERT_LEVEL > 0
+    assert(cond);
+#endif
+}
 
-struct AVTContext {
-    struct AVTOutput *out;
+static inline void avt_assert2(int cond)
+{
+#if CONFIG_ASSERT_LEVEL > 1
+    assert(cond);
+#endif
+}
 
-    struct {
-        AVTConnection **conn;
-        int nb_conn;
-        struct AVTOutputContext *ctx;
-        atomic_uint seq;
-        uint64_t epoch;
-    } output;
-
-    struct {
-        AVTConnection *conn;
-        struct AVTInputContext *ctx;
-        AVTInputCallbacks proc;
-        void *cb_opaque;
-        atomic_uint seq;
-        uint64_t epoch;
-    } input;
-
-    AVTStream **stream;
-    int nb_stream;
-
-    AVTContextOptions opts;
-};
-
-AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id);
-AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id);
+uint64_t avt_get_time_ns(void);
 
 #endif

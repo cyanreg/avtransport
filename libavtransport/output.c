@@ -26,20 +26,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
+#include "utils_internal.h"
 #include "output_internal.h"
 #include "encode.h"
 
 #include "../config.h"
 
-int avt_output_open(AVTContext *ctx, AVTConnection *conn)
+int avt_output_open(AVTContext *ctx, AVTOutput **_out,
+                    AVTConnection *conn, AVTOutputOptions *opts)
 {
     AVTOutput *out = calloc(1, sizeof(*out));
-    ctx->out = out;
 
     atomic_store(&out->seq, 0);
-    atomic_store(&out->epoch, 0);
-    out->conn = conn;
+    atomic_store(&out->epoch, avt_get_time_ns());
+
+    out->conn = calloc(1, sizeof(*out->conn));
+    if (!out->conn) {
+        free(out);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    out->nb_conn = 1;
+    out->conn[0] = conn;
 
 #ifdef CONFIG_HAVE_LIBZSTD
     out->zstd_ctx = ZSTD_createCCtx();
@@ -47,34 +57,49 @@ int avt_output_open(AVTContext *ctx, AVTConnection *conn)
         return AVT_ERROR(ENOMEM);
 #endif
 
-    avt_output_session_start(ctx, out);
+    avt_send_session_start(out);
 
     return 0;
 }
 
-AVT_API AVTStream *avt_output_add_stream(AVTContext *ctx, uint16_t id)
+AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
 {
-    return avt_alloc_stream(ctx, id);
+
+//    return avt_alloc_stream(out->ctx, id);
+    return NULL;
 }
 
-AVT_API int avt_output_update_stream(AVTContext *ctx, AVTStream *st)
+int avt_output_stream_update(AVTOutput *out, AVTStream *st)
 {
-    return avt_output_stream_register(ctx, ctx->out, st);
+    return avt_send_stream_register(out, st);
 }
 
-AVT_API int avt_output_write_stream_data(AVTContext *ctx, AVTStream *st,
-                                         AVTPacket *pkt)
+int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)
 {
-    return avt_output_stream_data(ctx, ctx->out, st, pkt);
+    return avt_send_stream_data(st->priv->out, st, pkt);
 }
 
-size_t avt_packet_get_max_size(AVTContext *ctx, AVTOutput *out)
+size_t avt_packet_get_max_size(AVTOutput *out)
 {
-    return out->conn->p->get_max_pkt_len(ctx, out->conn->p_ctx);
+    return out->conn[0]->p->get_max_pkt_len(out->ctx, out->conn[0]->p_ctx);
 }
 
-int avt_packet_send(AVTContext *ctx, AVTOutput *out,
+int avt_packet_send(AVTOutput *out,
                     uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf)
 {
-    return out->conn->p->send_packet(ctx, out->conn->p_ctx, hdr, hdr_len, buf);
+    return out->conn[0]->p->send_packet(out->ctx, out->conn[0]->p_ctx, hdr, hdr_len, buf);
+}
+
+int avt_output_close(AVTOutput **_out)
+{
+    AVTOutput *out = *_out;
+
+#ifdef CONFIG_HAVE_LIBZSTD
+    ZSTD_freeCCtx(out->zstd_ctx);
+#endif
+    free(out);
+
+    *_out = NULL;
+
+    return 0;
 }

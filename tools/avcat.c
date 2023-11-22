@@ -27,9 +27,11 @@
 #include <stdio.h>
 #include <avtransport/avtransport.h>
 
-#include <libavformat/avformat.h>
-
 #include "../config.h"
+
+#ifdef HAVE_FFMPEG
+#include <libavformat/avformat.h>
+#endif
 
 #define GEN_OPT_MAX_ARR 16
 #define GEN_OPT_LOG avt_log
@@ -48,8 +50,11 @@ typedef struct IOContext {
     AVTContext *avt;
     AVTConnection *conn;
     AVTStream *st;
+    AVTOutput *out;
 
+#ifdef HAVE_FFMPEG
     AVFormatContext *avf;
+#endif
 } IOContext;
 
 static int path_is_avt(const char *path, enum AVTConnectionType *conn_type)
@@ -66,13 +71,13 @@ static int path_is_avt(const char *path, enum AVTConnectionType *conn_type)
     return 0;
 }
 
-static int open_input(IOContext *in, const char *path)
+static int open_io(IOContext *io, const char *path, int is_out)
 {
     int err;
 
-    in->is_avt = path_is_avt(path, &in->type);
+    io->is_avt = path_is_avt(path, &io->type);
 
-    if (in->is_avt) {
+    if (io->is_avt) {
         AVTContextOptions ctx_opts = {
             .log_cb = NULL,
             .producer_name = "avcat",
@@ -80,82 +85,68 @@ static int open_input(IOContext *in, const char *path)
                               PROJECT_VERSION_MICRO,
                               PROJECT_VERSION_MINOR },
         };
-        err = avt_init(&in->avt, &ctx_opts);
+        err = avt_init(&io->avt, &ctx_opts);
         if (err < 0)
             return err;
 
         AVTConnectionInfo conn_info = {
             .path = path,
-            .type = in->type,
+            .type = io->type,
         };
-        err = avt_connection_create(in->avt, &in->conn, &conn_info);
-        if (err < 0)
-            return err;
-    } else {
-        err = avformat_open_input(&in->avf, path, NULL, NULL);
+        err = avt_connection_create(io->avt, &io->conn, &conn_info);
         if (err < 0) {
-            avt_log(NULL, AVT_LOG_ERROR, "Couldn't initialize demuxer: %s!\n",
-                    av_err2str(err));
+            avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s: %i!\n", path,
+                    err);
             return err;
         }
 
-        err = avformat_find_stream_info(in->avf, NULL);
-        if (err < 0) {
-            avt_log(NULL, AVT_LOG_ERROR, "Couldn't find stream info: %s!\n",
-                    av_err2str(err));
-            return err;
+        if (is_out) {
+            AVTOutputOptions opts = {
+                .threads = 1,
+            };
+
+            err = avt_output_open(io->avt, &io->out, io->conn, &opts);
+            if (err < 0) {
+                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s for writing: %i!\n", path,
+                        err);
+                return err;
+            }
+
+            io->st = avt_output_stream_add(io->out, 12765);
+
+            avt_output_stream_update(io->out, io->st);
         }
+    } else {
+#ifdef HAVE_FFMPEG
+        if (is_out) {
+            err = avformat_alloc_output_context2(&io->avf, NULL, NULL, path);
+            if (err < 0) {
+                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output %s: %s!\n", path,
+                        av_err2str(err));
+                return err;
+            }
+        } else {
+            err = avformat_open_input(&io->avf, path, NULL, NULL);
+            if (err < 0) {
+                avt_log(NULL, AVT_LOG_ERROR, "Couldn't initialize demuxer: %s!\n",
+                        av_err2str(err));
+                return err;
+            }
+
+            err = avformat_find_stream_info(io->avf, NULL);
+            if (err < 0) {
+                avt_log(NULL, AVT_LOG_ERROR, "Couldn't find stream info: %s!\n",
+                        av_err2str(err));
+                return err;
+            }
+        }
+#else
+        avt_log(NULL, AVT_LOG_ERROR, "FFmpeg support not compiled in, cannot open %s!\n", path);
+        return AVT_ERROR(EINVAL);
+#endif
     }
 
-    avt_log(NULL, AVT_LOG_INFO, "Opened input %s\n", path);
-
-    return 0;
-}
-
-static int open_output(IOContext *in, const char *path)
-{
-    int err;
-
-    in->is_avt = path_is_avt(path, &in->type);
-
-    if (in->is_avt) {
-        AVTContextOptions ctx_opts = {
-            .log_cb = NULL,
-            .producer_name = "avcat",
-            .producer_ver = { PROJECT_VERSION_MAJOR,
-                              PROJECT_VERSION_MICRO,
-                              PROJECT_VERSION_MINOR },
-        };
-        err = avt_init(&in->avt, &ctx_opts);
-        if (err < 0)
-            return err;
-
-        AVTConnectionInfo conn_info = {
-            .path = path,
-            .type = in->type,
-        };
-        err = avt_connection_create(in->avt, &in->conn, &conn_info);
-        if (err < 0)
-            return err;
-
-        err = avt_output_open(in->avt, in->conn);
-        if (err < 0)
-            return err;
-
-        in->st = avt_output_add_stream(in->avt, 12765);
-
-
-        avt_output_update_stream(in->avt, in->st);
-    } else {
-        err = avformat_alloc_output_context2(&in->avf, NULL, NULL, path);
-        if (err < 0) {
-            avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output file: %s!\n",
-                    av_err2str(err));
-            return err;
-        }
-    }
-
-    avt_log(NULL, AVT_LOG_INFO, "Opened output %s\n", path);
+    avt_log(NULL, AVT_LOG_INFO, "Opened file %s for %s\n", path, is_out ? "writing" : "reading");
 
     return 0;
 }
@@ -179,14 +170,14 @@ int main(int argc, char **argv)
     /* Create inputs */
     IOContext in[MAX_INPUTS] = { 0 };
     for (int i = 0; input[i]; i++) {
-        err = open_input(&in[i], input[i]);
+        err = open_io(&in[i], input[i], 0);
         if (err < 0)
             goto end;
     }
 
     IOContext out = { 0 };
     if (output) {
-        err = open_output(&out, output);
+        err = open_io(&out, output, 1);
         if (err < 0)
             goto end;
     }
@@ -201,7 +192,7 @@ int main(int argc, char **argv)
         .data = buf,
     };
 
-    avt_output_write_stream_data(out.avt, out.st, &pkt);
+    avt_output_stream_data(out.st, &pkt);
 
 end:
     return 0;

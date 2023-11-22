@@ -421,7 +421,7 @@ if f_packet_encode != None:
     file_encode.write("#define AVTRANSPORT_ENCODE_H\n" + "\n")
     file_encode.write("#include <avtransport/packet_data.h>\n")
     file_encode.write("#include \"bytestream.h\"\n")
-    file_encode.write("#include \"utils.h\"\n")
+    file_encode.write("#include \"utils_internal.h\"\n")
     file_encode.write("#include \"ldpc_encode.h\"\n")
     for struct, fields in packet_structs.items():
         had_bitfield = False

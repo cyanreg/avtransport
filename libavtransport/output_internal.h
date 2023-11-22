@@ -24,22 +24,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_UTILS
-#define LIBAVTRANSPORT_UTILS
+#ifndef LIBAVTRANSPORT_OUTPUT
+#define LIBAVTRANSPORT_OUTPUT
 
-#include <assert.h>
+#include <avtransport/output.h>
+
+#include "common.h"
+#include "connection_internal.h"
+
 #include "../config.h"
 
-static inline void avt_assert0(int cond)
-{
-    assert(cond);
-}
-
-static inline void avt_assert1(int cond)
-{
-#if CONFIG_ASSERT_LEVEL > 0
-    assert(cond);
+#ifdef CONFIG_HAVE_LIBZSTD
+#include <zstd.h>
 #endif
-}
+
+typedef struct AVTOutput {
+    AVTContext *ctx;
+
+    AVTConnection **conn;
+    uint32_t nb_conn;
+
+    AVTStream **stream;
+    int nb_stream;
+
+    atomic_uint_least64_t seq;
+    atomic_uint_least64_t epoch;
+
+#ifdef CONFIG_HAVE_LIBZSTD
+    ZSTD_CCtx *zstd_ctx;
+#endif
+} AVTOutput;
+
+int avt_packet_send(AVTOutput *out,
+                    uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                    AVTBuffer *buf);
+
+size_t avt_packet_get_max_size(AVTOutput *out);
 
 #endif

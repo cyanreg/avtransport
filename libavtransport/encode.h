@@ -30,32 +30,31 @@
 #include "output_internal.h"
 
 /* Session start */
-int avt_output_session_start(AVTContext *ctx, AVTOutput *out);
+int avt_send_session_start(AVTOutput *out);
 
 /* Time sync */
-int avt_output_time_sync(AVTContext *ctx, AVTOutput *out);
+int avt_send_time_sync(AVTOutput *out);
 
 /* Stream registration and data */
-int avt_output_stream_register(AVTContext *ctx, AVTOutput *out,
-                               AVTStream *st);
-int avt_output_stream_data(AVTContext *ctx, AVTOutput *out,
-                           AVTStream *st, AVTPacket *pkt);
+int avt_send_stream_register(AVTOutput *out, AVTStream *st);
+int avt_send_stream_data(AVTOutput *out,
+                         AVTStream *st, AVTPacket *pkt);
 
 /* Generic data */
-int avt_output_generic_data(AVTContext *ctx, AVTOutput *out,
-                            AVTStream *st, AVTBuffer *data, int64_t pts,
-                            uint32_t first_desd, uint32_t seg_desc);
+int avt_send_generic_data(AVTOutput *out,
+                          AVTStream *st, AVTBuffer *data, int64_t pts,
+                          uint32_t first_desd, uint32_t seg_desc);
 
 /* LUT/ICC */
-int avt_output_lut_data(AVTContext *ctx, AVTOutput *out,
-                        AVTStream *st, int64_t pts);
-int avt_output_icc_data(AVTContext *ctx, AVTOutput *out,
-                        AVTStream *st, int64_t pts);
+int avt_send_lut_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts);
+int avt_send_icc_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts);
 
 /* Video info/orientation */
-int avt_output_video_info(AVTContext *ctx, AVTOutput *out,
-                          AVTStream *st, int64_t pts);
-int avt_output_video_orientation(AVTContext *ctx, AVTOutput *out,
-                                 AVTStream *st, int64_t pts);
+int avt_send_video_info(AVTOutput *out,
+                        AVTStream *st, int64_t pts);
+int avt_send_video_orientation(AVTOutput *out,
+                               AVTStream *st, int64_t pts);
 
 #endif
