@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="ca6959805f160b33bfb5e9c79812f9555c985df9" name="document-revision">
+  <meta content="f8ec840d434ba39d3dca9961eefb1a588933b8e0" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -4212,6 +4212,18 @@ stream after decoding.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_ictcp"><code>CSP_ICTCP</code><a class="self-link" href="#dom-enum-colorspace-csp_ictcp"></a></dfn> = <i>0x5</i>
      <dd data-md>
       <p>Video contains <a data-link-type="biblio" href="#biblio-bt2100" title="BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange">[BT2100]</a> ICtCp color data.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_bggr"><code>CSP_BAYER_BGGR</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_bggr"></a></dfn> = <i>0x6</i>
+     <dd data-md>
+      <p>Video contains raw CMOS voltages, from 4x4 cells with a pattern <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Red</a>, in raster-order.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_rggb"><code>CSP_BAYER_RGGB</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_rggb"></a></dfn> = <i>0x7</i>
+     <dd data-md>
+      <p>Same as above, with a <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Blue</a> order.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_gbrg"><code>CSP_BAYER_GBRG</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_gbrg"></a></dfn> = <i>0x8</i>
+     <dd data-md>
+      <p>Same as above, with a <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Green</a> order.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_grbg"><code>CSP_BAYER_GRBG</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_grbg"></a></dfn> = <i>0x9</i>
+     <dd data-md>
+      <p>Same as above, with a <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Green</a> order.</p>
     </dl>
    </div>
    <h3 class="heading settled" data-level="2.20" id="enum-ColorRange"><span class="secno">2.20. </span><span class="content">Color Range Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-colorrange"><code>ColorRange</code></dfn>)</span><a class="self-link" href="#enum-ColorRange"></a></h3>
@@ -5726,6 +5738,10 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#time-synchronization-packets-cropped_width">cropped_width</a><span>, in § 2.18</span>
    <li><a href="#time-synchronization-packets-crop_x_offset">crop_x_offset</a><span>, in § 2.18</span>
    <li><a href="#time-synchronization-packets-crop_y_offset">crop_y_offset</a><span>, in § 2.18</span>
+   <li><a href="#dom-enum-colorspace-csp_bayer_bggr">CSP_BAYER_BGGR</a><span>, in § 2.19</span>
+   <li><a href="#dom-enum-colorspace-csp_bayer_gbrg">CSP_BAYER_GBRG</a><span>, in § 2.19</span>
+   <li><a href="#dom-enum-colorspace-csp_bayer_grbg">CSP_BAYER_GRBG</a><span>, in § 2.19</span>
+   <li><a href="#dom-enum-colorspace-csp_bayer_rggb">CSP_BAYER_RGGB</a><span>, in § 2.19</span>
    <li><a href="#dom-enum-colorspace-csp_ictcp">CSP_ICTCP</a><span>, in § 2.19</span>
    <li><a href="#dom-enum-colorspace-csp_mono">CSP_MONO</a><span>, in § 2.19</span>
    <li><a href="#dom-enum-colorspace-csp_rgb">CSP_RGB</a><span>, in § 2.19</span>
