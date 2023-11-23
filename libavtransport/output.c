@@ -59,14 +59,28 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
 
     avt_send_session_start(out);
 
+    *_out = out;
+
     return 0;
 }
 
+FN_CREATING(avt_out, AVTOutput, AVTStream, stream, streams, nb_streams)
+
 AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
 {
+    AVTStream *st = avt_out_create_stream(out);
+    if (!st)
+        return NULL;
 
-//    return avt_alloc_stream(out->ctx, id);
-    return NULL;
+    st->priv = calloc(1, sizeof(*st->priv));
+    if (!st->priv) {
+        return NULL;
+    }
+
+    st->id = id;
+    st->priv->out = out;
+
+    return st;
 }
 
 int avt_output_stream_update(AVTOutput *out, AVTStream *st)

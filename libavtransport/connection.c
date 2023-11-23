@@ -288,10 +288,10 @@ int avt_init_io(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
     return err;
 }
 
-void avt_connection_flush(AVTContext *ctx, AVTConnection **conn)
+void avt_connection_flush(AVTConnection *conn)
 {
 }
 
-void avt_connection_destroy(AVTContext *ctx, AVTConnection **conn)
+void avt_connection_destroy(AVTConnection **conn)
 {
 }

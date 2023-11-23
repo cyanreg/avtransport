@@ -44,30 +44,93 @@
 
 #define MAX_INPUTS 4
 
+enum IOMode {
+    IO_RAW,
+    IO_AVT,
+    IO_LAVF,
+};
+
 typedef struct IOContext {
-    int is_avt;
+    enum IOMode mode;
+
     enum AVTConnectionType type;
     AVTContext *avt;
     AVTConnection *conn;
     AVTStream *st;
     AVTOutput *out;
 
+    FILE *raw;
+
 #ifdef HAVE_FFMPEG
     AVFormatContext *avf;
 #endif
 } IOContext;
 
-static int path_is_avt(const char *path, enum AVTConnectionType *conn_type)
+static enum IOMode path_is_avt(const char *path, enum AVTConnectionType *conn_type, int is_out)
 {
     int len = strlen(path);
+
     if (!strncmp(path, "avt://", strlen("avt://")) ||
         !strncmp(path, "file://", strlen("file://"))) {
         *conn_type = AVT_CONNECTION_URL;
-        return 1;
+        return IO_AVT;
     } else if (!strcmp(&path[len - 4], ".avt") || !strcmp(&path[len - 3], ".at")) {
         *conn_type = AVT_CONNECTION_FILE;
-        return 1;
+        return IO_AVT;
+    } else if (is_out && /* For output, anything that can be concat'd payload */
+               (!strcmp(&path[len - 5], ".h264") ||
+                !strcmp(&path[len - 5], ".h265") ||
+                !strcmp(&path[len - 5], ".hevc") ||
+                !strcmp(&path[len - 5], ".tiff") ||
+                !strcmp(&path[len - 5], ".jpeg") ||
+                !strcmp(&path[len - 4], ".dng")  ||
+                !strcmp(&path[len - 4], ".png")  ||
+                !strcmp(&path[len - 4], ".jpg")  ||
+                !strcmp(&path[len - 4], ".aac")  ||
+                !strcmp(&path[len - 4], ".ac3")  ||
+                !strcmp(&path[len - 4], ".svg"))) {
+        return IO_RAW;
+    } else if (!is_out && /* Individual files do not need any framing */
+               (!strcmp(&path[len - 5], ".tiff") ||
+                !strcmp(&path[len - 5], ".jpeg") ||
+                !strcmp(&path[len - 4], ".dng")  ||
+                !strcmp(&path[len - 4], ".png")  ||
+                !strcmp(&path[len - 4], ".jpg")  ||
+                !strcmp(&path[len - 4], ".svg"))) {
+        return IO_RAW;
     }
+
+    return 0;
+}
+
+static int close_io(IOContext *io, int is_out)
+{
+    switch (io->mode) {
+    case IO_AVT: {
+        avt_output_close(&io->out);
+        avt_connection_flush(io->conn);
+        avt_connection_destroy(&io->conn);
+        avt_close(&io->avt);
+        break;
+    }
+    case IO_RAW: {
+        fclose(io->raw);
+        break;
+    }
+    case IO_LAVF: {
+        if (is_out) {
+            av_write_trailer(io->avf);
+            avformat_flush(io->avf);
+            avio_closep(&io->avf->pb);
+            avformat_free_context(io->avf);
+            io->avf = NULL;
+        } else {
+            avformat_close_input(&io->avf);
+        }
+        break;
+    }
+    };
+
     return 0;
 }
 
@@ -75,9 +138,10 @@ static int open_io(IOContext *io, const char *path, int is_out)
 {
     int err;
 
-    io->is_avt = path_is_avt(path, &io->type);
+    io->mode = path_is_avt(path, &io->type, is_out);
 
-    if (io->is_avt) {
+    switch (io->mode) {
+    case IO_AVT: {
         AVTContextOptions ctx_opts = {
             .log_cb = NULL,
             .producer_name = "avcat",
@@ -115,11 +179,31 @@ static int open_io(IOContext *io, const char *path, int is_out)
             io->st = avt_output_stream_add(io->out, 12765);
 
             avt_output_stream_update(io->out, io->st);
+        } else {
+
         }
-    } else {
+        break;
+    }
+    case IO_RAW: {
+        io->raw = fopen(path, is_out ? "w+" : "r");
+        if (!io->raw) {
+            avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s: %i!\n", path, errno);
+            return AVT_ERROR(errno);
+        }
+        break;
+    }
+    case IO_LAVF: {
 #ifdef HAVE_FFMPEG
         if (is_out) {
             err = avformat_alloc_output_context2(&io->avf, NULL, NULL, path);
+            if (err < 0) {
+                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output %s: %s!\n", path,
+                        av_err2str(err));
+                return err;
+            }
+
+            /* Open for writing */
+            err = avio_open(&io->avf->pb, path, AVIO_FLAG_WRITE);
             if (err < 0) {
                 avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output %s: %s!\n", path,
                         av_err2str(err));
@@ -144,7 +228,9 @@ static int open_io(IOContext *io, const char *path, int is_out)
         avt_log(NULL, AVT_LOG_ERROR, "FFmpeg support not compiled in, cannot open %s!\n", path);
         return AVT_ERROR(EINVAL);
 #endif
+        break;
     }
+    };
 
     avt_log(NULL, AVT_LOG_INFO, "Opened file %s for %s\n", path, is_out ? "writing" : "reading");
 
@@ -182,17 +268,53 @@ int main(int argc, char **argv)
             goto end;
     }
 
-    AVPacket *out_packet = av_packet_alloc();
-    av_read_frame(in->avf, out_packet);
+    switch (in[0].mode) {
+    case IO_AVT: {
 
-    AVTBuffer *buf = avt_buffer_create(out_packet->data, out_packet->size, NULL, NULL);
+        break;
+    }
+    case IO_RAW: {
+        fseek(in[0].raw, 0L, SEEK_END);
+        size_t len = ftell(in[0].raw);
+        fseek(in[0].raw, 0L, SEEK_SET);
+        uint8_t *data = malloc(len);
+        if (!data)
+            return AVT_ERROR(ENOMEM);
 
-    AVTPacket pkt = {
-        .type = AVT_FRAME_TYPE_KEY,
-        .data = buf,
+        fread(data, len, 1, in[0].raw);
+
+        AVTBuffer *buf = avt_buffer_create(data, len, NULL, NULL);
+        AVTPacket pkt = {
+            .type = AVT_FRAME_TYPE_KEY,
+            .data = buf,
+        };
+
+        avt_output_stream_data(out.st, &pkt);
+
+        break;
+    }
+    case IO_LAVF: {
+#ifdef HAVE_FFMPEG
+        AVPacket *out_packet = av_packet_alloc();
+        av_read_frame(in[0].avf, out_packet);
+
+        /* Todo: import */
+        AVTBuffer *buf = avt_buffer_create(out_packet->data, out_packet->size, NULL, NULL);
+
+        AVTPacket pkt = {
+            .type = AVT_FRAME_TYPE_KEY,
+            .data = buf,
+        };
+
+        avt_output_stream_data(out.st, &pkt);
+#endif
+        break;
+    }
     };
 
-    avt_output_stream_data(out.st, &pkt);
+    for (int i = 0; input[i]; i++)
+        close_io(&in[i], 0);
+    close_io(&out, 1);
 
 end:
     return 0;

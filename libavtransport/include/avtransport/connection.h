@@ -144,13 +144,13 @@ AVT_API int avt_connection_create(AVTContext *ctx, AVTConnection **conn,
  * Immediately flush all buffered data for a connection.
  * Should be called before avt_connection_destroy().
  */
-AVT_API void avt_connection_flush(AVTContext *ctx, AVTConnection **conn);
+AVT_API void avt_connection_flush(AVTConnection *conn);
 
 /**
  * Immediately destroy a connection, and free all resources associated
  * with it.
  * Will not flush.
  */
-AVT_API void avt_connection_destroy(AVTContext *ctx, AVTConnection **conn);
+AVT_API void avt_connection_destroy(AVTConnection **conn);
 
 #endif

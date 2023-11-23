@@ -54,4 +54,25 @@ static inline void avt_assert2(int cond)
 
 uint64_t avt_get_time_ns(void);
 
+/* Generic macro for creating contexts which need to keep their addresses
+ * if another context is created. */
+#define FN_CREATING(prefix, ctx, type, shortname, array, num)                  \
+static inline type * prefix## _ ## create_ ## shortname(ctx *dctx)             \
+{                                                                              \
+    type **array, *sctx = calloc(1, sizeof(*sctx));                            \
+    if (!sctx)                                                                 \
+        return NULL;                                                           \
+                                                                               \
+    array = realloc(dctx->array, sizeof(*dctx->array) * (dctx->num + 1));      \
+    if (!array) {                                                              \
+        free(sctx);                                                            \
+        return NULL;                                                           \
+    }                                                                          \
+                                                                               \
+    dctx->array = array;                                                       \
+    dctx->array[dctx->num++] = sctx;                                           \
+                                                                               \
+    return sctx;                                                               \
+}
+
 #endif

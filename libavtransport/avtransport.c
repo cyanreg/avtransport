@@ -56,45 +56,6 @@ void avt_close(AVTContext **ctx)
     }
 }
 
-AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id, AVTStream **stl, int *nb_st)
-{
-    if (!ctx->output.ctx)
-        return NULL;
-
-    AVTStream *ret = NULL;
-    AVTStream **new = realloc(ctx->stream, sizeof(*new)*(ctx->nb_stream + 1));
-    if (!new)
-        return NULL;
-    ctx->stream = new;
-
-    ret = calloc(1, sizeof(**new));
-    if (!ret)
-        return NULL;
-
-    ret->priv = calloc(1, sizeof(*ret->priv));
-    if (!ret->priv) {
-        free(ret);
-        return NULL;
-    }
-
-    new[ctx->nb_stream] = ret;
-    ctx->nb_stream++;
-
-    return ret;
-}
-
-AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id)
-{
-    int i;
-    for (i = 0; i < ctx->nb_stream; i++) {
-        if (ctx->stream[i]->id == id)
-            break;
-    }
-    if (i == ctx->nb_stream)
-        return NULL;
-    return ctx->stream[i];
-}
-
 void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
 {
     va_list args;

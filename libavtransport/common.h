@@ -63,7 +63,4 @@ struct AVTContext {
     AVTContextOptions opts;
 };
 
-AVTStream *avt_alloc_stream(AVTContext *ctx, uint16_t id);
-AVTStream *avt_find_stream(AVTContext *ctx, uint16_t id);
-
 #endif
