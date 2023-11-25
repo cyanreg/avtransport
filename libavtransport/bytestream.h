@@ -195,7 +195,7 @@ typedef struct AVTBytestream {
 } AVTBytestream;
 
 /* Initialize bytestream for reading or writing */
-static AVTBytestream inline avt_bs_init(uint8_t *buf, size_t len)
+static inline AVTBytestream avt_bs_init(uint8_t *buf, size_t len)
 {
     return (AVTBytestream) {
         .start = buf,
@@ -205,24 +205,25 @@ static AVTBytestream inline avt_bs_init(uint8_t *buf, size_t len)
 }
 
 /* Reset bytestream reader/writer */
-static void inline avt_bs_reset(AVTBytestream *bs)
+static inline void avt_bs_reset(AVTBytestream *bs)
 {
     bs->ptr = bs->start;
 }
 
 #define AVT_WRITE_FN(en, n, len)                                                    \
-static void inline avt_bsw_u ##len ##n (AVTBytestream *bs, const uint##len##_t val) \
+static inline void avt_bsw_u ##len ##n (AVTBytestream *bs, const uint##len##_t val) \
 {                                                                                   \
     avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                               \
     en##len(bs->ptr, val);                                                          \
     bs->ptr += len >> 3;                                                            \
 }                                                                                   \
                                                                                     \
-static void inline avt_bsw_i ##len ##n (AVTBytestream *bs, const int##len##_t _val) \
+static inline void avt_bsw_i ##len ##n (AVTBytestream *bs, const int##len##_t val)  \
 {                                                                                   \
     avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                               \
-    union { int##len##_t _val; uint##len##_t val; } t;                              \
-    en##len(bs->ptr, t.val);                                                        \
+    union { int##len##_t ival; uint##len##_t uval; } t;                             \
+    t.ival = val;                                                                   \
+    en##len(bs->ptr, t.uval);                                                       \
     bs->ptr += len >> 3;                                                            \
 }
 
@@ -237,7 +238,7 @@ AVT_WRITE_FN(AVT_WL, l, 32)
 AVT_WRITE_FN(AVT_WL, l, 64)
 
 #define AVT_WRITE_RATIONAL(en, n)                                        \
-static void inline avt_bsw_rt##n(AVTBytestream *bs, const AVTRational r) \
+static inline void avt_bsw_rt##n(AVTBytestream *bs, const AVTRational r) \
 {                                                                        \
     avt_assert1(((bs->ptr) + 8) <= bs->end);                             \
     union { int32_t _val; uint32_t val; } t[2];                          \
@@ -252,23 +253,29 @@ AVT_WRITE_RATIONAL(AVT_WB, be)
 AVT_WRITE_RATIONAL(AVT_WL, le)
 
 /* Write padding */
-static void inline avt_bsw_zpad(AVTBytestream *bs, const size_t len)
+static inline void avt_bsw_zpad(AVTBytestream *bs, const size_t len)
 {
     avt_assert1(((bs->ptr) + len) <= bs->end);
     memset(bs->ptr, 0, len);
     bs->ptr += len;
 }
 
-/* Write buffer to bytestream */
-static void inline avt_bsw_sbuf(AVTBytestream *bs, char8_t *buf, const size_t len)
+static inline void avt_bsw_sbuf(AVTBytestream *bs, const char8_t *buf, const size_t len)
 {
     avt_assert1(((bs->ptr) + len) <= bs->end);
     memcpy(bs->ptr, buf, len);
     bs->ptr += len;
 }
 
+static inline void avt_bsr_sbuf(AVTBytestream *bs, char8_t *buf, size_t len)
+{
+    len = AVT_MIN(len, bs->end - bs->ptr);
+    memcpy(buf, bs->ptr, len);
+    bs->ptr += len;
+}
+
 /* Write fixed-length zero-terminated string to bytestream */
-static void inline avt_bsw_fstr(AVTBytestream *bs, const char *str, const size_t fixed_len)
+static inline void avt_bsw_fstr(AVTBytestream *bs, const char *str, const size_t fixed_len)
 {
     size_t lens = AVT_MIN(strlen(str), fixed_len);
     avt_assert1(((bs->ptr) + fixed_len) <= bs->end);
@@ -277,43 +284,78 @@ static void inline avt_bsw_fstr(AVTBytestream *bs, const char *str, const size_t
     bs->ptr += fixed_len;
 }
 
-static uint8_t inline *avt_bs_pos(AVTBytestream *bs)
+static inline void avt_bsr_fstr(AVTBytestream *bs, char *str, const size_t fixed_len)
+{
+    if ((bs->ptr + fixed_len) > bs->end)
+        return;
+    memcpy(str, bs->ptr, fixed_len);
+    str[fixed_len] = '\0';
+    bs->ptr += fixed_len;
+}
+
+static inline uint8_t *avt_bs_pos(AVTBytestream *bs)
 {
     return bs->ptr;
 }
 
-static size_t inline avt_bs_offs(AVTBytestream *bs)
+static inline size_t avt_bs_offs(AVTBytestream *bs)
 {
     return bs->ptr - bs->start;
 }
 
-#if 0
-#define AVT_RDR(base_read, e, len, s)                                 \
-static inline uint ##len## _t avt_bsr_##e##len(AVTBytestream *bs)     \
-{                                                                     \
-    uint ##len## _t v = 0;                                            \
-    if ((bs)->ptr + (len >> 3) <= (bs)->end) {                        \
-        v = base_read##len((bs)->ptr);                                \
-        (bs)->ptr += len >> 3;                                        \
-    }                                                                 \
-    return v;                                                         \
+static inline size_t avt_bs_left(AVTBytestream *bs)
+{
+    return bs->end - bs->ptr;
 }
 
 static inline void avt_bs_skip(AVTBytestream *bs, const size_t len)
 {
-    if (bs->ptr + (len >> 3) <= bs->end)
-        bs->ptr += len >> 3;
+    bs->ptr = AVT_MIN(bs->ptr + len, bs->end);
 }
 
-AVT_RDR(AVT_RB, b, 8, i)
-AVT_RDR(AVT_RL, l, 8, i)
-AVT_RDR(AVT_RB, b, 16, i)
-AVT_RDR(AVT_RL, l, 16, i)
-AVT_RDR(AVT_RB, b, 32, i)
-AVT_RDR(AVT_RL, l, 32, i)
-AVT_RDR(AVT_RB, b, 64, i)
-AVT_RDR(AVT_RL, l, 64, i)
-#endif
+#define AVT_READ_FN(en, n, len)                                      \
+static inline uint##len##_t avt_bsr_u ##len ##n (AVTBytestream *bs)  \
+{                                                                    \
+    if (((bs->ptr) + (len >> 3)) > bs->end)                          \
+        return 0;                                                    \
+    bs->ptr += len >> 3;                                             \
+    return en##len(bs->ptr - (len >> 3));                            \
+}                                                                    \
+                                                                     \
+static inline int##len##_t avt_bsr_i ##len ##n (AVTBytestream *bs)   \
+{                                                                    \
+    if (((bs->ptr) + (len >> 3)) > bs->end)                          \
+        return 0;                                                    \
+    union { int##len##_t ival; uint##len##_t uval; } t;              \
+    t.uval = en##len(bs->ptr);                                       \
+    bs->ptr += len >> 3;                                             \
+    return t.ival;                                                   \
+}
+
+AVT_READ_FN(AVT_RB, b, 8)
+AVT_READ_FN(AVT_RB, b, 16)
+AVT_READ_FN(AVT_RB, b, 32)
+AVT_READ_FN(AVT_RB, b, 64)
+
+AVT_READ_FN(AVT_RL, l, 8)
+AVT_READ_FN(AVT_RL, l, 16)
+AVT_READ_FN(AVT_RL, l, 32)
+AVT_READ_FN(AVT_RL, l, 64)
+
+#define AVT_READ_RATIONAL(en, n)                                         \
+static inline AVTRational avt_bsr_rt##n(AVTBytestream *bs)               \
+{                                                                        \
+    if (((bs->ptr) + 8) > bs->end)                                       \
+        return (AVTRational){ 0, 0 };                                    \
+    union { int32_t ival; uint32_t uval; } t[2];                         \
+    t[0].uval = en##32(bs->ptr + 0);                                     \
+    t[1].uval = en##32(bs->ptr + 4);                                     \
+    bs->ptr += 8;                                                        \
+    return (AVTRational){ t[0].ival, t[1].ival };                        \
+}
+
+AVT_READ_RATIONAL(AVT_RB, be)
+AVT_READ_RATIONAL(AVT_RL, le)
 
 #endif
 

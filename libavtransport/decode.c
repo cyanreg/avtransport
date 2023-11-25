@@ -24,3 +24,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "../packet_decode.h"
+
+static int avt_decode_pkt(AVTBuffer *buf)
+{
+
+    AVTSessionStart session_start;
+    avt_decode_session_start(buf, &session_start);
+
+    return 0;
+}

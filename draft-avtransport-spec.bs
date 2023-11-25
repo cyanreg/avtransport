@@ -508,7 +508,7 @@ as an AVTransport session. The syntax is as follows:
             <td>Indicates the session version. This document describes version `21552` (`T0`).</td>
         </tr>
         <tr id="0x4156+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -611,7 +611,7 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
             <td>Value, in multiples of 1/65536 Hz, to be added to [=ts_clock_hz=] to make [=ts_clock_freq=].</td>
         </tr>
         <tr id="0x0300+3">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -692,7 +692,7 @@ The layout of the data is as follows:
             <td>Indicates the stream ID for the new stream to be registered.</td>
         </tr>
         <tr id="0x0002+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -914,7 +914,7 @@ The following template shall be used for generic data packets:
             <td>Indicates the stream ID for which this packet is applicable.</td>
         </tr>
         <tr id="GenericData+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -958,7 +958,7 @@ The following template shall be used for generic data packets:
         <tr id="GenericData+9">
             <td><code>[=payload_length=]*b(8)</code></td>
             <td><dfn>generic_payload</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The packet data itself.</td>
         </tr>
     </table>
@@ -991,7 +991,7 @@ has to be used for segments that follow the above:
             <td>Indicates the stream ID for which this packet is applicable.</td>
         </tr>
         <tr id="GenericDataSegment+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -1075,7 +1075,7 @@ the following [[#generic-data-packets]] structure is to be used:
             <td>Indicates the stream ID for which this packet is applicable.</td>
         </tr>
         <tr id="GenericDataParity+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -1242,7 +1242,7 @@ more [[#stream-data-segment-packets]]. It is laid out as follows:
             <td>Indicates the stream ID for which this packet is applicable.</td>
         </tr>
         <tr id="0x0100+7">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -1656,7 +1656,7 @@ or metadata changes, and the distance to the next index packet.
             <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
         </tr>
         <tr id="0x0051+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -1885,7 +1885,7 @@ The following structure MUST be followed:
             <td>The stream ID for which to apply the LUT/ICC profile.</td>
         </tr>
         <tr id="0x0010+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -2055,19 +2055,19 @@ The following structure MUST be followed:
             </td>
         </tr>
         <tr id="0x0020+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
         <tr id="0x0020+3">
-            <td><code>b(8)</code></td>
+            <td><code>u(8)</code></td>
             <td><dfn>font_segmented</dfn></td>
             <td></td>
             <td>If non-zero, indicates the font payload is segmented.</td>
         </tr>
         <tr id="0x0020+4">
-            <td><code>b(8)</code></td>
+            <td><code>u(8)</code></td>
             <td><dfn>font_flags</dfn></td>
             <td>enum {{FontFlags}}</td>
             <td>Flags for the font packet.</td>
@@ -2085,19 +2085,19 @@ The following structure MUST be followed:
             <td>Font data compression.</td>
         </tr>
         <tr id="0x0020+7">
-            <td><code>b(8)</code></td>
+            <td><code>u(8)</code></td>
             <td><dfn>font_name_length</dfn></td>
             <td></td>
             <td>The length of the font file name.</td>
         </tr>
         <tr id="0x0020+8">
-            <td><code>b(8)</code></td>
+            <td><code>u(32)</code></td>
             <td><dfn>font_data_length</dfn></td>
             <td></td>
-            <td>The length of the font file data.</td>
+            <td>The length in bytes of the font file data.</td>
         </tr>
         <tr id="0x0020+9">
-            <td><code>b(112)</code></td>
+            <td><code>b(88)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
@@ -2203,7 +2203,7 @@ stream after decoding.
             <td>The stream ID for which to apply the video information to.</td>
         </tr>
         <tr id="0x0008+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -2674,7 +2674,7 @@ A standardized way to transmit orientation information is as follows:
             <td>The stream ID for which to associate the video information with.</td>
         </tr>
         <tr id="0x0040+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -2761,7 +2761,7 @@ The user-specific data packet is laid out as follows:
             <td>A free to use field for user data.</td>
         </tr>
         <tr id="0x0600+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -2799,7 +2799,7 @@ The user-specific data packet is laid out as follows:
         <tr id="0x0600+8">
             <td><code>[=userdata_length=]*b(8)</code></td>
             <td><dfn>userdata</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The user data itself.</td>
         </tr>
     </table>
@@ -2857,7 +2857,7 @@ at the start of files to notify implementations of stream lengths.
             <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
         </tr>
         <tr id="0x0050+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -2923,7 +2923,7 @@ The EOS packet is laid out as follows:
             <td>Indicates the stream ID for the index. May be ''0xFFFF'', in which case, it applies to all streams.</td>
         </tr>
         <tr id="0x0FFF+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
@@ -3093,7 +3093,6 @@ THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 
 
 ### FLAC encapsulation ### {#flac-encapsulation}
-
 For FLAC encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x664c6143'' (''fLaC'').
@@ -3685,9 +3684,13 @@ packets to be sent without fragmentation.
 
 [[RFC2675|Jumbograms]] may be used where supported to reduce overhead and increase efficiency.
 
-Note: Data packets may be padded by appending random data or zeroes after the [=packet_data=]
+Note: Data packets may be padded by appending zeroed bytes after the [=packet_data=]
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
+
+Note: It is <b>highly recommended</b> to zero-pad packets of non-segmented payloads with
+at least <b>64 bytes</b> of zeroed out bytes. This permits zero-copy decoding with popular
+multimedia frameworks.
 
 Note: When operating at higher MTUs, implementations should consider adding FEC or parity,
 as the 16-bit UDP datagram CRC may be inadequate to detect errors.
@@ -3970,7 +3973,7 @@ that was likely dropped.
             <td>Padding, reserved for future use. Must be 0x0.</td>
         </tr>
         <tr id="0x8003+2">
-            <td><code>b(32)</code></td>
+            <td><code>u(32)</code></td>
             <td>[=global_seq=]</td>
             <td></td>
             <td>The sequence number of the packet that is missing.</td>
