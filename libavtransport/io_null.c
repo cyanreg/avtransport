@@ -59,6 +59,16 @@ static uint32_t null_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
     return UINT32_MAX;
 }
 
+static int null_add_dst(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr)
+{
+    return 0;
+}
+
+static int null_del_dst(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr)
+{
+    return 0;
+}
+
 static int64_t null_input(AVTContext *ctx, AVTIOCtx *io,
                           AVTBuffer **buf, size_t len)
 {
@@ -93,11 +103,14 @@ static int64_t null_output(AVTContext *ctx, AVTIOCtx *io,
     return atomic_fetch_add(&io->pos_w, hdr_len + avt_buffer_get_data_len(payload));
 }
 
-static int64_t null_seek(AVTContext *ctx, AVTIOCtx *io,
-                         int64_t off, uint32_t seq,
-                         int64_t ts, bool ts_is_dts)
+static int64_t null_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
 {
     return atomic_load(&io->pos_r);
+}
+
+static int null_flush(AVTContext *ctx, AVTIOCtx *io)
+{
+    return 0;
 }
 
 static int null_close(AVTContext *ctx, AVTIOCtx **_io)
@@ -113,8 +126,11 @@ const AVTIO avt_io_null = {
     .type = AVT_IO_NULL,
     .init = null_init,
     .get_max_pkt_len = null_max_pkt_len,
+    .add_dst = null_add_dst,
+    .del_dst = null_del_dst,
     .read_input = null_input,
     .write_output = null_output,
     .seek = null_seek,
+    .flush = null_flush,
     .close = null_close,
 };

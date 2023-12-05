@@ -60,9 +60,9 @@ static int noop_add_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
 
 static int noop_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
 {
-    if (!p->io->rm_dst)
+    if (!p->io->del_dst)
         return AVT_ERROR(ENOTSUP);
-    return p->io->rm_dst(ctx, p->io_ctx, addr);
+    return p->io->del_dst(ctx, p->io_ctx, addr);
 }
 
 static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
@@ -109,7 +109,7 @@ static int64_t noop_seek(AVTContext *ctx, AVTProtocolCtx *p,
                          int64_t off, uint32_t seq,
                          int64_t ts, bool ts_is_dts)
 {
-    return p->io->seek(ctx, p->io_ctx, off, seq, ts, ts_is_dts);
+    return p->io->seek(ctx, p->io_ctx, off);
 }
 
 static int noop_flush(AVTContext *ctx, AVTProtocolCtx *p)

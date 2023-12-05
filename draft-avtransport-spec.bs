@@ -6,7 +6,7 @@ Shortname: avtransport
 URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
-Date: 2023-11-17
+Date: now
 Status: LD
 Group: FFmpeg
 Abstract: The AVTransport protocol is a new standardized mechanism for multimedia transport and storage.
@@ -2409,13 +2409,13 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>CSP_ICTCP</dfn> = <i>0x5</i>
       :: Video contains [[BT2100]] ICtCp color data.
     : <dfn>CSP_BAYER_BGGR</dfn> = <i>0x6</i>
-      :: Video contains raw CMOS voltages, from 4x4 cells with a pattern 'Blue', 'Green', 'Green', 'Red', in raster-order.
+      :: Video contains raw CMOS voltages, from 4x4 cells with a pattern ''Blue'', ''Green'', ''Green'', ''Red'', in raster-order.
     : <dfn>CSP_BAYER_RGGB</dfn> = <i>0x7</i>
-      :: Same as above, with a 'Red', 'Green', 'Green', 'Blue' order.
+      :: Same as above, with a ''Red'', ''Green'', ''Green'', ''Blue'' order.
     : <dfn>CSP_BAYER_GBRG</dfn> = <i>0x8</i>
-      :: Same as above, with a 'Green', 'Blue', 'Red', 'Green' order.
+      :: Same as above, with a ''Green'', ''Blue'', ''Red'', ''Green'' order.
     : <dfn>CSP_BAYER_GRBG</dfn> = <i>0x9</i>
-      :: Same as above, with a 'Green', 'Red', 'Blue', 'Green' order.
+      :: Same as above, with a ''Green'', ''Red'', ''Blue'', ''Green'' order.
 </div>
 
 
@@ -3263,7 +3263,7 @@ The `packet_data` must contain raw FLAC frames, with their frame header untouche
 
 For [[AV1]] encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
-must be ''0x41563031'' (''AV01'').
+must be ''0x41563031'' (<code>AV01</code>).
 
 The [[#stream-configuration-packets]] payload MUST be the
 codec's so-called ''uncompressed header''. For information on its syntax,

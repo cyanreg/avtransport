@@ -46,13 +46,13 @@ typedef struct AVTIO {
     int (*init)(AVTContext *ctx, AVTIOCtx **io,
                 AVTAddress *addr);
 
+    uint32_t (*get_max_pkt_len)(AVTContext *ctx, struct AVTIOCtx *io);
+
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr);
 
     /* Removes a secondary destination, NULL if unsupported */
-    int (*rm_dst)(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr);
-
-    uint32_t (*get_max_pkt_len)(AVTContext *ctx, struct AVTIOCtx *io);
+    int (*del_dst)(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr);
 
     /* Write. Returns positive offset on success, otherwise negative error */
     int64_t (*write_output)(AVTContext *ctx, AVTIOCtx *io,
@@ -69,9 +69,7 @@ typedef struct AVTIO {
     /* If only off is set, get the first packet at/after that offset.
      * If pts is set, get the stream data packet at/after the pts time
      * If seq is set, the get first packet at/after that seq */
-    int64_t (*seek)(AVTContext *ctx, AVTIOCtx *io,
-                    int64_t off, uint32_t seq,
-                    int64_t ts, bool ts_is_dts);
+    int64_t (*seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off);
 
     /* Flush data written */
     int (*flush)(AVTContext *ctx, AVTIOCtx *io);

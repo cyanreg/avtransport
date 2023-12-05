@@ -34,6 +34,9 @@
 
 struct AVTIOCtx {
     FILE *f;
+    off_t rpos;
+    off_t wpos;
+    int is_write;
 };
 
 static int handle_error(AVTIOCtx *io, const char *msg)
@@ -71,10 +74,19 @@ static uint32_t file_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
 static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
                                AVTBuffer **_buf, size_t len)
 {
-    int err;
+    int ret;
     uint8_t *data;
     size_t buf_len, off = 0;
     AVTBuffer *buf = *_buf;
+
+    if (io->is_write) {
+        ret = fseeko(io->f, io->rpos, SEEK_SET);
+        if (ret < 0) {
+            ret = handle_error(io, "Error seeking: %s\n");
+            return ret;
+        }
+        io->is_write = 0;
+    }
 
     if (!buf) {
         buf = avt_buffer_alloc(len);
@@ -82,16 +94,16 @@ static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
             return AVT_ERROR(ENOMEM);
     } else {
         off = avt_buffer_get_data_len(buf);
-        err = avt_buffer_realloc(buf, len);
-        if (err < 0)
-            return err;
+        ret = avt_buffer_realloc(buf, len);
+        if (ret < 0)
+            return ret;
     }
 
     data = avt_buffer_get_data(buf, &buf_len);
     len = AVT_MIN(len, buf_len - off);
     fread(data + off, 1, len, io->f);
 
-    return (int64_t)ftello(io->f);
+    return (int64_t)(io->rpos = ftello(io->f));
 }
 
 static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
@@ -101,6 +113,15 @@ static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
     int ret;
     size_t len;
     uint8_t *data = avt_buffer_get_data(payload, &len);
+
+    if (!io->is_write) {
+        ret = fseeko(io->f, io->wpos, SEEK_SET);
+        if (ret < 0) {
+            ret = handle_error(io, "Error seeking: %s\n");
+            return ret;
+        }
+        io->is_write = 1;
+    }
 
     size_t out = fwrite(hdr, 1, hdr_len, io->f);
     if (out != hdr_len) {
@@ -117,14 +138,18 @@ static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
     }
     fflush(io->f);
 
-    return (int64_t)ftello(io->f);
+    return (int64_t)(io->wpos = ftello(io->f));
 }
 
-static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io,
-                         int64_t off, uint32_t seq,
-                         int64_t ts, bool ts_is_dts)
+static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
 {
-    return (int64_t)ftello(io->f);
+    int ret = fseeko(io->f, (off_t)off, SEEK_SET);
+    if (ret < 0) {
+        ret = handle_error(io, "Error seeking: %s\n");
+        return ret;
+    }
+    io->is_write = 0;
+    return (int64_t)(io->rpos = ftello(io->f));
 }
 
 static int file_flush(AVTContext *ctx, AVTIOCtx *io)
