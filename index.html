@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="682cf88c73b928a7be5b75a4d24581efa4c56fe0" name="document-revision">
+  <meta content="9ea409bed03a40cb0ae140c90a037a72ffc28e06" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-11-17">17 November 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-05">5 December 2023</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 17 November 2023,
+In addition, as of 5 December 2023,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -4216,16 +4216,16 @@ stream after decoding.</p>
       <p>Video contains <a data-link-type="biblio" href="#biblio-bt2100" title="BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange">[BT2100]</a> ICtCp color data.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_bggr"><code>CSP_BAYER_BGGR</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_bggr"></a></dfn> = <i>0x6</i>
      <dd data-md>
-      <p>Video contains raw CMOS voltages, from 4x4 cells with a pattern <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Red</a>, in raster-order.</p>
+      <p>Video contains raw CMOS voltages, from 4x4 cells with a pattern <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-blue" id="ref-for-valdef-color-blue">Blue</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green①">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-red" id="ref-for-valdef-color-red">Red</a>, in raster-order.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_rggb"><code>CSP_BAYER_RGGB</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_rggb"></a></dfn> = <i>0x7</i>
      <dd data-md>
-      <p>Same as above, with a <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Blue</a> order.</p>
+      <p>Same as above, with a <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-red" id="ref-for-valdef-color-red①">Red</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green②">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green③">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-blue" id="ref-for-valdef-color-blue①">Blue</a> order.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_gbrg"><code>CSP_BAYER_GBRG</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_gbrg"></a></dfn> = <i>0x8</i>
      <dd data-md>
-      <p>Same as above, with a <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Green</a> order.</p>
+      <p>Same as above, with a <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green④">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-blue" id="ref-for-valdef-color-blue②">Blue</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-red" id="ref-for-valdef-color-red②">Red</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green⑤">Green</a> order.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_bayer_grbg"><code>CSP_BAYER_GRBG</code><a class="self-link" href="#dom-enum-colorspace-csp_bayer_grbg"></a></dfn> = <i>0x9</i>
      <dd data-md>
-      <p>Same as above, with a <a class="property css" data-link-type="property">Green</a>, <a class="property css" data-link-type="property">Red</a>, <a class="property css" data-link-type="property">Blue</a>, <a class="property css" data-link-type="property">Green</a> order.</p>
+      <p>Same as above, with a <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green⑥">Green</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-red" id="ref-for-valdef-color-red③">Red</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-blue" id="ref-for-valdef-color-blue③">Blue</a>, <a class="css" data-link-type="maybe" href="https://drafts.csswg.org/css-color-4/#valdef-color-green" id="ref-for-valdef-color-green⑦">Green</a> order.</p>
     </dl>
    </div>
    <h3 class="heading settled" data-level="2.20" id="enum-ColorRange"><span class="secno">2.20. </span><span class="content">Color Range Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-colorrange"><code>ColorRange</code></dfn>)</span><a class="self-link" href="#enum-ColorRange"></a></h3>
@@ -4965,7 +4965,7 @@ to contain the stream info header, which is defined as follows:</p>
    </figure>
    <p>The `packet_data` must contain raw FLAC frames, with their frame header untouched.</p>
    <h4 class="heading settled" data-level="3.1.7" id="av1-encapsulation"><span class="secno">3.1.7. </span><span class="content">AV1 encapsulation</span><a class="self-link" href="#av1-encapsulation"></a></h4>
-   <p>For <a data-link-type="biblio" href="#biblio-av1" title="AV1 Bitstream &amp; Decoding Process Specification">[AV1]</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑦">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x41563031</span> (<a class="css" data-link-type="maybe" href="https://aomediacodec.github.io/av1-avif/#valdef-av1-image-item-type-av01" id="ref-for-valdef-av1-image-item-type-av01">AV01</a>).</p>
+   <p>For <a data-link-type="biblio" href="#biblio-av1" title="AV1 Bitstream &amp; Decoding Process Specification">[AV1]</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑦">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x41563031</span> (<code>AV01</code>).</p>
    <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload MUST be the
 codec’s so-called <span class="css">uncompressed header</span>. For information on its syntax,
 consult the specifications, section <span class="css">5.9.2. Uncompressed header syntax</span>.</p>
@@ -6143,18 +6143,20 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
   <h3 class="no-num no-ref heading settled" id="index-defined-elsewhere"><span class="content">Terms defined by reference</span><a class="self-link" href="#index-defined-elsewhere"></a></h3>
   <ul class="index">
    <li>
-    <a data-link-type="biblio">[AV1-AVIF]</a> defines the following terms:
+    <a data-link-type="biblio">[CSS-COLOR-4]</a> defines the following terms:
     <ul>
-     <li><span class="dfn-paneled" id="ee424399">av01</span>
+     <li><span class="dfn-paneled" id="f17eedd8">blue</span>
+     <li><span class="dfn-paneled" id="b06bf874">green</span>
+     <li><span class="dfn-paneled" id="82ed5c4b">red</span>
     </ul>
   </ul>
   <h2 class="no-num no-ref heading settled" id="references"><span class="content">References</span><a class="self-link" href="#references"></a></h2>
   <h3 class="no-num no-ref heading settled" id="normative"><span class="content">Normative References</span><a class="self-link" href="#normative"></a></h3>
   <dl>
-   <dt id="biblio-av1-avif">[AV1-AVIF]
-   <dd><a href="https://aomediacodec.github.io/av1-avif/"><cite>AV1 Image File Format (AVIF)</cite></a>. Editor's Draft. URL: <a href="https://aomediacodec.github.io/av1-avif/">https://aomediacodec.github.io/av1-avif/</a>
    <dt id="biblio-bcp47">[BCP47]
    <dd>A. Phillips, Ed.; M. Davis, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc5646"><cite>Tags for Identifying Languages</cite></a>. September 2009. Best Current Practice. URL: <a href="https://www.rfc-editor.org/rfc/rfc5646">https://www.rfc-editor.org/rfc/rfc5646</a>
+   <dt id="biblio-css-color-4">[CSS-COLOR-4]
+   <dd>Tab Atkins Jr.; Chris Lilley; Lea Verou. <a href="https://drafts.csswg.org/css-color/"><cite>CSS Color Module Level 4</cite></a>. URL: <a href="https://drafts.csswg.org/css-color/">https://drafts.csswg.org/css-color/</a>
    <dt id="biblio-rfc2119">[RFC2119]
    <dd>S. Bradner. <a href="https://datatracker.ietf.org/doc/html/rfc2119"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. March 1997. Best Current Practice. URL: <a href="https://datatracker.ietf.org/doc/html/rfc2119">https://datatracker.ietf.org/doc/html/rfc2119</a>
    <dt id="biblio-rfc6330">[RFC6330]
@@ -6533,7 +6535,9 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
 </script>
 <script>/* Boilerplate: script-dfn-panel-json */
 window.dfnpanelData = {};
-window.dfnpanelData['ee424399'] = {"dfnID": "ee424399", "url": "https://aomediacodec.github.io/av1-avif/#valdef-av1-image-item-type-av01", "dfnText": "av01", "refSections": [{"refs": [{"id": "ref-for-valdef-av1-image-item-type-av01"}], "title": "3.1.7. AV1 encapsulation"}], "external": true};
+window.dfnpanelData['f17eedd8'] = {"dfnID": "f17eedd8", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-blue", "dfnText": "blue", "refSections": [{"refs": [{"id": "ref-for-valdef-color-blue"}, {"id": "ref-for-valdef-color-blue\u2460"}, {"id": "ref-for-valdef-color-blue\u2461"}, {"id": "ref-for-valdef-color-blue\u2462"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
+window.dfnpanelData['b06bf874'] = {"dfnID": "b06bf874", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-green", "dfnText": "green", "refSections": [{"refs": [{"id": "ref-for-valdef-color-green"}, {"id": "ref-for-valdef-color-green\u2460"}, {"id": "ref-for-valdef-color-green\u2461"}, {"id": "ref-for-valdef-color-green\u2462"}, {"id": "ref-for-valdef-color-green\u2463"}, {"id": "ref-for-valdef-color-green\u2464"}, {"id": "ref-for-valdef-color-green\u2465"}, {"id": "ref-for-valdef-color-green\u2466"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
+window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-red", "dfnText": "red", "refSections": [{"refs": [{"id": "ref-for-valdef-color-red"}, {"id": "ref-for-valdef-color-red\u2460"}, {"id": "ref-for-valdef-color-red\u2461"}, {"id": "ref-for-valdef-color-red\u2462"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
 window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "3.5.2. Resend"}], "external": false};
 window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}, {"id": "ref-for-ldpc_288_224\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}, {"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.31. End of stream"}], "external": false};
