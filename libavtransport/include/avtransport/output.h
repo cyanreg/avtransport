@@ -33,25 +33,28 @@
 
 typedef struct AVTOutput AVTOutput;
 
+/* Compression mode flags. By default, AVT_OUTPUT_COMPRESS_ALL is used,
+ * which compresses everything uncompressed except video. */
+enum AVTOutputCompressionFlags {
+    AVT_OUTPUT_COMPRESS_NONE   = 0 << 0,        /* Don't compress anything */
+    AVT_OUTPUT_COMPRESS_AUX    = 1 << 0,        /* Compress auxillary payloads (ICC profiles/fonts) */
+    AVT_OUTPUT_COMPRESS_META   = 1 << 1,        /* Compress metadata */
+    AVT_OUTPUT_COMPRESS_SUBS   = 1 << 2,        /* Compress subtitles */
+    AVT_OUTPUT_COMPRESS_AUDIO  = 1 << 3,        /* Compress audio */
+    AVT_OUTPUT_COMPRESS_VIDEO  = 1 << 4,        /* Compress video */
+    AVT_OUTPUT_COMPRESS_USER   = 1 << 5,        /* Compress user data */
+    AVT_OUTPUT_COMPRESS_ALL    = (1 << 16) - 1, /* Compress everything */
+    AVT_OUTPUT_COMPRESS_FORCE  = 1 << 31,       /* Compress even if data is already compressed */
+};
+
 typedef struct AVTOutputOptions {
-    /* Period in nanoseconds for sending session_start packets to the receiver.
-     * Default: 250000000 (every 250 milliseconds). */
-    int64_t keepalive_period;
-
-    /* Period in nanoseconds for resending all stream initialization packets.
-     * Default: 10000000000 (every 10 seconds). */
-    int64_t refresh_period;
-
     /* Bandwidth available, in bits per second. Will segment and interleave
      * streams in such a way as to satisfy realtime playback on limited
      * throughput. */
     uint64_t bandwidth;
 
-    /* Enable parallel submission mode by setting a value greater
-     * than one. Mainly useful for very high bitrate streams, especially
-     * when using FEC.
-     * NOTE: packets may be sent out of order. */
-    int threads;
+    /* Compression mode */
+    enum AVTOutputCompressionFlags compress;
 } AVTOutputOptions;
 
 /* All functions listed here are thread-safe. */
@@ -81,8 +84,16 @@ AVT_API int avt_output_stream_update(AVTOutput *out, AVTStream *st);
 AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
                                        const char *filename, enum AVTFontType type);
 
-/* Write stream data to the output. */
+/* Write stream data to the output
+ * If the size of pkt->buf is not equal to pkt->total_size, the
+ * packet will be considered to be segmented, and further calls to
+ * avt_output_stream_data_segment with more segments will be required
+ * to produce a valid stream. */
 AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
+
+/* Write partial stream data to the output */
+AVT_API int avt_output_stream_data_segment(AVTStream *st, AVTPacket *pkt,
+                                           AVTBuffer *buf, size_t offset);
 
 /* Write user data packets. The immediate flag can be used to skip
  * any potential queueing. */

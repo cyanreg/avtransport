@@ -24,32 +24,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#include "protocol_common.h"
 
-#include <stdatomic.h>
+extern const AVTProtocol avt_protocol_noop;
 
-#include <avtransport/utils.h>
-
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
+static const AVTProtocol *avt_protocol_list[] = {
+    [AVT_PROTOCOL_FILE] = &avt_protocol_noop,
 };
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
+/* For connections to call */
+int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
+                      AVTProtocolCtx **p_ctx, AVTAddress *addr)
+{
+    const AVTProtocol *p = avt_protocol_list[addr->proto];
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
+    int err = p->init(ctx, p_ctx, addr);
+    if (err < 0)
+        return err;
 
-void avt_buffer_quick_unref(AVTBuffer *buf);
+    *_p = p;
 
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+    return err;
+}

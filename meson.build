@@ -59,13 +59,6 @@ build_args = [
 
 cc = meson.get_compiler('c')
 
-# Check for wmain support (Windows/MinGW)
-#============================================================================
-if cc.links('int wmain() { return 0; }', args: '-municode')
-     conf.set('HAVE_WMAIN', 1)
-     build_args += '-municode'
-endif
-
 # Hide all untagged API functions
 #============================================================================
 if cc.has_argument('-fvisibility=hidden')
@@ -129,6 +122,12 @@ else
     else
         conf.set('CONFIG_ASSERT_LEVEL', 2)
     endif
+endif
+
+# Check for wendys
+#============================================================================
+if host_machine.system() == 'windows'
+
 endif
 
 # Check for pthread_setname_np

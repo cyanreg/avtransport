@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "buffer.h"
+#include "utils_internal.h"
 
 AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
                              void *opaque, void (*free_fn)(void *opaque, void *base_data))
@@ -52,6 +53,22 @@ AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
     buf->free = free_fn;
 
     return buf;
+}
+
+int avt_buffer_realloc(AVTBuffer *buf, size_t len)
+{
+    avt_assert2(avt_buffer_get_refcount(buf) == 1);
+    avt_assert2(buf->free == avt_buffer_default_free);
+
+    uint8_t *newdata = realloc(buf->base_data, len);
+    if (!newdata)
+        return AVT_ERROR(ENOMEM);
+
+    buf->base_data = newdata;
+    buf->end_data = newdata + len;
+    buf->len = len;
+
+    return 0;
 }
 
 void avt_buffer_default_free(void *opaque, void *base_data)
@@ -111,7 +128,7 @@ int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset)
 }
 
 int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, int64_t len)
+                         ptrdiff_t offset, size_t len)
 {
     if (!buffer)
         return 0;

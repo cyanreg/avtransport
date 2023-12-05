@@ -92,6 +92,7 @@ typedef struct AVTStream {
 
 typedef struct AVTPacket {
     AVTBuffer *data;
+    size_t total_size;
 
     enum AVTFrameType type;
     int64_t pts;

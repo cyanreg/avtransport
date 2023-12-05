@@ -34,16 +34,6 @@
 #include <avtransport/rational.h>
 #include "utils_internal.h"
 
-#ifndef AVT_RB8
-#define AVT_RB8(x)               \
-    (((const uint8_t *)(x))[0])
-#endif
-
-#ifndef AVT_RL8
-#define AVT_RL8(x)               \
-    (((const uint8_t *)(x))[0])
-#endif
-
 #ifndef AVT_WB8
 #define AVT_WB8(p, val)             \
     do {                            \
@@ -60,31 +50,99 @@
     } while(0)
 #endif
 
-#ifndef AVT_RB16
-#define AVT_RB16(x)                                                 \
-    ((((const uint8_t *)(x))[0] << 8) | ((const uint8_t *)(x))[1])
+#ifndef AVT_RB8
+#define AVT_RB8(x)               \
+    (((const uint8_t *)(x))[0])
 #endif
 
-#ifndef AVT_RL16
-#define AVT_RL16(x)                                                 \
-    ((((const uint8_t *)(x))[1] << 8) | ((const uint8_t *)(x))[0])
+#ifndef AVT_RL8
+#define AVT_RL8(x)               \
+    (((const uint8_t *)(x))[0])
 #endif
 
 #ifndef AVT_WB16
-#define AVT_WB16(p, val)                 \
-    do {                                 \
-        uint16_t d = (val);              \
-        ((uint8_t *)(p))[1] = (d) >> 0;  \
-        ((uint8_t *)(p))[0] = (d) >> 8;  \
+#define AVT_WB16(p, val)                          \
+    do {                                          \
+        uint16_t d = (val);                       \
+        ((uint8_t *)(p))[0] = ((d) >> 8) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >> 0) & 0xFF;  \
     } while(0)
 #endif
 
 #ifndef AVT_WL16
-#define AVT_WL16(p, val)                 \
-    do {                                 \
-        uint16_t d = (val);              \
-        ((uint8_t *)(p))[0] = (d) >> 0;  \
-        ((uint8_t *)(p))[1] = (d) >> 8;  \
+#define AVT_WL16(p, val)                          \
+    do {                                          \
+        uint16_t d = (val);                       \
+        ((uint8_t *)(p))[0] = ((d) >> 0) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >> 8) & 0xFF;  \
+    } while(0)
+#endif
+
+#ifndef AVT_RB16
+#define AVT_RB16(x)                                               \
+    ((uint16_t)((((uint16_t)(((const uint8_t *)(x))[0])) << 8) |  \
+                (((uint16_t)(((const uint8_t *)(x))[1])) << 0)))
+#endif
+
+#ifndef AVT_RL16
+#define AVT_RL16(x)                                               \
+    ((uint16_t)((((uint16_t)(((const uint8_t *)(x))[0])) << 8) |  \
+                (((uint16_t)(((const uint8_t *)(x))[1])) << 0)))
+#endif
+
+#ifndef AVT_WB24
+#define AVT_WB24(p, val)                           \
+    do {                                           \
+        uint32_t d = (val);                        \
+        ((uint8_t *)(p))[0] = ((d) >> 24) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >> 16) & 0xFF;  \
+        ((uint8_t *)(p))[2] = ((d) >>  8) & 0xFF;  \
+    } while(0)
+#endif
+
+#ifndef AVT_WL24
+#define AVT_WL24(p, val)                           \
+    do {                                           \
+        uint32_t d = (val);                        \
+        ((uint8_t *)(p))[0] = ((d) >>  8) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >> 16) & 0xFF;  \
+        ((uint8_t *)(p))[2] = ((d) >> 24) & 0xFF;  \
+    } while(0)
+#endif
+
+#ifndef AVT_RB24
+#define AVT_RB24(x)                                                \
+    ((uint32_t)((((uint32_t)(((const uint8_t *)(x))[0])) << 24) |  \
+                (((uint32_t)(((const uint8_t *)(x))[1])) << 16) |  \
+                (((uint32_t)(((const uint8_t *)(x))[2])) <<  8)))
+#endif
+
+#ifndef AVT_RL24
+#define AVT_RL24(x)                                                \
+    ((uint32_t)((((uint32_t)(((const uint8_t *)(x))[0])) <<  8) |  \
+                (((uint32_t)(((const uint8_t *)(x))[1])) << 16) |  \
+                (((uint32_t)(((const uint8_t *)(x))[3])) << 24)))
+#endif
+
+#ifndef AVT_WB32
+#define AVT_WB32(p, val)                           \
+    do {                                           \
+        uint32_t d = (val);                        \
+        ((uint8_t *)(p))[0] = ((d) >> 24) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >> 16) & 0xFF;  \
+        ((uint8_t *)(p))[2] = ((d) >>  8) & 0xFF;  \
+        ((uint8_t *)(p))[3] = ((d) >>  0) & 0xFF;  \
+    } while(0)
+#endif
+
+#ifndef AVT_WL32
+#define AVT_WL32(p, val)                           \
+    do {                                           \
+        uint32_t d = (val);                        \
+        ((uint8_t *)(p))[0] = ((d) >>  0) & 0xFF;  \
+        ((uint8_t *)(p))[1] = ((d) >>  8) & 0xFF;  \
+        ((uint8_t *)(p))[2] = ((d) >> 16) & 0xFF;  \
+        ((uint8_t *)(p))[3] = ((d) >> 24) & 0xFF;  \
     } while(0)
 #endif
 
@@ -98,31 +156,39 @@
 
 #ifndef AVT_RL32
 #define AVT_RL32(x)                                                \
-    ((uint32_t)((((uint32_t)(((const uint8_t *)(x))[3])) << 24) |  \
-                (((uint32_t)(((const uint8_t *)(x))[2])) << 16) |  \
+    ((uint32_t)((((uint32_t)(((const uint8_t *)(x))[0])) <<  0) |  \
                 (((uint32_t)(((const uint8_t *)(x))[1])) <<  8) |  \
-                (((uint32_t)(((const uint8_t *)(x))[0])) <<  0)))
+                (((uint32_t)(((const uint8_t *)(x))[2])) << 16) |  \
+                (((uint32_t)(((const uint8_t *)(x))[3])) << 24)))
 #endif
 
-#ifndef AVT_WB32
-#define AVT_WB32(p, val)                  \
-    do {                                  \
-        uint32_t d = (val);               \
-        ((uint8_t *)(p))[3] = (d) >>  0;  \
-        ((uint8_t *)(p))[2] = (d) >>  8;  \
-        ((uint8_t *)(p))[1] = (d) >> 16;  \
-        ((uint8_t *)(p))[0] = (d) >> 24;  \
+#ifndef AVT_WB64
+#define AVT_WB64(p, val)                          \
+    do {                                          \
+        uint64_t d = (val);                       \
+        ((uint8_t *)(p))[0] = ((d) >> 56) & 0xFF; \
+        ((uint8_t *)(p))[1] = ((d) >> 48) & 0xFF; \
+        ((uint8_t *)(p))[2] = ((d) >> 40) & 0xFF; \
+        ((uint8_t *)(p))[3] = ((d) >> 32) & 0xFF; \
+        ((uint8_t *)(p))[4] = ((d) >> 24) & 0xFF; \
+        ((uint8_t *)(p))[5] = ((d) >> 16) & 0xFF; \
+        ((uint8_t *)(p))[6] = ((d) >>  8) & 0xFF; \
+        ((uint8_t *)(p))[7] = ((d) >>  0) & 0xFF; \
     } while(0)
 #endif
 
-#ifndef AVT_WL32
-#define AVT_WL32(p, val)                  \
-    do {                                  \
-        uint32_t d = (val);               \
-        ((uint8_t *)(p))[0] = (d) >>  0;  \
-        ((uint8_t *)(p))[1] = (d) >>  8;  \
-        ((uint8_t *)(p))[2] = (d) >> 16;  \
-        ((uint8_t *)(p))[3] = (d) >> 24;  \
+#ifndef AVT_WL64
+#define AVT_WL64(p, val)                          \
+    do {                                          \
+        uint64_t d = (val);                       \
+        ((uint8_t *)(p))[0] = ((d) >>  0) & 0xFF; \
+        ((uint8_t *)(p))[1] = ((d) >>  8) & 0xFF; \
+        ((uint8_t *)(p))[2] = ((d) >> 16) & 0xFF; \
+        ((uint8_t *)(p))[3] = ((d) >> 24) & 0xFF; \
+        ((uint8_t *)(p))[4] = ((d) >> 32) & 0xFF; \
+        ((uint8_t *)(p))[5] = ((d) >> 40) & 0xFF; \
+        ((uint8_t *)(p))[6] = ((d) >> 48) & 0xFF; \
+        ((uint8_t *)(p))[7] = ((d) >> 56) & 0xFF; \
     } while(0)
 #endif
 
@@ -140,44 +206,14 @@
 
 #ifndef AVT_RL64
 #define AVT_RL64(x)                                                \
-    ((uint64_t)((((uint64_t)(((const uint8_t *)(x))[7])) << 56) |  \
-                (((uint64_t)(((const uint8_t *)(x))[6])) << 48) |  \
-                (((uint64_t)(((const uint8_t *)(x))[5])) << 40) |  \
-                (((uint64_t)(((const uint8_t *)(x))[4])) << 32) |  \
-                (((uint64_t)(((const uint8_t *)(x))[3])) << 24) |  \
-                (((uint64_t)(((const uint8_t *)(x))[2])) << 16) |  \
+    ((uint64_t)((((uint64_t)(((const uint8_t *)(x))[0])) <<  0) |  \
                 (((uint64_t)(((const uint8_t *)(x))[1])) <<  8) |  \
-                (((uint64_t)(((const uint8_t *)(x))[0])) <<  0)))
-#endif
-
-#ifndef AVT_WB64
-#define AVT_WB64(p, val)                 \
-    do {                                 \
-        uint64_t d = (val);              \
-        ((uint8_t *)(p))[7] = (d) >>  0; \
-        ((uint8_t *)(p))[6] = (d) >>  8; \
-        ((uint8_t *)(p))[5] = (d) >> 16; \
-        ((uint8_t *)(p))[4] = (d) >> 24; \
-        ((uint8_t *)(p))[3] = (d) >> 32; \
-        ((uint8_t *)(p))[2] = (d) >> 40; \
-        ((uint8_t *)(p))[1] = (d) >> 48; \
-        ((uint8_t *)(p))[0] = (d) >> 56; \
-    } while(0)
-#endif
-
-#ifndef AVT_WL64
-#define AVT_WL64(p, val)                 \
-    do {                                 \
-        uint64_t d = (val);              \
-        ((uint8_t *)(p))[0] = (d) >>  0; \
-        ((uint8_t *)(p))[1] = (d) >>  8; \
-        ((uint8_t *)(p))[2] = (d) >> 16; \
-        ((uint8_t *)(p))[3] = (d) >> 24; \
-        ((uint8_t *)(p))[4] = (d) >> 32; \
-        ((uint8_t *)(p))[5] = (d) >> 40; \
-        ((uint8_t *)(p))[6] = (d) >> 48; \
-        ((uint8_t *)(p))[7] = (d) >> 56; \
-    } while(0)
+                (((uint64_t)(((const uint8_t *)(x))[2])) << 16) |  \
+                (((uint64_t)(((const uint8_t *)(x))[3])) << 24) |  \
+                (((uint64_t)(((const uint8_t *)(x))[4])) << 32) |  \
+                (((uint64_t)(((const uint8_t *)(x))[5])) << 40) |  \
+                (((uint64_t)(((const uint8_t *)(x))[6])) << 48) |  \
+                (((uint64_t)(((const uint8_t *)(x))[7])) << 56)))
 #endif
 
 #ifdef CONFIG_BIG_ENDIAN
@@ -210,32 +246,34 @@ static inline void avt_bs_reset(AVTBytestream *bs)
     bs->ptr = bs->start;
 }
 
-#define AVT_WRITE_FN(en, n, len)                                                    \
-static inline void avt_bsw_u ##len ##n (AVTBytestream *bs, const uint##len##_t val) \
-{                                                                                   \
-    avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                               \
-    en##len(bs->ptr, val);                                                          \
-    bs->ptr += len >> 3;                                                            \
-}                                                                                   \
-                                                                                    \
-static inline void avt_bsw_i ##len ##n (AVTBytestream *bs, const int##len##_t val)  \
-{                                                                                   \
-    avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                               \
-    union { int##len##_t ival; uint##len##_t uval; } t;                             \
-    t.ival = val;                                                                   \
-    en##len(bs->ptr, t.uval);                                                       \
-    bs->ptr += len >> 3;                                                            \
+#define AVT_WRITE_FN(en, n, len, tlen)                                               \
+static inline void avt_bsw_u ##len ##n (AVTBytestream *bs, const uint##tlen##_t val) \
+{                                                                                    \
+    avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                                \
+    en##len(bs->ptr, val);                                                           \
+    bs->ptr += len >> 3;                                                             \
+}                                                                                    \
+                                                                                     \
+static inline void avt_bsw_i ##len ##n (AVTBytestream *bs, const int##tlen##_t val)  \
+{                                                                                    \
+    avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                                \
+    union { int##tlen##_t ival; uint##tlen##_t uval; } t;                            \
+    t.ival = val;                                                                    \
+    en##len(bs->ptr, t.uval);                                                        \
+    bs->ptr += len >> 3;                                                             \
 }
 
-AVT_WRITE_FN(AVT_WB, b, 8)
-AVT_WRITE_FN(AVT_WB, b, 16)
-AVT_WRITE_FN(AVT_WB, b, 32)
-AVT_WRITE_FN(AVT_WB, b, 64)
+AVT_WRITE_FN(AVT_WB, b,  8,  8)
+AVT_WRITE_FN(AVT_WB, b, 16, 16)
+AVT_WRITE_FN(AVT_WB, b, 24, 32)
+AVT_WRITE_FN(AVT_WB, b, 32, 32)
+AVT_WRITE_FN(AVT_WB, b, 64, 64)
 
-AVT_WRITE_FN(AVT_WL, l, 8)
-AVT_WRITE_FN(AVT_WL, l, 16)
-AVT_WRITE_FN(AVT_WL, l, 32)
-AVT_WRITE_FN(AVT_WL, l, 64)
+AVT_WRITE_FN(AVT_WL, l,  8,  8)
+AVT_WRITE_FN(AVT_WL, l, 16, 16)
+AVT_WRITE_FN(AVT_WL, l, 24, 32)
+AVT_WRITE_FN(AVT_WL, l, 32, 32)
+AVT_WRITE_FN(AVT_WL, l, 64, 64)
 
 #define AVT_WRITE_RATIONAL(en, n)                                        \
 static inline void avt_bsw_rt##n(AVTBytestream *bs, const AVTRational r) \
@@ -313,34 +351,36 @@ static inline void avt_bs_skip(AVTBytestream *bs, const size_t len)
     bs->ptr = AVT_MIN(bs->ptr + len, bs->end);
 }
 
-#define AVT_READ_FN(en, n, len)                                      \
-static inline uint##len##_t avt_bsr_u ##len ##n (AVTBytestream *bs)  \
-{                                                                    \
-    if (((bs->ptr) + (len >> 3)) > bs->end)                          \
-        return 0;                                                    \
-    bs->ptr += len >> 3;                                             \
-    return en##len(bs->ptr - (len >> 3));                            \
-}                                                                    \
-                                                                     \
-static inline int##len##_t avt_bsr_i ##len ##n (AVTBytestream *bs)   \
-{                                                                    \
-    if (((bs->ptr) + (len >> 3)) > bs->end)                          \
-        return 0;                                                    \
-    union { int##len##_t ival; uint##len##_t uval; } t;              \
-    t.uval = en##len(bs->ptr);                                       \
-    bs->ptr += len >> 3;                                             \
-    return t.ival;                                                   \
+#define AVT_READ_FN(en, n, len, tlen)                                 \
+static inline uint##tlen##_t avt_bsr_u ##len ##n (AVTBytestream *bs)  \
+{                                                                     \
+    if (((bs->ptr) + (len >> 3)) > bs->end)                           \
+        return 0;                                                     \
+    bs->ptr += len >> 3;                                              \
+    return en##len(bs->ptr - (len >> 3));                             \
+}                                                                     \
+                                                                      \
+static inline int##tlen##_t avt_bsr_i ##len ##n (AVTBytestream *bs)   \
+{                                                                     \
+    if (((bs->ptr) + (len >> 3)) > bs->end)                           \
+        return 0;                                                     \
+    union { int##tlen##_t ival; uint##tlen##_t uval; } t;             \
+    t.uval = en##len(bs->ptr);                                        \
+    bs->ptr += len >> 3;                                              \
+    return t.ival;                                                    \
 }
 
-AVT_READ_FN(AVT_RB, b, 8)
-AVT_READ_FN(AVT_RB, b, 16)
-AVT_READ_FN(AVT_RB, b, 32)
-AVT_READ_FN(AVT_RB, b, 64)
+AVT_READ_FN(AVT_RB, b,  8,  8)
+AVT_READ_FN(AVT_RB, b, 16, 16)
+AVT_READ_FN(AVT_RB, b, 24, 32)
+AVT_READ_FN(AVT_RB, b, 32, 32)
+AVT_READ_FN(AVT_RB, b, 64, 64)
 
-AVT_READ_FN(AVT_RL, l, 8)
-AVT_READ_FN(AVT_RL, l, 16)
-AVT_READ_FN(AVT_RL, l, 32)
-AVT_READ_FN(AVT_RL, l, 64)
+AVT_READ_FN(AVT_RL, l, 8, 8)
+AVT_READ_FN(AVT_RL, l, 16, 16)
+AVT_READ_FN(AVT_RL, l, 24, 32)
+AVT_READ_FN(AVT_RL, l, 32, 32)
+AVT_READ_FN(AVT_RL, l, 64, 64)
 
 #define AVT_READ_RATIONAL(en, n)                                         \
 static inline AVTRational avt_bsr_rt##n(AVTBytestream *bs)               \

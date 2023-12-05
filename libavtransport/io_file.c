@@ -24,29 +24,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "os_compat.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
 
-#include "connection_internal.h"
+#include "io_common.h"
 
 struct AVTIOCtx {
     FILE *f;
 };
 
-static int file_init(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr)
+static int handle_error(AVTIOCtx *io, const char *msg)
 {
-    AVTIOCtx *priv = malloc(sizeof(*priv));
-    if (!priv)
+    char8_t err_info[256];
+    strerror_s(err_info, sizeof(err_info), errno);
+    avt_log(io, AVT_LOG_ERROR, msg, err_info);
+    return AVT_ERROR(errno);
+}
+
+static int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+{
+    int ret;
+    AVTIOCtx *io = malloc(sizeof(*io));
+    if (!io)
         return AVT_ERROR(ENOMEM);
 
-    priv->f = fopen(addr->path, "w+");
-    if (!priv->f) {
-        free(priv);
-        return AVT_ERROR(errno);
+    io->f = fopen(addr->path, "w+");
+    if (!io->f) {
+        ret = handle_error(io, "Error opening: %s\n");
+        free(io);
+        return ret;
     }
 
-    *io = priv;
+    *_io = io;
 
     return 0;
 }
@@ -56,53 +68,83 @@ static uint32_t file_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
     return UINT32_MAX;
 }
 
-static int file_input(AVTContext *ctx, AVTIOCtx *io, AVTBuffer *buf)
+static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
+                               AVTBuffer **_buf, size_t len)
 {
-    uint8_t header[36];
-    fread(header, 36, 1, io->f);
+    int err;
+    uint8_t *data;
+    size_t buf_len, off = 0;
+    AVTBuffer *buf = *_buf;
 
-    return 0;
+    if (!buf) {
+        buf = avt_buffer_alloc(len);
+        if (!buf)
+            return AVT_ERROR(ENOMEM);
+    } else {
+        off = avt_buffer_get_data_len(buf);
+        err = avt_buffer_realloc(buf, len);
+        if (err < 0)
+            return err;
+    }
+
+    data = avt_buffer_get_data(buf, &buf_len);
+    len = AVT_MIN(len, buf_len - off);
+    fread(data + off, 1, len, io->f);
+
+    return (int64_t)ftello(io->f);
 }
 
-static int file_output(AVTContext *ctx, AVTIOCtx *io,
-                       uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                       AVTBuffer *payload)
+static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
+                                 uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                                 AVTBuffer *payload)
 {
+    int ret;
     size_t len;
     uint8_t *data = avt_buffer_get_data(payload, &len);
 
     size_t out = fwrite(hdr, 1, hdr_len, io->f);
     if (out != hdr_len) {
-        avt_log(io, AVT_LOG_ERROR, "Error while writing!\n");
-        return AVT_ERROR(errno);
+        ret = handle_error(io, "Error writing: %s\n");
+        return ret;
     }
 
     if (payload) {
         out = fwrite(data, 1, len, io->f);
         if (out != len) {
-            avt_log(io, AVT_LOG_ERROR, "Error while writing!\n");
-            return AVT_ERROR(errno);
+            ret = handle_error(io, "Error writing: %s\n");
+            return ret;
         }
     }
     fflush(io->f);
 
-    return 0;
+    return (int64_t)ftello(io->f);
 }
 
-static int file_seek(AVTContext *ctx, AVTIOCtx *io,
-                     uint64_t off, uint32_t seq,
-                     int64_t ts, bool ts_is_dts)
+static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io,
+                         int64_t off, uint32_t seq,
+                         int64_t ts, bool ts_is_dts)
 {
-    return 0;
+    return (int64_t)ftello(io->f);
+}
+
+static int file_flush(AVTContext *ctx, AVTIOCtx *io)
+{
+    int ret = fflush(io->f);
+    if (ret)
+        ret = handle_error(io, "Error flushing: %s\n");
+    return ret;
 }
 
 static int file_close(AVTContext *ctx, AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     int ret = fclose(io->f);
+    if (ret)
+        ret = handle_error(io, "Error closing: %s\n");
+
     free(io);
     *_io = NULL;
-    return AVT_ERROR(ret);
+    return ret;
 }
 
 const AVTIO avt_io_file = {
@@ -110,8 +152,9 @@ const AVTIO avt_io_file = {
     .type = AVT_IO_FILE,
     .init = file_init,
     .get_max_pkt_len = file_max_pkt_len,
-    .read_input = file_input,
-    .write_output = file_output,
+    .read_input = file_read_input,
+    .write_output = file_write_output,
     .seek = file_seek,
+    .flush = file_flush,
     .close = file_close,
 };

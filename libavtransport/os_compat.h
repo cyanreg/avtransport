@@ -24,32 +24,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#ifndef AVTRANSPORT_OS_COMPAT
+#define AVTRANSPORT_OS_COMPAT
 
-#include <stdatomic.h>
+#include "../config.h"
 
-#include <avtransport/utils.h>
+#define strerror_s(buf, len, err) strerror_r(err, buf, len)
 
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
-
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
-
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
-
-void avt_buffer_quick_unref(AVTBuffer *buf);
-
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+#endif /* AVTRANSPORT_OS_COMPAT */

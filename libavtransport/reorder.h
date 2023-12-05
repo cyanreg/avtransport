@@ -30,19 +30,11 @@
 #include "common.h"
 #include "buffer.h"
 
-enum AVTReorderChainType {
-    AVT_REORDER_CHAIN_SEGMENT,
-    AVT_REORDER_CHAIN_PARITY,
-    AVT_REORDER_CHAIN_FEC_GROUP,
-    AVT_REORDER_CHAIN_GLOBAL,
-};
-
 typedef struct AVTReorderPkt {
-    uint8_t header[384];
-    AVTBuffer *payload;
-    enum AVTPktDescriptors desc;
+    union AVTPacketData pkt;
+    AVTBuffer *pl;
+
     uint64_t recv_order;
-    uint64_t seq;
 
     /* Segment */
     struct AVTReorderPkt *prev;
@@ -61,9 +53,27 @@ typedef struct AVTReorderPkt {
     struct AVTReorderPkt *global_next;
 } AVTReorderPkt;
 
+enum AVTReorderChainType {
+    /* Stream chain contains segments of a single stream data packet */
+    AVT_REORDER_CHAIN_STREAM_DATA,
+
+    /* Stream chain contains segments of parity data for a single stream data packet */
+    AVT_REORDER_CHAIN_PARITY,
+
+    /* Stream chain contains stream data segments of multiple streams, in order */
+    AVT_REORDER_CHAIN_FEC_GROUP,
+
+    /* Stream chain contains segments of parity data for a chain of stream data segments of multiple streams */
+    AVT_REORDER_CHAIN_FEC_GROUP_PARITY,
+
+    /* Stream chain contains the list of all currently buffered packets */
+    AVT_REORDER_CHAIN_GLOBAL,
+};
+
 typedef struct AVTReorderChain {
     enum AVTReorderChainType type;
     AVTReorderPkt *start;
+    AVTReorderPkt *top;
 
     uint32_t nb_packets; /* Received */
     uint32_t tot_nb_packets; /* Signalled */
@@ -77,10 +87,39 @@ typedef struct AVTReorderChain {
     uint16_t fecg_streams[16];
     int nb_fecg_streams;
 
+    /*
+     * type == AVT_REORDER_CHAIN_STREAM_DATA:
+     * Pointer to a AVT_REORDER_CHAIN_PARITY chain that has
+     * not been popped off yet, containing parity data not yet
+     * fully finished.
+     *
+     * type == AVT_REORDER_CHAIN_PARITY:
+     * Pointer to a poppped-off AVTReorderChain for the packet
+     * being given redundancy by this parity data chain
+     */
     struct AVTReorderChain *parity;
-    struct AVTReorderChain *fecg;
+
+    /*
+     * type == AVT_REORDER_CHAIN_FEC_GROUP:
+     * Pointer to a AVT_REORDER_CHAIN_FEC_GROUP_PARITY chain that has
+     * not been popped off yet, containing FEC data not yet
+     * fully finished.
+     *
+     * type == AVT_REORDER_CHAIN_FEC_GROUP:
+     * Pointer to a poppped-off AVTReorderChain for the packet
+     * being given redundancy by this FEC data chain
+     */
+    struct AVTReorderChain *fec_group;
+
+    /*
+     * type == any
+     * The global chain itself.
+     * the start field may be NULL
+     */
+    struct AVTReorderChain *global;
 } AVTReorderChain;
 
+/* Main context */
 typedef struct AVTReorderBuffer {
     /* Buffer for all packet structs */
     AVTReorderPkt *pkt;
@@ -105,14 +144,28 @@ typedef struct AVTReorderBuffer {
     size_t max_global_size;
 } AVTReorderBuffer;
 
+/* Initialize a reorder buffer with a given max_size which
+ * is the approximate bound of all packets and their payloads
+ * contained within. */
 int avt_reorder_init(AVTContext *ctx, AVTReorderBuffer *rb,
-                     size_t max_size, uint32_t patience);
+                     size_t max_size);
 
-int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb, AVTBuffer *data,
-                     uint32_t seq, enum AVTPktDescriptors desc);
+/* Push data to reorder buffer and let it figure everything out */
+int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb,
+                     union AVTPacketData pkt, AVTBuffer *pl);
 
+/* Peek at the topmost, most recent stream data chain.
+ * Call after push to understand if the packet ended up
+ * somewhere useful yet */
+int avt_reorder_peek_stream_data(AVTContext *ctx, AVTReorderBuffer *rb,
+                                 AVTReorderChain **chain);
+
+/* Pop a finished chain off the reorder buffer */
 int avt_reorder_pop(AVTContext *ctx, AVTReorderChain **chain);
+/* Mark chain as being done, letting its memory be reused */
+int avt_reorder_done(AVTContext *ctx, AVTReorderChain *chain);
 
+/* Free everything in all chains */
 void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb);
 
 #endif

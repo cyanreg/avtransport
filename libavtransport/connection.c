@@ -30,27 +30,14 @@
 #include <limits.h>
 
 #include "connection_internal.h"
+#include "protocol_common.h"
 
 #include "../config.h"
-
-extern const AVTIO avt_io_null;
-extern const AVTIO avt_io_file;
-
-static const AVTIO *avt_io_list[] = {
-    [AVT_IO_NULL] = &avt_io_null,
-    [AVT_IO_FILE] = &avt_io_file,
-};
-
-extern const AVTProtocol avt_protocol_noop;
-
-static const AVTProtocol *avt_protocol_list[] = {
-    [AVT_PROTOCOL_FILE] = &avt_protocol_noop,
-};
 
 #include <string.h>
 #include <stdio.h>
 
-static inline int avt_parse_url(void *log_ctx, AVTAddress *addr, const char *path)
+static inline int avt_url_parse(void *log_ctx, AVTAddress *addr, const char *path)
 {
     int ret = 0;
     int native_uri = 0;
@@ -237,6 +224,20 @@ end:
     return ret;
 }
 
+struct AVTConnection {
+    AVTContext *ctx;
+
+    /* Protocol */
+    const AVTProtocol *p;
+    AVTProtocolCtx *p_ctx;
+
+    /* File mirror */
+    AVTConnection *mirror;
+
+    /* Input reorder buffer */
+    AVTReorderBuffer *in_buffer;
+};
+
 int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
                           AVTConnectionInfo *info)
 {
@@ -248,13 +249,13 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     AVTAddress addr = { 0 };
     switch (info->type) {
     case AVT_CONNECTION_URL:
-        ret = avt_parse_url(ctx, &addr, info->path);
+        ret = avt_url_parse(ctx, &addr, info->path);
         if (ret < 0)
             return ret;
         addr.proto = addr.proto;
         break;
     case AVT_CONNECTION_SOCKET:
-        //determine type
+        //determine type here
         break;
     case AVT_CONNECTION_FILE:
         addr.path = strdup(info->path);
@@ -263,14 +264,18 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     case AVT_CONNECTION_CALLBACK:
         addr.proto = AVT_PROTOCOL_NOOP;
         break;
+    case AVT_CONNECTION_PACKET:
+        addr.proto = AVT_PROTOCOL_PACKET;
+        break;
     };
 
     AVTConnection *conn = calloc(1, sizeof(*conn));
 
-    conn->p = avt_protocol_list[addr.proto];
+    conn->ctx = ctx;
 
-    int err = conn->p->init(ctx, &conn->p_ctx, &addr);
+    int err = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &addr);
     if (err < 0) {
+        free(conn);
         return err;
     }
 
@@ -279,19 +284,33 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     return 0;
 }
 
-int avt_init_io(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
-                AVTAddress *addr)
+int avt_connection_send(AVTConnection *conn,
+                        union AVTPacketData pkt, AVTBuffer *pl, void **series)
 {
-    const AVTIO *io = avt_io_list[AVT_IO_FILE];
-    int err = io->init(ctx, io_ctx, addr);
-    *_io = io;
+
+
+    return 0;
+}
+
+int avt_connection_flush(AVTConnection *conn)
+{
+    return 0;
+}
+
+int avt_connection_destroy(AVTConnection **_conn)
+{
+    AVTConnection *conn = *_conn;
+    if (conn)
+        return 0;
+
+    int err = conn->p->close(conn->ctx, &conn->p_ctx);
+
+    free(conn);
+    *_conn = NULL;
     return err;
 }
 
-void avt_connection_flush(AVTConnection *conn)
+int avt_connection_mirror(AVTConnection *conn, const char *path)
 {
-}
-
-void avt_connection_destroy(AVTConnection **conn)
-{
+    return  0;
 }

@@ -24,32 +24,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#include <stdlib.h>
 
-#include <stdatomic.h>
+#include "output_internal.h"
 
-#include <avtransport/utils.h>
+/* Session start */
+int avt_send_session_start(AVTOutput *out);
 
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
+/* Time sync */
+int avt_send_time_sync(AVTOutput *out);
 
-    uint8_t *base_data;
-    uint8_t *end_data;
+/* Stream registration and data */
+int avt_send_stream_register(AVTOutput *out, AVTStream *st);
+int avt_send_stream_data(AVTOutput *out,
+                         AVTStream *st, AVTPacket *pkt);
 
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
+/* Generic data */
+int avt_send_generic_data(AVTOutput *out,
+                          AVTStream *st, AVTBuffer *data, int64_t pts,
+                          uint32_t first_desd, uint32_t seg_desc);
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
+/* LUT/ICC */
+int avt_send_lut_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts);
+int avt_send_icc_data(AVTOutput *out,
+                      AVTStream *st, int64_t pts);
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
-
-void avt_buffer_quick_unref(AVTBuffer *buf);
-
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+/* Video info/orientation */
+int avt_send_video_info(AVTOutput *out,
+                        AVTStream *st, int64_t pts);
+int avt_send_video_orientation(AVTOutput *out,
+                               AVTStream *st, int64_t pts);

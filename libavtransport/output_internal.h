@@ -44,8 +44,7 @@ typedef struct AVTOutput {
     AVTConnection **conn;
     uint32_t nb_conn;
 
-    AVTStream **streams;
-    int nb_streams;
+    AVTStream streams[UINT16_MAX];
 
     atomic_uint_least64_t seq;
     atomic_uint_least64_t epoch;
@@ -54,10 +53,6 @@ typedef struct AVTOutput {
     ZSTD_CCtx *zstd_ctx;
 #endif
 } AVTOutput;
-
-int avt_packet_send(AVTOutput *out,
-                    uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                    AVTBuffer *buf);
 
 size_t avt_packet_get_max_size(AVTOutput *out);
 

@@ -30,6 +30,7 @@
 #include <assert.h>
 #include <time.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "../config.h"
 

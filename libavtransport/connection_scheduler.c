@@ -24,32 +24,53 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#include "connection_scheduler.h"
+#include "utils_internal.h"
 
-#include <stdatomic.h>
+FN_CREATING(avt_scheduler, AVTScheduler, AVTSchedulerBucket,
+            bucket, buckets, nb_buckets)
 
-#include <avtransport/utils.h>
+int avt_scheduler_init(AVTScheduler *s, AVTOutput *out)
+{
+    return 0;
+}
 
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
+int avt_scheduler_set_props(AVTScheduler *s,
+                            uint64_t rx_bandwidth, uint64_t tx_bandwidth,
+                            uint64_t max_pkt_size, uint64_t max_buffered)
+{
+    return 0;
+}
 
-    uint8_t *base_data;
-    uint8_t *end_data;
+int avt_scheduler_push(AVTScheduler *s,
+                       union AVTPacketData pkt, AVTBuffer *pl)
+{
+    AVTSchedulerBucket *bkt = s->last_avail;
+    if (!bkt) {
+        bkt = avt_scheduler_create_bucket(s);
+        if (!bkt)
+            return AVT_ERROR(ENOMEM);
+    }
 
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
-};
+    s->last_avail = NULL;
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
+    return 0;
+}
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
+int avt_scheduler_pop(AVTScheduler *s, AVTSchedulerBucket **bkt)
+{
+    *bkt = s->last_avail;
+    return 0;
+}
 
-void avt_buffer_quick_unref(AVTBuffer *buf);
+void avt_scheduler_done(AVTScheduler *s, AVTSchedulerBucket *bkt)
+{
+    if (bkt)
+        return;
 
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
+    s->last_avail = bkt;
+}
 
-#endif
+void avt_scheduler_free(AVTScheduler *s)
+{
+}

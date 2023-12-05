@@ -24,32 +24,22 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#include "io_common.h"
 
-#include <stdatomic.h>
+extern const AVTIO avt_io_null;
+extern const AVTIO avt_io_file;
 
-#include <avtransport/utils.h>
-
-struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
-
-    uint8_t *base_data;
-    uint8_t *end_data;
-
-    void (*free)(void *opaque, void *data);
-    void *opaque;
-    atomic_int *refcnt;
+static const AVTIO *avt_io_list[] = {
+    [AVT_IO_NULL] = &avt_io_null,
+    [AVT_IO_FILE] = &avt_io_file,
 };
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
-
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
-
-void avt_buffer_quick_unref(AVTBuffer *buf);
-
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+/* For protocols to call */
+int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
+                AVTAddress *addr)
+{
+    const AVTIO *io = avt_io_list[AVT_IO_FILE];
+    int err = io->init(ctx, io_ctx, addr);
+    *_io = io;
+    return err;
+}

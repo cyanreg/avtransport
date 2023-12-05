@@ -30,6 +30,7 @@
 
 #include "utils_internal.h"
 #include "output_internal.h"
+#include "output_packet.h"
 #include "encode.h"
 
 #include "../config.h"
@@ -64,18 +65,9 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
     return 0;
 }
 
-FN_CREATING(avt_out, AVTOutput, AVTStream, stream, streams, nb_streams)
-
 AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
 {
-    AVTStream *st = avt_out_create_stream(out);
-    if (!st)
-        return NULL;
-
-    st->priv = calloc(1, sizeof(*st->priv));
-    if (!st->priv) {
-        return NULL;
-    }
+    AVTStream *st = &out->streams[id];
 
     st->id = id;
     st->priv->out = out;
@@ -95,13 +87,8 @@ int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)
 
 size_t avt_packet_get_max_size(AVTOutput *out)
 {
-    return out->conn[0]->p->get_max_pkt_len(out->ctx, out->conn[0]->p_ctx);
-}
-
-int avt_packet_send(AVTOutput *out,
-                    uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len, AVTBuffer *buf)
-{
-    return out->conn[0]->p->send_packet(out->ctx, out->conn[0]->p_ctx, hdr, hdr_len, buf);
+//    return out->conn[0]->p->get_max_pkt_len(out->ctx, out->conn[0]->p_ctx);
+    return 0;
 }
 
 int avt_output_close(AVTOutput **_out)

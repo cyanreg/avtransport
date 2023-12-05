@@ -1741,7 +1741,7 @@ The structure of the data for each index entry is as follows:
         </tr>
         <tr id="IndexEntry+2">
             <td><code>u(32)</code></td>
-            <td>[=global_seq=]</td>
+            <td>[=target_seq=]</td>
             <td></td>
             <td>Sequence number of the packet pointed to by this index entry.</td>
         </tr>
@@ -3092,6 +3092,91 @@ THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.
 
 
+### ATRAC-9 encapsulation ### {#atrac9-encapsulation}
+
+For ATRAC9, the [=codec_id=] in the
+[[#stream-registration-packets]]
+must be ''0x41545239'' (''ATR9'').
+
+The payload in the [[#stream-configuration-packets]] must be
+laid out in the following way:
+
+<figure id="table-ATRAC9Config" class="table">
+    <table class="complex data longlastcol" dfn-for="#atrac9-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(32)</code></td>
+            <td><dfn>atrac9_version</dfn></td>
+            <td>''0x01000000''</td>
+            <td>The version of ATRAC-9 contained. Must be ''0x01000000''.</td>
+        </tr>
+        <tr>
+            <td><code>u(8)</code></td>
+            <td><dfn>atrac9_magic</dfn></td>
+            <td>''0xFE''</td>
+            <td>ATRAC-9 magic byte</td>
+        </tr>
+        <tr>
+            <td><code>u(4)</code></td>
+            <td><dfn>atrac9_samplerate_idx</dfn></td>
+            <td></td>
+            <td>Samplerate index for the stream.</td>
+        </tr>
+        <tr>
+            <td><code>u(3)</code></td>
+            <td><dfn>atrac9_block_config</dfn></td>
+            <td></td>
+            <td>Block configuration for the stream.</td>
+        </tr>
+        <tr>
+            <td><code>b(1)</code></td>
+            <td><dfn>atrac9_verification_bit</dfn></td>
+            <td>0</td>
+            <td>Constant bit.</td>
+        </tr>
+        <tr>
+            <td><code>u(11)</code></td>
+            <td><dfn>atrac9_avg_frame_size</dfn></td>
+            <td></td>
+            <td>Average frame size in bits, <b>minus one</b></td>
+        </tr>
+        <tr>
+            <td><code>u(2)</code></td>
+            <td><dfn>atrac9_superframe_idx</dfn></td>
+            <td></td>
+            <td>Superframe index. Must be even.</td>
+        </tr>
+        <tr>
+            <td><code>u(32)</code></td>
+            <td><dfn>atrac9_block_align</dfn></td>
+            <td></td>
+            <td>ATRAC-9 block alignment value for each frame. Must be larger than the largest frame in the stream.</td>
+        </tr>
+    </table>
+</figure>
+
+Note: [=atrac9_block_align=] is a value carried over from RIFF encapsulation, and is normally given to
+decoders via a separate mechanism. The configuration data length should omit it (so that it's 12 bytes long).
+
+The [=packet_data=] must contain raw ATRAC-9 frames, with no RIFF headers or encapsulation.
+
+
+### TAK encapsulation ### {#tak-encapsulation}
+
+For TAK (Tom's lossless Audio Kompressor) encapsulation,
+the [=codec_id=] in [[#stream-registration-packets]]
+must be ''0x4154414b'' (''ATAK'').
+
+TAK streams require no [[#stream-configuration-packets]].
+
+THe `packet_data` must contain raw TAK frames, starting with the frame header.
+
+
 ### FLAC encapsulation ### {#flac-encapsulation}
 For FLAC encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
@@ -3391,7 +3476,6 @@ laid out in the following way:
     </table>
 </figure>
 
-
 The [=packet_data=] must contain the concatenated stream of <b>interleaved</b> samples
 for all channels.
 
@@ -3687,10 +3771,6 @@ packets to be sent without fragmentation.
 Note: Data packets may be padded by appending zeroed bytes after the [=packet_data=]
 field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.
-
-Note: It is <b>highly recommended</b> to zero-pad packets of non-segmented payloads with
-at least <b>64 bytes</b> of zeroed out bytes. This permits zero-copy decoding with popular
-multimedia frameworks.
 
 Note: When operating at higher MTUs, implementations should consider adding FEC or parity,
 as the 16-bit UDP datagram CRC may be inadequate to detect errors.

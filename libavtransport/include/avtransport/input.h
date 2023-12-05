@@ -61,12 +61,36 @@ typedef struct AVTInputCallbacks {
     void (*epoch_cb)(void *opaque, uint64_t epoch);
 
     void (*metadata_cb)(void *opaque, AVTStream *st, AVTMetadata *meta);
-    int  (*stream_pkt_cb)(void *opaque, AVTStream *st, AVTPacket pkt, int present);
     int  (*user_pkt_cb)(void *opaque, AVTBuffer *data, uint16_t descriptor,
                         uint16_t user, uint32_t seq);
 
     void (*duration_cb)(void *opaque, int64_t duration_nsec);
     void (*stream_close_cb)(void *opaque, AVTStream *st);
+
+    /*
+     * ============== Callbacks for complete packets ==============
+     * This provides a full packet, continuous, error corrected and
+     * called in incremental order.
+     */
+    int  (*stream_pkt_cb)(void *opaque, AVTStream *st, AVTPacket pkt);
+
+    /*
+     * ============== Callbacks for incomplete packets ==============
+     * This API provides users the ability to receive and present packets
+     * with minimal latency. Error correction will not be performed
+     * (unless error correction for a segment is available immediately),
+     * nor will any concatenation of segments be done.
+     *
+     * Users can use AVTPacket->total_size to know the total finished size
+     * of the packet, and using the offset argument, can determine the
+     * position of the segment.
+     *
+     * stream_pkt_cb will still be called with final, assembled, corrected
+     * and incrementing packets.
+     */
+    int (*stream_pkt_start_cb)(void *opaque, AVTStream *st, AVTPacket pkt, int present);
+    int (*stream_pkt_seg_cb)(void *opaque, AVTStream *st, AVTPacket pkt,
+                             AVTBuffer *seg, size_t offset);
 
     /* Reports a timeout, with the number of nanoseconds since the last packet */
     void (*timeout)(void *opaque, uint64_t last_received);

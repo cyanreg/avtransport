@@ -29,13 +29,13 @@
 #include "reorder.h"
 
 int avt_reorder_init(AVTContext *ctx, AVTReorderBuffer *rb,
-                     size_t max_size, uint32_t patience)
+                     size_t max_size)
 {
     return 0;
 }
 
-int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb, AVTBuffer *data,
-                     uint32_t seq, enum AVTPktDescriptors desc)
+int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb,
+                     union AVTPacketData pkt, AVTBuffer *pl)
 {
     return 0;
 }

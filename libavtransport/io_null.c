@@ -28,11 +28,29 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "connection_internal.h"
+#include "io_common.h"
+#include "utils_internal.h"
+#include "bytestream.h"
+#include "../config.h"
+#include "../packet_encode.h"
 
-static int null_init(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr)
+struct AVTIOCtx {
+    atomic_uint_least64_t seq;
+    atomic_uint_least64_t pos_r;
+    atomic_uint_least64_t pos_w;
+};
+
+static int null_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
-    *io = NULL;
+    AVTIOCtx *io = malloc(sizeof(*io));
+    if (!io)
+        return AVT_ERROR(ENOMEM);
+
+    atomic_store(&io->seq, 0);
+    atomic_store(&io->pos_r, 0);
+    atomic_store(&io->pos_w, 0);
+
+    *_io = io;
     return 0;
 }
 
@@ -41,27 +59,52 @@ static uint32_t null_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
     return UINT32_MAX;
 }
 
-static int null_input(AVTContext *ctx, AVTIOCtx *io, AVTBuffer *buf)
+static int64_t null_input(AVTContext *ctx, AVTIOCtx *io,
+                          AVTBuffer **buf, size_t len)
 {
-    return 0;
+    avt_assert0(!(*buf));
+    AVTBuffer *hdr_buf = avt_buffer_alloc(AVT_MAX_HEADER_LEN);
+    if (!hdr_buf)
+        return AVT_ERROR(ENOMEM);
+
+    uint8_t *hdr = avt_buffer_get_data(hdr_buf, NULL);
+    AVTBytestream bs = avt_bs_init(hdr, AVT_MAX_HEADER_LEN);
+
+    union AVTPacketData pkt = { .session_start = {
+        .global_seq = atomic_fetch_add(&io->seq, 1ULL) & UINT32_MAX,
+        .session_flags = 0x0,
+        .producer_major = PROJECT_VERSION_MAJOR,
+        .producer_minor = PROJECT_VERSION_MINOR,
+        .producer_micro = PROJECT_VERSION_MICRO,
+    }};
+    memcpy(pkt.session_start.producer_name, PROJECT_NAME, strlen(PROJECT_NAME));
+
+    avt_encode_session_start(&bs, pkt.session_start);
+
+    *buf = hdr_buf;
+
+    return atomic_fetch_add(&io->pos_r, avt_bs_offs(&bs)) + avt_bs_offs(&bs);
 }
 
-static int null_output(AVTContext *ctx, AVTIOCtx *io,
-                       uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                       AVTBuffer *payload)
+static int64_t null_output(AVTContext *ctx, AVTIOCtx *io,
+                           uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                           AVTBuffer *payload)
 {
-    return 0;
+    return atomic_fetch_add(&io->pos_w, hdr_len + avt_buffer_get_data_len(payload));
 }
 
-static int null_seek(AVTContext *ctx, AVTIOCtx *io,
-                     uint64_t off, uint32_t seq,
-                     int64_t ts, bool ts_is_dts)
+static int64_t null_seek(AVTContext *ctx, AVTIOCtx *io,
+                         int64_t off, uint32_t seq,
+                         int64_t ts, bool ts_is_dts)
 {
-    return 0;
+    return atomic_load(&io->pos_r);
 }
 
 static int null_close(AVTContext *ctx, AVTIOCtx **_io)
 {
+    AVTIOCtx *io = *_io;
+    free(io);
+    *_io = NULL;
     return 0;
 }
 

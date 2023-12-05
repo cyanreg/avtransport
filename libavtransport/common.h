@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_COMMON
-#define LIBAVTRANSPORT_COMMON
+#ifndef AVTRANSPORT_COMMON
+#define AVTRANSPORT_COMMON
 
 #include <stdatomic.h>
 
@@ -63,4 +63,4 @@ struct AVTContext {
     AVTContextOptions opts;
 };
 
-#endif
+#endif /* AVTRANSPORT_COMMON */

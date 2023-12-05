@@ -166,7 +166,6 @@ static int open_io(IOContext *io, const char *path, int is_out)
 
         if (is_out) {
             AVTOutputOptions opts = {
-                .threads = 1,
             };
 
             err = avt_output_open(io->avt, &io->out, io->conn, &opts);
@@ -242,8 +241,10 @@ int main(int argc, char **argv)
     int err;
 
     GEN_OPT_INIT(opts_list, 16);
-    GEN_OPT_ARR(opts_list, char *, input, "i", 1, MAX_INPUTS, 0, 0, "Input (files or URLs)");
-    GEN_OPT_ONE(opts_list, char *, output, "o", 1, 1, 0, 0, "Destination (file or URL)");
+    GEN_OPT_ARR(opts_list, char *, input,   "i", 1, MAX_INPUTS, 0, 0, "Input (files or URLs)");
+    GEN_OPT_ONE(opts_list, char *, output,  "o", 1, 1, 0, 0, "Destination (file or URL)");
+    GEN_OPT_ONE(opts_list, bool  , unround, "u", 0, 0, 0, 0, "Unround timestamps (for remuxing from Matroska)");
+    GEN_OPT_ONE(opts_list, char *, mirror,  "m", 1, 1, 0, 0, "Mirror input and output to a file for monitoring and caching");
 
     if ((err = GEN_OPT_PARSE(opts_list, argc, argv)))
         return err;

@@ -47,8 +47,10 @@ sources = [
 
     'connection.c',
 
+    'protocol_common.c',
     'protocol_noop.c',
 
+    'io_common.c',
     'io_null.c',
     'io_file.c',
 
@@ -63,7 +65,9 @@ sources = [
 
 if get_option('output').auto()
     sources += 'output.c'
+    sources += 'output_packet.c'
     sources += 'encode.c'
+    sources += 'connection_scheduler.c'
     sources += 'ldpc_encode.c'
 endif
 

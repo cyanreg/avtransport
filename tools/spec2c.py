@@ -263,6 +263,14 @@ def iter_data_fields(target_id, struct_name):
         field_name = fields[1].string.strip("[=]")
         if field_name in struct_fields:
             field_name += "_2"
+
+        if field_name.endswith("descriptor"):
+            datatype = "enum AVTPktDescriptors"
+            if size_bits < 16 and fixed_number != None:
+                fixed_number <<= 8;
+        elif "seq" in field_name:
+            datatype = "uint64_t"
+
         struct_fields[field_name] = dict({
             "type": fields[0].string,
             "fixed": fixed_number,
@@ -360,6 +368,9 @@ if f_packet_enums != None:
 
     file_enums.write("#define AVT_MAX_HEADER_LEN " + str(384) + "\n\n")
 
+    file_enums.write("#define AVT_SESSION_ID " + "((0x" + format(descriptors["session_start"], "X") + ") << 16)")
+    file_enums.write(") | 0x" + format(packet_structs["AVTSessionStart"]["session_version"]["fixed"], "X") + ")\n\n")
+
     file_enums.write("enum " + data_prefix + "PktDescriptors {\n")
     for name, desc in descriptors.items():
         add_flag = False
@@ -394,9 +405,25 @@ if f_packet_data != None:
     for struct, fields in packet_structs.items():
         file_structs.write("\ntypedef struct " + struct + " {\n")
 
+        # To enable type punning via unions
+        name_desc = None
+        name_seq = None
+        for name, field in fields.items():
+            if name.endswith("descriptor") and name_desc == None:
+                name_desc = name
+            elif name == "global_seq" and name_seq == None:
+                name_seq = name
+
+        if name_desc != None:
+            field = fields[name_desc]
+            file_structs.write("    " + field["datatype"] + " " + name_desc + ";\n")
+        if name_seq != None:
+            field = fields[name_seq]
+            file_structs.write("    " + field["datatype"] + " " + name_seq + ";\n")
+
         newline_carryover = False;
         for name, field in fields.items():
-            if name.startswith("padding") or field["fixed"] != None or field["payload"]:
+            if name.startswith("padding") or field["payload"] or name == "global_seq" or name.endswith("descriptor"):
                 continue
             if newline_carryover:
                 file_structs.write("\n")
@@ -417,6 +444,17 @@ if f_packet_data != None:
             file_structs.write(";\n")
 
         file_structs.write("} " + struct + ";\n")
+
+    file_structs.write("\nunion " + data_prefix + "PacketData {\n")
+    file_structs.write("    struct {\n")
+    file_structs.write("        uint16_t desc;\n")
+    file_structs.write("        uint64_t seq;\n")
+    file_structs.write("    };\n")
+    for struct, fields in packet_structs.items():
+        if struct not in substructs:
+            file_structs.write("    " + struct + " " + orig_desc_names[struct] + ";\n")
+    file_structs.write("};\n")
+
     file_structs.write("\n#endif /* AVTRANSPORT_PACKET_DATA_H */\n")
     file_structs.close()
 
@@ -436,7 +474,7 @@ if f_packet_encode != None:
         newline_carryover = False;
         bitfield_bit = 0
         indent = "    "
-        file_encode.write("\nstatic void inline " + fn_prefix + "encode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, const " + struct + " *p)" + "\n{\n")
+        file_encode.write("\nstatic void inline " + fn_prefix + "encode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, const " + struct + " p)" + "\n{\n")
         def wsym(indent, sym, name, field):
             # Start
             if field["struct"] != None:
@@ -458,36 +496,28 @@ if f_packet_encode != None:
 
             # Length or name
             if sym == bsw["buf"]:
-                if field["struct"] != None:
-                    file_encode.write(", &p->" + name)
-                else:
-                    file_encode.write(", p->" + name)
+                file_encode.write(", p." + name)
             elif sym == bsw["pad"]:
                 file_encode.write(", " + str(field["bytestream"]))
 
             # Name or length
             if sym == bsw["buf"]:
                 if field["array_len"]:
-                    file_encode.write(", p->" + str(field["array_len"]))
+                    file_encode.write(", p." + str(field["array_len"]))
                 else:
                     file_encode.write(", " + str(field["bytestream"]))
             elif sym != bsw["pad"] and sym != bsw["ldpc"]:
                 if field["struct"] != None:
-                    file_encode.write(", &p->" + name)
-                elif field["fixed"] != None:
-                    val = str(field["fixed"])
-                    if name[:-11] in descriptors:
-                        name = name[:-11].upper()
-                        val = ''
-                        if field["size_bits"] == 8:
-                            val += "("
-                        val += data_prefix + "_PKT_" + name
-                        # Workaround/hack for bitfields in descriptors
-                        if field["size_bits"] == 8:
-                            val += " >> 8) & 0xFF"
-                    file_encode.write(", " + val)
+                    file_encode.write(", p." + name)
                 else:
-                    file_encode.write(", p->" + name)
+                    file_encode.write(", p." + name)
+
+            if name == "global_seq" or name == "target_seq":
+                file_encode.write(" & UINT32_MAX")
+            elif name.endswith("descriptor"):
+                file_encode.write(" & UINT16_MAX")
+                if field["size_bits"] < 16:
+                    file_encode.write(" >> 8")
 
             # Array index
             if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
@@ -534,14 +564,14 @@ if f_packet_encode != None:
                     file_encode.write(indent + "bitfield  = ")
                 else:
                     file_encode.write(indent + "bitfield |= ")
-                file_encode.write("p->" + name + " << (" + str(bitfield_bit + 1) + " - " + str(field["size_bits"]) + ");\n")
+                file_encode.write("p." + name + " << (" + str(bitfield_bit + 1) + " - " + str(field["size_bits"]) + ");\n")
                 bitfield_bit -= field["size_bits"]
             else:
                 if write_sym != bsw["fstr"] and (type(field["array_len"]) == int and field["array_len"] > 1):
                     file_encode.write(indent + "for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
                     indent = indent + "    "
                 if write_sym != bsw["fstr"] and (type(field["array_len"]) == str and field["bytestream"] > 1):
-                    file_encode.write(indent + "for (int i = 0; i < p->" + field["array_len"] + "; i++)\n")
+                    file_encode.write(indent + "for (int i = 0; i < p." + field["array_len"] + "; i++)\n")
                     indent = indent + "    "
                 wsym(indent, write_sym, name, field)
 
@@ -594,7 +624,7 @@ if f_packet_decode != None:
             file_decode.write("    AVTBytestream bss = avt_bs_init(data, len), *bs = &bss;\n\n")
         def rsym(indent, sym, name, field):
             # Start
-            if (sym == bsr["int"] or sym == bsr["rat"]) and field["struct"] == None and field["fixed"] == None:
+            if (sym == bsr["int"] or sym == bsr["rat"]) and field["struct"] == None:
                 file_decode.write(indent + "p->" + name)
                 # Array index
                 if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
@@ -602,8 +632,6 @@ if f_packet_decode != None:
                     sym != bsr["fstr"]:
                     file_decode.write("[i]")
                 file_decode.write(" = ")
-            elif field["fixed"]:
-                file_decode.write(indent + "if (")
             else:
                 file_decode.write(indent)
 
@@ -639,11 +667,16 @@ if f_packet_decode != None:
             if sym == bsr["buf"]:
                 file_decode.write(", p->" + str(field["array_len"]))
 
+            file_decode.write(")")
+
+            if name.endswith("descriptor") and field["size_bits"] < 16:
+                file_decode.write(" << 8");
+
+            file_decode.write(";\n")
             if field["fixed"] != None:
-                file_decode.write(") != " + "0x" + format(field["fixed"], "04X") + ")\n")
+                file_decode.write(indent + "if ((p->" + name + ")")
+                file_decode.write(" ^ " + "0x" + format(field["fixed"], "04X") + ")\n")
                 file_decode.write(indent + indent + "return AVT_ERROR(EINVAL);\n")
-            else:
-                file_decode.write(");\n")
 
         for name, field in fields.items():
             indent = "    "

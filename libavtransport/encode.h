@@ -24,37 +24,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_ENCODE
-#define LIBAVTRANSPORT_ENCODE
+#ifndef AVTRANSPORT_ENCODE
+#define AVTRANSPORT_ENCODE
 
-#include "output_internal.h"
+#include <avtransport/connection.h>
 
-/* Session start */
-int avt_send_session_start(AVTOutput *out);
+int avt_encode_header(uint8_t hdr[AVT_MAX_HEADER_LEN], size_t *hdr_len,
+                      enum AVTPktDescriptors desc, union AVTPacketData pkt,
+                      const uint8_t first[AVT_MAX_HEADER_LEN]);
 
-/* Time sync */
-int avt_send_time_sync(AVTOutput *out);
-
-/* Stream registration and data */
-int avt_send_stream_register(AVTOutput *out, AVTStream *st);
-int avt_send_stream_data(AVTOutput *out,
-                         AVTStream *st, AVTPacket *pkt);
-
-/* Generic data */
-int avt_send_generic_data(AVTOutput *out,
-                          AVTStream *st, AVTBuffer *data, int64_t pts,
-                          uint32_t first_desd, uint32_t seg_desc);
-
-/* LUT/ICC */
-int avt_send_lut_data(AVTOutput *out,
-                      AVTStream *st, int64_t pts);
-int avt_send_icc_data(AVTOutput *out,
-                      AVTStream *st, int64_t pts);
-
-/* Video info/orientation */
-int avt_send_video_info(AVTOutput *out,
-                        AVTStream *st, int64_t pts);
-int avt_send_video_orientation(AVTOutput *out,
-                               AVTStream *st, int64_t pts);
-
-#endif
+#endif /* AVTRANSPORT_ENCODE */
