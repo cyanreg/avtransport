@@ -1293,6 +1293,16 @@ the [[#codec-encapsulation]] addenda.
       :: Packet data contains a scalable/switch frame, able to be decoded standalone with acceptable degradation.
     : <dfn>FRAME_TYPE_P</dfn> = <i>0x2</i>
       :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
+    : <dfn>FRAME_TYPE_C1</dfn> = <i>0x3</i>
+      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
+    : <dfn>FRAME_TYPE_C2</dfn> = <i>0x4</i>
+      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
+    : <dfn>FRAME_TYPE_C3</dfn> = <i>0x5</i>
+      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
+    : <dfn>FRAME_TYPE_C4</dfn> = <i>0x6</i>
+      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
+    : <dfn>FRAME_TYPE_C5</dfn> = <i>0x7</i>
+      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
 </div>
 
 

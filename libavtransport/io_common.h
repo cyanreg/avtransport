@@ -29,6 +29,8 @@
 
 #include "connection_internal.h"
 
+#define IO_MAX_VECTORS 1024
+
 enum AVTIOType {
     AVT_IO_NULL,
     AVT_IO_SOCKET,
@@ -36,6 +38,15 @@ enum AVTIOType {
     AVT_IO_FILE,
     AVT_IO_FD,
 };
+
+typedef struct AVTIOVectors {
+    int nb_vecs;
+    struct {
+        uint8_t hdr[AVT_MAX_HEADER_LEN];
+        size_t hdr_len;
+        AVTBuffer *payload;
+    } vecs [IO_MAX_VECTORS];
+} AVTIOVectors;
 
 /* Low level interface */
 typedef struct AVTIOCtx AVTIOCtx;
@@ -54,7 +65,13 @@ typedef struct AVTIO {
     /* Removes a secondary destination, NULL if unsupported */
     int (*del_dst)(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr);
 
-    /* Write. Returns positive offset on success, otherwise negative error */
+    /* Write multiple packets.
+     * Returns positive offset after writing on success, otherwise negative error.
+     * May be NULL if unsupported. */
+    int64_t (*write_vec_output)(AVTContext *ctx, AVTIOCtx *io, AVTIOVectors vec);
+
+    /* Write a single packet to the output.
+     * Returns positive offset after writing on success, otherwise negative error. */
     int64_t (*write_output)(AVTContext *ctx, AVTIOCtx *io,
                             uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
                             AVTBuffer *payload);
