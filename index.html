@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="9ea409bed03a40cb0ae140c90a037a72ffc28e06" name="document-revision">
+  <meta content="67c132b798c0403d35a166cbab27c8fd98d15cc2" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-05">5 December 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-07">7 December 2023</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 5 December 2023,
+In addition, as of 7 December 2023,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -3282,6 +3282,21 @@ the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addenda.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_p"><code>FRAME_TYPE_P</code><a class="self-link" href="#dom-enum-frametype-frame_type_p"></a></dfn> = <i>0x2</i>
      <dd data-md>
       <p>Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_c1"><code>FRAME_TYPE_C1</code><a class="self-link" href="#dom-enum-frametype-frame_type_c1"></a></dfn> = <i>0x3</i>
+     <dd data-md>
+      <p>Packet data contains a frame with a type defined in <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_c2"><code>FRAME_TYPE_C2</code><a class="self-link" href="#dom-enum-frametype-frame_type_c2"></a></dfn> = <i>0x4</i>
+     <dd data-md>
+      <p>Packet data contains a frame with a type defined in <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_c3"><code>FRAME_TYPE_C3</code><a class="self-link" href="#dom-enum-frametype-frame_type_c3"></a></dfn> = <i>0x5</i>
+     <dd data-md>
+      <p>Packet data contains a frame with a type defined in <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_c4"><code>FRAME_TYPE_C4</code><a class="self-link" href="#dom-enum-frametype-frame_type_c4"></a></dfn> = <i>0x6</i>
+     <dd data-md>
+      <p>Packet data contains a frame with a type defined in <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-export id="dom-enum-frametype-frame_type_c5"><code>FRAME_TYPE_C5</code><a class="self-link" href="#dom-enum-frametype-frame_type_c5"></a></dfn> = <i>0x7</i>
+     <dd data-md>
+      <p>Packet data contains a frame with a type defined in <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a>.</p>
     </dl>
    </div>
    <h4 class="heading settled" data-level="2.7.2" id="enum-DataCompression"><span class="secno">2.7.2. </span><span class="content">Data Compression Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-datacompression"><code>DataCompression</code></dfn>)</span><a class="self-link" href="#enum-DataCompression"></a></h4>
@@ -5890,6 +5905,11 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#time-synchronization-packets-framerate">framerate</a><span>, in § 2.18</span>
    <li><a href="#stream-data-packet-frame_type">frame_type</a><span>, in § 2.7</span>
    <li><a href="#enumdef-frametype">FrameType</a><span>, in § 2.7.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_c1">FRAME_TYPE_C1</a><span>, in § 2.7.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_c2">FRAME_TYPE_C2</a><span>, in § 2.7.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_c3">FRAME_TYPE_C3</a><span>, in § 2.7.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_c4">FRAME_TYPE_C4</a><span>, in § 2.7.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_c5">FRAME_TYPE_C5</a><span>, in § 2.7.1</span>
    <li><a href="#dom-enum-frametype-frame_type_key">FRAME_TYPE_KEY</a><span>, in § 2.7.1</span>
    <li><a href="#dom-enum-frametype-frame_type_p">FRAME_TYPE_P</a><span>, in § 2.7.1</span>
    <li><a href="#dom-enum-frametype-frame_type_s">FRAME_TYPE_S</a><span>, in § 2.7.1</span>
