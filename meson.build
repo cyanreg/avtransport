@@ -87,12 +87,14 @@ endif
 threads_dep = dependency('threads', required: true)
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
+brotli_dep = dependency('libzstd', required: false)
 lib_deps = [
     cc.find_library('m', required: true),
     threads_dep,
 
     uring_dep,
     zstd_dep,
+    brotli_dep,
 ]
 
 # Configure file
@@ -111,6 +113,7 @@ conf.set('CONFIG_OUTPUT', get_option('output').auto())
 
 conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
 conf.set('CONFIG_HAVE_LIBZSTD', zstd_dep.found())
+conf.set('CONFIG_HAVE_LIBBROTLI', brotli_dep.found())
 
 if get_option('assert') > -1
     conf.set('CONFIG_ASSERT_LEVEL', get_option('assert'))

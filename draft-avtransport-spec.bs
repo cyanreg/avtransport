@@ -847,18 +847,21 @@ in the following manner:
 
     : <dfn>STREAM_HEARING_IMPAIRED</dfn> = 0x200
       :: Stream is intended for hearing impaired audiences.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
+
+          Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_VISUALLY_IMPAIRED</dfn> = <i>0x400</i>
       :: Stream is intended for visually impaired audiences.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
+
+          Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_NO_DIALOGUE</dfn> = <i>0x800</i>
       :: Stream contains music and sound effects without voice.
 
     : <dfn>STREAM_NON_DIEGETIC</dfn> = <i>0x1000</i>
       :: Stream contains non-diegetic audio.
-         Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
+
+          Note: If [=related_stream_id=] is not equal to [=stream_id=], both should be mixed in.
 
     : <dfn>STREAM_DESCRIPTIONS</dfn> = <i>0x2000</i>
       :: Stream contains textual or spoken descriptions to the stream signalled in [=related_stream_id=].
@@ -1313,6 +1316,17 @@ the [[#codec-encapsulation]] addenda.
       :: Packet data is uncompressed
     : <dfn>DATA_COMPRESSION_ZSTD</dfn> = <i>0x1</i>
       :: Packet data is compressed with Zstandard, defined in IETF [[RFC8878]].
+
+          Note: Zstandard is a general purpose format, suitable for images,
+                audio, and binary data such as ICC or CUBE packets. Therefore,
+                it should be the preferred format for such payloads.
+
+    : <dfn>DATA_COMPRESSION_BROTLI</dfn> = <i>0x2</i>
+      :: Packet data is compressed with Zstandard, defined in IETF [[RFC7932]].
+
+          Note: Brotli is more optimized for <b>text</b> rather than generic data,
+                and should be the preferred format for subtitles. Presently, it is
+                also more supported on the web.
 </div>
 
 Any undefined values are hereby reserved and must not be present in a compliant
@@ -1394,6 +1408,7 @@ FEC grouped streams MUST be registered first via a special packet:
             <td></td>
             <td>
                 Indicates the ID for this FEC grouping.</br>
+
                 Note: Must not overlap with [=stream_id=].
             </td>
         </tr>
@@ -2061,6 +2076,7 @@ The following structure MUST be followed:
             <td></td>
             <td>
                 The stream ID for which to make the font available.
+
                 Note: may be set to ''0xffff'' to make the font available for all streams.
             </td>
         </tr>
@@ -2415,7 +2431,9 @@ The [=colorspace=] field must be interpreted in the following way:
       :: Video contains [[CIE1931]] XYZ color data.
     : <dfn>CSP_XYB</dfn> = <i>0x6</i>
       :: Video contains XYB color data, as defined by [[ISO18181]].
-         Note: [matrix] must be equal to ''0xFF'' and the [=custom_matrix=] must be a valid matrix to transform XYB into RGB.
+
+          Note: [matrix] must be equal to ''0xFF'' and the [=custom_matrix=] must be a valid matrix to transform XYB into RGB.
+
     : <dfn>CSP_ICTCP</dfn> = <i>0x5</i>
       :: Video contains [[BT2100]] ICtCp color data.
     : <dfn>CSP_BAYER_BGGR</dfn> = <i>0x6</i>
@@ -2438,10 +2456,10 @@ The [=colorspace=] field must be interpreted in the following way:
       :: Video sample values contains the limited range of the [=bit_depth=].
 
           Note: this describes the <i>cannonical</i> limited range representation:
-               <code>(219 * E + 16) * 2<sup>([=bit_depth=]-8)</sup></code>,
-               where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for <i>luma</i> planes and
-               ''-0.5'' to ''0.5'' for <i>chroma</i> planes. This means, for 8-bits, the luma
-               range is 16-235 and the chroma range is 16-240.
+                <code>(219 * E + 16) * 2<sup>([=bit_depth=]-8)</sup></code>,
+                where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for <i>luma</i> planes and
+                ''-0.5'' to ''0.5'' for <i>chroma</i> planes. This means, for 8-bits, the luma
+                range is 16-235 and the chroma range is 16-240.
 </div>
 
 
@@ -2466,7 +2484,7 @@ to interpret the value of [=field_id=] in stream data packet headers.
     : <dfn>ILACE_PROG</dfn> = <i>0x0</i>
       :: Video contains progressive data, or interlacing does not apply.
 
-      Note: in this mode, the [=field_id=] bit is free to use by users. Implementations must ignore it, and preserve it.
+          Note: in this mode, the [=field_id=] bit is free to use by users. Implementations must ignore it, and preserve it.
 
     : <dfn>ILACE_TFF</dfn> = <i>0x1</i>
       :: Video is interlaced. One [[#stream-data-packets]] packet per <i>field</i>. If the data packet's [=field_id=] bit is <b>unset</b>, indicates the field contained is the <b>top</b> field, otherwise it's the <i>bottom</i> field.
@@ -2491,17 +2509,17 @@ the setting used, if the codec supports this.
     : <dfn>CHROMA_POS_LEFT</dfn> = <i>0x1</i>
       :: Chroma position is between 2 luma samples on different lines.
 
-      Note: This is the default chroma position for MPEG-2, H.263 with {{CHROMA_422}}, and H.264 with {{CHROMA_420}}.
+          Note: This is the default chroma position for MPEG-2, H.263 with {{CHROMA_422}}, and H.264 with {{CHROMA_420}}.
 
     : <dfn>CHROMA_POS_CENTER</dfn> = <i>0x2</i>
       :: Chroma position is in the middle between all neighbouring luma samples on 2 lines.
 
-      Note: This is the default chroma position for JPEG with {{CHROMA_420}}, and H.263 with {{CHROMA_420}}.
+          Note: This is the default chroma position for JPEG with {{CHROMA_420}}, and H.263 with {{CHROMA_420}}.
 
     : <dfn>CHROMA_POS_TOPLEFT</dfn> = <i>0x3</i>
       :: Chroma position coincides with top left's luma sample position.
 
-      Note: This is the default chroma position for MPEG-2 with {{CHROMA_422}}.
+          Note: This is the default chroma position for MPEG-2 with {{CHROMA_422}}.
 
     : <dfn>CHROMA_POS_TOP</dfn> = <i>0x4</i>
       :: Chroma position is between 2 luma samples on the same top line.

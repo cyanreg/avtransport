@@ -28,8 +28,14 @@
 
 #include "output_packet.h"
 
+#include "../config.h"
+
 #ifdef CONFIG_HAVE_LIBZSTD
 #include <zstd.h>
+#endif
+
+#ifdef CONFIG_HAVE_LIBBROTLI
+#include <brotli/encode.h>
 #endif
 
 static inline int avt_send_pkt(union AVTPacketData pkt)
@@ -49,13 +55,21 @@ static inline int avt_interleave_start(AVTOutput *out, AVTStream *st,
     return 0;
 }
 
+#ifdef CONFIG_HAVE_LIBBROTLI
+static void avt_brotli_data_free(void *opaque, void *base_data)
+{
+    BrotliEncoderState *brotli_ctx = opaque;
+    BrotliEncoderDestroyInstance(brotli_ctx);
+}
+#endif
+
 static inline int avt_payload_compress(AVTOutput *out,
                                        AVTBuffer **data, enum AVTPktDescriptors desc,
                                        enum AVTDataCompression *data_compression)
 {
     int err = 0;
 
-    int lvl = 0;
+    int lvl = -1;
     enum AVTDataCompression method = AVT_DATA_COMPRESSION_NONE;
 
     switch (method) {
@@ -71,7 +85,8 @@ static inline int avt_payload_compress(AVTOutput *out,
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
-        size_t dst_len = ZSTD_compressCCtx(out->zstd_ctx, dst, dst_size, src, src_len, lvl);
+        size_t dst_len = ZSTD_compressCCtx(out->zstd_ctx, dst, dst_size, src, src_len,
+                                           lvl < 0 ? ZSTD_CLEVEL_DEFAULT : lvl);
         if (!dst_len) {
             avt_log(out, AVT_LOG_ERROR, "Error while compressing with ZSTD!\n");
             err = AVT_ERROR(EINVAL);
@@ -89,6 +104,44 @@ static inline int avt_payload_compress(AVTOutput *out,
         *data = tmp;
 #else
         avt_log(out, AVT_LOG_ERROR, "ZSTD compression not enabled during build!\n");
+        err = AVT_ERROR(EINVAL);
+#endif
+        break;
+    }
+    case AVT_DATA_COMPRESSION_BROTLI: {
+#ifdef CONFIG_HAVE_LIBBROTLI
+        size_t src_len;
+        uint8_t *src = avt_buffer_get_data(*data, &src_len);
+
+        size_t dst_size = BrotliEncoderMaxCompressedSize(src_len);
+
+        /* TODO: use a buffer pool */
+        uint8_t *dst = malloc(dst_size);
+        if (!dst)
+            return AVT_ERROR(ENOMEM);
+
+        /* Brotli has a braindead advanced API that
+         * makes it really hard to use pooling. Since Brotli is mostly
+         * used by text, meh, good enough for now. */
+        if (!BrotliEncoderCompress(lvl < 0 ? BROTLI_DEFAULT_QUALITY : lvl,
+                                   BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
+                                   src_len, src, &dst_size, dst)) {
+            avt_log(out, AVT_LOG_ERROR, "Error while compressing with Brotli!\n");
+            err = AVT_ERROR(EINVAL);
+            free(dst);
+            break;
+        }
+
+        AVTBuffer *tmp = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
+        if (!tmp) {
+            free(dst);
+            err = AVT_ERROR(ENOMEM);
+            break;
+        }
+
+        *data = tmp;
+#else
+        avt_log(out, AVT_LOG_ERROR, "Brotli compression not enabled during build!\n");
         err = AVT_ERROR(EINVAL);
 #endif
         break;
