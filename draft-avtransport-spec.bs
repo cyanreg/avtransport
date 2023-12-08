@@ -4007,6 +4007,45 @@ This structure is flexible enough to permit zero-copy or one-copy streaming
 of video from most sources.
 
 
+### JPEG XL codestream encapsulation ### {#jxl-encapsulation}
+
+For JXL codestream streams, the [=codec_id=] in the
+[[#stream-registration-packets]] must be ''0x4a584c20'' (''JXL '').
+
+JXL streams require no [[#stream-configuration-packets]]. A JXL stream may
+optionally contain a [[#stream-configuration-packets]]. The payload of such
+a packet MUST be exactly one byte long. The payload is a <code>u(8)</code>
+integer which equals the level of the encapsulated codestreams. Levels are
+defined in [[ISO18181]].
+
+If no stream configuration packet is present, codestreams are assumed to be
+level 5.
+
+The [=packet_data=] MUST contain an entire JXL codestream and the frame type MUST be
+FRAME_TYPE_KEY.
+
+JXL codestreams may optionally be accompanied by JPEG Bitstream Reconstruction Data (JBRD).
+JBRD is not part of a JXL codestream, but it may be sent with a JXL codestream. If JBRD is
+present for a specific codetream, it may be sent as a packet with FRAME_TYPE_C1, but only
+after that JXL codestream has been sent. The JBRD packet must have the same PTS as
+its associated JXL codestream.
+
+JBRD packets may not be compressed except by the mechanisms provided by AVTransport itself.
+
+JXL codestreams encapsulated by this section MUST NOT be animated JXL codestreams. Codestreams
+as used in this section are raw codestreams as defined in ISO18181-1. The container format
+defined in ISO18181-2 is not supported.
+
+If the AVTransport container signals that a JXL image is rotated, it is applied after the
+orientation flag signalled by the JXL codestream.
+
+If a JXL codestream is internally flagged as XYB-encoded, the color information signalled
+by AVTransport SHOULD agree with the color information signalled by the codestream itself.
+If they do not, the color information signalled by the codestream itself takes precedence.
+
+If a JXL image is internally flagged as not XYB-encoded, the color information signalled
+by AVTransport MUST agree with the color information signalled by the codestream itself.
+
 ### Custom codec encapsulation ### {#custom-codec-encapsulation}
 
 A special section is dedicated for custom codec storage. While potentially useful
