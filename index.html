@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="67c132b798c0403d35a166cbab27c8fd98d15cc2" name="document-revision">
+  <meta content="a918281c8e2eaaf487db80a66a2964fa3450c9ce" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-07">7 December 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-08">8 December 2023</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 7 December 2023,
+In addition, as of 8 December 2023,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2920,19 +2920,19 @@ in the following manner:</p>
       <p>Stream is a karaoke track to the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑥">related_stream_id</a>.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_hearing_impaired"><code>STREAM_HEARING_IMPAIRED</code></dfn> = 0x200
      <dd data-md>
-      <p>Stream is intended for hearing impaired audiences.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑦">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id③">stream_id</a>, both should be mixed in.</p>
+      <p>Stream is intended for hearing impaired audiences.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑦">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id③">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_visually_impaired"><code>STREAM_VISUALLY_IMPAIRED</code><a class="self-link" href="#dom-enum-streamflags-stream_visually_impaired"></a></dfn> = <i>0x400</i>
      <dd data-md>
-      <p>Stream is intended for visually impaired audiences.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑧">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id④">stream_id</a>, both should be mixed in.</p>
+      <p>Stream is intended for visually impaired audiences.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑧">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id④">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_no_dialogue"><code>STREAM_NO_DIALOGUE</code><a class="self-link" href="#dom-enum-streamflags-stream_no_dialogue"></a></dfn> = <i>0x800</i>
      <dd data-md>
       <p>Stream contains music and sound effects without voice.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_non_diegetic"><code>STREAM_NON_DIEGETIC</code><a class="self-link" href="#dom-enum-streamflags-stream_non_diegetic"></a></dfn> = <i>0x1000</i>
      <dd data-md>
-      <p>Stream contains non-diegetic audio.
- Note: If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑨">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id⑤">stream_id</a>, both should be mixed in.</p>
+      <p>Stream contains non-diegetic audio.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> If <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id⑨">related_stream_id</a> is not equal to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id⑤">stream_id</a>, both should be mixed in.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_descriptions"><code>STREAM_DESCRIPTIONS</code><a class="self-link" href="#dom-enum-streamflags-stream_descriptions"></a></dfn> = <i>0x2000</i>
      <dd data-md>
       <p>Stream contains textual or spoken descriptions to the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①⓪">related_stream_id</a>.</p>
@@ -3308,6 +3308,15 @@ the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addenda.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-export id="dom-enum-datacompression-data_compression_zstd"><code>DATA_COMPRESSION_ZSTD</code><a class="self-link" href="#dom-enum-datacompression-data_compression_zstd"></a></dfn> = <i>0x1</i>
      <dd data-md>
       <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc8878" title="Zstandard Compression and the &apos;application/zstd&apos; Media Type">[RFC8878]</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> Zstandard is a general purpose format, suitable for images,
+        audio, and binary data such as ICC or CUBE packets. Therefore,
+        it should be the preferred format for such payloads.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-export id="dom-enum-datacompression-data_compression_brotli"><code>DATA_COMPRESSION_BROTLI</code><a class="self-link" href="#dom-enum-datacompression-data_compression_brotli"></a></dfn> = <i>0x2</i>
+     <dd data-md>
+      <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc7932" title="Brotli Compressed Data Format">[RFC7932]</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> Brotli is more optimized for <b>text</b> rather than generic data,
+        and should be the preferred format for subtitles. Presently, it is
+        also more supported on the web.</p>
     </dl>
    </div>
    <p>Any undefined values are hereby reserved and must not be present in a compliant
@@ -3369,7 +3378,9 @@ streams to be FEC corrected in order to ensure no stream is starved of data.</p>
        <td><code>b(16)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#fec-grouping-packets" data-dfn-type="dfn" data-noexport id="fec-grouping-packets-group_id">group_id</dfn>
        <td>
-       <td> Indicates the ID for this FEC grouping.<br> Note: Must not overlap with <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①①">stream_id</a>. 
+       <td>
+         Indicates the ID for this FEC grouping.<br> 
+        <p class="note" role="note"><span class="marker">Note:</span> Must not overlap with <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①①">stream_id</a>.</p>
       <tr id="0x0030+2">
        <td><code>u(32)</code>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①⓪">global_seq</a>
@@ -3921,8 +3932,9 @@ these fonts must be made available for the ASS stream.</p>
        <td><code>b(16)</code>
        <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①⑦">stream_id</a>
        <td>
-       <td> The stream ID for which to make the font available.
-                Note: may be set to <span class="css">0xffff</span> to make the font available for all streams. 
+       <td>
+         The stream ID for which to make the font available. 
+        <p class="note" role="note"><span class="marker">Note:</span> may be set to <span class="css">0xffff</span> to make the font available for all streams.</p>
       <tr id="0x0020+2">
        <td><code>u(32)</code>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①⑤">global_seq</a>
@@ -4224,8 +4236,8 @@ stream after decoding.</p>
       <p>Video contains <a data-link-type="biblio" href="#biblio-cie1931" title="Commission internationale de l&apos;Eclairage proceedings">[CIE1931]</a> XYZ color data.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_xyb"><code>CSP_XYB</code><a class="self-link" href="#dom-enum-colorspace-csp_xyb"></a></dfn> = <i>0x6</i>
      <dd data-md>
-      <p>Video contains XYB color data, as defined by <a data-link-type="biblio" href="#biblio-iso18181" title="JPEG XL image coding system — Part 1: Core coding system">[ISO18181]</a>.
- Note: [matrix] must be equal to <span class="css">0xFF</span> and the <a data-link-type="dfn" href="#time-synchronization-packets-custom_matrix" id="ref-for-time-synchronization-packets-custom_matrix">custom_matrix</a> must be a valid matrix to transform XYB into RGB.</p>
+      <p>Video contains XYB color data, as defined by <a data-link-type="biblio" href="#biblio-iso18181" title="JPEG XL image coding system — Part 1: Core coding system">[ISO18181]</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> [matrix] must be equal to <span class="css">0xFF</span> and the <a data-link-type="dfn" href="#time-synchronization-packets-custom_matrix" id="ref-for-time-synchronization-packets-custom_matrix">custom_matrix</a> must be a valid matrix to transform XYB into RGB.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-export id="dom-enum-colorspace-csp_ictcp"><code>CSP_ICTCP</code><a class="self-link" href="#dom-enum-colorspace-csp_ictcp"></a></dfn> = <i>0x5</i>
      <dd data-md>
       <p>Video contains <a data-link-type="biblio" href="#biblio-bt2100" title="BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange">[BT2100]</a> ICtCp color data.</p>
@@ -4253,8 +4265,8 @@ stream after decoding.</p>
      <dd data-md>
       <p>Video sample values contains the limited range of the <a data-link-type="dfn" href="#time-synchronization-packets-bit_depth" id="ref-for-time-synchronization-packets-bit_depth①">bit_depth</a>.</p>
       <p class="note" role="note"><span class="marker">Note:</span> this describes the <i>cannonical</i> limited range representation: <code>(219 * E + 16) * 2<sup>(<a data-link-type="dfn" href="#time-synchronization-packets-bit_depth" id="ref-for-time-synchronization-packets-bit_depth②">bit_depth</a>-8)</sup></code>,
-       where <code>E</code>, the input range, is <span class="css">0.0</span> to <span class="css">1.0</span> for <i>luma</i> planes and <span class="css">-0.5</span> to <span class="css">0.5</span> for <i>chroma</i> planes. This means, for 8-bits, the luma
-       range is 16-235 and the chroma range is 16-240.</p>
+        where <code>E</code>, the input range, is <span class="css">0.0</span> to <span class="css">1.0</span> for <i>luma</i> planes and <span class="css">-0.5</span> to <span class="css">0.5</span> for <i>chroma</i> planes. This means, for 8-bits, the luma
+        range is 16-235 and the chroma range is 16-240.</p>
     </dl>
    </div>
    <h3 class="heading settled" data-level="2.21" id="enum-ChromaSubsampling"><span class="secno">2.21. </span><span class="content">Chroma Subsampling Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-chromasubsampling"><code>ChromaSubsampling</code></dfn>)</span><a class="self-link" href="#enum-ChromaSubsampling"></a></h3>
@@ -4279,9 +4291,7 @@ to interpret the value of <a data-link-type="dfn" href="#stream-data-packet-fiel
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Interlacing" data-dfn-type="enum-value" data-export id="dom-enum-interlacing-ilace_prog"><code>ILACE_PROG</code><a class="self-link" href="#dom-enum-interlacing-ilace_prog"></a></dfn> = <i>0x0</i>
      <dd data-md>
       <p>Video contains progressive data, or interlacing does not apply.</p>
-    </dl>
-    <p class="note" role="note"><span class="marker">Note:</span> in this mode, the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id①">field_id</a> bit is free to use by users. Implementations must ignore it, and preserve it.</p>
-    <dl>
+      <p class="note" role="note"><span class="marker">Note:</span> in this mode, the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id①">field_id</a> bit is free to use by users. Implementations must ignore it, and preserve it.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-Interlacing" data-dfn-type="enum-value" data-export id="dom-enum-interlacing-ilace_tff"><code>ILACE_TFF</code></dfn> = <i>0x1</i>
      <dd data-md>
       <p>Video is interlaced. One <a href="#stream-data-packets">§ 2.7 Stream Data</a> packet per <i>field</i>. If the data packet’s <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id②">field_id</a> bit is <b>unset</b>, indicates the field contained is the <b>top</b> field, otherwise it’s the <i>bottom</i> field.</p>
@@ -4308,21 +4318,15 @@ the setting used, if the codec supports this.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-ChromaPosition" data-dfn-type="enum-value" data-export id="dom-enum-chromaposition-chroma_pos_left"><code>CHROMA_POS_LEFT</code></dfn> = <i>0x1</i>
      <dd data-md>
       <p>Chroma position is between 2 luma samples on different lines.</p>
-    </dl>
-    <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for MPEG-2, H.263 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_422" id="ref-for-dom-enum-chromasubsampling-chroma_422">CHROMA_422</a></code>, and H.264 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420">CHROMA_420</a></code>.</p>
-    <dl>
+      <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for MPEG-2, H.263 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_422" id="ref-for-dom-enum-chromasubsampling-chroma_422">CHROMA_422</a></code>, and H.264 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420">CHROMA_420</a></code>.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-ChromaPosition" data-dfn-type="enum-value" data-export id="dom-enum-chromaposition-chroma_pos_center"><code>CHROMA_POS_CENTER</code></dfn> = <i>0x2</i>
      <dd data-md>
       <p>Chroma position is in the middle between all neighbouring luma samples on 2 lines.</p>
-    </dl>
-    <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for JPEG with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420①">CHROMA_420</a></code>, and H.263 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420②">CHROMA_420</a></code>.</p>
-    <dl>
+      <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for JPEG with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420①">CHROMA_420</a></code>, and H.263 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_420" id="ref-for-dom-enum-chromasubsampling-chroma_420②">CHROMA_420</a></code>.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-ChromaPosition" data-dfn-type="enum-value" data-export id="dom-enum-chromaposition-chroma_pos_topleft"><code>CHROMA_POS_TOPLEFT</code></dfn> = <i>0x3</i>
      <dd data-md>
       <p>Chroma position coincides with top left’s luma sample position.</p>
-    </dl>
-    <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for MPEG-2 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_422" id="ref-for-dom-enum-chromasubsampling-chroma_422①">CHROMA_422</a></code>.</p>
-    <dl>
+      <p class="note" role="note"><span class="marker">Note:</span> This is the default chroma position for MPEG-2 with <code class="idl"><a data-link-type="idl" href="#dom-enum-chromasubsampling-chroma_422" id="ref-for-dom-enum-chromasubsampling-chroma_422①">CHROMA_422</a></code>.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-ChromaPosition" data-dfn-type="enum-value" data-export id="dom-enum-chromaposition-chroma_pos_top"><code>CHROMA_POS_TOP</code></dfn> = <i>0x4</i>
      <dd data-md>
       <p>Chroma position is between 2 luma samples on the same top line.</p>
@@ -5839,6 +5843,7 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#dom-enum-colorspace-csp_yuv">CSP_YUV</a><span>, in § 2.19</span>
    <li><a href="#time-synchronization-packets-custom_matrix">custom_matrix</a><span>, in § 2.18</span>
    <li><a href="#enumdef-datacompression">DataCompression</a><span>, in § 2.7.2</span>
+   <li><a href="#dom-enum-datacompression-data_compression_brotli">DATA_COMPRESSION_BROTLI</a><span>, in § 2.7.2</span>
    <li><a href="#dom-enum-datacompression-data_compression_none">DATA_COMPRESSION_NONE</a><span>, in § 2.7.2</span>
    <li><a href="#dom-enum-datacompression-data_compression_zstd">DATA_COMPRESSION_ZSTD</a><span>, in § 2.7.2</span>
    <li><a href="#stream-data-packet-data_length">data_length</a><span>, in § 2.7</span>
@@ -6232,6 +6237,8 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <dd>J. Postel. <a href="https://www.rfc-editor.org/rfc/rfc768"><cite>User Datagram Protocol</cite></a>. August 1980. Internet Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc768">https://www.rfc-editor.org/rfc/rfc768</a>
    <dt id="biblio-rfc7845">[RFC7845]
    <dd>T. Terriberry; R. Lee; R. Giles. <a href="https://www.rfc-editor.org/rfc/rfc7845"><cite>Ogg Encapsulation for the Opus Audio Codec</cite></a>. April 2016. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc7845">https://www.rfc-editor.org/rfc/rfc7845</a>
+   <dt id="biblio-rfc7932">[RFC7932]
+   <dd>J. Alakuijala; Z. Szabadka. <a href="https://www.rfc-editor.org/rfc/rfc7932"><cite>Brotli Compressed Data Format</cite></a>. July 2016. Informational. URL: <a href="https://www.rfc-editor.org/rfc/rfc7932">https://www.rfc-editor.org/rfc/rfc7932</a>
    <dt id="biblio-rfc8486">[RFC8486]
    <dd>J. Skoglund; M. Graczyk. <a href="https://www.rfc-editor.org/rfc/rfc8486"><cite>Ambisonics in an Ogg Opus Container</cite></a>. October 2018. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc8486">https://www.rfc-editor.org/rfc/rfc8486</a>
    <dt id="biblio-rfc8878">[RFC8878]
