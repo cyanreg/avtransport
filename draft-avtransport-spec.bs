@@ -871,6 +871,9 @@ in the following manner:
 
     : <dfn>STREAM_THUMBNAILS</dfn> = <i>0x8000</i>
       :: Stream contains temporally sparse thumbnails to the stream signalled in [=related_stream_id=].
+
+    : <dfn>STREAM_BINAURAL</dfn> = <i>0x10000</i>
+      :: Stream contains binaural audio. If set, pre-processing for headphones should be disabled.
 </div>
 
 Several streams can be <b>chained</b> with the {{SESSION_LOW_QUALITY}} bit set to indicate
