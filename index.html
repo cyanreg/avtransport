@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="a918281c8e2eaaf487db80a66a2964fa3450c9ce" name="document-revision">
+  <meta content="518b6f04e5732ffb1df5d711df30c714991d8779" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-08">8 December 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-09">9 December 2023</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 8 December 2023,
+In addition, as of 9 December 2023,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2942,6 +2942,9 @@ in the following manner:</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_thumbnails"><code>STREAM_THUMBNAILS</code><a class="self-link" href="#dom-enum-streamflags-stream_thumbnails"></a></dfn> = <i>0x8000</i>
      <dd data-md>
       <p>Stream contains temporally sparse thumbnails to the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①①">related_stream_id</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-export id="dom-enum-streamflags-stream_binaural"><code>STREAM_BINAURAL</code><a class="self-link" href="#dom-enum-streamflags-stream_binaural"></a></dfn> = <i>0x10000</i>
+     <dd data-md>
+      <p>Stream contains binaural audio. If set, pre-processing for headphones should be disabled.</p>
     </dl>
    </div>
    <p>Several streams can be <b>chained</b> with the <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-session_low_quality" id="ref-for-dom-enum-streamflags-session_low_quality">SESSION_LOW_QUALITY</a></code> bit set to indicate
@@ -6077,6 +6080,7 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#session-start-packets-session_version">session_version</a><span>, in § 2.1</span>
    <li><a href="#time-synchronization-packets-signal_aspect">signal_aspect</a><span>, in § 2.18</span>
    <li><a href="#stream-registration-packets-skip_preroll">skip_preroll</a><span>, in § 2.4</span>
+   <li><a href="#dom-enum-streamflags-stream_binaural">STREAM_BINAURAL</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-streamflags-stream_commentary">STREAM_COMMENTARY</a><span>, in § 2.4.2</span>
    <li><a href="#stream-configuration-packets-stream_config_descriptor">stream_config_descriptor</a><span>, in § 2.6</span>
    <li><a href="#stream-configuration-packets-stream_config_parity_descriptor">stream_config_parity_descriptor</a><span>, in § 2.6</span>
