@@ -473,6 +473,35 @@ Network Time Protocol (NTP), specified in [[RFC5905]], or any other protocol to 
 simply assume all device are already synchronized.
 
 
+## URI scheme ## {#uri-scheme}
+
+The recommended URI scheme is:
+
+<code><xmp>avt://[<transport>[:<mode>]@]<address>[:<port>][/<stream_id>[+<stream_id>][?<params>]]</xmp></code>
+
+ - &lt;transport&gt; may be either missing (default: ''udp'') or:
+     * ''udp'': for [[#udp-streaming]] streams
+     * ''udplite'': for [[#udp-lite-streaming]] streams
+     * ''quic'': for [[#quic-streaming]] streams
+     * ''file'': for <b>local</b> files
+ - &lt;mode&gt; is an optional setting which has different meanings for senders and receivers:
+     * Senders:
+         - ''active'': the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.
+         - ''passive'' means to wait for receivers to send packets on the given address to begin transmitting back to them.
+     * Receivers:
+         - ''passive'': the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.
+         - ''active'':means that receivers will actively connect and try to request a stream from the target address.
+ - &lt;address&gt; of the remote host, or local host, multicast group, or local file.
+ - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols.
+ - &lt;stream_id&gt; of the stream(s) to present as default (overriding those signalled by the sender).
+ - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>.
+
+Note: Alternatively, for UDP-only, the <code>udp://&lt;address&gt;:&lt;port&gt;</code> URI scheme may be used,
+at the risk of conflict with other protocols (''MPEG-TS'' or ''Matroska'').
+
+Note: When handling AVTransport files, it is recommended to use the <b>.avt</b> file extension.
+
+
 # Packet structure # {#packet-structure}
 
 This section lists the syntax of each individual packet type and specifies its purpose,
