@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="eb3ff86eb6336ad9902b8673841c89383b5d6369" name="document-revision">
+  <meta content="745be58828ba054538c908c9d4182f5dd6f2c19c" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2617,7 +2617,7 @@ simply assume all device are already synchronized.</p>
    <h3 class="heading settled" data-level="1.8" id="uri-scheme"><span class="secno">1.8. </span><span class="content">URI scheme</span><a class="self-link" href="#uri-scheme"></a></h3>
    <p>The recommended URI scheme is:</p>
    <p><code></code></p>
-   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt;stream_id>][?&lt;params>]]</pre></code>
+   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/[&lt;stream_id>][?&lt;params>]]</pre></code>
    <p></p>
    <ul>
     <li data-md>
@@ -2636,7 +2636,7 @@ simply assume all device are already synchronized.</p>
      <p>&lt;mode> is an optional setting which has different meanings for senders and receivers:</p>
      <ul>
       <li data-md>
-       <p>Senders:</p>
+       <p>Sender:</p>
        <ul>
         <li data-md>
          <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active">active</a>: the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.</p>
@@ -2644,7 +2644,7 @@ simply assume all device are already synchronized.</p>
          <p><span class="css">passive</span> means to wait for receivers to send packets on the given address to begin transmitting back to them.</p>
        </ul>
       <li data-md>
-       <p>Receivers:</p>
+       <p>Receiver:</p>
        <ul>
         <li data-md>
          <p><span class="css">passive</span>: the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.</p>
@@ -2655,11 +2655,15 @@ simply assume all device are already synchronized.</p>
     <li data-md>
      <p>&lt;address> of the remote host, or local host, multicast group, or local file.</p>
     <li data-md>
-     <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols.</p>
+     <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. If not specified, port <b>8212</b> shall be the default port.</p>
     <li data-md>
-     <p>&lt;stream_id> of the stream(s) to present as default (overriding those signalled by the sender).</p>
+     <p>&lt;stream_id> is an optional, <b>unique</b>, <b>pre-shared</b> 64-bit value.</p>
     <li data-md>
-     <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>.</p>
+     <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by a comma:</p>
+     <ul>
+      <li data-md>
+       <p>default=&lt;stream_id1>+&lt;stream_id2>: Specifies streams to assign as being the default</p>
+     </ul>
    </ul>
    <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the <code>udp://&lt;address>:&lt;port></code> URI scheme may be used,
 at the risk of conflict with other protocols (<span class="css">MPEG-TS</span> or <span class="css">Matroska</span>).</p>
@@ -2695,40 +2699,55 @@ as an AVTransport session. The syntax is as follows:</p>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①">global_seq</a>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
+      <tr id="0x4156+4">
+       <td><code>16*b(8)</code>
+       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-sender_uuid">sender_uuid<a class="self-link" href="#session-start-packets-sender_uuid"></a></dfn>
+       <td>
+       <td>UUID of the sender.
       <tr id="0x4156+3">
-       <td><code>b(8)</code>
+       <td><code>u(32)</code>
+       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_id">session_id<a class="self-link" href="#session-start-packets-session_id"></a></dfn>
+       <td>
+       <td>32-bit session identification of the sender.
+      <tr id="0x4156+5">
+       <td><code>b(64)</code>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①">LDPC(288, 224)</a>
+       <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
+      <tr id="0x4156+6">
+       <td><code>u(16)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_flags">session_flags</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-sessionflags" id="ref-for-enumdef-sessionflags">SessionFlags</a></code>
        <td>Session flags.
-      <tr id="0x4156+4">
-       <td><code>12*b(8)</code>
+      <tr id="0x4156+7">
+       <td><code>16*b(8)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_name">producer_name<a class="self-link" href="#session-start-packets-producer_name"></a></dfn>
        <td>fixed-length string
-       <td>12-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> string, containing the name of the producer.
-      <tr id="0x4156+5">
+       <td>16-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> string, containing the name of the producer.
+      <tr id="0x4156+8">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_major">producer_major<a class="self-link" href="#session-start-packets-producer_major"></a></dfn>
        <td>
        <td>Major version of the producer.
-      <tr id="0x4156+6">
+      <tr id="0x4156+9">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_minor">producer_minor<a class="self-link" href="#session-start-packets-producer_minor"></a></dfn>
        <td>
        <td>Minor version of the producer.
-      <tr id="0x4156+7">
+      <tr id="0x4156+10">
        <td><code>u(16)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-producer_micro">producer_micro<a class="self-link" href="#session-start-packets-producer_micro"></a></dfn>
        <td>
        <td>Micro version of the producer.
-      <tr id="0x4156+8">
-       <td><code>b(8)</code>
+      <tr id="0x4156+11">
+       <td><code>b(32)</code>
        <td><a data-link-type="dfn" href="#padding" id="ref-for-padding">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
-      <tr id="0x4156+9">
+      <tr id="0x4156+12">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -2799,8 +2818,8 @@ bytewise-identical.</p>
        <td>Hertz value of the device clock.
       <tr id="0x0300+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224③">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -2863,8 +2882,8 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
        <td>Flags to indicate the type of stream.
       <tr id="0x0002+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224③">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224③">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224④">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0002+8">
        <td><code>b(32)</code>
@@ -2898,8 +2917,8 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0002+14">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224③">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224④">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224④">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑤">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -3061,8 +3080,8 @@ of an <a href="#fec-grouping-packets">§ 2.8 FEC grouping</a> packet.</p>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="GenericData+8">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224④">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑤">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑤">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑥">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="GenericData+9">
        <td><code><a data-link-type="dfn" href="#generic-data-packets-payload_length" id="ref-for-generic-data-packets-payload_length">payload_length</a>*b(8)</code>
@@ -3124,8 +3143,8 @@ has to be used for segments that follow the above:</p>
        <td>A seventh of the starting <a href="#generic-data-packets">§ 2.5 Generic data</a> header. The part taken is determined by <code><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq⑥">global_seq</a> % 7</code>.
       <tr id="GenericDataSegment+8">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑤">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑥">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑥">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑦">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="GenericDataSegment+9">
        <td><code><a data-link-type="dfn" href="#generic-data-segment-packets-seg_length" id="ref-for-generic-data-segment-packets-seg_length">seg_length</a>*b(8)</code>
@@ -3192,8 +3211,8 @@ the following <a href="#generic-data-packets">§ 2.5 Generic data</a> structur
        <td>A seventh of the starting <a href="#generic-data-packets">§ 2.5 Generic data</a> header. The part taken is determined by <code><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq⑧">global_seq</a> % 7</code>.
       <tr id="GenericDataParity+8">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑥">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑦">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑦">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑧">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="GenericDataParity+9">
        <td><code><a data-link-type="dfn" href="#generic-data-parity-packets-parity_data_length" id="ref-for-generic-data-parity-packets-parity_data_length">parity_data_length</a>*b(8)</code>
@@ -3312,8 +3331,8 @@ more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation<
        <td>The size of the data in this packet.
       <tr id="0x0100+11">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑦">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑧">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑧">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑨">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0100+12">
        <td><code><a data-link-type="dfn" href="#stream-data-packet-data_length" id="ref-for-stream-data-packet-data_length">data_length</a>*b(8)</code>
@@ -3467,8 +3486,8 @@ streams to be FEC corrected in order to ensure no stream is starved of data.</p>
        <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
       <tr id="0x0030+8">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑧">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224⑨">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑨">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⓪">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0030+9">
        <td><code>16*u(32)</code>
@@ -3547,8 +3566,8 @@ previous grouping.</p>
        <td>Provides a single source packet which contains data to be forward error corrected.
       <tr id="0x0031+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224⑨">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⓪">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⓪">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①①">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0031+8">
        <td><code>3*b(64)</code>
@@ -3562,8 +3581,8 @@ previous grouping.</p>
        <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
       <tr id="0x0031+10">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⓪">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①①">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①①">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①②">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0031+11">
        <td><code><a data-link-type="dfn" href="#fec-grouping-packets-fec_data_length" id="ref-for-fec-grouping-packets-fec_data_length">fec_data_length</a>*b(8)</code>
@@ -3678,8 +3697,8 @@ or metadata changes, and the distance to the next index packet.</p>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0051+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①①">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①②">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①②">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①③">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0051+8">
        <td><code><a data-link-type="dfn" href="#index-packets-nb_indices" id="ref-for-index-packets-nb_indices">nb_indices</a>*b(144)</code>
@@ -3900,8 +3919,8 @@ metadata after starting and outputting a packet.</p>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0010+12">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①②">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①③">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①③">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①④">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0010+13">
        <td><code><a data-link-type="dfn" href="#time-synchronization-packets-lut_name_length" id="ref-for-time-synchronization-packets-lut_name_length">lut_name_length</a>*b(8)</code>
@@ -4031,8 +4050,8 @@ these fonts must be made available for the ASS stream.</p>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0020+10">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①③">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①④">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①④">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑤">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0020+11">
        <td><code><a data-link-type="dfn" href="#font-data-packets-font_name_length" id="ref-for-font-data-packets-font_name_length">font_name_length</a>*b(8)</code>
@@ -4156,8 +4175,8 @@ stream after decoding.</p>
        <td>Indicates the video interleaving.
       <tr id="0x0008+10">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①④">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑤">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑤">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑥">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0008+11">
        <td><code>R(64)</code>
@@ -4619,8 +4638,8 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0040+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑤">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑥">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑥">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑦">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -4691,8 +4710,8 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0600+7">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑥">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑦">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑦">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑧">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0600+8">
        <td><code><a data-link-type="dfn" href="#user-data-packets-userdata_length" id="ref-for-user-data-packets-userdata_length">userdata_length</a>*b(8)</code>
@@ -4760,8 +4779,8 @@ at the start of files to notify implementations of stream lengths.</p>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0050+5">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑦">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑧">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑧">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑨">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -4804,8 +4823,8 @@ streams, and amend them later.</p>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0FFF+4">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑧">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑨">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑨">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②⓪">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
@@ -6125,9 +6144,11 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <li><a href="#session-control-data-packets-seek_seq">seek_seq</a><span>, in § 3.4.1</span>
    <li><a href="#generic-data-segment-packets-seg_length">seg_length</a><span>, in § 2.5.1</span>
    <li><a href="#generic-data-segment-packets-seg_offset">seg_offset</a><span>, in § 2.5.1</span>
+   <li><a href="#session-start-packets-sender_uuid">sender_uuid</a><span>, in § 2.1</span>
    <li><a href="#session-control-data-packets-session_control_descriptor">session_control_descriptor</a><span>, in § 3.4.1</span>
    <li><a href="#session-start-packets-session_flags">session_flags</a><span>, in § 2.1</span>
    <li><a href="#enumdef-sessionflags">SessionFlags</a><span>, in § 2.2</span>
+   <li><a href="#session-start-packets-session_id">session_id</a><span>, in § 2.1</span>
    <li><a href="#dom-enum-streamflags-session_low_quality">SESSION_LOW_QUALITY</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-sessionflags-session_reverse_signal_ready">SESSION_REVERSE_SIGNAL_READY</a><span>, in § 2.2</span>
    <li><a href="#session-start-packets-session_start_descriptor">session_start_descriptor</a><span>, in § 2.1</span>
@@ -6633,7 +6654,7 @@ window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.c
 window.dfnpanelData['c862e26c'] = {"dfnID": "c862e26c", "url": "https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active", "dfnText": "active", "refSections": [{"refs": [{"id": "ref-for-valdef-media-forced-colors-active"}, {"id": "ref-for-valdef-media-forced-colors-active\u2460"}], "title": "1.8. URI scheme"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
 window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "3.5.2. Resend"}], "external": false};
-window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}, {"id": "ref-for-ldpc_288_224\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}, {"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.31. End of stream"}], "external": false};
+window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}, {"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2462"}, {"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}, {"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2468"}], "title": "2.31. End of stream"}], "external": false};
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.18. Video information"}], "external": false};
 window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "3.5.3. Stream control"}], "external": false};
 window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}, {"id": "ref-for-stream_id\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2463"}, {"id": "ref-for-stream_id\u2460\u2464"}], "title": "2.11.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}, {"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}, {"id": "ref-for-stream_id\u2461\u2463"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2464"}], "title": "3.5. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2465"}], "title": "3.5.1. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}, {"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.5.3. Stream control"}], "external": false};
@@ -6768,7 +6789,7 @@ window.dfnpanelData['session-control-data-packets-seek'] = {"dfnID": "session-co
 window.dfnpanelData['session-control-data-packets-seek_pts'] = {"dfnID": "session-control-data-packets-seek_pts", "url": "#session-control-data-packets-seek_pts", "dfnText": "seek_pts", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_pts"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['session-control-data-packets-seek_seq'] = {"dfnID": "session-control-data-packets-seek_seq", "url": "#session-control-data-packets-seek_seq", "dfnText": "seek_seq", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_seq"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['enumdef-errorcode'] = {"dfnID": "enumdef-errorcode", "url": "#enumdef-errorcode", "dfnText": "ErrorCode", "refSections": [{"refs": [{"id": "ref-for-enumdef-errorcode"}], "title": "3.4.1. Session control data"}], "external": false};
-window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}, {"id": "ref-for-ldpc-288-224\u2463"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}, {"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}], "title": "2.31. End of stream"}], "external": false};
+window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.31. End of stream"}], "external": false};
 window.dfnpanelData['ldpc-2784-2016'] = {"dfnID": "ldpc-2784-2016", "url": "#ldpc-2784-2016", "dfnText": "LDPC(2784, 2016)", "refSections": [{"refs": [{"id": "ref-for-ldpc-2784-2016"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2461"}], "title": "2.18. Video information"}], "external": false};
 </script>
 <script>/* Boilerplate: script-dom-helper */
