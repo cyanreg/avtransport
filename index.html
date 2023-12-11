@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="8862494e605380edfbf54fa9fe7287b24795cb6b" name="document-revision">
+  <meta content="d7724521f6b5bbb23eb8c689fd25b8cf122ad760" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2618,61 +2618,58 @@ simply assume all device are already synchronized.</p>
    <p>The recommended URI scheme is:</p>
    <p><code></code></p>
    <code><pre>
-avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][?&lt;setting1>=&lt;value1>][/&lt;stream_id>[+&lt;stream_id>][?&lt;param1>=&lt;val1]]&lt;/p>
+avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt;stream_id>][?&lt;params>]]&lt;/p>
 </pre></code> 
    <ul>
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;transport></pre></code></b> may be either missing (default: <code>udp</code>) or:
-     <p></p>
+<pre>&lt;transport></pre>
+      may be either missing (default: <span class="css">udp</span>) or: 
     <li data-md>
-     <p><code>udp</code>: for <a href="#udp-streaming">§ 3.3.1 UDP</a> streams</p>
+     <p><span class="css">udp</span>: for <a href="#udp-streaming">§ 3.3.1 UDP</a> streams</p>
     <li data-md>
-     <p><code>udplite</code>: for <a href="#udp-lite-streaming">§ 3.3.2 UDP-Lite</a> streams</p>
+     <p><span class="css">udplite</span>: for <a href="#udp-lite-streaming">§ 3.3.2 UDP-Lite</a> streams</p>
     <li data-md>
-     <p><code>quic</code>: for <a href="#quic-streaming">§ 3.3.3 QUIC</a> streams</p>
+     <p><span class="css">quic</span>: for <a href="#quic-streaming">§ 3.3.3 QUIC</a> streams</p>
     <li data-md>
-     <p><code>file</code>: for <b>local</b> files</p>
+     <p><span class="css">file</span>: for <b>local</b> files</p>
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;mode></pre></code></b> is an optional setting which has different meanings for senders and receivers:
-     <p></p>
+<pre>&lt;mode></pre>
+      is an optional setting which has different meanings for senders and receivers: 
     <li data-md>
-     <p><b>Senders</b></p>
+     <p>Senders:</p>
      <ul>
       <li data-md>
-       <p><b><code>active</code></b>: the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.</p>
+       <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active">active</a>: the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.</p>
       <li data-md>
-       <p><b><code>passive</code></b> means to wait for receivers to send packets on the given address to begin transmitting back to them.</p>
+       <p><span class="css">passive</span> means to wait for receivers to send packets on the given address to begin transmitting back to them.</p>
      </ul>
     <li data-md>
-     <p><b>Receivers</b></p>
+     <p>Receivers:</p>
      <ul>
       <li data-md>
-       <p><b><code>passive</code></b>: the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.</p>
+       <p><span class="css">passive</span>: the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.</p>
       <li data-md>
-       <p><b><code>active</code></b>:means that receivers will actively connect and try to request a stream from the target address.</p>
+       <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active①">active</a>:means that receivers will actively connect and try to request a stream from the target address.</p>
      </ul>
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;address></pre></code></b> of the remote host, or local host, multicast group, or local file.
-     <p></p>
+<pre>&lt;address></pre>
+      of the remote host, or local host, multicast group, or local file. 
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;port></pre></code></b> on which to listen on/transmit to. Only valid for <code>udp</code>, <code>udplite</code> and <code>quic</code> protocols.
-     <p></p>
+<pre>&lt;port></pre>
+      on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. 
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;stream_id></pre></code></b> of the stream(s) to present as default (overriding those signalled by the sender).
-     <p></p>
+<pre>&lt;stream_id></pre>
+      of the stream(s) to present as default (overriding those signalled by the sender). 
     <li data-md>
-     <p><b><code></code></b></p>
-     <b><code><pre>&lt;setting1>=&lt;value1></pre></code></b> are a key=value pair of settings for the connection. Currently, all keys and values are <b>reserved</b>, and must not be present.
-     <p></p>
+<pre>&lt;params></pre>
+      are a 
+<pre>&lt;key>=&lt;value></pre>
+      pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>. 
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the <code></code></p>
-   <code><pre>udp://&lt;address>:&lt;port></pre></code> URI scheme may be used,
-at the risk of conflict with other protocols (<code>MPEG-TS</code> or <code>Matroska</code>).
+   <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the </p>
+<pre>udp://&lt;address>:&lt;port></pre>
+    URI scheme may be used,
+at the risk of conflict with other protocols (<span class="css">MPEG-TS</span> or <span class="css">Matroska</span>).
    <p></p>
    <p class="note" role="note"><span class="marker">Note:</span> When handling AVTransport files, it is recommended to use the <b>.avt</b> file extension.</p>
    <h2 class="heading settled" data-level="2" id="packet-structure"><span class="secno">2. </span><span class="content">Packet structure</span><a class="self-link" href="#packet-structure"></a></h2>
@@ -6243,6 +6240,11 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
      <li><span class="dfn-paneled" id="b06bf874">green</span>
      <li><span class="dfn-paneled" id="82ed5c4b">red</span>
     </ul>
+   <li>
+    <a data-link-type="biblio">[MEDIAQUERIES-5]</a> defines the following terms:
+    <ul>
+     <li><span class="dfn-paneled" id="c862e26c">active</span>
+    </ul>
   </ul>
   <h2 class="no-num no-ref heading settled" id="references"><span class="content">References</span><a class="self-link" href="#references"></a></h2>
   <h3 class="no-num no-ref heading settled" id="normative"><span class="content">Normative References</span><a class="self-link" href="#normative"></a></h3>
@@ -6251,6 +6253,8 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <dd>A. Phillips, Ed.; M. Davis, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc5646"><cite>Tags for Identifying Languages</cite></a>. September 2009. Best Current Practice. URL: <a href="https://www.rfc-editor.org/rfc/rfc5646">https://www.rfc-editor.org/rfc/rfc5646</a>
    <dt id="biblio-css-color-4">[CSS-COLOR-4]
    <dd>Tab Atkins Jr.; Chris Lilley; Lea Verou. <a href="https://drafts.csswg.org/css-color/"><cite>CSS Color Module Level 4</cite></a>. URL: <a href="https://drafts.csswg.org/css-color/">https://drafts.csswg.org/css-color/</a>
+   <dt id="biblio-mediaqueries-5">[MEDIAQUERIES-5]
+   <dd>Dean Jackson; et al. <a href="https://drafts.csswg.org/mediaqueries-5/"><cite>Media Queries Level 5</cite></a>. URL: <a href="https://drafts.csswg.org/mediaqueries-5/">https://drafts.csswg.org/mediaqueries-5/</a>
    <dt id="biblio-rfc2119">[RFC2119]
    <dd>S. Bradner. <a href="https://datatracker.ietf.org/doc/html/rfc2119"><cite>Key words for use in RFCs to Indicate Requirement Levels</cite></a>. March 1997. Best Current Practice. URL: <a href="https://datatracker.ietf.org/doc/html/rfc2119">https://datatracker.ietf.org/doc/html/rfc2119</a>
    <dt id="biblio-rfc6330">[RFC6330]
@@ -6634,6 +6638,7 @@ window.dfnpanelData = {};
 window.dfnpanelData['f17eedd8'] = {"dfnID": "f17eedd8", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-blue", "dfnText": "blue", "refSections": [{"refs": [{"id": "ref-for-valdef-color-blue"}, {"id": "ref-for-valdef-color-blue\u2460"}, {"id": "ref-for-valdef-color-blue\u2461"}, {"id": "ref-for-valdef-color-blue\u2462"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['b06bf874'] = {"dfnID": "b06bf874", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-green", "dfnText": "green", "refSections": [{"refs": [{"id": "ref-for-valdef-color-green"}, {"id": "ref-for-valdef-color-green\u2460"}, {"id": "ref-for-valdef-color-green\u2461"}, {"id": "ref-for-valdef-color-green\u2462"}, {"id": "ref-for-valdef-color-green\u2463"}, {"id": "ref-for-valdef-color-green\u2464"}, {"id": "ref-for-valdef-color-green\u2465"}, {"id": "ref-for-valdef-color-green\u2466"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-red", "dfnText": "red", "refSections": [{"refs": [{"id": "ref-for-valdef-color-red"}, {"id": "ref-for-valdef-color-red\u2460"}, {"id": "ref-for-valdef-color-red\u2461"}, {"id": "ref-for-valdef-color-red\u2462"}], "title": "2.19. Colorspace Enumeration (enum Colorspace)"}], "external": true};
+window.dfnpanelData['c862e26c'] = {"dfnID": "c862e26c", "url": "https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active", "dfnText": "active", "refSections": [{"refs": [{"id": "ref-for-valdef-media-forced-colors-active"}, {"id": "ref-for-valdef-media-forced-colors-active\u2460"}], "title": "1.8. URI scheme"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
 window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "3.5.2. Resend"}], "external": false};
 window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}, {"id": "ref-for-ldpc_288_224\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}, {"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.31. End of stream"}], "external": false};
