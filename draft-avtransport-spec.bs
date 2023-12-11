@@ -477,7 +477,7 @@ simply assume all device are already synchronized.
 
 The recommended URI scheme is:
 
-<code><xmp>avt://[<transport>[:<mode>]@]<address>[:<port>][/<stream_id>[+<stream_id>][?<params>]]</xmp></code>
+<code><xmp>avt://[<transport>[:<mode>]@]<address>[:<port>][/[<sender_uuid>][?<params>]]</xmp></code>
 
  - &lt;transport&gt; may be either missing (default: ''udp'') or:
      * ''udp'': for [[#udp-streaming]] streams
@@ -485,16 +485,17 @@ The recommended URI scheme is:
      * ''quic'': for [[#quic-streaming]] streams
      * ''file'': for <b>local</b> files
  - &lt;mode&gt; is an optional setting which has different meanings for senders and receivers:
-     * Senders:
+     * Sender:
          - ''active'': the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.
          - ''passive'' means to wait for receivers to send packets on the given address to begin transmitting back to them.
-     * Receivers:
+     * Receiver:
          - ''passive'': the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.
          - ''active'':means that receivers will actively connect and try to request a stream from the target address.
  - &lt;address&gt; of the remote host, or local host, multicast group, or local file.
- - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols.
- - &lt;stream_id&gt; of the stream(s) to present as default (overriding those signalled by the sender).
- - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>.
+ - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols. If not specified, port <b>8212</b> shall be the default port.
+ - &lt;sender_uuid&gt; is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID ([[RFC4122]]) value.
+ - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by a comma:
+     * default=&lt;stream_id1&gt;+&lt;stream_id2&gt;: Specifies streams to assign as being the default
 
 Note: Alternatively, for UDP-only, the <code>udp://&lt;address&gt;:&lt;port&gt;</code> URI scheme may be used,
 at the risk of conflict with other protocols (''MPEG-TS'' or ''Matroska'').
@@ -542,43 +543,61 @@ as an AVTransport session. The syntax is as follows:
             <td></td>
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
+        <tr id="0x4156+4">
+            <td><code>16*b(8)</code></td>
+            <td><dfn>sender_uuid</dfn></td>
+            <td>[[RFC4122|UUID]]</td>
+            <td>UUID of the sender.</td>
+        </tr>
         <tr id="0x4156+3">
-            <td><code>b(8)</code></td>
+            <td><code>u(32)</code></td>
+            <td><dfn>session_id</dfn></td>
+            <td></td>
+            <td>32-bit session identification of the sender.</td>
+        </tr>
+        <tr id="0x4156+5">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr id="0x4156+6">
+            <td><code>u(16)</code></td>
             <td><dfn>session_flags</dfn></td>
             <td>enum {{SessionFlags}}</td>
             <td>Session flags.</td>
         </tr>
-        <tr id="0x4156+4">
-            <td><code>12*b(8)</code></td>
+        <tr id="0x4156+7">
+            <td><code>16*b(8)</code></td>
             <td><dfn>producer_name</dfn></td>
             <td>fixed-length string</td>
-            <td>12-byte [[RFC3629|UTF-8]] string, containing the name of the producer.</td>
+            <td>16-byte [[RFC3629|UTF-8]] string, containing the name of the producer.</td>
         </tr>
-        <tr id="0x4156+5">
+        <tr id="0x4156+8">
             <td><code>u(16)</code></td>
             <td><dfn>producer_major</dfn></td>
             <td></td>
             <td>Major version of the producer.</td>
         </tr>
-        <tr id="0x4156+6">
+        <tr id="0x4156+9">
             <td><code>u(16)</code></td>
             <td><dfn>producer_minor</dfn></td>
             <td></td>
             <td>Minor version of the producer.</td>
         </tr>
-        <tr id="0x4156+7">
+        <tr id="0x4156+10">
             <td><code>u(16)</code></td>
             <td><dfn>producer_micro</dfn></td>
             <td></td>
             <td>Micro version of the producer.</td>
         </tr>
-        <tr id="0x4156+8">
-            <td><code>b(8)</code></td>
+        <tr id="0x4156+11">
+            <td><code>b(32)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. Must be 0x0.</td>
         </tr>
-        <tr id="0x4156+9">
+        <tr id="0x4156+12">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
