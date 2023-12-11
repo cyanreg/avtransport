@@ -3331,6 +3331,11 @@ A [[#stream-configuration-packets]] may be sent, to
 speed up stream initialization. If they are present, they must contain an
 `AVCDecoderConfigurationRecord` structure, as defined in ''ISO/IEC 14496-15''.
 
+Note: on some decoder implementations, giving an `AVCDecoderConfigurationRecord` structure upon
+initialization will result in the decoder mistaking the packets in the payload as <b>AVCC</b>
+rather than <b>Annex-B</b>. Implementations should consider whether the decoder being used will
+accept configuration data without assuming Annex-B, and only input such data if it is safe to do so.
+
 
 ### H265 encapsulation ### {#h265-encapsulation}
 
