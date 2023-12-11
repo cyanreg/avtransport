@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="d7724521f6b5bbb23eb8c689fd25b8cf122ad760" name="document-revision">
+  <meta content="5bf892d67b297f6642f166630aff5117263571aa" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2617,13 +2617,11 @@ simply assume all device are already synchronized.</p>
    <h3 class="heading settled" data-level="1.8" id="uri-scheme"><span class="secno">1.8. </span><span class="content">URI scheme</span><a class="self-link" href="#uri-scheme"></a></h3>
    <p>The recommended URI scheme is:</p>
    <p><code></code></p>
-   <code><pre>
-avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt;stream_id>][?&lt;params>]]&lt;/p>
-</pre></code> 
+   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt;stream_id>][?&lt;params>]]</pre></code>
+   <p></p>
    <ul>
     <li data-md>
-<pre>&lt;transport></pre>
-      may be either missing (default: <span class="css">udp</span>) or: 
+     <p>&lt;transport> may be either missing (default: <span class="css">udp</span>) or:</p>
     <li data-md>
      <p><span class="css">udp</span>: for <a href="#udp-streaming">§ 3.3.1 UDP</a> streams</p>
     <li data-md>
@@ -2633,8 +2631,7 @@ avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt
     <li data-md>
      <p><span class="css">file</span>: for <b>local</b> files</p>
     <li data-md>
-<pre>&lt;mode></pre>
-      is an optional setting which has different meanings for senders and receivers: 
+     <p>&lt;mode> is an optional setting which has different meanings for senders and receivers:</p>
     <li data-md>
      <p>Senders:</p>
      <ul>
@@ -2652,25 +2649,16 @@ avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/&lt;stream_id>[+&lt
        <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active①">active</a>:means that receivers will actively connect and try to request a stream from the target address.</p>
      </ul>
     <li data-md>
-<pre>&lt;address></pre>
-      of the remote host, or local host, multicast group, or local file. 
+     <p>&lt;address> of the remote host, or local host, multicast group, or local file.</p>
     <li data-md>
-<pre>&lt;port></pre>
-      on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. 
+     <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols.</p>
     <li data-md>
-<pre>&lt;stream_id></pre>
-      of the stream(s) to present as default (overriding those signalled by the sender). 
+     <p>&lt;stream_id> of the stream(s) to present as default (overriding those signalled by the sender).</p>
     <li data-md>
-<pre>&lt;params></pre>
-      are a 
-<pre>&lt;key>=&lt;value></pre>
-      pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>. 
+     <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by a comma. Currently, all keys and values are <b>reserved</b>.</p>
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the </p>
-<pre>udp://&lt;address>:&lt;port></pre>
-    URI scheme may be used,
-at the risk of conflict with other protocols (<span class="css">MPEG-TS</span> or <span class="css">Matroska</span>).
-   <p></p>
+   <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the <code>udp://&lt;address>:&lt;port></code> URI scheme may be used,
+at the risk of conflict with other protocols (<span class="css">MPEG-TS</span> or <span class="css">Matroska</span>).</p>
    <p class="note" role="note"><span class="marker">Note:</span> When handling AVTransport files, it is recommended to use the <b>.avt</b> file extension.</p>
    <h2 class="heading settled" data-level="2" id="packet-structure"><span class="secno">2. </span><span class="content">Packet structure</span><a class="self-link" href="#packet-structure"></a></h2>
    <p>This section lists the syntax of each individual packet type and specifies its purpose,
