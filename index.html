@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="745be58828ba054538c908c9d4182f5dd6f2c19c" name="document-revision">
+  <meta content="58d8a662d2ee812f32523b4d8bdcde17186e60bc" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2617,7 +2617,7 @@ simply assume all device are already synchronized.</p>
    <h3 class="heading settled" data-level="1.8" id="uri-scheme"><span class="secno">1.8. </span><span class="content">URI scheme</span><a class="self-link" href="#uri-scheme"></a></h3>
    <p>The recommended URI scheme is:</p>
    <p><code></code></p>
-   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/[&lt;stream_id>][?&lt;params>]]</pre></code>
+   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/[&lt;sender_uuid>][?&lt;params>]]</pre></code>
    <p></p>
    <ul>
     <li data-md>
@@ -2657,7 +2657,7 @@ simply assume all device are already synchronized.</p>
     <li data-md>
      <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. If not specified, port <b>8212</b> shall be the default port.</p>
     <li data-md>
-     <p>&lt;stream_id> is an optional, <b>unique</b>, <b>pre-shared</b> 64-bit value.</p>
+     <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc4122" title="A Universally Unique IDentifier (UUID) URN Namespace">[RFC4122]</a>) value.</p>
     <li data-md>
      <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by a comma:</p>
      <ul>
@@ -2702,7 +2702,7 @@ as an AVTransport session. The syntax is as follows:</p>
       <tr id="0x4156+4">
        <td><code>16*b(8)</code>
        <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-sender_uuid">sender_uuid<a class="self-link" href="#session-start-packets-sender_uuid"></a></dfn>
-       <td>
+       <td>[[RFC4122]|UUID]
        <td>UUID of the sender.
       <tr id="0x4156+3">
        <td><code>u(32)</code>
@@ -6315,6 +6315,8 @@ and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the r
    <dd>F. Yergeau. <a href="https://www.rfc-editor.org/rfc/rfc3629"><cite>UTF-8, a transformation format of ISO 10646</cite></a>. November 2003. Internet Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc3629">https://www.rfc-editor.org/rfc/rfc3629</a>
    <dt id="biblio-rfc3828">[RFC3828]
    <dd>L-A. Larzon; et al. <a href="https://www.rfc-editor.org/rfc/rfc3828"><cite>The Lightweight User Datagram Protocol (UDP-Lite)</cite></a>. July 2004. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc3828">https://www.rfc-editor.org/rfc/rfc3828</a>
+   <dt id="biblio-rfc4122">[RFC4122]
+   <dd>P. Leach; M. Mealling; R. Salz. <a href="https://www.rfc-editor.org/rfc/rfc4122"><cite>A Universally Unique IDentifier (UUID) URN Namespace</cite></a>. July 2005. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc4122">https://www.rfc-editor.org/rfc/rfc4122</a>
    <dt id="biblio-rfc5905">[RFC5905]
    <dd>D. Mills; et al. <a href="https://www.rfc-editor.org/rfc/rfc5905"><cite>Network Time Protocol Version 4: Protocol and Algorithms Specification</cite></a>. June 2010. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc5905">https://www.rfc-editor.org/rfc/rfc5905</a>
    <dt id="biblio-rfc6716">[RFC6716]
