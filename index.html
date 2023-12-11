@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="5bf892d67b297f6642f166630aff5117263571aa" name="document-revision">
+  <meta content="eb3ff86eb6336ad9902b8673841c89383b5d6369" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2622,31 +2622,35 @@ simply assume all device are already synchronized.</p>
    <ul>
     <li data-md>
      <p>&lt;transport> may be either missing (default: <span class="css">udp</span>) or:</p>
-    <li data-md>
-     <p><span class="css">udp</span>: for <a href="#udp-streaming">§ 3.3.1 UDP</a> streams</p>
-    <li data-md>
-     <p><span class="css">udplite</span>: for <a href="#udp-lite-streaming">§ 3.3.2 UDP-Lite</a> streams</p>
-    <li data-md>
-     <p><span class="css">quic</span>: for <a href="#quic-streaming">§ 3.3.3 QUIC</a> streams</p>
-    <li data-md>
-     <p><span class="css">file</span>: for <b>local</b> files</p>
-    <li data-md>
-     <p>&lt;mode> is an optional setting which has different meanings for senders and receivers:</p>
-    <li data-md>
-     <p>Senders:</p>
      <ul>
       <li data-md>
-       <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active">active</a>: the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.</p>
+       <p><span class="css">udp</span>: for <a href="#udp-streaming">§ 3.3.1 UDP</a> streams</p>
       <li data-md>
-       <p><span class="css">passive</span> means to wait for receivers to send packets on the given address to begin transmitting back to them.</p>
+       <p><span class="css">udplite</span>: for <a href="#udp-lite-streaming">§ 3.3.2 UDP-Lite</a> streams</p>
+      <li data-md>
+       <p><span class="css">quic</span>: for <a href="#quic-streaming">§ 3.3.3 QUIC</a> streams</p>
+      <li data-md>
+       <p><span class="css">file</span>: for <b>local</b> files</p>
      </ul>
     <li data-md>
-     <p>Receivers:</p>
+     <p>&lt;mode> is an optional setting which has different meanings for senders and receivers:</p>
      <ul>
       <li data-md>
-       <p><span class="css">passive</span>: the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.</p>
+       <p>Senders:</p>
+       <ul>
+        <li data-md>
+         <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active">active</a>: the default value. Means to start continuously sending packets to the given address without attempting bidirectional communication.</p>
+        <li data-md>
+         <p><span class="css">passive</span> means to wait for receivers to send packets on the given address to begin transmitting back to them.</p>
+       </ul>
       <li data-md>
-       <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active①">active</a>:means that receivers will actively connect and try to request a stream from the target address.</p>
+       <p>Receivers:</p>
+       <ul>
+        <li data-md>
+         <p><span class="css">passive</span>: the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.</p>
+        <li data-md>
+         <p><a class="css" data-link-type="maybe" href="https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active" id="ref-for-valdef-media-forced-colors-active①">active</a>:means that receivers will actively connect and try to request a stream from the target address.</p>
+       </ul>
      </ul>
     <li data-md>
      <p>&lt;address> of the remote host, or local host, multicast group, or local file.</p>
