@@ -3048,8 +3048,7 @@ definitions.
 ### Opus encapsulation ### {#opus-encapsulation}
 
 For [[RFC6716|Opus]] encapsulation, the [=codec_id=] in
-[[#stream-registration-packets]]
-MUST be 0x4F707573 (`Opus`).
+[[#stream-registration-packets]] must be 0x4F707573 (`Opus`).
 
 The payload of the [[#stream-configuration-packets]] packets MUST be
 laid out in the following way:
@@ -3148,7 +3147,7 @@ For AAC encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be 0x41414300 (''AAC0'').
 
-The [[#stream-configuration-packets]] payload must be the
+The [[#stream-configuration-packets]] packet payload must be the
 codec's ''AudioSpecificConfig'', as defined in MPEG-4.
 
 The [=packet_data=] MUST contain regular AAC ADTS packtes. Note that ''LATM'' is
@@ -3165,7 +3164,7 @@ For AAC encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x41432d33'' (''AC-3'').
 
-AC-3 streams require no [[#stream-configuration-packets]].
+AC-3 streams require no [[#stream-configuration-packets]] packets.
 
 THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.
@@ -3177,8 +3176,8 @@ For ATRAC9, the [=codec_id=] in the
 [[#stream-registration-packets]]
 must be ''0x41545239'' (''ATR9'').
 
-The payload in the [[#stream-configuration-packets]] must be
-laid out in the following way:
+The payload in [[#stream-configuration-packets]] packets
+must be laid out in the following way:
 
 <figure id="table-ATRAC9Config" class="table">
     <table class="complex data longlastcol" dfn-for="#atrac9-encapsulation">
@@ -3251,9 +3250,9 @@ For TAK (Tom's lossless Audio Kompressor) encapsulation,
 the [=codec_id=] in [[#stream-registration-packets]]
 must be ''0x4154414b'' (''ATAK'').
 
-TAK streams require no [[#stream-configuration-packets]].
+TAK streams require no [[#stream-configuration-packets]] packets.
 
-THe `packet_data` must contain raw TAK frames, starting with the frame header.
+The [=packet_data=] must contain raw TAK frames, starting with the frame header.
 
 
 ### FLAC encapsulation ### {#flac-encapsulation}
@@ -3344,7 +3343,7 @@ For [[AV1]] encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x41563031'' (<code>AV01</code>).
 
-The [[#stream-configuration-packets]] payload MUST be the
+The [[#stream-configuration-packets]] packet payload must be the
 codec's so-called ''uncompressed header''. For information on its syntax,
 consult the specifications, section ''5.9.2. Uncompressed header syntax''.
 
@@ -3357,7 +3356,7 @@ For VP9 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x56503039'' (''VP09'').
 
-The [[#stream-configuration-packets]] payload must be the
+The [[#stream-configuration-packets]] packet payload must be the
 codec's so-called ''uncompressed header''. For information on its syntax,
 consult the specifications, section ''6.2 Uncompressed header syntax''.
 
@@ -3375,11 +3374,14 @@ The [=packet_data=] must contain the following elements, in order:
  - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
  - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
 
-A [[#stream-configuration-packets]] may be sent, to
-speed up stream initialization. If they are present, they must contain an
-`AVCDecoderConfigurationRecord` structure, as defined in ''ISO/IEC 14496-15''.
+A [[#stream-configuration-packets]] packet may be sent, to speed up stream initialization.
+If they are present, they must contain an ''AVCDecoderConfigurationRecord'' structure,
+as defined in ''ISO/IEC 14496-15''.
 
-Note: on some decoder implementations, giving an `AVCDecoderConfigurationRecord` structure upon
+In-band parameters are always required to be present, even if an ''AVCDecoderConfigurationRecord''
+structure is present in a [[#stream-configuration-packets]] packet.
+
+Note: On some decoder implementations, giving an ''AVCDecoderConfigurationRecord'' structure upon
 initialization will result in the decoder mistaking the packets in the payload as <b>AVCC</b>
 rather than <b>Annex-B</b>. Implementations should consider whether the decoder being used will
 accept configuration data without assuming Annex-B, and only input such data if it is safe to do so.
@@ -3397,7 +3399,7 @@ The [=packet_data=] must contain the following elements, in order:
 
 ''Annex-B'' formatted packets must be used, with startcode emulation bits included.
 
-A [[#stream-configuration-packets]] may be sent, to
+A [[#stream-configuration-packets]] packet may be sent, to
 speed up stream initialization. If they are present, they must contain an
 ''HEVCDecoderConfigurationRecord'' structure, as defined in ''ISO/IEC 23008''.
 
@@ -3408,7 +3410,7 @@ For Dirac or VC-2 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be ''0x42424344'' (''BBCD'').
 
-Dirac streams require no [[#stream-configuration-packets]].
+Dirac streams require no [[#stream-configuration-packets]] packets.
 
 The [=packet_data=] must contain raw sequences,
 with one sequence being a picture.
@@ -3420,8 +3422,8 @@ For [[RFC9043|FFv1]] encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be ''0x46467631'' (''FFv1'').
 
-Stream configuration data is required for FFv1. [[#stream-configuration-packets]] must
-contain a "Parameters" structure, as defined in [[RFC9043#name-parameters]].
+Stream configuration data is required for FFv1. [[#stream-configuration-packets]] packets
+must contain a "Parameters" structure, as defined in [[RFC9043#name-parameters]].
 
 The [=packet_data=] must contain raw FFv1 packets.
 
@@ -3445,7 +3447,7 @@ ASS contains 3 important sections:
 
 First, all data MUST be converted to UTF-8.<br/>
 
-The [[#stream-configuration-packets]] payload MUST contain
+The [[#stream-configuration-packets]] packet payload MUST contain
 the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string, unmodified.
 
 Events listed in ASS files MUST be modified in the following way:
@@ -3465,7 +3467,7 @@ For DNG/TIFF encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x54494646'' (''TIFF'').
 
-DNG/TIFF streams require no [[#stream-configuration-packets]].
+DNG/TIFF streams require no [[#stream-configuration-packets]] packets.
 
 The [=packet_data=] must contain a raw TIFF file,
 with one packet being a single picture.
@@ -3477,7 +3479,7 @@ For JPEG and Motion JPEG, the [=codec_id=] in the
 [[#stream-registration-packets]]
 must be ''0x4a504547'' (''JPEG'').
 
-JPEG and Motion JPEG streams require no [[#stream-configuration-packets]].
+JPEG and Motion JPEG streams require no [[#stream-configuration-packets]] packets.
 
 The [=packet_data=] must contain a raw JPEG file, with
 one packet being a single picture.
@@ -3489,7 +3491,7 @@ For PNG, the [=codec_id=] in the
 [[#stream-registration-packets]]
 must be ''0x504e4730'' (''PNG0'').
 
-PNG streams require no [[#stream-configuration-packets]].
+PNG streams require no [[#stream-configuration-packets]] packets.
 
 The [=packet_data=] must contain a raw PNG file.
 No support for Animated PNG is defined, but simply not
@@ -3503,7 +3505,7 @@ allowed for any codec.
 For [[SVG2]] (Scalable Vector Graphics), the [=codec_id=] in the
 [[#stream-registration-packets]] must be ''0x53564732'' (''SVG2'').
 
-SVG streams require no [[#stream-configuration-packets]].
+SVG streams require no [[#stream-configuration-packets]] packets.
 
 The [=packet_data=] must contain a raw SVG file. Compressed ''SVGZ''
 are explicitly not supported. Instead, the [=pkt_compression=] field
@@ -3528,8 +3530,8 @@ For raw audio encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be ''0x52414141'' (''RAAA'').
 
-The payload in the [[#stream-configuration-packets]] must be
-laid out in the following way:
+[[#stream-configuration-packets]] packets are required, and
+must be laid out in the following way:
 
 <figure id="table-RawAudioConfig" class="table">
     <table class="complex data longlastcol" dfn-for="#raw-audio-encapsulation">
@@ -3576,8 +3578,8 @@ that 24-bit samples are coded as 32-bits, with the data contained in the topmost
 For raw video encapsulation, the [=codec_id=] in [[#stream-registration-packets]]
 MUST be ''0x52415656'' (''RAVV'').
 
-The payload in the [[#stream-configuration-packets]] MUST be
-laid out in the following way:
+[[#stream-configuration-packets]] packets are required, and
+must be laid out in the following way:
 
 <figure id="table-RawVideoConfig" class="table">
     <table class="complex data longlastcol" dfn-for="#raw-video-encapsulation">
