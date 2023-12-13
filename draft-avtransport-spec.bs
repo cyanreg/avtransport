@@ -65,6 +65,18 @@ Markup Shorthands: http no, markup no
         "title": "Cube LUT Specification Version 1.0",
         "published-by": "Adobe",
         "href": "https://kono.phpage.fr/images/a/a1/Adobe-cube-lut-specification-1.0.pdf"
+    },
+    "ISO15444": {
+        "title": "JPEG 2000 image coding system",
+        "published-by": "International Standards Organization",
+        "date": "October 2019",
+        "href": "https://www.iso.org/standard/78321.html"
+    },
+    "ISO15444-15": {
+        "title": "JPEG 2000 image coding system Part 15: High-Throughput JPEG 2000",
+        "published-by": "International Standards Organization",
+        "date": "October 2019",
+        "href": "https://www.iso.org/standard/76621.html"
     }
 }
 </pre>
@@ -3556,6 +3568,26 @@ JPEG and Motion JPEG streams require no [[#stream-configuration-packets]] packet
 
 The [=packet_data=] must contain a raw JPEG file, with
 one packet being a single picture.
+
+
+### JPEG-2000 encapsulation ### {#jpeg2000-encapsulation}
+
+For JPEG-2000 streams, as defined by [[ISO15444]],
+the [=codec_id=] in the [[#stream-registration-packets]]
+must be ''0x4a50324b'' (''JP2K'').
+
+JPEG-2000 streams require no [[#stream-configuration-packets]] packets.
+
+The [=packet_data=] must contain a raw JPEG-2000 frame.
+
+The [=packet_data=] must not contain ''JP2'' data (better known as the JPEG-2000
+standalone container), but rather the raw, individual JPEG-2000 frames
+(known as ''J2K'', or ''HTJ2K'').
+
+High-throughput JPEG-2000, as defined by [[ISO15444-15]],
+is supported and recommended. The same considerations as regular
+JPEG-2000 apply, but the [=codec_id=] in the [[#stream-registration-packets]]
+must be ''0x48544a32'' (''HTJ2'') instead.
 
 
 ### PNG encapsulation ### {#png-encapsulation}
