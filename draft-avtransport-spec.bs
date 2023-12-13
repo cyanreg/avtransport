@@ -749,13 +749,13 @@ The layout of the data is as follows:
             <td><code>b(16)</code></td>
             <td><dfn>related_stream_id</dfn></td>
             <td></td>
-            <td>Indicates the stream ID for which this stream is related to.</td>
+            <td>Indicates the stream ID for which this stream is related to. Relations are defined by {{StreamFlags}} set in [=stream_flags=]. Must be 0xFFFF if this stream has no relations.</td>
         </tr>
         <tr id="0x0002+4">
             <td><code>b(16)</code></td>
             <td><dfn>derived_stream_id</dfn></td>
             <td></td>
-            <td>Indicates the stream ID for which this stream is derived from.</td>
+            <td>Indicates the stream ID for which this stream is derived from. Derivation is defined by {{StreamFlags}} set in [=stream_flags=]. Must be 0xFFFF if this stream is not derived from any other stream.</td>
         </tr>
         <tr id="0x0002+5">
             <td><code>u(64)</code></td>
