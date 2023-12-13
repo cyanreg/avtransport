@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="53f6af495b0843fbd10f66cbc31f52c0f2d84f63" name="document-revision">
+  <meta content="c67b90947bdbf37ac304467891f32918bc20e8ed" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-12">12 December 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-13">13 December 2023</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 12 December 2023,
+In addition, as of 13 December 2023,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -4842,7 +4842,7 @@ as padding and ignore it. AVTransport files should not be concatenated.</p>
     The following section lists the supported codecs, along with their encapsulation
 definitions. 
    <h4 class="heading settled" data-level="3.1.1" id="opus-encapsulation"><span class="secno">3.1.1. </span><span class="content">Opus encapsulation</span><a class="self-link" href="#opus-encapsulation"></a></h4>
-   <p>For <a data-link-type="biblio" href="#biblio-rfc6716" title="Definition of the Opus Audio Codec">Opus</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be 0x4F707573 (`Opus`).</p>
+   <p>For <a data-link-type="biblio" href="#biblio-rfc6716" title="Definition of the Opus Audio Codec">Opus</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be 0x4F707573 (`Opus`).</p>
    <p>The payload of the <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets MUST be
 laid out in the following way:</p>
    <figure class="table" id="table-OpusConfig">
@@ -4917,7 +4917,7 @@ appended to the packet as-is, and no <a href="#stream-data-parity-packets">§ 
 be present for this stream.</p>
    <h4 class="heading settled" data-level="3.1.2" id="aac-encapsulation"><span class="secno">3.1.2. </span><span class="content">AAC encapsulation</span><a class="self-link" href="#aac-encapsulation"></a></h4>
    <p>For AAC encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id②">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be 0x41414300 (<span class="css">AAC0</span>).</p>
-   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload must be the
+   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet payload must be the
 codec’s <span class="css">AudioSpecificConfig</span>, as defined in MPEG-4.</p>
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①">packet_data</a> MUST contain regular AAC ADTS packtes. Note that <span class="css">LATM</span> is
 explicitly unsupported.</p>
@@ -4926,13 +4926,13 @@ value as defined in <a href="#stream-data-packets">§ 2.7 Stream Data</a> to r
 of prepended samples.</p>
    <h4 class="heading settled" data-level="3.1.3" id="ac-3-encapsulation"><span class="secno">3.1.3. </span><span class="content">AC-3 encapsulation</span><a class="self-link" href="#ac-3-encapsulation"></a></h4>
    <p>For AAC encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id③">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x41432d33</span> (<span class="css">AC-3</span>).</p>
-   <p>AC-3 streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
+   <p>AC-3 streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
    <p>THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.</p>
    <h4 class="heading settled" data-level="3.1.4" id="atrac9-encapsulation"><span class="secno">3.1.4. </span><span class="content">ATRAC-9 encapsulation</span><a class="self-link" href="#atrac9-encapsulation"></a></h4>
    <p>For ATRAC9, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id④">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x41545239</span> (<span class="css">ATR9</span>).</p>
-   <p>The payload in the <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> must be
-laid out in the following way:</p>
+   <p>The payload in <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets
+must be laid out in the following way:</p>
    <figure class="table" id="table-ATRAC9Config">
     <table class="complex data longlastcol">
      <tbody>
@@ -4989,8 +4989,8 @@ decoders via a separate mechanism. The configuration data length should omit it 
    <h4 class="heading settled" data-level="3.1.5" id="tak-encapsulation"><span class="secno">3.1.5. </span><span class="content">TAK encapsulation</span><a class="self-link" href="#tak-encapsulation"></a></h4>
    <p>For TAK (Tom’s lossless Audio Kompressor) encapsulation,
 the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑤">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x4154414b</span> (<span class="css">ATAK</span>).</p>
-   <p>TAK streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>THe `packet_data` must contain raw TAK frames, starting with the frame header.</p>
+   <p>TAK streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data③">packet_data</a> must contain raw TAK frames, starting with the frame header.</p>
    <h4 class="heading settled" data-level="3.1.6" id="flac-encapsulation"><span class="secno">3.1.6. </span><span class="content">FLAC encapsulation</span><a class="self-link" href="#flac-encapsulation"></a></h4>
     For FLAC encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑥">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x664c6143</span> (<span class="css">fLaC</span>). 
    <p>FLAC streams require <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets,
@@ -5058,35 +5058,36 @@ to contain the stream info header, which is defined as follows:</p>
    <p>The `packet_data` must contain raw FLAC frames, with their frame header untouched.</p>
    <h4 class="heading settled" data-level="3.1.7" id="av1-encapsulation"><span class="secno">3.1.7. </span><span class="content">AV1 encapsulation</span><a class="self-link" href="#av1-encapsulation"></a></h4>
    <p>For <a data-link-type="biblio" href="#biblio-av1" title="AV1 Bitstream &amp; Decoding Process Specification">[AV1]</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑦">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x41563031</span> (<code>AV01</code>).</p>
-   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload MUST be the
+   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet payload must be the
 codec’s so-called <span class="css">uncompressed header</span>. For information on its syntax,
 consult the specifications, section <span class="css">5.9.2. Uncompressed header syntax</span>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data③">packet_data</a> MUST contain raw, separated <span class="css">OBU</span>s.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data④">packet_data</a> MUST contain raw, separated <span class="css">OBU</span>s.</p>
    <h4 class="heading settled" data-level="3.1.8" id="vp9-encapsulation"><span class="secno">3.1.8. </span><span class="content">VP9 encapsulation</span><a class="self-link" href="#vp9-encapsulation"></a></h4>
    <p>For VP9 encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑧">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x56503039</span> (<span class="css">VP09</span>).</p>
-   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload must be the
+   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet payload must be the
 codec’s so-called <span class="css">uncompressed header</span>. For information on its syntax,
 consult the specifications, section <span class="css">6.2 Uncompressed header syntax</span>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data④">packet_data</a> must contain raw <b>superframe</b> packets, as defined in <span class="css">Annex B</span> of the
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑤">packet_data</a> must contain raw <b>superframe</b> packets, as defined in <span class="css">Annex B</span> of the
 VP9 specifications.</p>
    <h4 class="heading settled" data-level="3.1.9" id="h264-encapsulation"><span class="secno">3.1.9. </span><span class="content">H264 encapsulation</span><a class="self-link" href="#h264-encapsulation"></a></h4>
    <p>For H264 encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id⑨">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x48323634</span> (<span class="css">H264</span>).</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑤">packet_data</a> must contain the following elements, in order:</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑥">packet_data</a> must contain the following elements, in order:</p>
    <ul>
     <li data-md>
      <p>A single <code>b(64)</code> element with the <a data-link-type="dfn" href="#dts" id="ref-for-dts③">dts</a>, the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.</p>
     <li data-md>
      <p><span class="css">Annex-B</span> formatted NAL units, with startcode emulation bits included.</p>
    </ul>
-   <p>A <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> may be sent, to
-speed up stream initialization. If they are present, they must contain an
-`AVCDecoderConfigurationRecord` structure, as defined in <span class="css">IEC 14496-15</span>.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> on some decoder implementations, giving an `AVCDecoderConfigurationRecord` structure upon
+   <p>A <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet may be sent, to speed up stream initialization.
+If they are present, they must contain an <span class="css">AVCDecoderConfigurationRecord</span> structure,
+as defined in <span class="css">IEC 14496-15</span>.</p>
+   <p>In-band parameters are always required to be present, even if an <span class="css">AVCDecoderConfigurationRecord</span> structure is present in a <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> On some decoder implementations, giving an <span class="css">AVCDecoderConfigurationRecord</span> structure upon
 initialization will result in the decoder mistaking the packets in the payload as <b>AVCC</b> rather than <b>Annex-B</b>. Implementations should consider whether the decoder being used will
 accept configuration data without assuming Annex-B, and only input such data if it is safe to do so.</p>
    <h4 class="heading settled" data-level="3.1.10" id="h265-encapsulation"><span class="secno">3.1.10. </span><span class="content">H265 encapsulation</span><a class="self-link" href="#h265-encapsulation"></a></h4>
    <p>For H265 encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⓪">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x48323635</span> (<span class="css">H265</span>).</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑥">packet_data</a> must contain the following elements, in order:</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑦">packet_data</a> must contain the following elements, in order:</p>
    <ul>
     <li data-md>
      <p>A single <code>b(64)</code> element with the <a data-link-type="dfn" href="#dts" id="ref-for-dts④">dts</a>, the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.</p>
@@ -5094,18 +5095,18 @@ accept configuration data without assuming Annex-B, and only input such data if 
      <p><span class="css">Annex-B</span> formatted NAL units, with startcode emulation bits included.</p>
    </ul>
    <p><span class="css">Annex-B</span> formatted packets must be used, with startcode emulation bits included.</p>
-   <p>A <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> may be sent, to
+   <p>A <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet may be sent, to
 speed up stream initialization. If they are present, they must contain an <span class="css">HEVCDecoderConfigurationRecord</span> structure, as defined in <span class="css">IEC 23008</span>.</p>
    <h4 class="heading settled" data-level="3.1.11" id="dirac-vc-2-encapsulation"><span class="secno">3.1.11. </span><span class="content">Dirac/VC-2 encapsulation</span><a class="self-link" href="#dirac-vc-2-encapsulation"></a></h4>
    <p>For Dirac or VC-2 encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①①">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be <span class="css">0x42424344</span> (<span class="css">BBCD</span>).</p>
-   <p>Dirac streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑦">packet_data</a> must contain raw sequences,
+   <p>Dirac streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑧">packet_data</a> must contain raw sequences,
 with one sequence being a picture.</p>
    <h4 class="heading settled" data-level="3.1.12" id="ffv1-encapsulation"><span class="secno">3.1.12. </span><span class="content">FFv1 encapsulation</span><a class="self-link" href="#ffv1-encapsulation"></a></h4>
    <p>For <a data-link-type="biblio" href="#biblio-rfc9043" title="FFV1 Video Coding Format Versions 0, 1, and 3">FFv1</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①②">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be <span class="css">0x46467631</span> (<span class="css">FFv1</span>).</p>
-   <p>Stream configuration data is required for FFv1. <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> must
-contain a "Parameters" structure, as defined in <a href="https://www.rfc-editor.org/rfc/rfc9043#name-parameters">FFV1 Video Coding Format Versions 0, 1, and 3 § name-parameters</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑧">packet_data</a> must contain raw FFv1 packets.</p>
+   <p>Stream configuration data is required for FFv1. <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets
+must contain a "Parameters" structure, as defined in <a href="https://www.rfc-editor.org/rfc/rfc9043#name-parameters">FFV1 Video Coding Format Versions 0, 1, and 3 § name-parameters</a>.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑨">packet_data</a> must contain raw FFv1 packets.</p>
    <h4 class="heading settled" data-level="3.1.13" id="ass-encapsulation"><span class="secno">3.1.13. </span><span class="content">ASS encapsulation</span><a class="self-link" href="#ass-encapsulation"></a></h4>
    <p>For ASS encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①③">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be 0x41535334 (<span class="css">ASS4</span>).</p>
    <p>ASS is a popular subtitle format with great presentation capabilities.
@@ -5124,14 +5125,14 @@ These match to how Matroska handles <a data-link-type="biblio" href="#biblio-mat
      <p>All other sections MUST be stripped.</p>
    </ul>
    <p>First, all data MUST be converted to UTF-8.<br></p>
-   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload MUST contain
+   <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet payload MUST contain
 the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string, unmodified.</p>
    <p>Events listed in ASS files MUST be modified in the following way:</p>
    <ul>
     <li data-md>
      <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration⑥">duration</a> fields, and must be ommitted from the data.</p>
     <li data-md>
-     <p>All other fields MUST be stored in the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑨">packet_data</a> field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.</p>
+     <p>All other fields MUST be stored in the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⓪">packet_data</a> field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.</p>
     <li data-md>
      <p>Comments MAY be left as-is after all the fields.</p>
    </ul>
@@ -5140,26 +5141,26 @@ order in which to reconstruct the original ASS file.</p>
    <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> are permitted.</p>
    <h4 class="heading settled" data-level="3.1.14" id="dng-tiff-encapsulation"><span class="secno">3.1.14. </span><span class="content">DNG/TIFF encapsulation</span><a class="self-link" href="#dng-tiff-encapsulation"></a></h4>
    <p>For DNG/TIFF encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①④">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x54494646</span> (<span class="css">TIFF</span>).</p>
-   <p>DNG/TIFF streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⓪">packet_data</a> must contain a raw TIFF file,
+   <p>DNG/TIFF streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①①">packet_data</a> must contain a raw TIFF file,
 with one packet being a single picture.</p>
    <h4 class="heading settled" data-level="3.1.15" id="jpeg-encapsulation"><span class="secno">3.1.15. </span><span class="content">JPEG encapsulation</span><a class="self-link" href="#jpeg-encapsulation"></a></h4>
    <p>For JPEG and Motion JPEG, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑤">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x4a504547</span> (<span class="css">JPEG</span>).</p>
-   <p>JPEG and Motion JPEG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①①">packet_data</a> must contain a raw JPEG file, with
+   <p>JPEG and Motion JPEG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①②">packet_data</a> must contain a raw JPEG file, with
 one packet being a single picture.</p>
    <h4 class="heading settled" data-level="3.1.16" id="png-encapsulation"><span class="secno">3.1.16. </span><span class="content">PNG encapsulation</span><a class="self-link" href="#png-encapsulation"></a></h4>
    <p>For PNG, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑥">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x504e4730</span> (<span class="css">PNG0</span>).</p>
-   <p>PNG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①②">packet_data</a> must contain a raw PNG file.
+   <p>PNG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①③">packet_data</a> must contain a raw PNG file.
 No support for Animated PNG is defined, but simply not
 flagging the still picture flag (`stream_flags &amp; 0x04`) and sending
 a single picture per frame is sufficient to animate PNG, as this is
 allowed for any codec.</p>
    <h4 class="heading settled" data-level="3.1.17" id="svg-encapsulation"><span class="secno">3.1.17. </span><span class="content">SVG encapsulation</span><a class="self-link" href="#svg-encapsulation"></a></h4>
    <p>For <a data-link-type="biblio" href="#biblio-svg2" title="Scalable Vector Graphics (SVG) 2">[SVG2]</a> (Scalable Vector Graphics), the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑦">codec_id</a> in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x53564732</span> (<span class="css">SVG2</span>).</p>
-   <p>SVG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a>.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①③">packet_data</a> must contain a raw SVG file. Compressed <span class="css">SVGZ</span> are explicitly not supported. Instead, the <a data-link-type="dfn" href="#stream-data-packet-pkt_compression" id="ref-for-stream-data-packet-pkt_compression">pkt_compression</a> field
+   <p>SVG streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①④">packet_data</a> must contain a raw SVG file. Compressed <span class="css">SVGZ</span> are explicitly not supported. Instead, the <a data-link-type="dfn" href="#stream-data-packet-pkt_compression" id="ref-for-stream-data-packet-pkt_compression">pkt_compression</a> field
 must be used if compression is to be used. This is due to DEFLATE
 (<a data-link-type="biblio" href="#biblio-rfc1951" title="DEFLATE Compressed Data Format Specification version 1.3">[RFC1951]</a>) being potentially a bottleneck in decompression.</p>
    <p>No support for animated SVG (<a href="https://svgwg.org/svg2-draft/conform.html#animated-mode"><cite>SVG 2</cite> § 2.2.3 Animated mode</a>) is available, or any
@@ -5171,8 +5172,8 @@ The <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream
 subtitles.</p>
    <h4 class="heading settled" data-level="3.1.18" id="raw-audio-encapsulation"><span class="secno">3.1.18. </span><span class="content">Raw audio encapsulation</span><a class="self-link" href="#raw-audio-encapsulation"></a></h4>
    <p>For raw audio encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑧">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be <span class="css">0x52414141</span> (<span class="css">RAAA</span>).</p>
-   <p>The payload in the <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> must be
-laid out in the following way:</p>
+   <p><a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets are required, and
+must be laid out in the following way:</p>
    <figure class="table" id="table-RawAudioConfig">
     <table class="complex data longlastcol">
      <tbody>
@@ -5198,7 +5199,7 @@ laid out in the following way:</p>
        <td>If non-zero, data is floating-point.
     </table>
    </figure>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①④">packet_data</a> must contain the concatenated stream of <b>interleaved</b> samples
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑤">packet_data</a> must contain the concatenated stream of <b>interleaved</b> samples
 for all channels.</p>
    <p>The samples must be <b>normalized</b> between <b>[-1.0, 1.0]</b> if they’re float, and
 full-range <i>signed</i> if they’re integers.</p>
@@ -5206,8 +5207,8 @@ full-range <i>signed</i> if they’re integers.</p>
 that 24-bit samples are coded as 32-bits, with the data contained in the topmost 24 bits.</p>
    <h4 class="heading settled" data-level="3.1.19" id="raw-video-encapsulation"><span class="secno">3.1.19. </span><span class="content">Raw video encapsulation</span><a class="self-link" href="#raw-video-encapsulation"></a></h4>
    <p>For raw video encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑨">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be <span class="css">0x52415656</span> (<span class="css">RAVV</span>).</p>
-   <p>The payload in the <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> MUST be
-laid out in the following way:</p>
+   <p><a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets are required, and
+must be laid out in the following way:</p>
    <figure class="table" id="table-RawVideoConfig">
     <table class="complex data longlastcol">
      <tbody>
@@ -5292,7 +5293,7 @@ laid out in the following way:</p>
 different orderings of pixels in an RGB video, e.g. <span class="css">RGB</span>'s <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset①">rc_offset</a>s will
 be <code>[0, 1, 2]</code>, whilst <span class="css">BGR</span>'s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑤">packet_data</a> field MUST contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line. The number of horizontal lines being given by <a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height①">rv_height</a> for plane number <span class="css">0</span>, and <code><a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height②">rv_height</a> >> <a data-link-type="dfn" href="#raw-video-encapsulation-rv_ver_subsample" id="ref-for-raw-video-encapsulation-rv_ver_subsample">rv_ver_subsample</a></code> for all other planes. The actual lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑥">packet_data</a> field MUST contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line. The number of horizontal lines being given by <a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height①">rv_height</a> for plane number <span class="css">0</span>, and <code><a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height②">rv_height</a> >> <a data-link-type="dfn" href="#raw-video-encapsulation-rv_ver_subsample" id="ref-for-raw-video-encapsulation-rv_ver_subsample">rv_ver_subsample</a></code> for all other planes. The actual lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
    <p class="note" role="note"><span class="marker">Note:</span> <a href="#video-information-packets">§ 2.18 Video information</a> packets must be present. The information in this structure
 is only sufficient to parse data, not enough to present it.</p>
    <h3 class="heading settled" data-level="3.2" id="enum-RawVideoFlags"><span class="secno">3.2. </span><span class="content">Raw Video Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-rawvideoflags"><code>RawVideoFlags</code></dfn>)</span><a class="self-link" href="#enum-RawVideoFlags"></a></h3>
@@ -5331,7 +5332,7 @@ used if the codec being contained already has a formal definition in this spec.<
    <p>For custom encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id②⓪">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x433f****</span> (<span class="css">C?**</span>), where the bottom 2 bytes can be any value between <span class="css">0x30</span> to <span class="css">0x39</span> (<code>0</code> to <code>9</code> in ASCII) and <span class="css">0x61</span> to <span class="css">0x7a</span> (<code>a</code> to <code>z</code> in ASCII).</p>
    <p>The <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> payload can be any length
 and contain any sequence of data.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑥">packet_data</a> field can be any length and contain any sequence of data.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑦">packet_data</a> field can be any length and contain any sequence of data.</p>
    <h3 class="heading settled" data-level="3.3" id="streaming"><span class="secno">3.3. </span><span class="content">Streaming</span><a class="self-link" href="#streaming"></a></h3>
    <p>This section describes and suggests behavior for realtime AVTransport streams.</p>
    <p>The protocol supports four different streaming arrangements:</p>
@@ -5422,7 +5423,7 @@ exceeded and no packet fragmentation occurs.<br> The <b>minimum</b> network MTU 
 as to allow <a href="#video-information-packets">§ 2.18 Video information</a> or any future large
 packets to be sent without fragmentation.</p>
    <p><a data-link-type="biblio" href="#biblio-rfc2675" title="IPv6 Jumbograms">Jumbograms</a> may be used where supported to reduce overhead and increase efficiency.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> Data packets may be padded by appending zeroed bytes after the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑦">packet_data</a> field up to the maximum MTU size. This permits constant bitrate operation,
+   <p class="note" role="note"><span class="marker">Note:</span> Data packets may be padded by appending zeroed bytes after the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①⑧">packet_data</a> field up to the maximum MTU size. This permits constant bitrate operation,
 as well as preventing metadata leakage in the form of a packet size.</p>
    <p class="note" role="note"><span class="marker">Note:</span> When operating at higher MTUs, implementations should consider adding FEC or parity,
 as the 16-bit UDP datagram CRC may be inadequate to detect errors.</p>
@@ -6699,7 +6700,7 @@ window.dfnpanelData['generic-data-parity-packets-parity_data_length'] = {"dfnID"
 window.dfnpanelData['stream-data-packet-field_id'] = {"dfnID": "stream-data-packet-field_id", "url": "#stream-data-packet-field_id", "dfnText": "field_id", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-field_id"}, {"id": "ref-for-stream-data-packet-field_id\u2460"}, {"id": "ref-for-stream-data-packet-field_id\u2461"}, {"id": "ref-for-stream-data-packet-field_id\u2462"}], "title": "2.22. Interlacing Enumeration (enum Interlacing)"}], "external": false};
 window.dfnpanelData['stream-data-packet-pkt_compression'] = {"dfnID": "stream-data-packet-pkt_compression", "url": "#stream-data-packet-pkt_compression", "dfnText": "pkt_compression", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-pkt_compression"}], "title": "3.1.17. SVG encapsulation"}], "external": false};
 window.dfnpanelData['stream-data-packet-data_length'] = {"dfnID": "stream-data-packet-data_length", "url": "#stream-data-packet-data_length", "dfnText": "data_length", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-data_length"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream-data-packet-data_length\u2460"}], "title": "2.7.3. Stream data segmentation"}], "external": false};
-window.dfnpanelData['stream-data-packet-packet_data'] = {"dfnID": "stream-data-packet-packet_data", "url": "#stream-data-packet-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-packet_data"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461"}], "title": "3.1.4. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2462"}], "title": "3.1.7. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2463"}], "title": "3.1.8. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2464"}], "title": "3.1.9. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2465"}], "title": "3.1.10. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2466"}], "title": "3.1.11. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2467"}], "title": "3.1.12. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2468"}], "title": "3.1.13. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u24ea"}], "title": "3.1.14. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2460"}], "title": "3.1.15. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2461"}], "title": "3.1.16. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2462"}], "title": "3.1.17. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2463"}], "title": "3.1.18. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2464"}], "title": "3.1.19. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2465"}], "title": "3.2.1. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2466"}], "title": "3.3.1. UDP"}], "external": false};
+window.dfnpanelData['stream-data-packet-packet_data'] = {"dfnID": "stream-data-packet-packet_data", "url": "#stream-data-packet-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-packet_data"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461"}], "title": "3.1.4. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2462"}], "title": "3.1.5. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2463"}], "title": "3.1.7. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2464"}], "title": "3.1.8. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2465"}], "title": "3.1.9. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2466"}], "title": "3.1.10. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2467"}], "title": "3.1.11. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2468"}], "title": "3.1.12. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u24ea"}], "title": "3.1.13. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2460"}], "title": "3.1.14. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2461"}], "title": "3.1.15. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2462"}], "title": "3.1.16. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2463"}], "title": "3.1.17. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2464"}], "title": "3.1.18. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2465"}], "title": "3.1.19. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2466"}], "title": "3.2.1. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2467"}], "title": "3.3.1. UDP"}], "external": false};
 window.dfnpanelData['enumdef-frametype'] = {"dfnID": "enumdef-frametype", "url": "#enumdef-frametype", "dfnText": "FrameType", "refSections": [{"refs": [{"id": "ref-for-enumdef-frametype"}], "title": "2.7. Stream Data"}], "external": false};
 window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.15. Font data"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-group_id'] = {"dfnID": "fec-grouping-packets-group_id", "url": "#fec-grouping-packets-group_id", "dfnText": "group_id", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-group_id"}], "title": "2.8. FEC grouping"}], "external": false};
