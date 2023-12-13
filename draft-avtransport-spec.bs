@@ -879,7 +879,7 @@ in the following manner:
       :: Stream is a cover art picture for the stream signalled in [=related_stream_id=].
 
     : <dfn>SESSION_LOW_QUALITY</dfn> = <i>0x10</i>
-      :: Stream is a lower quality version of the stream signalled in [=related_stream_id=].
+      :: Stream is a lower quality version of the stream signalled in [=derived_stream_id=].
 
     : <dfn>STREAM_DUB</dfn> = <i>0x20</i>
       :: Stream is a dubbed version of the stream signalled in [=related_stream_id=].
