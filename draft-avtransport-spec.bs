@@ -3337,17 +3337,18 @@ to contain the stream info header, which is defined as follows:
 The `packet_data` must contain raw FLAC frames, with their frame header untouched.
 
 
-### AV1 encapsulation ### {#av1-encapsulation}
+## Theora encapsulation ### {#theora-encapsulation}
 
-For [[AV1]] encapsulation, the [=codec_id=] in
-[[#stream-registration-packets]]
-must be ''0x41563031'' (<code>AV01</code>).
+For Xiph Theora encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]] must be 0x56503332 (''VP32'').
 
-The [[#stream-configuration-packets]] packet payload must be the
-codec's so-called ''uncompressed header''. For information on its syntax,
-consult the specifications, section ''5.9.2. Uncompressed header syntax''.
+Stream configuration data is required for Theora. [[#stream-configuration-packets]]
+packets must contain an <i>"Identification Header"</i> (defined in <b>Section 6.2</b>),
+<i>"Comment Header"</i> (defined in <b>Section 6.3</b>), and a <i>"Setup Header"</i>
+(defined in <b>Section 6.4</b>), concatenated together, as defined in
+<b>Section 3.2.1</b>, <i>"Decoder Setup"</i>.
 
-The [=packet_data=] MUST contain raw, separated ''OBU''s.
+The [=packet_data=] must contain raw Theora packets.
 
 
 ### VP9 encapsulation ### {#vp9-encapsulation}
@@ -3362,6 +3363,19 @@ consult the specifications, section ''6.2 Uncompressed header syntax''.
 
 The [=packet_data=] must contain raw <b>superframe</b> packets, as defined in ''Annex B'' of the
 VP9 specifications.
+
+
+### AV1 encapsulation ### {#av1-encapsulation}
+
+For [[AV1]] encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x41563031'' (<code>AV01</code>).
+
+The [[#stream-configuration-packets]] packet payload must be the
+codec's so-called ''uncompressed header''. For information on its syntax,
+consult the specifications, section ''5.9.2. Uncompressed header syntax''.
+
+The [=packet_data=] MUST contain raw, separated ''OBU''s.
 
 
 ### H264 encapsulation ### {#h264-encapsulation}
@@ -3426,6 +3440,65 @@ Stream configuration data is required for FFv1. [[#stream-configuration-packets]
 must contain a "Parameters" structure, as defined in [[RFC9043#name-parameters]].
 
 The [=packet_data=] must contain raw FFv1 packets.
+
+
+### ProRes encapsulation ### {#prores-encapsulation}
+
+Apple ProRes is a collection of different profiles, each having its own codec ID:
+
+<figure id="table-ProResCodec" class="table">
+    <table class="complex data longlastcol" dfn-for="#prores-encapsulation">
+        <tr>
+            <th>codec ID</th>
+            <th>codec ID (text)</th>
+            <th>Profile</th>
+        </tr>
+        <tr>
+            <td>''0x6170636e''</td>
+            <td>''apcn''</td>
+            <td>Apple ProRes 422 Standard Definition</td>
+        </tr>
+        <tr>
+            <td>''0x61706368''</td>
+            <td>''apch''</td>
+            <td>Apple ProRes 422 High Quality</td>
+        </tr>
+        <tr>
+            <td>''0x61706373''</td>
+            <td>''apcs''</td>
+            <td>Apple ProRes 422 LT</td>
+        </tr>
+        <tr>
+            <td>''0x6170636f''</td>
+            <td>''apco''</td>
+            <td>Apple ProRes 422 Proxy</td>
+        </tr>
+        <tr>
+            <td>''0x61703468''</td>
+            <td>''ap4h''</td>
+            <td>Apple ProRes 4444</td>
+        </tr>
+        <tr>
+            <td>''0x61703478''</td>
+            <td>''ap4x''</td>
+            <td>Apple ProRes 4444 XQ</td>
+        </tr>
+        <tr>
+            <td>''0x61707268''</td>
+            <td>''aprh''</td>
+            <td>Apple ProRes RAW High Quality</td>
+        </tr>
+        <tr>
+            <td>''0x6170726e''</td>
+            <td>''aprn''</td>
+            <td>Apple ProRes RAW Standard Definition</td>
+        </tr>
+    </table>
+</figure>
+
+All Apple ProRes streams require no [[#stream-configuration-packets]] packets.
+
+The [=packet_data=] must contain raw ProRes packets.
 
 
 ### ASS encapsulation ### {#ass-encapsulation}
