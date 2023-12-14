@@ -3349,7 +3349,7 @@ to contain the stream info header, which is defined as follows:
 The `packet_data` must contain raw FLAC frames, with their frame header untouched.
 
 
-## Theora encapsulation ### {#theora-encapsulation}
+### Theora encapsulation ### {#theora-encapsulation}
 
 For Xiph Theora encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]] must be 0x56503332 (''VP32'').
