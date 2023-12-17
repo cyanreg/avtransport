@@ -193,6 +193,11 @@ AVT_API int avt_connection_mirror(AVTConnection *conn, const char *path);
 AVT_API int avt_connection_flush(AVTConnection *conn);
 
 /**
+ * Queries connection status.
+ */
+AVT_API int avt_connection_status(AVTConnection *conn);
+
+/**
  * Immediately destroy a connection, and free all resources associated
  * with it.
  * Will not flush.

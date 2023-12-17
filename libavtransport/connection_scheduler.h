@@ -43,8 +43,8 @@ typedef struct AVTScheduler {
     AVTOutput *out;
 
     uint64_t max_buffered; /* In bytes */
-    uint64_t rx_bandwidth; /* Bits per second */
-    uint64_t tx_bandwidth; /* Bits per second */
+    uint64_t rx_bandwidth; /* Bits per second for transmission */
+    uint64_t tx_bandwidth; /* Bits per second for the receiver */
     uint64_t max_pkt_size;
 
     /* One per stream. Value in bytes. 0 means in perfect realtime sync,
@@ -57,7 +57,7 @@ typedef struct AVTScheduler {
     int nb_buckets;
 } AVTScheduler;
 
-int avt_scheduler_init(AVTScheduler *s, AVTOutput *out);
+int avt_scheduler_init(AVTScheduler *s);
 
 int avt_scheduler_set_props(AVTScheduler *s,
                             uint64_t rx_bandwidth, uint64_t tx_bandwidth,

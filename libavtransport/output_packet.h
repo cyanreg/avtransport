@@ -36,22 +36,17 @@ int avt_send_time_sync(AVTOutput *out);
 
 /* Stream registration and data */
 int avt_send_stream_register(AVTOutput *out, AVTStream *st);
-int avt_send_stream_data(AVTOutput *out,
-                         AVTStream *st, AVTPacket *pkt);
+int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt);
 
 /* Generic data */
 int avt_send_generic_data(AVTOutput *out,
                           AVTStream *st, AVTBuffer *data, int64_t pts,
-                          uint32_t first_desd, uint32_t seg_desc);
+                          uint32_t init_desc, uint32_t seg_desc);
 
 /* LUT/ICC */
-int avt_send_lut_data(AVTOutput *out,
-                      AVTStream *st, int64_t pts);
-int avt_send_icc_data(AVTOutput *out,
-                      AVTStream *st, int64_t pts);
+int avt_send_lut_data(AVTOutput *out, AVTStream *st, int64_t pts);
+int avt_send_icc_data(AVTOutput *out, AVTStream *st, int64_t pts);
 
 /* Video info/orientation */
-int avt_send_video_info(AVTOutput *out,
-                        AVTStream *st, int64_t pts);
-int avt_send_video_orientation(AVTOutput *out,
-                               AVTStream *st, int64_t pts);
+int avt_send_video_info(AVTOutput *out, AVTStream *st, int64_t pts);
+int avt_send_video_orientation(AVTOutput *out, AVTStream *st, int64_t pts);

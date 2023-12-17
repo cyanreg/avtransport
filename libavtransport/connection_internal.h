@@ -57,6 +57,6 @@ typedef struct AVTAddress {
 } AVTAddress;
 
 int avt_connection_send(AVTConnection *conn,
-                        union AVTPacketData pkt, AVTBuffer *pl, void **series);
+                        union AVTPacketData pkt, AVTBuffer *pl);
 
 #endif /* AVTRANSPORT_CONNECTION_INTERNAL */

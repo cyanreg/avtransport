@@ -32,6 +32,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <avtransport/utils.h>
+#include <avtransport/packet_data.h>
+#include "buffer.h"
+
 #include "../config.h"
 
 static inline void avt_assert0(int cond)
@@ -75,5 +79,23 @@ static inline type * prefix## _ ## create_ ## shortname(ctx *dctx)             \
                                                                                \
     return sctx;                                                               \
 }
+
+/* Zero (usually) alloc FIFO. Payload is ref'd, and leaves with a ref. */
+typedef struct AVTOutputPacket {
+    union AVTPacketData pkt;
+    AVTBuffer pl;
+} AVTOutputPacket;
+
+typedef struct AVTPacketFifo {
+    AVTOutputPacket *data;
+    int nb;
+    int alloc;
+} AVTPacketFifo;
+
+int avt_pkt_fifo_push(AVTPacketFifo *fifo,
+                      union AVTPacketData pkt, AVTBuffer *pl);
+int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
+                     union AVTPacketData *pkt, AVTBuffer *pl);
+size_t avt_pkt_fifo_size(AVTPacketFifo *fifo);
 
 #endif

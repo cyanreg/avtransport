@@ -107,6 +107,12 @@ conf.set('PROJECT_VERSION_MAJOR', avtransport_ver_major)
 conf.set('PROJECT_VERSION_MINOR', avtransport_ver_minor)
 conf.set('PROJECT_VERSION_MICRO', avtransport_ver_micro)
 
+conf.set('CONFIG_DEFAULT_PORT', '8212')
+conf.set('CONFIG_DEFAULT_PORT_STR', '"8212"')
+conf.set('CONFIG_DEFAULT_TYPE', 'AVT_PROTOCOL_UDP')
+
+# Configuration settings
+#============================================================================
 conf.set('CONFIG_BIG_ENDIAN', host_machine.endian() == 'big')
 conf.set('CONFIG_INPUT', get_option('input').auto())
 conf.set('CONFIG_OUTPUT', get_option('output').auto()) 
@@ -140,10 +146,6 @@ if cc.has_function('pthread_setname_np', prefix: '#include <pthread.h>',
     conf.set('HAVE_PTHREAD_SETNAME_NP', 1)
     add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
-
-conf.set('CONFIG_DEFAULT_PORT', '8212')
-conf.set('CONFIG_DEFAULT_PORT_STR', '"8212"')
-conf.set('CONFIG_DEFAULT_TYPE', 'AVT_PROTOCOL_UDP')
 
 # spec2py
 #============================================================================

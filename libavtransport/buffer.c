@@ -132,12 +132,7 @@ int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
 {
     if (!buffer)
         return 0;
-
-    if (!len)
-        len = buffer->end_data - (buffer->data + offset);
-    if (len < 0)
-        return AVT_ERROR(EINVAL);
-    if (buffer->base_data + offset > buffer->end_data)
+    else if (buffer->base_data + offset > buffer->end_data)
         return AVT_ERROR(EINVAL);
 
     atomic_fetch_add_explicit(buffer->refcnt, 1, memory_order_relaxed);
@@ -159,6 +154,9 @@ void avt_buffer_quick_unref(AVTBuffer *buf)
         buf->free(buf->opaque, buf->data);
         free(buf->refcnt);
     }
+
+    /* Zero out to avoid leaks */
+    memset(buf, 0, sizeof(*buf));
 }
 
 int avt_buffer_get_refcount(AVTBuffer *buffer)

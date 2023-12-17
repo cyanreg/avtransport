@@ -104,6 +104,24 @@ templates = { }
 orig_desc_names = { }
 struct_sizes = { }
 substructs = [ ]
+anchor_name_remap = { }
+
+extra_values = {
+    "AVTStreamData": [
+        "dts", {
+            "fixed": None,
+            "ldpc": None,
+            "enum": None,
+            "size_bits": 64,
+            "bytestream": 8,
+            "datatype": "int64_t",
+            "struct": None,
+            "array_len": 0,
+            "string": False,
+            "payload": False,
+        }
+    ],
+}
 
 def iter_enum_fields(target_id):
     if target_id in enums:
@@ -123,7 +141,7 @@ def iter_enum_fields(target_id):
     enums[target_id] = enum_vals
 
 # Iterate over each field of a data structure
-def iter_data_fields(target_id, struct_name):
+def iter_data_fields(target_id, struct_name, anchor_name):
     total_bits = 0
     original_desc_name = None
     original_struct_name = struct_name
@@ -148,11 +166,13 @@ def iter_data_fields(target_id, struct_name):
         if fields[2].string and fields[2].string.startswith("[[#generic"):
             template_descriptor = int(fields[0].string.strip("'"), 16)
             descriptors[fields[1].string[:-11]] = template_descriptor
+
             print("Parsed templated struct", original_struct_name)
             templated_structs[struct_name] = dict({
                 "name": fields[1].string[:-11],
                 "descriptor": template_descriptor,
-                "template": fields[1].string.strip("[]"),
+                "descriptor_name": original_desc_name,
+                "template": anchor_name_remap[fields[2].string.strip("[]")],
             })
             return templated_structs[struct_name]
 
@@ -183,7 +203,7 @@ def iter_data_fields(target_id, struct_name):
                 struct = data[7:].strip("{}")
                 if struct.startswith("[[#"):
                     struct = struct.split("|")[1]
-                if iter_data_fields(struct, struct) == None:
+                if iter_data_fields(struct, struct, None) == None:
                     print("Unknown struct:", struct)
                     exit(22)
                 else:
@@ -272,7 +292,6 @@ def iter_data_fields(target_id, struct_name):
             datatype = "uint64_t"
 
         struct_fields[field_name] = dict({
-            "type": fields[0].string,
             "fixed": fixed_number,
             "ldpc": ldpc,
             "enum": enum,
@@ -288,7 +307,7 @@ def iter_data_fields(target_id, struct_name):
         if type(array_len) == int and array_len > 1:
             size_bits *= array_len
 
-        if payload == False and string == False or (string == True and type(array_len) == int):
+        if payload == False and struct == None and string == False or (string == True and type(array_len) == int):
             total_bits += size_bits
 
         if ldpc == None:
@@ -303,14 +322,15 @@ def iter_data_fields(target_id, struct_name):
         packet_structs[struct_name] = struct_fields
         orig_desc_names[struct_name] = original_desc_name
         struct_sizes[struct_name] = total_bits
+        anchor_name_remap[anchor_name] = struct_name
 
     return struct_fields
 
 # Load all templates
 templates = {
-    "#generic-data-packets": iter_data_fields("GenericData", None),
-    "#generic-data-segment-packets": iter_data_fields("GenericDataSegment", None),
-    "#generic-data-parity-packets": iter_data_fields("GenericDataParity", None),
+    "#generic-data-packets": iter_data_fields("GenericData", None, "#generic-data-packets"),
+    "#generic-data-segment-packets": iter_data_fields("GenericDataSegment", None, "#generic-data-segment-packets"),
+    "#generic-data-parity-packets": iter_data_fields("GenericDataParity", None, "#generic-data-parity-packets"),
 }
 
 for desc_pair in desc_pairs[1:]: # Skip table header
@@ -328,7 +348,7 @@ for desc_pair in desc_pairs[1:]: # Skip table header
         desc_end = int(val[1].strip("[']"), 16)
 
     for i in range(desc_start, desc_end + 1):
-        if iter_data_fields("0x" + format(i, '04X'), None) == None:
+        if iter_data_fields("0x" + format(i, '04X'), None, pair[1]) == None:
             break;
 
 copyright_header = "/*\n * Copyright © " + datetime.datetime.now().date().strftime("%Y") + ''', Lynne
@@ -402,6 +422,27 @@ if f_packet_data != None:
     file_structs.write("#include <stddef.h>\n\n")
     file_structs.write("#include <avtransport/packet_enums.h>\n")
     file_structs.write("#include <avtransport/rational.h>\n")
+
+    def write_struct_fields(name, field, newline_carryover):
+        if name.startswith("padding") or field["payload"] or name == "global_seq" or name.endswith("descriptor"):
+            return
+        if newline_carryover:
+            file_structs.write("\n")
+            newline_carryover = False;
+        if field["ldpc"] != None:
+            newline_carryover = True
+            return
+        file_structs.write("    " + field["datatype"] + " ")
+        if type(field["array_len"]) != int:
+            file_structs.write("*")
+        file_structs.write(name)
+        if type(field["array_len"]) == int:
+            if type(field["array_len"]) == str:
+                file_structs.write("[" + "" + "]")
+            elif field["array_len"] > 0:
+                file_structs.write("[" + str(field["array_len"]) + "]")
+        file_structs.write(";\n")
+
     for struct, fields in packet_structs.items():
         file_structs.write("\ntypedef struct " + struct + " {\n")
 
@@ -423,37 +464,42 @@ if f_packet_data != None:
 
         newline_carryover = False;
         for name, field in fields.items():
-            if name.startswith("padding") or field["payload"] or name == "global_seq" or name.endswith("descriptor"):
-                continue
-            if newline_carryover:
-                file_structs.write("\n")
-                newline_carryover = False;
-            if field["ldpc"] != None:
-                newline_carryover = True
-                continue
+            write_struct_fields(name, field, newline_carryover)
 
-            file_structs.write("    " + field["datatype"] + " ")
-            if type(field["array_len"]) != int:
-                file_structs.write("*")
-            file_structs.write(name)
-            if type(field["array_len"]) == int:
-                if type(field["array_len"]) == str:
-                    file_structs.write("[" + "" + "]")
-                elif field["array_len"] > 0:
-                    file_structs.write("[" + str(field["array_len"]) + "]")
-            file_structs.write(";\n")
+        for estruct, data in extra_values.items():
+            if struct == estruct:
+                write_struct_fields(data[0], data[1], newline_carryover)
 
         file_structs.write("} " + struct + ";\n")
 
     file_structs.write("\nunion " + data_prefix + "PacketData {\n")
     file_structs.write("    struct {\n")
-    file_structs.write("        uint16_t desc;\n")
+    file_structs.write("    enum AVTPktDescriptors desc;\n")
     file_structs.write("        uint64_t seq;\n")
     file_structs.write("    };\n")
     for struct, fields in packet_structs.items():
         if struct not in substructs:
             file_structs.write("    " + struct + " " + orig_desc_names[struct] + ";\n")
     file_structs.write("};\n")
+
+    file_structs.write("\nstatic inline size_t avt_pkt_hdr_size(union AVTPacketData pkt)\n")
+    file_structs.write("{\n")
+    file_structs.write("    switch (pkt.desc) {\n")
+
+    for name, size in struct_sizes.items():
+        if name in substructs or orig_desc_names[name].startswith("generic"):
+            continue
+        file_structs.write("    case " + (data_prefix + "_PKT_" + orig_desc_names[name]).upper() + ":\n")
+        file_structs.write("        return " + str(size >> 3) + ";\n")
+    for name, tstruct in templated_structs.items():
+        file_structs.write("    case " + (data_prefix + "_PKT_" + tstruct["descriptor_name"]).upper() + ":\n")
+        file_structs.write("        return " + str(struct_sizes[tstruct["template"]] >> 3) + ";\n")
+
+    file_structs.write("    default:\n")
+    file_structs.write("        break;\n")
+    file_structs.write("    }\n")
+    file_structs.write("    return 0;\n")
+    file_structs.write("}\n")
 
     file_structs.write("\n#endif /* AVTRANSPORT_PACKET_DATA_H */\n")
     file_structs.close()
@@ -580,7 +626,7 @@ if f_packet_encode != None:
                 file_encode.write(indent + bsw["int"] + "u" + str(MAX_BITFIELD_LEN - bitfield_bit - 1) + "b (bs, bitfield);\n")
                 bitfield = False
         file_encode.write("}\n")
-    file_encode.write("#endif /* AVTRANSPORT_ENCODE_H */\n")
+    file_encode.write("\n#endif /* AVTRANSPORT_ENCODE_H */\n")
     file_encode.close()
 
 if f_packet_decode != None:
@@ -730,5 +776,5 @@ if f_packet_decode != None:
         if substruct == False:
             file_decode.write("\n    return avt_bs_offs(bs);\n")
         file_decode.write("}\n")
-    file_decode.write("#endif /* AVTRANSPORT_DECODE_H */\n")
+    file_decode.write("\n#endif /* AVTRANSPORT_DECODE_H */\n")
     file_decode.close()

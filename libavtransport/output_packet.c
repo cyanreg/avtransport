@@ -38,30 +38,19 @@
 #include <brotli/encode.h>
 #endif
 
-static inline int avt_send_pkt(union AVTPacketData pkt)
+static inline int avt_send_pkt(AVTOutput *out,
+                               union AVTPacketData pkt, AVTBuffer *pl)
 {
+    int ret = 0;
 
-    return 0;
-}
+    for (int i = 0; i < out->nb_conn; i++) {
+        int err = avt_connection_send(out->conn[i], pkt, pl);
+        if (err < 0)
+            ret = err;
+    }
 
-static inline int calc_stream_satisfaction(AVTOutput *out, AVTStream *st)
-{
-    return 0;
+    return ret;
 }
-
-static inline int avt_interleave_start(AVTOutput *out, AVTStream *st,
-                                       AVTBuffer *pl, uint32_t *seg_size)
-{
-    return 0;
-}
-
-#ifdef CONFIG_HAVE_LIBBROTLI
-static void avt_brotli_data_free(void *opaque, void *base_data)
-{
-    BrotliEncoderState *brotli_ctx = opaque;
-    BrotliEncoderDestroyInstance(brotli_ctx);
-}
-#endif
 
 static inline int avt_payload_compress(AVTOutput *out,
                                        AVTBuffer **data, enum AVTPktDescriptors desc,
@@ -162,34 +151,42 @@ static inline int avt_payload_compress(AVTOutput *out,
 int avt_send_session_start(AVTOutput *out)
 {
     union AVTPacketData pkt = { .session_start = {
-        .global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX,
+        .session_start_descriptor = AVT_PKT_SESSION_START,
+        .session_version = 21552,
+        .session_id = 0x0,
+        .sender_uuid = { 0 },
+
         .session_flags = 0x0,
         .producer_major = PROJECT_VERSION_MAJOR,
         .producer_minor = PROJECT_VERSION_MINOR,
         .producer_micro = PROJECT_VERSION_MICRO,
+        .producer_name = { 0 },
     }};
-    memcpy(pkt.session_start.producer_name, PROJECT_NAME, strlen(PROJECT_NAME));
 
-    return 0;
+    memccpy(pkt.session_start.producer_name, PROJECT_NAME,
+            '\0', sizeof(pkt.session_start.producer_name));
+
+    return avt_send_pkt(out, pkt, nullptr);
 }
 
 int avt_send_time_sync(AVTOutput *out)
 {
     union AVTPacketData pkt = { .time_sync = {
+        .time_sync_descriptor = AVT_PKT_TIME_SYNC,
         .ts_clock_id = 0,
         .ts_clock_hz2 = 0,
-        .global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX,
         .epoch = atomic_load(&out->epoch),
         .ts_clock_seq = 0,
         .ts_clock_hz = 0,
     }};
 
-    return 0;
+    return avt_send_pkt(out, pkt, nullptr);
 }
 
 int avt_send_stream_register(AVTOutput *out, AVTStream *st)
 {
     union AVTPacketData pkt = { .stream_registration = {
+        .stream_registration_descriptor = AVT_PKT_STREAM_REGISTRATION,
         .stream_id = st->id,
         .global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX,
         .related_stream_id = st->related_to ? st->related_to->id : UINT16_MAX,
@@ -204,7 +201,7 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
         .init_packets = 0,
     }};
 
-    return 0;
+    return avt_send_pkt(out, pkt, nullptr);
 }
 
 #define INIT_SEGMENTED(buf, desc)                                                   \
@@ -250,30 +247,34 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
                                                                                     \
     return err;
 
-int avt_send_stream_data(AVTOutput *out,
-                         AVTStream *st, AVTPacket *pkt)
+int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
 {
-    INIT_SEGMENTED(pkt->data, AVT_PKT_STREAM_DATA)
+    /* Compress payload if necessary */
+    AVTBuffer *pl = pkt->data;
+    enum AVTDataCompression data_compression;
+    int err = avt_payload_compress(out, &pl, AVT_PKT_STREAM_DATA,
+                                   &data_compression);
+    if (err < 0)
+        return err;
 
     union AVTPacketData hdr = { .stream_data = {
+        .stream_data_descriptor = AVT_PKT_STREAM_DATA,
         .frame_type = pkt->type,
-        .pkt_segmented = seg_len < pbytes,
         .pkt_in_fec_group = 0,
         .field_id = 0,
         .pkt_compression = data_compression,
         .stream_id = st->id,
         .pts = pkt->pts,
         .duration = pkt->duration,
-        .data_length = seg_len,
     }};
 
-    SEGMENT(pkt->data, AVT_PKT_STREAM_DATA_SEGMENT)
+    return avt_send_pkt(out, hdr, pl);
 }
 
 #if 0
 int avt_send_generic_data(AVTOutput *out,
                           AVTStream *st, AVTBuffer *data, int64_t pts,
-                          uint32_t hdr_desc, uint32_t seg_desc)
+                          uint32_t init_desc, uint32_t seg_desc)
 {
     INIT_SEGMENTED(data, hdr_desc)
 

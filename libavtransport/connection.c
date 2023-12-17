@@ -31,6 +31,7 @@
 
 #include "connection_internal.h"
 #include "protocol_common.h"
+#include "utils_internal.h"
 
 #include "../config.h"
 
@@ -232,16 +233,22 @@ struct AVTConnection {
     AVTProtocolCtx *p_ctx;
 
     /* File mirror */
-    AVTConnection *mirror;
+    const AVTProtocol *mirror;
+    AVTProtocolCtx *mirror_ctx;
+
+    /* Output FIFO, pre-scheduler */
+    AVTPacketFifo out_fifo_pre;
+    AVTScheduler out_scheduler;
+    AVTPacketFifo out_fifo_post;
 
     /* Input reorder buffer */
-    AVTReorderBuffer *in_buffer;
+    AVTReorderBuffer in_buffer;
 };
 
 int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
                           AVTConnectionInfo *info)
 {
-    int ret;
+    int err;
 
     if (info->type < 0 || info->type > AVT_CONNECTION_CALLBACK)
         return AVT_ERROR(EINVAL);
@@ -249,9 +256,9 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     AVTAddress addr = { 0 };
     switch (info->type) {
     case AVT_CONNECTION_URL:
-        ret = avt_url_parse(ctx, &addr, info->path);
-        if (ret < 0)
-            return ret;
+        err = avt_url_parse(ctx, &addr, info->path);
+        if (err < 0)
+            return err;
         addr.proto = addr.proto;
         break;
     case AVT_CONNECTION_SOCKET:
@@ -273,7 +280,13 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
 
     conn->ctx = ctx;
 
-    int err = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &addr);
+    /* Output scheduler */
+    err = avt_scheduler_init(&conn->out_scheduler);
+    if (err < 0)
+        return err;
+
+    /* Protocol init */
+    err = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &addr);
     if (err < 0) {
         free(conn);
         return err;
@@ -285,9 +298,11 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
 }
 
 int avt_connection_send(AVTConnection *conn,
-                        union AVTPacketData pkt, AVTBuffer *pl, void **series)
+                        union AVTPacketData pkt, AVTBuffer *pl)
 {
-
+    int err = avt_pkt_fifo_push(&conn->out_fifo_pre, pkt, pl);
+    if (err < 0)
+        return err;
 
     return 0;
 }

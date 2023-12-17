@@ -1637,7 +1637,7 @@ FEC groups use a different packet for the FEC data.
         <tr id="0x0031+11">
             <td><code>[=fec_data_length=]*b(8)</code></td>
             <td><dfn>fec_data</dfn></td>
-            <td></td>
+            <td>payload</td>
             <td>The FEC data that can be used to check or correct the previous data packet's payload.</td>
         </tr>
     </table>
@@ -3053,14 +3053,200 @@ This section expands on certain aspects of the specification.
 
 
 ## Codec encapsulation ## {#codec-encapsulation}
+
 The following section lists the supported codecs, along with their encapsulation
-definitions.
+definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
+
+<figure id="table-EOS" class="table">
+    <table class="complex data longlastcol" dfn-for="#codec-encapsulation" id="codec_id_map">
+        <tr>
+            <th>[=codec_id=]</th>
+            <th>codec_id (ASCII)</th>
+            <th>Encapsulation</th>
+            <th>Name</th>
+        </tr>
+        <tr id="codec_id_map+0">
+            <td>''0x4F707573''</td>
+            <td>''Opus''</td>
+            <td><dfn>CODEC_ID_OPUS</dfn></td>
+            <td>[[#opus-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+1">
+            <td>''0x41414300''</td>
+            <td>''AAC\0''</td>
+            <td><dfn>CODEC_ID_AAC</dfn></td>
+            <td>[[#aac-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+2">
+            <td>''0x41432d33''</td>
+            <td>''AC-3''</td>
+            <td><dfn>CODEC_ID_AC3</dfn></td>
+            <td>[[#ac-3-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+3">
+            <td>''0x41545239''</td>
+            <td>''ATR9''</td>
+            <td><dfn>CODEC_ID_ATRAC9</dfn></td>
+            <td>[[#atrac9-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+4">
+            <td>''0x4154414b''</td>
+            <td>''ATAK''</td>
+            <td><dfn>CODEC_ID_TAK</dfn></td>
+            <td>[[#tak-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+5">
+            <td>''0x664c6143''</td>
+            <td>''fLaC''</td>
+            <td><dfn>CODEC_ID_FLAC</dfn></td>
+            <td>[[#tak-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+6">
+            <td>''0x56503332''</td>
+            <td>''VP23''</td>
+            <td><dfn>CODEC_ID_THEORA</dfn></td>
+            <td>[[#theora-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+7">
+            <td>''0x56503039''</td>
+            <td>''VP09''</td>
+            <td><dfn>CODEC_ID_VP9</dfn></td>
+            <td>[[#vp9-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+8">
+            <td>''0x41563031''</td>
+            <td>''AV01''</td>
+            <td><dfn>CODEC_ID_AV1</dfn></td>
+            <td>[[#av1-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+9">
+            <td>''0x48323634''</td>
+            <td>''H264''</td>
+            <td><dfn>CODEC_ID_H264</dfn></td>
+            <td>[[#h264-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+10">
+            <td>''0x48323635''</td>
+            <td>''H265''</td>
+            <td><dfn>CODEC_ID_H265</dfn></td>
+            <td>[[#h265-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+11">
+            <td>''0x42424344''</td>
+            <td>''BBCD''</td>
+            <td><dfn>CODEC_ID_DIRAC</dfn></td>
+            <td>[[#dirac-vc-2-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+12">
+            <td>''0x46467631''</td>
+            <td>''FFv1''</td>
+            <td><dfn>CODEC_ID_FFV1</dfn></td>
+            <td>[[#ffv1-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+13">
+            <td>''0x6170636e''</td>
+            <td>''apcn''</td>
+            <td><dfn>CODEC_ID_PRORES_SD</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+14">
+            <td>''0x61706368''</td>
+            <td>''apch''</td>
+            <td><dfn>CODEC_ID_PRORES_HQ</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+15">
+            <td>''0x61706373''</td>
+            <td>''apcs''</td>
+            <td><dfn>CODEC_ID_PRORES_LT</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+16">
+            <td>''0x6170636f''</td>
+            <td>''apco''</td>
+            <td><dfn>CODEC_ID_PRORES_PROXY</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+17">
+            <td>''0x61703468''</td>
+            <td>''ap4h''</td>
+            <td><dfn>CODEC_ID_PRORES_4444</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+18">
+            <td>''0x61703478''</td>
+            <td>''ap4x''</td>
+            <td><dfn>CODEC_ID_PRORES_4444_XQ</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+19">
+            <td>''0x61707268''</td>
+            <td>''aprh''</td>
+            <td><dfn>CODEC_ID_PRORES_RAW_HQ</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+20">
+            <td>''0x6170726e''</td>
+            <td>''aprn''</td>
+            <td><dfn>CODEC_ID_PRORES_RAW_SD</dfn></td>
+            <td>[[#prores-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+21">
+            <td>''0x54494646''</td>
+            <td>''TIFF''</td>
+            <td><dfn>CODEC_ID_TIFF</dfn></td>
+            <td>[[#dng-tiff-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+22">
+            <td>''0x4a504547''</td>
+            <td>''JPEG''</td>
+            <td><dfn>CODEC_ID_JPEG</dfn></td>
+            <td>[[#jpeg-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+23">
+            <td>''0x4a50324b''</td>
+            <td>''JP2K''</td>
+            <td><dfn>CODEC_ID_JPEG2000</dfn></td>
+            <td>[[#jpeg2000-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+24">
+            <td>''0x48544a32''</td>
+            <td>''HTJ2''</td>
+            <td><dfn>CODEC_ID_JPEG2000_HT</dfn></td>
+            <td>[[#jpeg2000-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+25">
+            <td>''0x504e4700''</td>
+            <td>''PNG\0''</td>
+            <td><dfn>CODEC_ID_PNG</dfn></td>
+            <td>[[#png-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+26">
+            <td>''0x53564732''</td>
+            <td>''SVG2''</td>
+            <td><dfn>CODEC_ID_SVG</dfn></td>
+            <td>[[#svg-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+27">
+            <td>''0x52414141''</td>
+            <td>''RAAA''</td>
+            <td><dfn>CODEC_ID_RAW_AUDIO</dfn></td>
+            <td>[[#raw-audio-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+28">
+            <td>''0x52415656''</td>
+            <td>''RAVV''</td>
+            <td><dfn>CODEC_ID_RAW_VIDEO</dfn></td>
+            <td>[[#raw-video-encapsulation]]</td>
+        </tr>
+    </table>
+</figure>
 
 
 ### Opus encapsulation ### {#opus-encapsulation}
 
 For [[RFC6716|Opus]] encapsulation, the [=codec_id=] in
-[[#stream-registration-packets]] must be 0x4F707573 (`Opus`).
+[[#stream-registration-packets]] must be ''0x4F707573'' (`Opus`).
 
 The payload of the [[#stream-configuration-packets]] packets MUST be
 laid out in the following way:

@@ -70,6 +70,12 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
     AVTStream *st = &out->streams[id];
 
     st->id = id;
+    if (!st->priv) {
+        st->priv = calloc(1, sizeof(*st->priv));
+        if (!st->priv)
+            return NULL;
+    }
+
     st->priv->out = out;
 
     return st;
@@ -83,12 +89,6 @@ int avt_output_stream_update(AVTOutput *out, AVTStream *st)
 int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)
 {
     return avt_send_stream_data(st->priv->out, st, pkt);
-}
-
-size_t avt_packet_get_max_size(AVTOutput *out)
-{
-//    return out->conn[0]->p->get_max_pkt_len(out->ctx, out->conn[0]->p_ctx);
-    return 0;
 }
 
 int avt_output_close(AVTOutput **_out)
