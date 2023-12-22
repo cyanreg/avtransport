@@ -54,6 +54,7 @@ enum AVTConnectionType {
      *   will actively connect and try to request a stream from the target address.
      *
      * - <address> of the remote host, or local host, or multicast group
+     *   May be suffixed with %<interface> to indicate an interface to attempt to bind to.
      *
      * - <port> on which to listen on/transmit to
      *
@@ -87,6 +88,12 @@ enum AVTProtocolType {
     AVT_PROTOCOL_QUIC,
 };
 
+enum AVTProtocolMode {
+    AVT_MODE_DEFAULT = 0,
+    AVT_MODE_PASSIVE,
+    AVT_MODE_ACTIVE,
+};
+
 typedef struct AVTConnectionInfo {
     /* Connection type */
     enum AVTConnectionType type;
@@ -107,6 +114,8 @@ typedef struct AVTConnectionInfo {
             bool use_receiver_addr;
             /* AVT_CONNECTION_SOCKET: which protocol to use */
             enum AVTProtocolType protocol;
+            /* AVT_CONNECTION_SOCKET: behaviour of the protocol */
+            enum AVTProtocolMode mode;
         } fd;
 
         /* AVT_CONNECTION_CALLBACK: structure */
@@ -158,6 +167,14 @@ typedef struct AVTConnectionInfo {
     struct {
         /* Buffer size limit. Zero means automatic. Approximate/best effort. */
         size_t buffer;
+
+        /* Interleave buffering:
+         *  - 0 (the default): automatically select based on the bandwidth
+         *  - 1:  buffer enough to interleave the largest current packet completely
+         *  - 2:  buffer enough to interleave half of the largest packet
+         *  - 3:  buffer enough to interleave a third of the largest packet
+         *  - 4 and so on: fraction continues to INT_MAX */
+        int interleave;
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.
@@ -204,4 +221,4 @@ AVT_API int avt_connection_status(AVTConnection *conn);
  */
 AVT_API int avt_connection_destroy(AVTConnection **conn);
 
-#endif
+#endif /* AVTRANSPORT_CONNECTION_H */

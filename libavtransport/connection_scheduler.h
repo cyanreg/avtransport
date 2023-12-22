@@ -24,20 +24,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_CONNECTION_SCHEDULER
-#define AVTRANSPORT_CONNECTION_SCHEDULER
+#ifndef AVTRANSPORT_CONNECTION_SCHEDULER_H
+#define AVTRANSPORT_CONNECTION_SCHEDULER_H
 
 #include "output_internal.h"
-
-typedef struct AVTSchedulerBucket {
-    union AVTPacketData *pkt;
-    AVTBuffer **pl;
-    int nb_packets;
-
-    /* Private entries */
-    int nb_packets_alloc;
-    int avail;
-} AVTSchedulerBucket;
+#include "utils_internal.h"
 
 typedef struct AVTScheduler {
     AVTOutput *out;
@@ -52,8 +43,11 @@ typedef struct AVTScheduler {
      * stream is good for now. */
     int64_t realtime[UINT16_MAX];
 
-    AVTSchedulerBucket *last_avail;
-    AVTSchedulerBucket **buckets;
+    /* Per-stream staging buffers */
+    AVTPacketFifo staging[UINT16_MAX];
+
+    AVTPacketFifo *last_avail;
+    AVTPacketFifo **buckets;
     int nb_buckets;
 } AVTScheduler;
 
@@ -66,9 +60,9 @@ int avt_scheduler_set_props(AVTScheduler *s,
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl);
 
-int avt_scheduler_pop(AVTScheduler *s, AVTSchedulerBucket **bkt);
-void avt_scheduler_done(AVTScheduler *s, AVTSchedulerBucket *bkt);
+int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq);
+void avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq);
 
 void avt_scheduler_free(AVTScheduler *s);
 
-#endif /* AVTRANSPORT_CONNECTION_SCHEDULER */
+#endif /* AVTRANSPORT_CONNECTION_SCHEDULER_H */

@@ -45,6 +45,7 @@ sources = [
     'ldpc.c',
     'raptor.c',
 
+    'address.c',
     'connection.c',
 
     'protocol_common.c',

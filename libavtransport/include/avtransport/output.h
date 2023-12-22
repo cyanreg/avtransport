@@ -109,4 +109,4 @@ AVT_API int avt_output_stream_close(AVTStream **st);
 /* Close all streams and free resources */
 AVT_API int avt_output_close(AVTOutput **out);
 
-#endif
+#endif /* AVTRANSPORT_SEND_H */

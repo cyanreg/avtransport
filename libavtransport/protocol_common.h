@@ -56,7 +56,7 @@ typedef struct AVTProtocol {
     /* Send a bucket of packets. Returns positive offset on success,
        otherwise negative error */
     int64_t (*send_packets)(AVTContext *ctx, AVTProtocolCtx *p,
-                            AVTSchedulerBucket *bkt);
+                            AVTPacketFifo *seq);
 
     /* Overwrite a packet at a given offset */
     int (*update_packet)(AVTContext *ctx, AVTProtocolCtx *p,

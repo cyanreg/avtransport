@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_UTILS
-#define LIBAVTRANSPORT_UTILS
+#ifndef AVTRANSPORT_UTILS_H
+#define AVTRANSPORT_UTILS_H
 
 #include <assert.h>
 #include <time.h>
@@ -88,14 +88,40 @@ typedef struct AVTOutputPacket {
 
 typedef struct AVTPacketFifo {
     AVTOutputPacket *data;
-    int nb;
-    int alloc;
+    unsigned int nb;
+    unsigned int alloc;
 } AVTPacketFifo;
 
+/* Push a packet to the FIFO */
 int avt_pkt_fifo_push(AVTPacketFifo *fifo,
                       union AVTPacketData pkt, AVTBuffer *pl);
+
+/* Pop a packet from the FIFO. quick_ref'd into pl */
 int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
                      union AVTPacketData *pkt, AVTBuffer *pl);
+
+/* Peek a packet from the FIFO. quick_ref'd into pl */
+int avt_pkt_fifo_peek(AVTPacketFifo *fifo,
+                      union AVTPacketData *pkt, AVTBuffer *pl);
+
+/* Copy and ref all packets from src to dst */
+int avt_pkt_fifo_copy(AVTPacketFifo *dst, AVTPacketFifo *src);
+
+/* Move all packets from src to dst */
+int avt_pkt_fifo_move(AVTPacketFifo *dst, AVTPacketFifo *src);
+
+/* Drop packets from the tail.
+ * If nb_pkts == 0, the ceiling is a size limit. */
+int avt_pkt_fifo_drop(AVTPacketFifo *fifo,
+                      unsigned nb_pkts, size_t ceiling);
+
+/* Get the current size of the FIFO */
 size_t avt_pkt_fifo_size(AVTPacketFifo *fifo);
 
-#endif
+/* Clear all packets in the fifo */
+void avt_pkt_fifo_clear(AVTPacketFifo *fifo);
+
+/* Free all resources */
+void avt_pkt_fifo_free(AVTPacketFifo *fifo);
+
+#endif /* AVTRANSPORT_UTILS_H */

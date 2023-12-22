@@ -27,7 +27,7 @@
 #include "connection_scheduler.h"
 #include "utils_internal.h"
 
-FN_CREATING(avt_scheduler, AVTScheduler, AVTSchedulerBucket,
+FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
 int avt_scheduler_init(AVTScheduler *s)
@@ -45,7 +45,14 @@ int avt_scheduler_set_props(AVTScheduler *s,
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl)
 {
-    AVTSchedulerBucket *bkt = s->last_avail;
+
+
+    return 0;
+}
+
+int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
+{
+    AVTPacketFifo *bkt = s->last_avail;
     if (!bkt) {
         bkt = avt_scheduler_create_bucket(s);
         if (!bkt)
@@ -53,22 +60,17 @@ int avt_scheduler_push(AVTScheduler *s,
     }
 
     s->last_avail = NULL;
+    *seq = bkt;
 
     return 0;
 }
 
-int avt_scheduler_pop(AVTScheduler *s, AVTSchedulerBucket **bkt)
+void avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq)
 {
-    *bkt = s->last_avail;
-    return 0;
-}
-
-void avt_scheduler_done(AVTScheduler *s, AVTSchedulerBucket *bkt)
-{
-    if (bkt)
+    if (!seq)
         return;
 
-    s->last_avail = bkt;
+    s->last_avail = seq;
 }
 
 void avt_scheduler_free(AVTScheduler *s)

@@ -25,6 +25,7 @@
  */
 
 #include <string.h>
+#include <stdckdint.h>
 #include <avtransport/avtransport.h>
 
 #include "utils_internal.h"
@@ -41,6 +42,22 @@ uint64_t avt_get_time_ns(void)
     return (ts.tv_sec * 1000000000) + ts.tv_nsec;
 }
 
+void avt_pkt_fifo_clear(AVTPacketFifo *fifo)
+{
+    for (int i = 0; i < fifo->nb; i++) {
+        AVTOutputPacket *data = &fifo->data[i];
+        avt_buffer_quick_unref(&data->pl);
+    }
+    fifo->nb = 0;
+}
+
+void avt_pkt_fifo_free(AVTPacketFifo *fifo)
+{
+    avt_pkt_fifo_clear(fifo);
+    free(fifo->data);
+    memset(fifo, 0, sizeof(*fifo));
+}
+
 int avt_pkt_fifo_push(AVTPacketFifo *fifo,
                       union AVTPacketData pkt, AVTBuffer *pl)
 {
@@ -48,6 +65,7 @@ int avt_pkt_fifo_push(AVTPacketFifo *fifo,
         if (!fifo->alloc)
             fifo->alloc = 1;
 
+        /* Ptwo allocations */
         AVTOutputPacket *alloc = reallocarray(fifo->data,
                                               fifo->alloc << 1,
                                               sizeof(*fifo->data));
@@ -65,6 +83,73 @@ int avt_pkt_fifo_push(AVTPacketFifo *fifo,
         fifo->nb++;
 
     return err;
+}
+
+int avt_pkt_fifo_copy(AVTPacketFifo *dst, AVTPacketFifo *src)
+{
+    if ((dst->nb + src->nb) >= dst->alloc) {
+        if (!dst->alloc)
+            dst->alloc = src->nb;
+
+        AVTOutputPacket *alloc = reallocarray(dst->data,
+                                              dst->alloc + src->nb,
+                                              sizeof(*dst->data));
+        if (!alloc)
+            return AVT_ERROR(ENOMEM);
+
+        dst->data = alloc;
+        dst->alloc += src->nb;
+    }
+
+    for (int i = 0; i < src->nb; i++) {
+        AVTOutputPacket *pdst = &dst->data[dst->nb + i];
+        AVTOutputPacket *psrc = &src->data[i];
+        *psrc = *pdst;
+        int err = avt_buffer_quick_ref(&pdst->pl, &psrc->pl, 0, 0);
+        if (err < 0) {
+            dst->nb += 1;
+            return err;
+        }
+    }
+
+    dst->nb += src->nb;
+
+    return 0;
+}
+
+int avt_pkt_fifo_move(AVTPacketFifo *dst, AVTPacketFifo *src)
+{
+    if ((dst->nb + src->nb) >= dst->alloc) {
+        if (!dst->alloc)
+            dst->alloc = src->nb;
+
+        AVTOutputPacket *alloc = reallocarray(dst->data,
+                                              dst->alloc + src->nb,
+                                              sizeof(*dst->data));
+        if (!alloc)
+            return AVT_ERROR(ENOMEM);
+
+        dst->data = alloc;
+        dst->alloc += src->nb;
+    }
+
+    memcpy(&dst->data[dst->nb], src->data, src->nb*sizeof(*dst->data));
+    dst->nb += src->nb;
+    avt_pkt_fifo_clear(src);
+
+    return 0;
+}
+
+int avt_pkt_fifo_peek(AVTPacketFifo *fifo,
+                      union AVTPacketData *pkt, AVTBuffer *pl)
+{
+    if (!fifo->nb)
+        return AVT_ERROR(ENOENT);
+
+    AVTOutputPacket *data = &fifo->data[0];
+
+    *pkt = data->pkt;
+    return avt_buffer_quick_ref(pl, &data->pl, 0, 0);
 }
 
 int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
@@ -85,12 +170,46 @@ int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
     return err;
 }
 
+static inline size_t avt_pkt_fifo_get_entry_size(AVTOutputPacket *e)
+{
+    return sizeof(e) + avt_buffer_get_data_len(&e->pl);
+}
+
+int avt_pkt_fifo_drop(AVTPacketFifo *fifo, unsigned int nb_pkts, size_t ceiling)
+{
+    unsigned int idx = 0;
+
+    if (!nb_pkts) {
+        size_t acc = 0;
+        for (int i = 0; i < fifo->nb; i++) {
+            acc += avt_pkt_fifo_get_entry_size(&fifo->data[i]);
+            if (acc > ceiling) {
+                idx = i;
+                break;
+            }
+        }
+    } else {
+        if (ckd_sub(&idx, fifo->nb, nb_pkts))
+            return AVT_ERROR(EINVAL);
+    }
+
+    for (; idx < fifo->nb; idx++) {
+        AVTOutputPacket *data = &fifo->data[idx];
+        avt_buffer_quick_unref(&data->pl);
+    }
+
+    fifo->nb = idx;
+
+    return 0;
+}
+
 size_t avt_pkt_fifo_size(AVTPacketFifo *fifo)
 {
-    size_t acc = 0;
+    // TODO: not sure if I want to use fifo->alloc instead of fifo->nb here
+    size_t acc = fifo->alloc * sizeof(*fifo->data);
 
     for (int i = 0; i < fifo->nb; i++)
-        acc += avt_pkt_hdr_size(fifo->data[i].pkt);
+        acc += avt_buffer_get_data_len(&fifo->data[i].pl);
 
     return acc;
 }

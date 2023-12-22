@@ -26,7 +26,7 @@ project('avtransport', 'c',
     license: 'BSD-2-Clause',
     license_files: ['LICENSE.md'],
     default_options: [ 'buildtype=debugoptimized', 'c_std=c2x', 'warning_level=1' ],
-    version: '0.0.3',
+    version: '0.0.4',
     meson_version: '>=1.1.0',
 )
 

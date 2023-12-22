@@ -77,7 +77,7 @@ static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
 }
 
 static int64_t noop_send_packets(AVTContext *ctx, AVTProtocolCtx *p,
-                                 AVTSchedulerBucket *bkt)
+                                 AVTPacketFifo *seq)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     size_t hdr_len = 0;

@@ -105,6 +105,8 @@ orig_desc_names = { }
 struct_sizes = { }
 substructs = [ ]
 anchor_name_remap = { }
+streamid_padded_structs = [ ]
+streamid_field_exceptions = [ "stream_id", "group_id", "user_field", "session_version" ]
 
 extra_values = {
     "AVTStreamData": [
@@ -351,6 +353,17 @@ for desc_pair in desc_pairs[1:]: # Skip table header
         if iter_data_fields("0x" + format(i, '04X'), None, pair[1]) == None:
             break;
 
+# Marks all structs which don't have a stream_id or a stream_id analogue
+# which have had padding inserted into them to enable type punning.
+# We need this as f_packet_enums may be NULL.
+for struct, fields in packet_structs.items():
+    name_sid = None
+    for name, field in fields.items():
+        if name in streamid_field_exceptions and name_sid == None:
+            name_sid = name
+    if name_sid == None and struct not in substructs:
+        streamid_padded_structs.append(struct)
+
 copyright_header = "/*\n * Copyright © " + datetime.datetime.now().date().strftime("%Y") + ''', Lynne
  * All rights reserved.
  *
@@ -424,7 +437,9 @@ if f_packet_data != None:
     file_structs.write("#include <avtransport/rational.h>\n")
 
     def write_struct_fields(name, field, newline_carryover):
-        if name.startswith("padding") or field["payload"] or name == "global_seq" or name.endswith("descriptor"):
+        if name.startswith("padding") or field["payload"] or name == "global_seq" or \
+           name in streamid_field_exceptions or \
+           name.endswith("descriptor"):
             return
         if newline_carryover:
             file_structs.write("\n")
@@ -449,18 +464,29 @@ if f_packet_data != None:
         # To enable type punning via unions
         name_desc = None
         name_seq = None
+        name_sid = None
         for name, field in fields.items():
             if name.endswith("descriptor") and name_desc == None:
                 name_desc = name
             elif name == "global_seq" and name_seq == None:
                 name_seq = name
+            elif name in streamid_field_exceptions and name_sid == None:
+                name_sid = name
 
         if name_desc != None:
             field = fields[name_desc]
             file_structs.write("    " + field["datatype"] + " " + name_desc + ";\n")
+
         if name_seq != None:
             field = fields[name_seq]
             file_structs.write("    " + field["datatype"] + " " + name_seq + ";\n")
+
+        if name_sid != None:
+            field = fields[name_sid]
+            file_structs.write("    " + field["datatype"] + " " + name_sid + ";\n")
+        elif struct not in substructs:
+            file_structs.write("    uint16_t padding;\n")
+            streamid_padded_structs.append(struct)
 
         newline_carryover = False;
         for name, field in fields.items():
@@ -472,10 +498,33 @@ if f_packet_data != None:
 
         file_structs.write("} " + struct + ";\n")
 
+        if struct not in substructs:
+            file_structs.write("\n#define AVT_" + orig_desc_names[struct].upper() + "_HDR")
+            if orig_desc_names[struct].startswith("generic"):
+                file_structs.write("(DESC, ...) \\\n")
+            else:
+                file_structs.write("(...) \\\n")
+            file_structs.write("    (union AVTPacketData) { ." + orig_desc_names[struct] + " = { \\\n")
+            file_structs.write("        ." + orig_desc_names[struct] + "_descriptor = ")
+            if orig_desc_names[struct].startswith("generic"):
+                file_structs.write("DESC, \\\n")
+            else:
+                file_structs.write(data_prefix + "_PKT_" + orig_desc_names[struct].upper() + ", \\\n")
+            if struct in streamid_padded_structs:
+                file_structs.write("        .padding = UINT16_MAX, \\\n")
+
+            for name, field in fields.items():
+                if field["fixed"] != None and name.endswith("descriptor") == False:
+                    file_structs.write("        ." + name + " = " + str(field["fixed"]) + ", \\\n")
+
+            file_structs.write("        __VA_ARGS__ \\\n")
+            file_structs.write("    }}\n")
+
     file_structs.write("\nunion " + data_prefix + "PacketData {\n")
     file_structs.write("    struct {\n")
-    file_structs.write("    enum AVTPktDescriptors desc;\n")
+    file_structs.write("        enum AVTPktDescriptors desc;\n")
     file_structs.write("        uint64_t seq;\n")
+    file_structs.write("        uint16_t stream_id;\n")
     file_structs.write("    };\n")
     for struct, fields in packet_structs.items():
         if struct not in substructs:
@@ -498,6 +547,7 @@ if f_packet_data != None:
     file_structs.write("    default:\n")
     file_structs.write("        break;\n")
     file_structs.write("    }\n")
+    file_structs.write("    unreachable();\n")
     file_structs.write("    return 0;\n")
     file_structs.write("}\n")
 
@@ -773,6 +823,8 @@ if f_packet_decode != None:
                math.log2(MAX_BITFIELD_LEN - bitfield_bit - 1).is_integer(): # Terminate bitfield
                 bitfield = False
                 file_decode.write("\n")
+        if struct in streamid_padded_structs:
+            file_decode.write("\n    p->padding = UINT16_MAX;\n")
         if substruct == False:
             file_decode.write("\n    return avt_bs_offs(bs);\n")
         file_decode.write("}\n")

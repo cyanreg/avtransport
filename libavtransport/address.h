@@ -24,16 +24,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_CONNECTION_INTERNAL_H
-#define AVTRANSPORT_CONNECTION_INTERNAL_H
+#ifndef AVTRANSPORT_ADDRESS_H
+#define AVTRANSPORT_ADDRESS_H
 
-#include "common.h"
-#include "reorder.h"
-#include "address.h"
+#include <avtransport/connection.h>
 
-#include <avtransport/packet_enums.h>
+/* Extend the <connection.h> definitions further */
+#define AVT_PROTOCOL_NOOP    (0)
+#define AVT_PROTOCOL_PIPE    (AVT_PROTOCOL_QUIC    + 1)
+#define AVT_PROTOCOL_FILE    (AVT_PROTOCOL_PIPE    + 1)
+#define AVT_PROTOCOL_FD      (AVT_PROTOCOL_FILE    + 1)
+#define AVT_PROTOCOL_PACKET  (AVT_PROTOCOL_FD      + 1)
 
-int avt_connection_send(AVTConnection *conn,
-                        union AVTPacketData pkt, AVTBuffer *pl);
+typedef struct AVTAddress {
+    enum AVTProtocolType proto;
+    enum AVTProtocolMode mode;
 
-#endif /* AVTRANSPORT_CONNECTION_INTERNAL_H */
+    uint8_t ip[16]; /* Always mapped to IPv6 */
+    uint16_t port;
+
+    char8_t *interface;
+    char8_t *path;
+    AVTMetadata *params;
+} AVTAddress;
+
+int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path);
+int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info);
+void avt_addr_free(AVTAddress *addr);
+
+#endif /* AVTRANSPORT_URL_ADDRESS_H */

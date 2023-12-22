@@ -150,9 +150,7 @@ static inline int avt_payload_compress(AVTOutput *out,
 
 int avt_send_session_start(AVTOutput *out)
 {
-    union AVTPacketData pkt = { .session_start = {
-        .session_start_descriptor = AVT_PKT_SESSION_START,
-        .session_version = 21552,
+    union AVTPacketData pkt = AVT_SESSION_START_HDR(
         .session_id = 0x0,
         .sender_uuid = { 0 },
 
@@ -161,7 +159,7 @@ int avt_send_session_start(AVTOutput *out)
         .producer_minor = PROJECT_VERSION_MINOR,
         .producer_micro = PROJECT_VERSION_MICRO,
         .producer_name = { 0 },
-    }};
+    );
 
     memccpy(pkt.session_start.producer_name, PROJECT_NAME,
             '\0', sizeof(pkt.session_start.producer_name));
@@ -171,22 +169,20 @@ int avt_send_session_start(AVTOutput *out)
 
 int avt_send_time_sync(AVTOutput *out)
 {
-    union AVTPacketData pkt = { .time_sync = {
-        .time_sync_descriptor = AVT_PKT_TIME_SYNC,
+    union AVTPacketData pkt = AVT_TIME_SYNC_HDR(
         .ts_clock_id = 0,
         .ts_clock_hz2 = 0,
         .epoch = atomic_load(&out->epoch),
         .ts_clock_seq = 0,
         .ts_clock_hz = 0,
-    }};
+    );
 
     return avt_send_pkt(out, pkt, nullptr);
 }
 
 int avt_send_stream_register(AVTOutput *out, AVTStream *st)
 {
-    union AVTPacketData pkt = { .stream_registration = {
-        .stream_registration_descriptor = AVT_PKT_STREAM_REGISTRATION,
+    union AVTPacketData pkt = AVT_STREAM_REGISTRATION_HDR(
         .stream_id = st->id,
         .global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX,
         .related_stream_id = st->related_to ? st->related_to->id : UINT16_MAX,
@@ -199,7 +195,7 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
         .ts_clock_id = 0,
         .skip_preroll = 0,
         .init_packets = 0,
-    }};
+    );
 
     return avt_send_pkt(out, pkt, nullptr);
 }
@@ -257,8 +253,7 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
     if (err < 0)
         return err;
 
-    union AVTPacketData hdr = { .stream_data = {
-        .stream_data_descriptor = AVT_PKT_STREAM_DATA,
+    union AVTPacketData hdr = AVT_STREAM_DATA_HDR(
         .frame_type = pkt->type,
         .pkt_in_fec_group = 0,
         .field_id = 0,
@@ -266,7 +261,7 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
         .stream_id = st->id,
         .pts = pkt->pts,
         .duration = pkt->duration,
-    }};
+    );
 
     return avt_send_pkt(out, hdr, pl);
 }
