@@ -31,8 +31,6 @@
 #include "utils_internal.h"
 
 typedef struct AVTScheduler {
-    AVTOutput *out;
-
     uint64_t max_buffered; /* In bytes */
     uint64_t rx_bandwidth; /* Bits per second for transmission */
     uint64_t tx_bandwidth; /* Bits per second for the receiver */
@@ -45,6 +43,7 @@ typedef struct AVTScheduler {
 
     /* Per-stream staging buffers */
     AVTPacketFifo staging[UINT16_MAX];
+    int nb_streams;
 
     AVTPacketFifo *last_avail;
     AVTPacketFifo **buckets;

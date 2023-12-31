@@ -33,6 +33,8 @@
 
 #include <avtransport/packet_enums.h>
 
+int avt_connection_register_out(AVTConnection *conn, AVTOutput *out);
+
 int avt_connection_send(AVTConnection *conn,
                         union AVTPacketData pkt, AVTBuffer *pl);
 

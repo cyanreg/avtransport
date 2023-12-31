@@ -52,6 +52,7 @@ enum IOMode {
 
 typedef struct IOContext {
     enum IOMode mode;
+    int64_t val;
 
     enum AVTConnectionType type;
     AVTContext *avt;

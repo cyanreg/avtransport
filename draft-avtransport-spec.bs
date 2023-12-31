@@ -4522,6 +4522,9 @@ As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:
  - 64x288
  - 768x2784
 
+where `k` is the <b>message length</b> and `n` is the <b>block length</b> (the message length plus the
+parity bits).
+
 As each value of a matrix is purely boolean, <b>64 rows are represented as 64-bit unsigned integers</b>,
 in big endian format, hence row 1 is the most significant bit, row 2 is the second most significant bit,
 and so on. In other words, <b><i>GF(2⁶)</i></b>. This is the format that the reference function above expects.

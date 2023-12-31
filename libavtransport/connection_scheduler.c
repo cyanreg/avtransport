@@ -30,7 +30,7 @@
 FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
-int avt_scheduler_init(AVTScheduler *s)
+int avt_scheduler_init(AVTScheduler *s, AVTOutput *out)
 {
     return 0;
 }

@@ -67,6 +67,11 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
 
 AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
 {
+    if (id == UINT16_MAX) {
+        avt_log(out, AVT_LOG_ERROR, "Invalid stream ID: 0x%X is reserved!\n", id);
+        return AVT_ERROR(EINVAL);
+    }
+
     AVTStream *st = &out->streams[id];
 
     st->id = id;
@@ -77,6 +82,7 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
     }
 
     st->priv->out = out;
+    out->active_stream_idx[out->nb_streams++] = id;
 
     return st;
 }

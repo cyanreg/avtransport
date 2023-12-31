@@ -45,6 +45,8 @@ typedef struct AVTOutput {
     uint32_t nb_conn;
 
     AVTStream streams[UINT16_MAX];
+    uint16_t active_stream_idx[UINT16_MAX];
+    int nb_streams;
 
     atomic_uint_least64_t seq;
     atomic_uint_least64_t epoch;
