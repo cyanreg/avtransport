@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright © 2023 Lynne
+# Copyright © 2024 Lynne
 #
 # Permission is hereby granted, free of charge, to any person
 # obtaining a copy of this software and associated documentation

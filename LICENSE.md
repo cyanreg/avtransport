@@ -1,7 +1,7 @@
 BSD 2-clause license
 ====================
 
-Copyright © 2023, Lynne
+Copyright © 2024, Lynne
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
