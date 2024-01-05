@@ -69,7 +69,7 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
 {
     if (id == UINT16_MAX) {
         avt_log(out, AVT_LOG_ERROR, "Invalid stream ID: 0x%X is reserved!\n", id);
-        return AVT_ERROR(EINVAL);
+        return NULL;
     }
 
     AVTStream *st = &out->streams[id];
