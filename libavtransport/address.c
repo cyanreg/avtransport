@@ -269,6 +269,9 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         return AVT_ERROR(EINVAL);
 
     switch (info->type) {
+    case AVT_CONNECTION_NULL:
+        addr->proto = AVT_PROTOCOL_NOOP;
+        break;
     case AVT_CONNECTION_URL:
         err = avt_addr_from_url(log_ctx, addr, info->path);
         if (err < 0)

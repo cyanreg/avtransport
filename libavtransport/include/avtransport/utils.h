@@ -29,7 +29,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <uchar.h>
+#include <stdbool.h>
 #include <errno.h>
 
 typedef struct AVTContext AVTContext;
@@ -69,7 +69,7 @@ typedef struct AVTBuffer AVTBuffer;
 #endif
 
 /* Probe if the sequence of 36 bytes represents a valid AVT packet, or
- * the start of one. Returns 'true' if so. Result is fully certain. */
+ * the start of one. Returns 'true' if so. Result is trustworthy. */
 AVT_API bool avt_data_probe(uint8_t data[36]);
 
 /* Create a reference counted buffer from existing data. */

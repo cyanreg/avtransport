@@ -35,6 +35,9 @@ typedef struct AVTConnection AVTConnection;
 
 /* Connection type */
 enum AVTConnectionType {
+    /* Null connection. Transmits nothing. Receives only session start packets. */
+    AVT_CONNECTION_NULL = 0,
+
     /* URL address in the form of:
      *
      * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>][/<stream_id>[+<stream_id>][?<param1>=<val1]]
@@ -67,7 +70,7 @@ enum AVTConnectionType {
      * "udplite://", "quic://" and "file://", but none may be followed by
      * <transport>:<mode>, only <address>[:<port>]. Using "avt://" is recommended.
      */
-    AVT_CONNECTION_URL = 1,
+    AVT_CONNECTION_URL,
 
     /* File path */
     AVT_CONNECTION_FILE,
@@ -89,7 +92,7 @@ enum AVTProtocolType {
 };
 
 enum AVTProtocolMode {
-    AVT_MODE_DEFAULT = 0,
+    AVT_MODE_DEFAULT,
     AVT_MODE_PASSIVE,
     AVT_MODE_ACTIVE,
 };
@@ -100,7 +103,7 @@ typedef struct AVTConnectionInfo {
 
     /* Connection interface */
     union {
-        /* AVT_CONNECTION_URL:  url or file path using the syntax described above */
+        /* AVT_CONNECTION_URL: url or file path using the syntax described above */
         const char *path;
 
         /* AVT_CONNECTION_SOCKET: opened and bound socket
@@ -118,7 +121,7 @@ typedef struct AVTConnectionInfo {
             enum AVTProtocolMode mode;
         } fd;
 
-        /* AVT_CONNECTION_CALLBACK: structure */
+        /* AVT_CONNECTION_CALLBACK: the following structure */
         struct {
             /* Called by libavtransport in strictly sequential order,
              * with no holes, to write data. */
@@ -136,7 +139,7 @@ typedef struct AVTConnectionInfo {
             void *opaque;
         } cb;
 
-        /* AVT_CONNECTION_PACKET: structure */
+        /* AVT_CONNECTION_PACKET: the following structure */
         struct {
             /* Called by libavtransport in output order
              * (pkt.global_seq may not increase monotonically) */
@@ -165,16 +168,41 @@ typedef struct AVTConnectionInfo {
     } input_opts;
 
     struct {
-        /* Buffer size limit. Zero means automatic. Approximate/best effort. */
+        /* Buffer size limit. Adjusts retransmission capabilites for output.
+         * Zero means automatic. Approximate/best effort. */
         size_t buffer;
 
-        /* Interleave buffering:
-         *  - 0 (the default): automatically select based on the bandwidth
-         *  - 1:  buffer enough to interleave the largest current packet completely
-         *  - 2:  buffer enough to interleave half of the largest packet
-         *  - 3:  buffer enough to interleave a third of the largest packet
-         *  - 4 and so on: fraction continues to INT_MAX */
-        int interleave;
+        /* Controls interleave settings for the output scheduler.
+         * If set to true, will disable any stream interleaving
+         * and directly output all packets after segmentation.
+         * Enabling this reduces latency, as otherwise each stream
+         * must have a packet ready, but may cause streams to starve
+         * one another if the bandwidth is insufficient. */
+        bool skip_interleave;
+
+        /* Connection bandwidth, in bits per second.
+         *
+         * This lets the scheduler avoid streams from
+         * being starved by interleaving packets based
+         * on duration and bitrate.
+         * Setting this too low will result in excessive
+         * packet fragmentation, increasing overhead.
+         *
+         * By default, the current bandwidth of all streams,
+         * plus 10% is used by default.
+         */
+        int64_t bandwidth;
+
+        /* If enabled, the bandwidth field is used
+         * as a hard limit for transmission which will
+         * never be exceeded.
+         * This will result in buffering in case the current
+         * rate of all streams exceeds the limit, and
+         * if all buffers are full, will result in packets
+         * being rejected.
+         *
+         * Only enabled when bandwidth given is non-zero. */
+        bool bandwidth_limit;
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.
@@ -191,33 +219,75 @@ AVT_API int avt_connection_create(AVTContext *ctx, AVTConnection **conn,
                                   AVTConnectionInfo *info);
 
 /**
+ * Processes received packets and transmits scheduled packets.
+ */
+AVT_API int avt_connection_process(AVTConnection *conn, int64_t timeout);
+
+/**
  * Creates an AVTransport file with the given <path>.
  *
  * The resulting stream contains every single packet going in or out,
  * allowing for exact backing up and preservation of ephemeral streams,
- * as well as debugging and deeper, offline FEC.
+ * as well as debugging, and more expensive offline FEC.
  *
  * The file will also be used as a retransmit cache, reducing memory usage
  * and allowing infinite retransmission (actual retransmitted data packets
  * are omitted from the mirror as they're redundant).
+ *
+ * NOTE: avt_connection_flush() should be called before calling
+ *       avt_connection_mirror_close().
  */
-AVT_API int avt_connection_mirror(AVTConnection *conn, const char *path);
+AVT_API int avt_connection_mirror_open(AVTConnection *conn, const char *path);
+AVT_API int avt_connection_mirror_close(AVTConnection *conn);
+
+/**
+ * Queries connection status.
+ * Depending on connection configuration, may query the receiver.
+ */
+typedef struct AVTConnectionStatus {
+    /* Receive statistics */
+    struct {
+        /* A counter that indicates the total amount of repaired packets
+         * (packets with errors that FEC was able to correct). */
+        uint64_t fec_corrections;
+
+        /* Indicates the total number of corrupt packets. This also counts
+         * corrupt packets FEC was not able to correct. */
+        uint64_t corrupt_packets;
+
+        /* Indicates the total number of dropped packets. */
+        uint64_t dropped_packets;
+
+        /* The total number of packets received */
+        uint64_t packets;
+
+        /* Bitrate in bits per second */
+        int64_t bitrate;
+    } rx;
+
+    /* Send statistics */
+    struct {
+        /* The total number of packets send */
+        uint64_t packets;
+
+        /* Bitrate in bits per second */
+        int64_t bitrate;
+    } tx;
+} AVTConnectionStatus;
+
+AVT_API int avt_connection_status(AVTConnection *conn, AVTConnectionStatus *s,
+                                  int64_t timeout);
 
 /**
  * Immediately flush all buffered data for a connection.
  * Should be called before avt_connection_destroy().
  */
-AVT_API int avt_connection_flush(AVTConnection *conn);
+AVT_API int avt_connection_flush(AVTConnection *conn, int64_t timeout);
 
 /**
- * Queries connection status.
- */
-AVT_API int avt_connection_status(AVTConnection *conn);
-
-/**
- * Immediately destroy a connection, and free all resources associated
- * with it.
- * Will not flush.
+ * Immediately destroy a connection, and free all resources associated with it.
+ *
+ * NOTE: Will not flush
  */
 AVT_API int avt_connection_destroy(AVTConnection **conn);
 

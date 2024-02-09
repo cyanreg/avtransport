@@ -73,11 +73,12 @@ static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
 
     // TODO
 
-    return p->io->write_output(ctx, p->io_ctx, hdr, hdr_len, pl);
+    //    return p->io->write_output(ctx, p->io_ctx, hdr, hdr_len, pl);
+    return 0;
 }
 
-static int64_t noop_send_packets(AVTContext *ctx, AVTProtocolCtx *p,
-                                 AVTPacketFifo *seq)
+static int64_t noop_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
+                             AVTPacketFifo *seq)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     size_t hdr_len = 0;
@@ -87,17 +88,17 @@ static int64_t noop_send_packets(AVTContext *ctx, AVTProtocolCtx *p,
     return 0;
 }
 
-static int noop_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                               union AVTPacketData *pkt, AVTBuffer **pl)
+static int64_t noop_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
+                                   union AVTPacketData *pkt, AVTBuffer **pl)
 {
     AVTBuffer *buf;
-    int err = p->io->read_input(ctx, p->io_ctx, &buf, 0);
+    int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0);
     if (err < 0)
         return err;
 
     // TODO
 
-    return 0;
+    return err;
 }
 
 static uint32_t noop_max_pkt_len(AVTContext *ctx, AVTProtocolCtx *p)
@@ -133,8 +134,10 @@ const AVTProtocol avt_protocol_noop = {
     .add_dst = noop_add_dst,
     .rm_dst = noop_rm_dst,
     .get_max_pkt_len = noop_max_pkt_len,
-    .receive_packet = noop_receive_packet,
     .send_packet = noop_send_packet,
+    .send_seq = noop_send_seq,
+    .update_packet = NULL,
+    .receive_packet = noop_receive_packet,
     .seek = noop_seek,
     .flush = noop_flush,
     .close = noop_close,

@@ -34,12 +34,12 @@
 #include <zstd.h>
 #endif
 
-#ifdef CONFIG_HAVE_LIBBROTLI
+#ifdef CONFIG_HAVE_LIBBROTLIENC
 #include <brotli/encode.h>
 #endif
 
-static inline int avt_send_pkt(AVTOutput *out,
-                               union AVTPacketData pkt, AVTBuffer *pl)
+static inline int send_pkt(AVTOutput *out,
+                           union AVTPacketData pkt, AVTBuffer *pl)
 {
     int ret = 0;
 
@@ -58,24 +58,31 @@ static inline int avt_payload_compress(AVTOutput *out,
 {
     int err = 0;
 
-    int lvl = -1;
+    [[maybe_unused]] int lvl = 0;
     enum AVTDataCompression method = AVT_DATA_COMPRESSION_NONE;
 
-    switch (method) {
-    case AVT_DATA_COMPRESSION_ZSTD: {
-#ifdef CONFIG_HAVE_LIBZSTD
-        size_t src_len;
-        uint8_t *src = avt_buffer_get_data(*data, &src_len);
+    [[maybe_unused]] uint8_t *src;
+    [[maybe_unused]] size_t src_len;
+    [[maybe_unused]] uint8_t *dst;
+    [[maybe_unused]] size_t dst_len;
+    [[maybe_unused]] size_t dst_size;
+    [[maybe_unused]] AVTBuffer *tmp;
 
-        size_t dst_size = ZSTD_compressBound(src_len);
+    switch (method) {
+    case AVT_DATA_COMPRESSION_NONE:
+        break;
+    case AVT_DATA_COMPRESSION_ZSTD:
+#ifdef CONFIG_HAVE_LIBZSTD
+        src = avt_buffer_get_data(*data, &src_len);
+
+        dst_size = ZSTD_compressBound(src_len);
 
         /* TODO: use a buffer pool */
-        uint8_t *dst = malloc(dst_size);
+        dst = malloc(dst_size);
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
-        size_t dst_len = ZSTD_compressCCtx(out->zstd_ctx, dst, dst_size, src, src_len,
-                                           lvl < 0 ? ZSTD_CLEVEL_DEFAULT : lvl);
+        dst_len = ZSTD_compressCCtx(out->zstd_ctx, dst, dst_size, src, src_len, lvl);
         if (!dst_len) {
             avt_log(out, AVT_LOG_ERROR, "Error while compressing with ZSTD!\n");
             err = AVT_ERROR(EINVAL);
@@ -83,7 +90,7 @@ static inline int avt_payload_compress(AVTOutput *out,
             break;
         }
 
-        AVTBuffer *tmp = avt_buffer_create(dst, dst_len, NULL, avt_buffer_default_free);
+        tmp = avt_buffer_create(dst, dst_len, NULL, avt_buffer_default_free);
         if (!tmp) {
             free(dst);
             err = AVT_ERROR(ENOMEM);
@@ -96,24 +103,21 @@ static inline int avt_payload_compress(AVTOutput *out,
         err = AVT_ERROR(EINVAL);
 #endif
         break;
-    }
-    case AVT_DATA_COMPRESSION_BROTLI: {
-#ifdef CONFIG_HAVE_LIBBROTLI
-        size_t src_len;
-        uint8_t *src = avt_buffer_get_data(*data, &src_len);
+    case AVT_DATA_COMPRESSION_BROTLI:
+#ifdef CONFIG_HAVE_LIBBROTLIENC
+        src = avt_buffer_get_data(*data, &src_len);
 
-        size_t dst_size = BrotliEncoderMaxCompressedSize(src_len);
+        dst_size = BrotliEncoderMaxCompressedSize(src_len);
 
         /* TODO: use a buffer pool */
-        uint8_t *dst = malloc(dst_size);
+        dst = malloc(dst_size);
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
         /* Brotli has a braindead advanced API that
          * makes it really hard to use pooling. Since Brotli is mostly
          * used by text, meh, good enough for now. */
-        if (!BrotliEncoderCompress(lvl < 0 ? BROTLI_DEFAULT_QUALITY : lvl,
-                                   BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
+        if (!BrotliEncoderCompress(lvl, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
                                    src_len, src, &dst_size, dst)) {
             avt_log(out, AVT_LOG_ERROR, "Error while compressing with Brotli!\n");
             err = AVT_ERROR(EINVAL);
@@ -121,7 +125,7 @@ static inline int avt_payload_compress(AVTOutput *out,
             break;
         }
 
-        AVTBuffer *tmp = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
+        tmp = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
         if (!tmp) {
             free(dst);
             err = AVT_ERROR(ENOMEM);
@@ -134,12 +138,9 @@ static inline int avt_payload_compress(AVTOutput *out,
         err = AVT_ERROR(EINVAL);
 #endif
         break;
-    }
     default:
         avt_log(out, AVT_LOG_ERROR, "Unknown compression method: %i\n", method);
         err = AVT_ERROR(EINVAL);
-    case AVT_DATA_COMPRESSION_NONE:
-        break;
     };
 
     if (err >= 0)
@@ -164,7 +165,7 @@ int avt_send_session_start(AVTOutput *out)
     memccpy(pkt.session_start.producer_name, PROJECT_NAME,
             '\0', sizeof(pkt.session_start.producer_name));
 
-    return avt_send_pkt(out, pkt, nullptr);
+    return send_pkt(out, pkt, nullptr);
 }
 
 int avt_send_time_sync(AVTOutput *out)
@@ -177,7 +178,7 @@ int avt_send_time_sync(AVTOutput *out)
         .ts_clock_hz = 0,
     );
 
-    return avt_send_pkt(out, pkt, nullptr);
+    return send_pkt(out, pkt, nullptr);
 }
 
 int avt_send_stream_register(AVTOutput *out, AVTStream *st)
@@ -197,7 +198,7 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
         .init_packets = 0,
     );
 
-    return avt_send_pkt(out, pkt, nullptr);
+    return send_pkt(out, pkt, nullptr);
 }
 
 #define INIT_SEGMENTED(buf, desc)                                                   \
@@ -263,7 +264,7 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
         .duration = pkt->duration,
     );
 
-    return avt_send_pkt(out, hdr, pl);
+    return send_pkt(out, hdr, pl);
 }
 
 #if 0

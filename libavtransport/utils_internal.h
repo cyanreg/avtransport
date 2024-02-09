@@ -35,6 +35,7 @@
 #include <avtransport/utils.h>
 #include <avtransport/packet_data.h>
 #include "buffer.h"
+#include "packet_common.h"
 
 #include "../config.h"
 
@@ -57,37 +58,11 @@ static inline void avt_assert2(int cond)
 #endif
 }
 
-uint64_t avt_get_time_ns(void);
-
-/* Generic macro for creating contexts which need to keep their addresses
- * if another context is created. */
-#define FN_CREATING(prefix, ctx, type, shortname, array, num)                  \
-static inline type * prefix## _ ## create_ ## shortname(ctx *dctx)             \
-{                                                                              \
-    type **array, *sctx = calloc(1, sizeof(*sctx));                            \
-    if (!sctx)                                                                 \
-        return NULL;                                                           \
-                                                                               \
-    array = realloc(dctx->array, sizeof(*dctx->array) * (dctx->num + 1));      \
-    if (!array) {                                                              \
-        free(sctx);                                                            \
-        return NULL;                                                           \
-    }                                                                          \
-                                                                               \
-    dctx->array = array;                                                       \
-    dctx->array[dctx->num++] = sctx;                                           \
-                                                                               \
-    return sctx;                                                               \
-}
+int64_t avt_get_time_ns(void);
 
 /* Zero (usually) alloc FIFO. Payload is ref'd, and leaves with a ref. */
-typedef struct AVTOutputPacket {
-    union AVTPacketData pkt;
-    AVTBuffer pl;
-} AVTOutputPacket;
-
 typedef struct AVTPacketFifo {
-    AVTOutputPacket *data;
+    AVTPktd *data;
     unsigned int nb;
     unsigned int alloc;
 } AVTPacketFifo;
@@ -96,16 +71,27 @@ typedef struct AVTPacketFifo {
 int avt_pkt_fifo_push(AVTPacketFifo *fifo,
                       union AVTPacketData pkt, AVTBuffer *pl);
 
+/* Push a referenced packet to the FIFO (skips a quick ref, takes ownership) */
+int avt_pkt_fifo_push_refd_d(AVTPacketFifo *fifo, AVTPktd *p);
+int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
+                             union AVTPacketData pkt, AVTBuffer *pl);
+
+#define avt_pkt_fifo_push_refd(f, x, ...)                   \
+    _Generic((x),                                           \
+             AVTPktd *: avt_pkt_fifo_push_refd_d,           \
+             union AVTPacketData: avt_pkt_fifo_push_refd_p  \
+    ) (f, x __VA_OPT__(,) __VA_ARGS__)
+
 /* Pop a packet from the FIFO. quick_ref'd into pl */
 int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
                      union AVTPacketData *pkt, AVTBuffer *pl);
 
 /* Peek a packet from the FIFO. quick_ref'd into pl */
-int avt_pkt_fifo_peek(AVTPacketFifo *fifo,
+int avt_pkt_fifo_peek(const AVTPacketFifo *fifo,
                       union AVTPacketData *pkt, AVTBuffer *pl);
 
 /* Copy and ref all packets from src to dst */
-int avt_pkt_fifo_copy(AVTPacketFifo *dst, AVTPacketFifo *src);
+int avt_pkt_fifo_copy(AVTPacketFifo *dst, const AVTPacketFifo *src);
 
 /* Move all packets from src to dst */
 int avt_pkt_fifo_move(AVTPacketFifo *dst, AVTPacketFifo *src);
@@ -123,5 +109,27 @@ void avt_pkt_fifo_clear(AVTPacketFifo *fifo);
 
 /* Free all resources */
 void avt_pkt_fifo_free(AVTPacketFifo *fifo);
+
+/* Sliding window */
+#define AVT_SLIDING_WINDOW_MAX_ENTRIES (1024*512)
+typedef struct AVTSlidingWinCtx {
+    int num_entries;
+    struct AVTSlidingWinEntry {
+        int64_t val;
+        int64_t ts;
+        AVTRational tb;
+    } entries[AVT_SLIDING_WINDOW_MAX_ENTRIES];
+} AVTSlidingWinCtx;
+
+/*
+ * Run a sliding window calculation and produce an output.
+ * val is the value for which to average or sum
+ * ts is the timestamp for the value
+ * tb is the timebase for the timestamp of the value, as well as the period
+ * period is the value in tb units over which to average or sum up
+ * do_avg specifies that instead of summing, an average is to be performed
+ */
+int64_t avt_sliding_win(AVTSlidingWinCtx *ctx, int64_t val, int64_t ts,
+                        AVTRational tb, int64_t period, bool do_avg);
 
 #endif /* AVTRANSPORT_UTILS_H */

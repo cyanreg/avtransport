@@ -27,10 +27,13 @@
 #ifndef LIBAVTRANSPORT_LDPC_ENCODE
 #define LIBAVTRANSPORT_LDPC_ENCODE
 
-#include "bytestream.h"
+#include <stdint.h>
 
-void avt_bsw_ldpc_288_224(AVTBytestream *bs);
+/* Computes and writes an LDPC code at the end of the data buffer.
+ * dst pointer given must point to the start of the sequence. */
 
-void avt_bsw_ldpc_2784_2016(AVTBytestream *bs);
+void avt_ldpc_encode_288_224(uint8_t *dst);
+
+void avt_ldpc_encode_2784_2016(uint8_t *dst);
 
 #endif

@@ -25,6 +25,9 @@
  */
 
 #include <stdio.h>
+#include <stdnoreturn.h>
+#include <signal.h>
+
 #include <avtransport/avtransport.h>
 
 #include "../config.h"
@@ -109,7 +112,7 @@ static int close_io(IOContext *io, int is_out)
     switch (io->mode) {
     case IO_AVT: {
         avt_output_close(&io->out);
-        avt_connection_flush(io->conn);
+        avt_connection_flush(io->conn, INT64_MAX);
         avt_connection_destroy(&io->conn);
         avt_close(&io->avt);
         break;
@@ -119,6 +122,7 @@ static int close_io(IOContext *io, int is_out)
         break;
     }
     case IO_LAVF: {
+#ifdef HAVE_FFMPEG
         if (is_out) {
             av_write_trailer(io->avf);
             avformat_flush(io->avf);
@@ -129,6 +133,9 @@ static int close_io(IOContext *io, int is_out)
             avformat_close_input(&io->avf);
         }
         break;
+#else
+        return AVT_ERROR(EINVAL);
+#endif
     }
     };
 
@@ -237,23 +244,34 @@ static int open_io(IOContext *io, const char *path, int is_out)
     return 0;
 }
 
+static noreturn void on_quit_signal(int signo)
+{
+    int err = 0;
+    exit(err);
+}
+
 int main(int argc, char **argv)
 {
     int err;
 
     GEN_OPT_INIT(opts_list, 16);
+    GEN_OPT_SEC(opts_list, "Input/Output");
     GEN_OPT_ARR(opts_list, char *, input,   "i", 1, MAX_INPUTS, 0, 0, "Input (files or URLs)");
-    GEN_OPT_ONE(opts_list, char *, output,  "o", 1, 1, 0, 0, "Destination (file or URL)");
-    GEN_OPT_ONE(opts_list, bool  , unround, "u", 0, 0, 0, 0, "Unround timestamps (for remuxing from Matroska)");
-    GEN_OPT_ONE(opts_list, char *, mirror,  "m", 1, 1, 0, 0, "Mirror input and output to a file for monitoring and caching");
+    GEN_OPT_ONE(opts_list, char *, output, "o", 1, 1, NULL, 0, 0, "Destination (file or URL)");
+    GEN_OPT_SEC(opts_list, "Miscellaneous");
+    GEN_OPT_ONE(opts_list, bool  , unround, "u", 0, 0, false, 0, 0, "Unround timestamps (for remuxing from Matroska)");
+    GEN_OPT_ONE(opts_list, char *, mirror,  "m", 1, 1, NULL, 0, 0, "Mirror input and output to a file for monitoring and caching");
 
-    if ((err = GEN_OPT_PARSE(opts_list, argc, argv)))
+    if ((err = GEN_OPT_PARSE(opts_list, argc, argv)) < 0)
         return err;
 
     if (!input[0]) {
         avt_log(NULL, AVT_LOG_ERROR, "At least one input required!\n");
         return EINVAL;
     }
+
+    if (signal(SIGINT, on_quit_signal) == SIG_ERR)
+        avt_log(NULL, AVT_LOG_ERROR, "Can't init signal handler!\n");
 
     /* Create inputs */
     IOContext in[MAX_INPUTS] = { 0 };

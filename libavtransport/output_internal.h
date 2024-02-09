@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_OUTPUT
-#define LIBAVTRANSPORT_OUTPUT
+#ifndef AVTRANSPORT_OUTPUT_INTERNAL_H
+#define AVTRANSPORT_OUTPUT_INTERNAL_H
 
 #include <avtransport/output.h>
 
@@ -58,4 +58,4 @@ typedef struct AVTOutput {
 
 size_t avt_packet_get_max_size(AVTOutput *out);
 
-#endif
+#endif /* AVTRANSPORT_OUTPUT_INTERNAL_H */

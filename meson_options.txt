@@ -6,6 +6,12 @@ option('assert',
     description: 'Assert level with which to build the library (-1: depending on the build type)'
 )
 
+option('enable_asm',
+    type: 'feature',
+    value: 'enabled',
+    description: 'Build libavtransport with assembly optimizations'
+)
+
 option('output',
     type: 'feature',
     value: 'auto',

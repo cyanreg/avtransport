@@ -24,13 +24,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_ENCODE
-#define AVTRANSPORT_ENCODE
+#ifndef AVTRANSPORT_INPUT_INTERNAL_H
+#define AVTRANSPORT_INPUT_INTERNAL_H
 
-#include <avtransport/connection.h>
+#include <avtransport/input.h>
 
-int avt_encode_header(uint8_t hdr[AVT_MAX_HEADER_LEN], size_t *hdr_len,
-                      enum AVTPktDescriptors desc, union AVTPacketData pkt,
-                      const uint8_t first[AVT_MAX_HEADER_LEN]);
+#include "common.h"
 
-#endif /* AVTRANSPORT_ENCODE */
+typedef struct PQInputContext PQInputContext;
+
+typedef struct PQInput {
+    const char *name;
+    enum AVTConnectionType type;
+
+//    int (*init)(AVTContext *ctx, PQInputContext **pc, AVTInputSource *in,
+//                AVTInputOptions *opts);
+
+    int (*process)(AVTContext *ctx, PQInputContext *pc);
+
+    int (*close)(AVTContext *ctx, PQInputContext **pc);
+} PQInput;
+
+#endif /* AVTRANSPORT_INPUT_INTERNAL_H */

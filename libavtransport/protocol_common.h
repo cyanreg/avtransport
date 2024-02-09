@@ -28,7 +28,7 @@
 #define AVTRANSPORT_PROTOCOL_COMMON
 
 #include "connection_internal.h"
-#include "connection_scheduler.h"
+#include "utils_internal.h"
 
 /* High level interface */
 typedef struct AVTProtocolCtx AVTProtocolCtx;
@@ -41,7 +41,6 @@ typedef struct AVTProtocol {
 
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr);
-
     /* Removes a secondary destination, NULL if unsupported */
     int (*rm_dst)(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr);
 
@@ -53,10 +52,10 @@ typedef struct AVTProtocol {
     int64_t (*send_packet)(AVTContext *ctx, AVTProtocolCtx *p,
                            union AVTPacketData pkt, AVTBuffer *pl);
 
-    /* Send a bucket of packets. Returns positive offset on success,
+    /* Send a sequence of packets. Returns positive offset on success,
        otherwise negative error */
-    int64_t (*send_packets)(AVTContext *ctx, AVTProtocolCtx *p,
-                            AVTPacketFifo *seq);
+    int64_t (*send_seq)(AVTContext *ctx, AVTProtocolCtx *p,
+                        AVTPacketFifo *seq);
 
     /* Overwrite a packet at a given offset */
     int (*update_packet)(AVTContext *ctx, AVTProtocolCtx *p,
@@ -64,8 +63,8 @@ typedef struct AVTProtocol {
                          void **series, int64_t pos);
 
     /* Receive a packet. Returns offset after reading. */
-    int (*receive_packet)(AVTContext *ctx, AVTProtocolCtx *p,
-                          union AVTPacketData *pkt, AVTBuffer **pl);
+    int64_t (*receive_packet)(AVTContext *ctx, AVTProtocolCtx *p,
+                              union AVTPacketData *pkt, AVTBuffer **pl);
 
     /* Seek to a place in the stream */
     int64_t (*seek)(AVTContext *ctx, AVTProtocolCtx *p,

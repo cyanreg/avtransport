@@ -26,12 +26,12 @@
 
 #include "ldpc_encode.h"
 
-void avt_bsw_ldpc_288_224(AVTBytestream *bs)
+void avt_ldpc_encode_288_224(uint8_t *dst)
 {
-    avt_bsw_zpad(bs, 64);
+    ;
 }
 
-void avt_bsw_ldpc_2784_2016(AVTBytestream *bs)
+void avt_ldpc_encode_2784_2016(uint8_t *dst)
 {
-    avt_bsw_zpad(bs, 768);
+    ;
 }

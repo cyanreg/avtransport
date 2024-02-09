@@ -298,14 +298,14 @@ static inline void avt_bsw_zpad(AVTBytestream *bs, const size_t len)
     bs->ptr += len;
 }
 
-static inline void avt_bsw_sbuf(AVTBytestream *bs, const char8_t *buf, const size_t len)
+static inline void avt_bsw_sbuf(AVTBytestream *bs, const uint8_t *buf, const size_t len)
 {
     avt_assert1(((bs->ptr) + len) <= bs->end);
     memcpy(bs->ptr, buf, len);
     bs->ptr += len;
 }
 
-static inline void avt_bsr_sbuf(AVTBytestream *bs, char8_t *buf, size_t len)
+static inline void avt_bsr_sbuf(AVTBytestream *bs, uint8_t *buf, size_t len)
 {
     len = AVT_MIN(len, bs->end - bs->ptr);
     memcpy(buf, bs->ptr, len);
@@ -346,9 +346,10 @@ static inline size_t avt_bs_left(AVTBytestream *bs)
     return bs->end - bs->ptr;
 }
 
-static inline void avt_bs_skip(AVTBytestream *bs, const size_t len)
+static inline uint8_t *avt_bs_skip(AVTBytestream *bs, const size_t len)
 {
     bs->ptr = AVT_MIN(bs->ptr + len, bs->end);
+    return bs->ptr - len;
 }
 
 #define AVT_READ_FN(en, n, len, tlen)                                 \

@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_RECEIVE_H
-#define AVTRANSPORT_RECEIVE_H
+#ifndef AVTRANSPORT_INPUT_H
+#define AVTRANSPORT_INPUT_H
 
 #include "stream.h"
 #include "utils.h"
@@ -134,4 +134,4 @@ AVT_API int avt_input_start_thread(AVTContext *ctx);
 /* Close input and free all associated data with it. */
 AVT_API int avt_input_close(AVTContext *ctx);
 
-#endif /* AVTRANSPORT_RECEIVE_H */
+#endif /* AVTRANSPORT_INPUT_H */

@@ -106,13 +106,9 @@ static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
     return (int64_t)(io->rpos = ftello(io->f));
 }
 
-static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
-                                 uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                                 AVTBuffer *payload)
+static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
 {
     int ret;
-    size_t len;
-    uint8_t *data = avt_buffer_get_data(payload, &len);
 
     if (!io->is_write) {
         ret = fseeko(io->f, io->wpos, SEEK_SET);
@@ -123,20 +119,61 @@ static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io,
         io->is_write = 1;
     }
 
-    size_t out = fwrite(hdr, 1, hdr_len, io->f);
-    if (out != hdr_len) {
+    size_t out = fwrite(p->hdr, 1, p->hdr_len, io->f);
+    if (out != p->hdr_len) {
         ret = handle_error(io, "Error writing: %s\n");
         return ret;
     }
 
-    if (payload) {
-        out = fwrite(data, 1, len, io->f);
-        if (out != len) {
+    size_t pl_len;
+    uint8_t *data = avt_buffer_get_data(&p->pl, &pl_len);
+    if (data) {
+        out = fwrite(data, 1, pl_len, io->f);
+        if (out != pl_len) {
             ret = handle_error(io, "Error writing: %s\n");
             return ret;
         }
     }
-    fflush(io->f);
+
+    return (int64_t)(io->wpos = ftello(io->f));
+}
+
+static int64_t file_write_vec(AVTContext *ctx, AVTIOCtx *io,
+                              AVTPktd *iov, uint32_t nb_iov)
+{
+    int ret;
+
+    if (!io->is_write) {
+        ret = fseeko(io->f, io->wpos, SEEK_SET);
+        if (ret < 0) {
+            ret = handle_error(io, "Error seeking: %s\n");
+            return ret;
+        }
+        io->is_write = 1;
+    }
+
+    size_t out;
+    size_t pl_len;
+    uint8_t *pl_data;
+    AVTPktd *v;
+    for (auto i = 0; i < nb_iov; i++) {
+        v = &iov[i];
+
+        out = fwrite(v->hdr, 1, v->hdr_len, io->f);
+        if (out != v->hdr_len) {
+            ret = AVT_ERROR(errno);
+            break;
+        }
+
+        pl_data = avt_buffer_get_data(&v->pl, &pl_len);
+        if (pl_data) {
+            out = fwrite(pl_data, 1, pl_len, io->f);
+            if (out != pl_len) {
+                ret = AVT_ERROR(errno);
+                break;
+            }
+        }
+    }
 
     return (int64_t)(io->wpos = ftello(io->f));
 }
@@ -148,7 +185,9 @@ static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
         ret = handle_error(io, "Error seeking: %s\n");
         return ret;
     }
+
     io->is_write = 0;
+
     return (int64_t)(io->rpos = ftello(io->f));
 }
 
@@ -157,6 +196,7 @@ static int file_flush(AVTContext *ctx, AVTIOCtx *io)
     int ret = fflush(io->f);
     if (ret)
         ret = handle_error(io, "Error flushing: %s\n");
+
     return ret;
 }
 
@@ -169,6 +209,7 @@ static int file_close(AVTContext *ctx, AVTIOCtx **_io)
 
     free(io);
     *_io = NULL;
+
     return ret;
 }
 
@@ -179,6 +220,7 @@ const AVTIO avt_io_file = {
     .get_max_pkt_len = file_max_pkt_len,
     .read_input = file_read_input,
     .write_output = file_write_output,
+    .write_vec = file_write_vec,
     .seek = file_seek,
     .flush = file_flush,
     .close = file_close,

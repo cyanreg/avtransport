@@ -91,25 +91,25 @@ AVTBuffer *avt_buffer_alloc(size_t len)
     return buf;
 }
 
-AVTBuffer *avt_buffer_reference(AVTBuffer *buffer, ptrdiff_t offset, int64_t len)
+AVTBuffer *avt_buffer_reference(AVTBuffer *buf, ptrdiff_t offset, int64_t len)
 {
-    if (!buffer)
+    if (!buf || !buf->refcnt)
         return NULL;
 
     if (!len)
-        len = buffer->end_data - (buffer->data + offset);
+        len = buf->end_data - (buf->data + offset);
     if (len < 0)
         return NULL;
-    if (buffer->base_data + offset > buffer->end_data)
+    if (buf->base_data + offset > buf->end_data)
         return NULL;
 
     AVTBuffer *ret = malloc(sizeof(*ret));
     if (!ret)
         return NULL;
 
-    atomic_fetch_add_explicit(buffer->refcnt, 1, memory_order_relaxed);
+    atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
 
-    memcpy(ret, buffer, sizeof(*ret));
+    memcpy(ret, buf, sizeof(*ret));
 
     ret->data += offset;
     ret->len = !len ? ret->end_data - ret->data : len;
@@ -127,17 +127,17 @@ int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset)
     return 0;
 }
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
+int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
                          ptrdiff_t offset, size_t len)
 {
-    if (!buffer)
+    if (!buf || !buf->refcnt)
         return 0;
-    else if (buffer->base_data + offset > buffer->end_data)
+    else if (buf->base_data + offset > buf->end_data)
         return AVT_ERROR(EINVAL);
 
-    atomic_fetch_add_explicit(buffer->refcnt, 1, memory_order_relaxed);
+    atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
 
-    memcpy(dst, buffer, sizeof(*dst));
+    memcpy(dst, buf, sizeof(*dst));
 
     dst->data += offset;
     dst->len = !len ? dst->end_data - dst->data : len;
@@ -147,10 +147,10 @@ int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
 
 void avt_buffer_quick_unref(AVTBuffer *buf)
 {
-    if (!buf)
+    if (!buf || !buf->refcnt)
         return;
 
-    if (atomic_fetch_sub_explicit(buf->refcnt, 1, memory_order_acq_rel) == 1) {
+    if (atomic_fetch_sub_explicit(buf->refcnt, 1, memory_order_acq_rel) <= 1) {
         buf->free(buf->opaque, buf->data);
         free(buf->refcnt);
     }
@@ -159,37 +159,37 @@ void avt_buffer_quick_unref(AVTBuffer *buf)
     memset(buf, 0, sizeof(*buf));
 }
 
-int avt_buffer_get_refcount(AVTBuffer *buffer)
+int avt_buffer_get_refcount(AVTBuffer *buf)
 {
-    if (!buffer)
+    if (!buf || !buf->refcnt)
         return 0;
 
-    return atomic_load_explicit(buffer->refcnt, memory_order_relaxed);
+    return atomic_load_explicit(buf->refcnt, memory_order_relaxed);
 }
 
-void *avt_buffer_get_data(AVTBuffer *buffer, size_t *len)
+void *avt_buffer_get_data(AVTBuffer *buf, size_t *len)
 {
-    if (!buffer) {
+    if (!buf || !buf->refcnt) {
         *len = 0;
         return NULL;
     }
 
-    *len = buffer->len;
-    return buffer->data;
+    *len = buf->len;
+    return buf->data;
 }
 
-size_t avt_buffer_get_data_len(AVTBuffer *buffer)
+size_t avt_buffer_get_data_len(AVTBuffer *buf)
 {
-    if (!buffer)
+    if (!buf || !buf->refcnt)
         return 0;
 
-    return buffer->len;
+    return buf->len;
 }
 
-void avt_buffer_unref(AVTBuffer **buffer)
+void avt_buffer_unref(AVTBuffer **_buf)
 {
-    AVTBuffer *buf = *buffer;
-    if (!buffer)
+    AVTBuffer *buf = *_buf;
+    if (!buf || !buf->refcnt)
         return;
 
     avt_buffer_quick_unref(buf);

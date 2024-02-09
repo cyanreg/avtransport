@@ -26,8 +26,10 @@
 
 #include "common.h"
 #include "buffer.h"
-#include "utils.h"
-#include "input.h"
+#include "utils_internal.h"
+#include "input_internal.h"
+
+#if 0
 
 extern const PQInput pq_input_file;
 
@@ -208,3 +210,5 @@ int avt_input_close(AVTContext *ctx)
 
     return ctx->src.cb->close(ctx, &ctx->src.ctx);
 }
+
+#endif

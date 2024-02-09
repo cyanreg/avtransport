@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_SEND_H
-#define AVTRANSPORT_SEND_H
+#ifndef AVTRANSPORT_OUTPUT_H
+#define AVTRANSPORT_OUTPUT_H
 
 #include "connection.h"
 #include "stream.h"
@@ -34,27 +34,32 @@
 typedef struct AVTOutput AVTOutput;
 
 /* Compression mode flags. By default, AVT_OUTPUT_COMPRESS_ALL is used,
- * which compresses everything uncompressed except video. */
+ * which compresses everything not already compressed, except video. */
 enum AVTOutputCompressionFlags {
-    AVT_OUTPUT_COMPRESS_NONE   = 0 << 0,        /* Don't compress anything */
-    AVT_OUTPUT_COMPRESS_AUX    = 1 << 0,        /* Compress auxillary payloads (ICC profiles/fonts) */
-    AVT_OUTPUT_COMPRESS_META   = 1 << 1,        /* Compress metadata */
-    AVT_OUTPUT_COMPRESS_SUBS   = 1 << 2,        /* Compress subtitles */
-    AVT_OUTPUT_COMPRESS_AUDIO  = 1 << 3,        /* Compress audio */
-    AVT_OUTPUT_COMPRESS_VIDEO  = 1 << 4,        /* Compress video */
-    AVT_OUTPUT_COMPRESS_USER   = 1 << 5,        /* Compress user data */
-    AVT_OUTPUT_COMPRESS_ALL    = (1 << 16) - 1, /* Compress everything */
-    AVT_OUTPUT_COMPRESS_FORCE  = 1 << 31,       /* Compress even if data is already compressed */
+    AVT_SENDER_COMPRESS_NONE   = 0 << 0,        /* Don't compress anything */
+    AVT_SENDER_COMPRESS_AUX    = 1 << 0,        /* Compress auxillary payloads (ICC profiles/fonts) */
+    AVT_SENDER_COMPRESS_META   = 1 << 1,        /* Compress metadata */
+    AVT_SENDER_COMPRESS_SUBS   = 1 << 2,        /* Compress subtitles */
+    AVT_SENDER_COMPRESS_AUDIO  = 1 << 3,        /* Compress audio */
+    AVT_SENDER_COMPRESS_VIDEO  = 1 << 4,        /* Compress video */
+    AVT_SENDER_COMPRESS_USER   = 1 << 5,        /* Compress user data */
+    AVT_SENDER_COMPRESS_ALL    = (1 << 16) - 1, /* Compress everything */
+    AVT_SENDER_COMPRESS_FORCE  = 1 << 31,       /* Compress even if data is already compressed */
 };
 
 typedef struct AVTOutputOptions {
-    /* Bandwidth available, in bits per second. Will segment and interleave
-     * streams in such a way as to satisfy realtime playback on limited
-     * throughput. */
-    uint64_t bandwidth;
-
     /* Compression mode */
     enum AVTOutputCompressionFlags compress;
+
+    /* Compression algorithm.
+     * If left as 0 (AVT_DATA_COMPRESSION_NONE), will automatically
+     * decide the best algorithm (Brotli for subtitles, Zstd for everything else)
+     *
+     * Otherwise, will force the use of this compression algorithm. */
+    enum AVTDataCompression compress_algo;
+
+    /* Compression level. Zero means automatic (the default for each compressor). */
+    int compress_level;
 } AVTOutputOptions;
 
 /* All functions listed here are thread-safe. */
@@ -84,23 +89,32 @@ AVT_API int avt_output_stream_update(AVTOutput *out, AVTStream *st);
 AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
                                        const char *filename, enum AVTFontType type);
 
-/* Write stream data to the output
- * If the size of pkt->buf is not equal to pkt->total_size, the
- * packet will be considered to be segmented, and further calls to
- * avt_output_stream_data_segment with more segments will be required
- * to produce a valid stream. */
+/* Write a complete stream data packet to the output. */
 AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
 
-/* Write partial stream data to the output */
-AVT_API int avt_output_stream_data_segment(AVTStream *st, AVTPacket *pkt,
-                                           AVTBuffer *buf, size_t offset);
+/* This function allows for writing of a stream data packet
+ * in chunks.
+ * Useful for extremely low-latency scenarios.
+ *
+ * To use:
+ *  - pkt->data must be NULL
+ *  - pkt->total_size must be equal to the sum of the size of all future segments
+ *  - pkt must be identical between each call
+ *  - for the first call, use offset 0
+ *  - for each call after the offset must be equal to the previous offset, plus
+ *    the size of the previous buffer
+ */
+AVT_API int avt_output_stream_data_streaming(AVTStream *st,
+                                             uint8_t state[1024],
+                                             AVTPacket *pkt,
+                                             AVTBuffer *buf, size_t offset);
 
 /* Write user data packets. The immediate flag can be used to skip
  * any potential queueing. */
 AVT_API int avt_output_user_data(AVTOutput *out, AVTBuffer *data,
                                  uint64_t opaque, int immediate);
 
-/* Immediately refresh all stream data */
+/* Immediately refresh all stream configuration data */
 AVT_API int avt_output_refresh(AVTOutput *out);
 
 /* Close a single stream */
@@ -109,4 +123,4 @@ AVT_API int avt_output_stream_close(AVTStream **st);
 /* Close all streams and free resources */
 AVT_API int avt_output_close(AVTOutput **out);
 
-#endif /* AVTRANSPORT_SEND_H */
+#endif /* AVTRANSPORT_OUTPUT_H */

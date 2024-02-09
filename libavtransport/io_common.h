@@ -28,8 +28,7 @@
 #define AVTRANSPORT_IO_COMMON
 
 #include "connection_internal.h"
-
-#define IO_MAX_VECTORS 1024
+#include "packet_common.h"
 
 enum AVTIOType {
     AVT_IO_NULL,
@@ -38,15 +37,6 @@ enum AVTIOType {
     AVT_IO_FILE,
     AVT_IO_FD,
 };
-
-typedef struct AVTIOVectors {
-    int nb_vecs;
-    struct {
-        uint8_t hdr[AVT_MAX_HEADER_LEN];
-        size_t hdr_len;
-        AVTBuffer *payload;
-    } vecs [IO_MAX_VECTORS];
-} AVTIOVectors;
 
 /* Low level interface */
 typedef struct AVTIOCtx AVTIOCtx;
@@ -68,13 +58,12 @@ typedef struct AVTIO {
     /* Write multiple packets.
      * Returns positive offset after writing on success, otherwise negative error.
      * May be NULL if unsupported. */
-    int64_t (*write_vec_output)(AVTContext *ctx, AVTIOCtx *io, AVTIOVectors vec);
+    int64_t (*write_vec)(AVTContext *ctx, AVTIOCtx *io,
+                         AVTPktd *iov, uint32_t nb_iov);
 
     /* Write a single packet to the output.
      * Returns positive offset after writing on success, otherwise negative error. */
-    int64_t (*write_output)(AVTContext *ctx, AVTIOCtx *io,
-                            uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                            AVTBuffer *payload);
+    int64_t (*write_output)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p);
 
     /* Read input from IO. May be called with a non-zero buffer, in which
      * case the data in the buffer will be reallocated to 'len', with the

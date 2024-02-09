@@ -22,10 +22,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-project('avtransport', 'c',
+project('avtransport',
+    [ 'c' ],
     license: 'BSD-2-Clause',
     license_files: ['LICENSE.md'],
-    default_options: [ 'buildtype=debugoptimized', 'c_std=c2x', 'warning_level=1' ],
+    default_options: [
+        'buildtype=debugoptimized',
+        'c_std=c2x',
+#        'c_std=c23',
+        'warning_level=1'
+    ],
     version: '0.0.4',
     meson_version: '>=1.1.0',
 )
@@ -37,7 +43,7 @@ avtransport_ver_minor = avtransport_version_split[1]
 avtransport_ver_micro = avtransport_version_split[2]
 
 # api version
-avtransport_soname_version    = '0.0.3'
+avtransport_soname_version    = '0.0.4'
 avtransport_api_version_split = avtransport_soname_version.split('.')
 avtransport_api_version_major = avtransport_api_version_split[0]
 avtransport_api_version_minor = avtransport_api_version_split[1]
@@ -46,7 +52,10 @@ avtransport_api_version_micro = avtransport_api_version_split[2]
 # Compiler
 #============================================================================
 build_args = [
-    '-D_ISOC11_SOURCE', '-D_XOPEN_SOURCE=700', '-U__STRICT_ANSI__',
+    '-D_ISOC11_SOURCE',
+    '-D_ISOC2X_SOURCE',
+    '-D_ISOC23_SOURCE',
+    '-U__STRICT_ANSI__',
 
     # Warnings
     '-Wundef', '-Wmissing-prototypes', '-Wshadow', '-Wparentheses',
@@ -58,6 +67,19 @@ build_args = [
 ]
 
 cc = meson.get_compiler('c')
+
+# Check C23 headers
+#if cc.has_header('stdckdint.h') == false
+#    error('Compiler lacks stdckdint.h, cannot compile!')
+#endif
+#if cc.has_header('stdbit.h') == false
+#    error('System lacks stdbit.h, cannot compile!')
+#endif
+
+# Check for 128-bit integer support (required for timestamp handling)
+if cc.has_type('_BitInt(128)') == false and cc.has_type('__int128') == false
+    error('Compiler lacks support for 128-bit integers!')
+endif
 
 # Hide all untagged API functions
 #============================================================================
@@ -84,17 +106,54 @@ endif
 
 # Dependencies
 #============================================================================
-threads_dep = dependency('threads', required: true)
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
-brotli_dep = dependency('libzstd', required: false)
-lib_deps = [
-    cc.find_library('m', required: true),
-    threads_dep,
+cbor_dep = dependency('libcbor', required: false)
+openssl_dep = dependency('openssl', required: false)
+brotlienc_dep = dependency('', required:false)
+brotlidec_dep = dependency('', required:false)
 
+if get_option('output').auto()
+    brotlienc_dep = dependency('libbrotlienc', required: false)
+endif
+
+if get_option('input').auto()
+    brotlidec_dep = dependency('libbrotlienc', required: false)
+endif
+
+# External dep fallback
+#======================
+cmake = import('cmake')
+
+if cbor_dep.found() == false
+    cbor_ext_opts = cmake.subproject_options()
+    cbor_ext_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': true})
+
+    cbor_ext = cmake.subproject('libcbor', options: cbor_ext_opts, required: true)
+    cbor_dep = cbor_ext.dependency('cbor')
+endif
+
+if brotlienc_dep.found() == false or brotlidec_dep.found() == false
+    brotli_ext_opts = cmake.subproject_options()
+    brotli_ext_opts.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': true})
+    brotli_ext_opts.add_cmake_defines({'BROTLI_BUILD_TOOLS': false})
+
+    brotli_ext = cmake.subproject('brotli', options: brotli_ext_opts, required: false)
+    if brotli_ext.found()
+        brotlienc_dep = brotli_ext.dependency('brotlienc')
+        brotlidec_dep = brotli_ext.dependency('brotlidec')
+    endif
+endif
+
+# Final deps
+#===========
+lib_deps = [
+    cbor_dep,
+    openssl_dep,
     uring_dep,
     zstd_dep,
-    brotli_dep,
+    brotlienc_dep,
+    brotlidec_dep
 ]
 
 # Configure file
@@ -116,10 +175,11 @@ conf.set('CONFIG_DEFAULT_TYPE', 'AVT_PROTOCOL_UDP')
 conf.set('CONFIG_BIG_ENDIAN', host_machine.endian() == 'big')
 conf.set('CONFIG_INPUT', get_option('input').auto())
 conf.set('CONFIG_OUTPUT', get_option('output').auto()) 
-
+conf.set('CONFIG_HAVE_LIBBROTLIENC', brotlienc_dep.found())
+conf.set('CONFIG_HAVE_LIBBROTLIDEC', brotlidec_dep.found())
 conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
 conf.set('CONFIG_HAVE_LIBZSTD', zstd_dep.found())
-conf.set('CONFIG_HAVE_LIBBROTLI', brotli_dep.found())
+conf.set('CONFIG_HAVE_OPENSSL', openssl_dep.found())
 
 if get_option('assert') > -1
     conf.set('CONFIG_ASSERT_LEVEL', get_option('assert'))
@@ -133,18 +193,18 @@ else
     endif
 endif
 
+# Opt-in into 64-bit time if not already defined on 32-bit platforms
+if (cc.sizeof('void *') == 4
+    and cc.has_header_symbol('time.h', '__GLIBC__')
+    and not cc.has_header_symbol('time.h', '_TIME_BITS'))
+    conf.set('_TIME_BITS', '64')
+endif
+
+
 # Check for wendys
 #============================================================================
 if host_machine.system() == 'windows'
 
-endif
-
-# Check for pthread_setname_np
-#============================================================================
-if cc.has_function('pthread_setname_np', prefix: '#include <pthread.h>',
-                   args: [ '-D_GNU_SOURCE' ], dependencies: threads_dep)
-    conf.set('HAVE_PTHREAD_SETNAME_NP', 1)
-    add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
 
 # spec2py
@@ -155,7 +215,7 @@ spec2c = files('tools/spec2c.py')
 spec_file = files('draft-avtransport-spec.bs')
 
 conv_spec = custom_target(
-    'packet encode/decode',
+    'packet_encode_decode',
     input: spec_file,
     output: ['packet_encode.h', 'packet_decode.h'],
     command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
@@ -173,3 +233,14 @@ configure_file(
     output: 'config.h',
     configuration: conf,
 )
+
+summary({
+    'output': get_option('output').auto(),
+    'input': get_option('input').auto(),
+    'cbor': cbor_dep.found(),
+    'openssl': openssl_dep.found(),
+    'uring': uring_dep.found(),
+    'zstd': zstd_dep.found(),
+    'brotli (enc)':  brotlienc_dep.found(),
+    'brotli (dec)':  brotlidec_dep.found(),
+}, section: 'libavtransport', bool_yn: true)

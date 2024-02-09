@@ -24,55 +24,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "connection_scheduler.h"
-#include "utils_internal.h"
+#ifndef AVTRANSPORT_PACKET_COMMON_H
+#define AVTRANSPORT_PACKET_COMMON_H
 
-FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
-            bucket, buckets, nb_buckets)
+#include <avtransport/packet_data.h>
+#include "buffer.h"
 
-int avt_scheduler_init(AVTScheduler *s, AVTOutput *out)
-{
-    return 0;
-}
+#define AVT_MAX_HEADER_BUF ((1024 - AVT_MAX_HEADER_LEN) + AVT_MAX_HEADER_LEN)
 
-int avt_scheduler_set_props(AVTScheduler *s,
-                            uint64_t rx_bandwidth, uint64_t tx_bandwidth,
-                            uint64_t max_pkt_size, uint64_t max_buffered)
-{
-    return 0;
-}
+typedef struct AVTPktd {
+    uint8_t hdr[AVT_MAX_HEADER_BUF];
+    union AVTPacketData pkt;
+    AVTBuffer pl;
+    uint16_t hdr_len;
+    uint16_t hdr_off;
+} AVTPktd;
 
-int avt_scheduler_push(AVTScheduler *s,
-                       union AVTPacketData pkt, AVTBuffer *pl)
-{
-
-
-    return 0;
-}
-
-int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
-{
-    AVTPacketFifo *bkt = s->last_avail;
-    if (!bkt) {
-        bkt = avt_scheduler_create_bucket(s);
-        if (!bkt)
-            return AVT_ERROR(ENOMEM);
-    }
-
-    s->last_avail = NULL;
-    *seq = bkt;
-
-    return 0;
-}
-
-void avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq)
-{
-    if (!seq)
-        return;
-
-    s->last_avail = seq;
-}
-
-void avt_scheduler_free(AVTScheduler *s)
-{
-}
+#endif /* AVTRANSPORT_PACKET_COMMON_H */

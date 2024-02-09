@@ -41,6 +41,7 @@ sources = [
     'avtransport.c',
     'buffer.c',
     'utils.c',
+    'rational.c',
 
     'ldpc.c',
     'raptor.c',
@@ -67,15 +68,26 @@ sources = [
 if get_option('output').auto()
     sources += 'output.c'
     sources += 'output_packet.c'
-    sources += 'encode.c'
-    sources += 'connection_scheduler.c'
+    sources += 'scheduler.c'
     sources += 'ldpc_encode.c'
+
 endif
 
 if get_option('input').auto()
+    sources += 'input.c'
     sources += 'decode.c'
     sources += 'reorder.c'
     sources += 'ldpc_decode.c'
+endif
+
+if get_option('enable_asm').enabled()
+    if host_machine.cpu_family().startswith('x86')
+        if add_languages('nasm', required: false, native: false)
+            subdir('x86')
+        else
+            warning('nasm not found! libavtransport will be compiled without assembly optimizations!')
+        endif
+    endif
 endif
 
 if host_machine.system() == 'windows'

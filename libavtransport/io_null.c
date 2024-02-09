@@ -96,11 +96,19 @@ static int64_t null_input(AVTContext *ctx, AVTIOCtx *io,
     return atomic_fetch_add(&io->pos_r, avt_bs_offs(&bs)) + avt_bs_offs(&bs);
 }
 
-static int64_t null_output(AVTContext *ctx, AVTIOCtx *io,
-                           uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                           AVTBuffer *payload)
+static int64_t null_output(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
 {
-    return atomic_fetch_add(&io->pos_w, hdr_len + avt_buffer_get_data_len(payload));
+    return atomic_fetch_add(&io->pos_w,
+                            p->hdr_len + avt_buffer_get_data_len(&p->pl));
+}
+
+static int64_t null_write_vec(AVTContext *ctx, AVTIOCtx *io,
+                              AVTPktd *iov, uint32_t nb_iov)
+{
+    int64_t acc = 0;
+    for (auto i = 0; i < nb_iov; i++)
+        acc += iov[i].hdr_len + avt_buffer_get_data_len(&iov[i].pl);
+    return atomic_fetch_add(&io->pos_w, acc);
 }
 
 static int64_t null_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
@@ -130,6 +138,7 @@ const AVTIO avt_io_null = {
     .del_dst = null_del_dst,
     .read_input = null_input,
     .write_output = null_output,
+    .write_vec = null_write_vec,
     .seek = null_seek,
     .flush = null_flush,
     .close = null_close,

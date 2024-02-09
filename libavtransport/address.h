@@ -27,6 +27,8 @@
 #ifndef AVTRANSPORT_ADDRESS_H
 #define AVTRANSPORT_ADDRESS_H
 
+#include <uchar.h>
+
 #include <avtransport/connection.h>
 
 /* Extend the <connection.h> definitions further */

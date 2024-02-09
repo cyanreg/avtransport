@@ -13,7 +13,6 @@ Abstract: The AVTransport protocol is a new standardized mechanism for multimedi
 Markup Shorthands: http no, markup no
 </pre>
 
-
 <pre class='biblio'>
 {
     "UNIX-time": {
@@ -363,6 +362,13 @@ MUST hold. If this condition is violated, the behavior is <b>unspecified</b>.
 For subtitle frames, the [=duration=] field's definition is different. It specifies the
 time during which the contents of the current packet must be presented. It may not
 match a video frame's duration.
+
+Note: for subtitles, [=duration=] has two special values:
+ - [=duration=] equal to zero has the special meaning of <b>clearing</b> all currently presented subtitles, even if their [=duration=] value overlaps with the current [=pts=].
+ - [=duration=] of exactly INT64_MIN (-9223372036854775808) has the special meaning of presenting this subtitle <b>until another subtitle packet appears</b>.
+
+Unlike video or audio, subtitle packets may overlap. During presentation, players
+must present all subtitles on screen.
 
 
 ### Jitter compensation ### {#jitter-compensation}
@@ -2065,13 +2071,13 @@ segmentation and parity packets is via the following [[#generic-data-packets]] t
             <th>Structure</th>
             <th>Description</th>
         </tr>
-        <tr>
+        <tr id="0x0011+0">
             <td>''0x0011''</td>
             <td><dfn>lut_icc_segment_descriptor</dfn></td>
             <td>[[#generic-data-segment-packets]]</td>
             <td>Non-final segment for segmented LUT/ICC profile.</td>
         </tr>
-        <tr>
+        <tr id="0x0012+0">
             <td>''0x0012''</td>
             <td><dfn>lut_icc_parity_descriptor</dfn></td>
             <td>[[#generic-data-segment-packets]]</td>
