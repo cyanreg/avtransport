@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="d74db20ba3172b130af529ec58a7f9cdf006287c" name="document-revision">
+  <meta content="0f4ee8b30d39576871b5435a59b777e517a8b6e0" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2124,7 +2124,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2023-12-31">31 December 2023</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-02-09">9 February 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2138,7 +2138,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 31 December 2023,
+In addition, as of 9 February 2024,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2528,6 +2528,15 @@ MUST hold. If this condition is violated, the behavior is <b>unspecified</b>.</p
    <p>For subtitle frames, the <a data-link-type="dfn" href="#duration" id="ref-for-duration①">duration</a> field’s definition is different. It specifies the
 time during which the contents of the current packet must be presented. It may not
 match a video frame’s duration.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> for subtitles, <a data-link-type="dfn" href="#duration" id="ref-for-duration②">duration</a> has two special values:</p>
+   <ul>
+    <li data-md>
+     <p><a data-link-type="dfn" href="#duration" id="ref-for-duration③">duration</a> equal to zero has the special meaning of <b>clearing</b> all currently presented subtitles, even if their <a data-link-type="dfn" href="#duration" id="ref-for-duration④">duration</a> value overlaps with the current <a data-link-type="dfn" href="#pts" id="ref-for-pts①">pts</a>.</p>
+    <li data-md>
+     <p><a data-link-type="dfn" href="#duration" id="ref-for-duration⑤">duration</a> of exactly INT64_MIN (-9223372036854775808) has the special meaning of presenting this subtitle <b>until another subtitle packet appears</b>.</p>
+   </ul>
+   <p>Unlike video or audio, subtitle packets may overlap. During presentation, players
+must present all subtitles on screen.</p>
    <h4 class="heading settled" data-level="1.7.1" id="jitter-compensation"><span class="secno">1.7.1. </span><span class="content">Jitter compensation</span><a class="self-link" href="#jitter-compensation"></a></h4>
    <p>Implementations should use the derived <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq">ts_clock_freq</a> field from <a href="#time-synchronization-packets">§ 2.3 Time synchronization</a> packets to perform jitter compensation
 of stream timestamps.</p>
@@ -2540,7 +2549,7 @@ streams with the same timebase, which must be equal to the inverse of <a data-li
 Jitter compensation is otherwise undefined.</p>
    <p>As the <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq②">ts_clock_freq</a> field defines a strictly monotonic clock signal with a rate of <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq③">ts_clock_freq</a>,
 which atomically increments a counter, <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_seq" id="ref-for-time-synchronization-packets-ts_clock_seq">ts_clock_seq</a> on the <b>rising</b> edge of the waveform, this
-can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pts①">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts②">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration②">duration</a> values of stream packets.</p>
+can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pts②">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts②">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration⑥">duration</a> values of stream packets.</p>
    <p>The following is a suggestion for implementations:</p>
    <ul>
     <li data-md>
@@ -2553,9 +2562,9 @@ can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pt
    <p>On every received packet:</p>
    <ul>
     <li data-md>
-     <p>Measure the difference <span class="css">Δ</span> between <a data-link-type="dfn" href="#pts" id="ref-for-pts②">pts</a> and <span class="css">local_ts_clock_seq</span>.</p>
+     <p>Measure the difference <span class="css">Δ</span> between <a data-link-type="dfn" href="#pts" id="ref-for-pts③">pts</a> and <span class="css">local_ts_clock_seq</span>.</p>
     <li data-md>
-     <p>If <span class="css">Δ</span> is small, assume <a data-link-type="dfn" href="#pts" id="ref-for-pts③">pts</a> has jitter, and replace it with <span class="css">local_ts_clock_seq</span></p>
+     <p>If <span class="css">Δ</span> is small, assume <a data-link-type="dfn" href="#pts" id="ref-for-pts④">pts</a> has jitter, and replace it with <span class="css">local_ts_clock_seq</span></p>
     <li data-md>
      <p>Otherwise, add <span class="css">Δ</span> to <span class="css">local_ts_clock_seq</span>.</p>
    </ul>
@@ -2565,14 +2574,14 @@ can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pt
 implementations <b>should</b> resampple the audio and adjust video frame duration such that
 synchronization is maintained. Otherwise, implementations can drop or duplicate frames.</p>
    <h4 class="heading settled" data-level="1.7.2" id="negative-times"><span class="secno">1.7.2. </span><span class="content">Negative times</span><a class="self-link" href="#negative-times"></a></h4>
-   <p>The time <code>t</code> of a <a data-link-type="dfn" href="#pts" id="ref-for-pts④">pts</a> may be negative. Packets with a negative timestamps
+   <p>The time <code>t</code> of a <a data-link-type="dfn" href="#pts" id="ref-for-pts⑤">pts</a> may be negative. Packets with a negative timestamps
 must be decoded, but not presented.</p>
    <p>For audio packets, this corresponds to the internal algorithmic delay between
 the first output sample and the correct sample being available.<br> For audio, the time between <code>t</code> and <code>0</code> may not be a multiple of the
-audio data’s <a data-link-type="dfn" href="#duration" id="ref-for-duration③">duration</a> of a packet. Implementations must nevertheless remove any
+audio data’s <a data-link-type="dfn" href="#duration" id="ref-for-duration⑦">duration</a> of a packet. Implementations must nevertheless remove any
 decoded samples with a negative time.</p>
-   <p>Negative <a data-link-type="dfn" href="#pts" id="ref-for-pts⑤">pts</a> values are allowed, and implementations must decode such frames,
-however must not present any such frames unless <code><a data-link-type="dfn" href="#pts" id="ref-for-pts⑥">pts</a> + <a data-link-type="dfn" href="#duration" id="ref-for-duration④">duration</a></code> is greater than 0, in which case they must present the data required for that duration.<br> This enables removal of extra samples added during audio compression, as well
+   <p>Negative <a data-link-type="dfn" href="#pts" id="ref-for-pts⑥">pts</a> values are allowed, and implementations must decode such frames,
+however must not present any such frames unless <code><a data-link-type="dfn" href="#pts" id="ref-for-pts⑦">pts</a> + <a data-link-type="dfn" href="#duration" id="ref-for-duration⑧">duration</a></code> is greater than 0, in which case they must present the data required for that duration.<br> This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
 all dependencies (other frames) required for their presentation.</p>
    <h4 class="heading settled" data-level="1.7.3" id="epoch-definition"><span class="secno">1.7.3. </span><span class="content">Epoch definition</span><a class="self-link" href="#epoch-definition"></a></h4>
@@ -2606,7 +2615,7 @@ Once a stream has started, it MUST NOT be changed.</p>
     </table>
    </figure>
    <p>By default, implementations must use the field as metadata, if present. Otherwise, they should ignore it.</p>
-   <p>Users are free to use the field to measure the stream duration by converting the <span class="css">t</span> of the <a data-link-type="dfn" href="#pts" id="ref-for-pts⑦">pts</a> field of any stream’s packet to nanoseconds (multiply by <span class="css">1000000000</span>), rounding it, and subtracting
+   <p>Users are free to use the field to measure the stream duration by converting the <span class="css">t</span> of the <a data-link-type="dfn" href="#pts" id="ref-for-pts⑧">pts</a> field of any stream’s packet to nanoseconds (multiply by <span class="css">1000000000</span>), rounding it, and subtracting
 it from the <a data-link-type="dfn" href="#epoch" id="ref-for-epoch①">epoch</a> time (<code>t - <a data-link-type="dfn" href="#epoch" id="ref-for-epoch②">epoch</a></code>).</p>
    <p>Users are also free to measure the latency in a similar way, by measuring their current wallclock time <span class="css">t</span>, and using <code>Δ = t' - t - epoch</code>. <span class="css">Δ</span> will be the delay in nanoseconds.</p>
    <p>Finally, if <b>explicitly requested</b>, implementations are allowed to <i>delay</i> presentation by interpreting
@@ -3063,7 +3072,7 @@ of an <a href="#fec-grouping-packets">§ 2.8 FEC grouping</a> packet.</p>
        <td>The total size of all data needed to receive the payload correctly. Must be either 0 if unknown, or the total size of the payload across all segments.
       <tr id="GenericData+4">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts⑧">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts⑨">pts</a>
        <td>
        <td>Indicates the presentation timestamp for when this data becomes valid at. To interpret the value, read the <a href="#timestamps">§ 1.7 Timestamps</a> section.
       <tr id="GenericData+5">
@@ -3319,12 +3328,12 @@ more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation<
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0100+8">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts⑨">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①⓪">pts</a>
        <td>
        <td>Indicates the presentation timestamp for when this frame should be presented at. To interpret the value, read the <a href="#timestamps">§ 1.7 Timestamps</a> section.
       <tr id="0x0100+9">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#duration" id="ref-for-duration⑤">duration</a>
+       <td><a data-link-type="dfn" href="#duration" id="ref-for-duration⑨">duration</a>
        <td>
        <td>The duration of this packet in stream timebase unis.
       <tr id="0x0100+10">
@@ -3717,7 +3726,7 @@ The exception to this is if a newer reinitialization has begun.</p>
    <p>If valid, <a data-link-type="dfn" href="#index-packets-prev_idx" id="ref-for-index-packets-prev_idx">prev_idx</a>, <a data-link-type="dfn" href="#index-packets-next_idx" id="ref-for-index-packets-next_idx">next_idx</a> and <a data-link-type="dfn" href="#index-entry-struct-pkt_offset" id="ref-for-index-entry-struct-pkt_offset">pkt_offset</a> offsets must point to the start of
 a packet. In other words, the byte pointed to by the offsets must contain the
 first, most significant byte of the descriptor of the pointed packet.</p>
-   <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①③">stream_id</a> is <span class="css">0xFFFF</span>, the timebase used for <a data-link-type="dfn" href="#pts" id="ref-for-pts①⓪">pts</a> must be assumed to be <b>1 nanosecond</b>, numerator of <span class="css">1</span>, denominator of <span class="css">1000000000</span>.</p>
+   <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①③">stream_id</a> is <span class="css">0xFFFF</span>, the timebase used for <a data-link-type="dfn" href="#pts" id="ref-for-pts①①">pts</a> must be assumed to be <b>1 nanosecond</b>, numerator of <span class="css">1</span>, denominator of <span class="css">1000000000</span>.</p>
    <p>When streaming, <a data-link-type="dfn" href="#index-packets-prev_idx" id="ref-for-index-packets-prev_idx①">prev_idx</a> and <a data-link-type="dfn" href="#index-packets-next_idx" id="ref-for-index-packets-next_idx①">next_idx</a> must be <span class="css">0</span>.</p>
    <h4 class="heading settled" data-level="2.10.1" id="index-entry-struct"><span class="secno">2.10.1. </span><span class="content">Index entry (struct <dfn data-dfn-type="dfn" data-noexport id="indexentry">IndexEntry<a class="self-link" href="#indexentry"></a></dfn>)</span><a class="self-link" href="#index-entry-struct"></a></h4>
    <p>The structure of the data for each index entry is as follows:</p>
@@ -3736,7 +3745,7 @@ first, most significant byte of the descriptor of the pointed packet.</p>
        <td><a href="#packet-descriptor">Descriptor</a> of the packet that each index points to.
       <tr id="IndexEntry+1">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①①">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①②">pts</a>
        <td>
        <td>Timestamp of the packet that the index entry points to.
       <tr id="IndexEntry+2">
@@ -3751,7 +3760,7 @@ first, most significant byte of the descriptor of the pointed packet.</p>
        <td>The offset of the index entry relative to the current position in bytes. May be <span class="css">0</span> if unavailable or not applicable.
     </table>
    </figure>
-   <p class="note" role="note"><span class="marker">Note:</span> If a packet starts before the value of <a data-link-type="dfn" href="#pts" id="ref-for-pts①②">pts</a> but has a duration that
+   <p class="note" role="note"><span class="marker">Note:</span> If a packet starts before the value of <a data-link-type="dfn" href="#pts" id="ref-for-pts①③">pts</a> but has a duration that
 matches or exceeds the PTS, then it must be included. This is to permit
 correct subtitle presentation, or long duration still pictures like slideshows.</p>
    <h3 class="heading settled" data-level="2.11" id="metadata-packets"><span class="secno">2.11. </span><span class="content">Metadata</span><a class="self-link" href="#metadata-packets"></a></h3>
@@ -3877,7 +3886,7 @@ metadata after starting and outputting a packet.</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0010+3">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①③">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①④">pts</a>
        <td>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase②">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0010+4">
@@ -3948,12 +3957,12 @@ segmentation and parity packets is via the following <a href="#generic-data-pack
        <th>Name
        <th>Structure
        <th>Description
-      <tr>
+      <tr id="0x0011+0">
        <td><span class="css">0x0011</span>
        <td><dfn data-dfn-for="#lut-icc-profile-packets" data-dfn-type="dfn" data-noexport id="lut-icc-profile-packets-lut_icc_segment_descriptor">lut_icc_segment_descriptor<a class="self-link" href="#lut-icc-profile-packets-lut_icc_segment_descriptor"></a></dfn>
        <td><a href="#generic-data-segment-packets">§ 2.5.1 Generic data segmentation</a>
        <td>Non-final segment for segmented LUT/ICC profile.
-      <tr>
+      <tr id="0x0012+0">
        <td><span class="css">0x0012</span>
        <td><dfn data-dfn-for="#lut-icc-profile-packets" data-dfn-type="dfn" data-noexport id="lut-icc-profile-packets-lut_icc_parity_descriptor">lut_icc_parity_descriptor<a class="self-link" href="#lut-icc-profile-packets-lut_icc_parity_descriptor"></a></dfn>
        <td><a href="#generic-data-segment-packets">§ 2.5.1 Generic data segmentation</a>
@@ -4143,7 +4152,7 @@ stream after decoding.</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0008+3">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①④">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①⑤">pts</a>
        <td>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase③">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0008+4">
@@ -4621,7 +4630,7 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0040+3">
        <td><code>i(64)</code>
-       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①⑤">pts</a>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①⑥">pts</a>
        <td>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase④">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0040+4">
@@ -4646,7 +4655,7 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
-   <p>The effects of video orientation packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑥">pts</a> value given,
+   <p>The effects of video orientation packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑦">pts</a> value given,
 until a new orientation packet is sent, or the stream is reinitialized.</p>
    <h3 class="heading settled" data-level="2.28" id="enum-VideoReflection"><span class="secno">2.28. </span><span class="content">Video Reflection Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-videoreflection"><code>VideoReflection</code></dfn>)</span><a class="self-link" href="#enum-VideoReflection"></a></h3>
    <div id="VideoReflection">
@@ -5065,7 +5074,7 @@ laid out in the following way:</p>
    </figure>
    <p>The meaning of each field is defined by <a data-link-type="biblio" href="#biblio-rfc7845" title="Ogg Encapsulation for the Opus Audio Codec">[RFC7845]</a>.</p>
    <p>Implementations must not use the <a data-link-type="dfn" href="#opus-encapsulation-opus_prepad" id="ref-for-opus-encapsulation-opus_prepad">opus_prepad</a> field, but must set the
-first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑦">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.7.2 Negative times</a> to remove the required number of prepended samples.</p>
+first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.7.2 Negative times</a> to remove the required number of prepended samples.</p>
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data">packet_data</a> MUST contain regular Opus packets with their front uncompressed
 header intact.</p>
    <p>In case of multiple channels, the packets MUST contain the concatenated contents
@@ -5337,7 +5346,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    <p>Events listed in ASS files MUST be modified in the following way:</p>
    <ul>
     <li data-md>
-     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration⑥">duration</a> fields, and must be ommitted from the data.</p>
+     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①⓪">duration</a> fields, and must be ommitted from the data.</p>
     <li data-md>
      <p>All other fields MUST be stored in the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①②">packet_data</a> field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.</p>
     <li data-md>
@@ -5345,7 +5354,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    </ul>
    <p>The <code>ReadOrder</code> field is a monotonically incrementing field to identify the correct
 order in which to reconstruct the original ASS file.</p>
-   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> are permitted.</p>
+   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts②⓪">pts</a> are permitted.</p>
    <h4 class="heading settled" data-level="3.1.16" id="dng-tiff-encapsulation"><span class="secno">3.1.16. </span><span class="content">DNG/TIFF encapsulation</span><a class="self-link" href="#dng-tiff-encapsulation"></a></h4>
    <p>For DNG/TIFF encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑦">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x54494646</span> (<span class="css">TIFF</span>).</p>
    <p>DNG/TIFF streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
@@ -5744,7 +5753,7 @@ one-to-one transmission. The following syntax is used:</p>
        <td><code>i(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_pts">seek_pts</dfn>
        <td>
-       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts②⓪">pts</a> value to seek to.
+       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts②①">pts</a> value to seek to.
       <tr id="0x8001+8">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_seq">seek_seq</dfn>
@@ -6922,9 +6931,9 @@ window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_28
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.18. Video information"}], "external": false};
 window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.29. User data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "3.5.3. Stream control"}], "external": false};
 window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}, {"id": "ref-for-stream_id\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2463"}, {"id": "ref-for-stream_id\u2460\u2464"}], "title": "2.11.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.15. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}, {"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.30. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}, {"id": "ref-for-stream_id\u2461\u2463"}], "title": "2.31. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2464"}], "title": "3.5. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2465"}], "title": "3.5.1. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}, {"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.5.3. Stream control"}], "external": false};
-window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}, {"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2463"}, {"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2466"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}, {"id": "ref-for-pts\u2460\u2461"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2462"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}, {"id": "ref-for-pts\u2460\u2465"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2466"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}, {"id": "ref-for-pts\u2460\u2468"}], "title": "3.1.15. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u24ea"}], "title": "3.4.1. Session control data"}], "external": false};
+window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}, {"id": "ref-for-pts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}, {"id": "ref-for-pts\u2463"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}, {"id": "ref-for-pts\u2466"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2461"}, {"id": "ref-for-pts\u2460\u2462"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}], "title": "2.18. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}, {"id": "ref-for-pts\u2460\u2466"}], "title": "2.27. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2468"}, {"id": "ref-for-pts\u2461\u24ea"}], "title": "3.1.15. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2460"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['dts'] = {"dfnID": "dts", "url": "#dts", "dfnText": "dts", "refSections": [{"refs": [{"id": "ref-for-dts"}, {"id": "ref-for-dts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-dts\u2461"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-dts\u2462"}], "title": "3.1.10. H264 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2463"}], "title": "3.1.11. H265 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2464"}], "title": "3.1.15. ASS encapsulation"}], "external": false};
-window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}, {"id": "ref-for-duration\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2461"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2464"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "3.1.15. ASS encapsulation"}], "external": false};
+window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}, {"id": "ref-for-duration\u2460"}, {"id": "ref-for-duration\u2461"}, {"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}, {"id": "ref-for-duration\u2464"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "1.7.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2466"}, {"id": "ref-for-duration\u2467"}], "title": "1.7.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2460\u24ea"}], "title": "3.1.15. ASS encapsulation"}], "external": false};
 window.dfnpanelData['epoch'] = {"dfnID": "epoch", "url": "#epoch", "dfnText": "epoch", "refSections": [{"refs": [{"id": "ref-for-epoch"}, {"id": "ref-for-epoch\u2460"}, {"id": "ref-for-epoch\u2461"}], "title": "1.7.3. Epoch definition"}, {"refs": [{"id": "ref-for-epoch\u2462"}, {"id": "ref-for-epoch\u2463"}, {"id": "ref-for-epoch\u2464"}, {"id": "ref-for-epoch\u2465"}, {"id": "ref-for-epoch\u2466"}, {"id": "ref-for-epoch\u2467"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-epoch\u2468"}], "title": "3.5.1. Feedback"}], "external": false};
 window.dfnpanelData['session-start-packets-session_flags'] = {"dfnID": "session-start-packets-session_flags", "url": "#session-start-packets-session_flags", "dfnText": "session_flags", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-session_flags"}], "title": "2.2. Stream Session Flags Enumeration (enum SessionFlags)"}, {"refs": [{"id": "ref-for-session-start-packets-session_flags\u2460"}], "title": "3.4. Reverse signalling"}], "external": false};
 window.dfnpanelData['enumdef-sessionflags'] = {"dfnID": "enumdef-sessionflags", "url": "#enumdef-sessionflags", "dfnText": "SessionFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-sessionflags"}], "title": "2.1. Session start"}], "external": false};
