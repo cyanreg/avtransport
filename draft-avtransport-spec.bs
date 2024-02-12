@@ -359,16 +359,25 @@ The time <code>t</code> of a <dfn>duration</dfn> field corresponds to the exact 
 two <b>consecutive</b> frames of audio or video. If the field is non-zero, this assertion
 MUST hold. If this condition is violated, the behavior is <b>unspecified</b>.
 
-For subtitle frames, the [=duration=] field's definition is different. It specifies the
-time during which the contents of the current packet must be presented. It may not
-match a video frame's duration.
 
-Note: for subtitles, [=duration=] has two special values:
+## Subtitle timestamps ## {#subtitle-timestamps}
+
+For subtitle frames, the [=duration=] field's definition is different. It specifies the
+time during which the contents of the current packet must be presented.
+
+Unlike video or audio, subtitle packets are allowed to have overlapping timestamps.
+This means that players should be simultaneously presenting all subtitles on screen
+whose duration indicates that they should be on screen.
+
+For exact information on how this should be done, implementors are invited to view the
+specifications of each encapsulated subtitle format.
+
+Additionally, for subtitles, [=duration=] has two special values:
  - [=duration=] equal to zero has the special meaning of <b>clearing</b> all currently presented subtitles, even if their [=duration=] value overlaps with the current [=pts=].
  - [=duration=] of exactly INT64_MIN (-9223372036854775808) has the special meaning of presenting this subtitle <b>until another subtitle packet appears</b>.
 
-Unlike video or audio, subtitle packets may overlap. During presentation, players
-must present all subtitles on screen.
+Implementations are welcome to normalize subtitle timestamps and remove any occurrences
+of the two special values.
 
 
 ### Jitter compensation ### {#jitter-compensation}
@@ -3090,156 +3099,162 @@ definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
             <td>[[#ac-3-encapsulation]]</td>
         </tr>
         <tr id="codec_id_map+3">
+            <td>''0x41545231''</td>
+            <td>''ATR1''</td>
+            <td><dfn>CODEC_ID_ATRAC1</dfn></td>
+            <td>[[#atrac1-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+4">
             <td>''0x41545239''</td>
             <td>''ATR9''</td>
             <td><dfn>CODEC_ID_ATRAC9</dfn></td>
             <td>[[#atrac9-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+4">
+        <tr id="codec_id_map+5">
             <td>''0x4154414b''</td>
             <td>''ATAK''</td>
             <td><dfn>CODEC_ID_TAK</dfn></td>
             <td>[[#tak-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+5">
+        <tr id="codec_id_map+6">
             <td>''0x664c6143''</td>
             <td>''fLaC''</td>
             <td><dfn>CODEC_ID_FLAC</dfn></td>
             <td>[[#tak-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+6">
+        <tr id="codec_id_map+7">
             <td>''0x56503332''</td>
             <td>''VP23''</td>
             <td><dfn>CODEC_ID_THEORA</dfn></td>
             <td>[[#theora-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+7">
+        <tr id="codec_id_map+8">
             <td>''0x56503039''</td>
             <td>''VP09''</td>
             <td><dfn>CODEC_ID_VP9</dfn></td>
             <td>[[#vp9-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+8">
+        <tr id="codec_id_map+9">
             <td>''0x41563031''</td>
             <td>''AV01''</td>
             <td><dfn>CODEC_ID_AV1</dfn></td>
             <td>[[#av1-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+9">
+        <tr id="codec_id_map+10">
             <td>''0x48323634''</td>
             <td>''H264''</td>
             <td><dfn>CODEC_ID_H264</dfn></td>
             <td>[[#h264-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+10">
+        <tr id="codec_id_map+11">
             <td>''0x48323635''</td>
             <td>''H265''</td>
             <td><dfn>CODEC_ID_H265</dfn></td>
             <td>[[#h265-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+11">
+        <tr id="codec_id_map+12">
             <td>''0x42424344''</td>
             <td>''BBCD''</td>
             <td><dfn>CODEC_ID_DIRAC</dfn></td>
             <td>[[#dirac-vc-2-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+12">
+        <tr id="codec_id_map+13">
             <td>''0x46467631''</td>
             <td>''FFv1''</td>
             <td><dfn>CODEC_ID_FFV1</dfn></td>
             <td>[[#ffv1-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+13">
+        <tr id="codec_id_map+14">
             <td>''0x6170636e''</td>
             <td>''apcn''</td>
             <td><dfn>CODEC_ID_PRORES_SD</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+14">
+        <tr id="codec_id_map+15">
             <td>''0x61706368''</td>
             <td>''apch''</td>
             <td><dfn>CODEC_ID_PRORES_HQ</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+15">
+        <tr id="codec_id_map+16">
             <td>''0x61706373''</td>
             <td>''apcs''</td>
             <td><dfn>CODEC_ID_PRORES_LT</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+16">
+        <tr id="codec_id_map+17">
             <td>''0x6170636f''</td>
             <td>''apco''</td>
             <td><dfn>CODEC_ID_PRORES_PROXY</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+17">
+        <tr id="codec_id_map+18">
             <td>''0x61703468''</td>
             <td>''ap4h''</td>
             <td><dfn>CODEC_ID_PRORES_4444</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+18">
+        <tr id="codec_id_map+19">
             <td>''0x61703478''</td>
             <td>''ap4x''</td>
             <td><dfn>CODEC_ID_PRORES_4444_XQ</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+19">
+        <tr id="codec_id_map+20">
             <td>''0x61707268''</td>
             <td>''aprh''</td>
             <td><dfn>CODEC_ID_PRORES_RAW_HQ</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+20">
+        <tr id="codec_id_map+21">
             <td>''0x6170726e''</td>
             <td>''aprn''</td>
             <td><dfn>CODEC_ID_PRORES_RAW_SD</dfn></td>
             <td>[[#prores-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+21">
+        <tr id="codec_id_map+22">
             <td>''0x54494646''</td>
             <td>''TIFF''</td>
             <td><dfn>CODEC_ID_TIFF</dfn></td>
             <td>[[#dng-tiff-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+22">
+        <tr id="codec_id_map+23">
             <td>''0x4a504547''</td>
             <td>''JPEG''</td>
             <td><dfn>CODEC_ID_JPEG</dfn></td>
             <td>[[#jpeg-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+23">
+        <tr id="codec_id_map+24">
             <td>''0x4a50324b''</td>
             <td>''JP2K''</td>
             <td><dfn>CODEC_ID_JPEG2000</dfn></td>
             <td>[[#jpeg2000-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+24">
+        <tr id="codec_id_map+25">
             <td>''0x48544a32''</td>
             <td>''HTJ2''</td>
             <td><dfn>CODEC_ID_JPEG2000_HT</dfn></td>
             <td>[[#jpeg2000-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+25">
+        <tr id="codec_id_map+26">
             <td>''0x504e4700''</td>
             <td>''PNG\0''</td>
             <td><dfn>CODEC_ID_PNG</dfn></td>
             <td>[[#png-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+26">
+        <tr id="codec_id_map+27">
             <td>''0x53564732''</td>
             <td>''SVG2''</td>
             <td><dfn>CODEC_ID_SVG</dfn></td>
             <td>[[#svg-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+27">
+        <tr id="codec_id_map+28">
             <td>''0x52414141''</td>
             <td>''RAAA''</td>
             <td><dfn>CODEC_ID_RAW_AUDIO</dfn></td>
             <td>[[#raw-audio-encapsulation]]</td>
         </tr>
-        <tr id="codec_id_map+28">
+        <tr id="codec_id_map+29">
             <td>''0x52415656''</td>
             <td>''RAVV''</td>
             <td><dfn>CODEC_ID_RAW_VIDEO</dfn></td>
@@ -3372,6 +3387,17 @@ AC-3 streams require no [[#stream-configuration-packets]] packets.
 
 THe `packet_data` must contain regular AC-3 or E-AC-3 frames, starting from the
 `syncinfo` header defined in the specifications.
+
+### ATRAC-1 encapsulation ### {#atrac1-encapsulation}
+
+For ATRAC1, the [=codec_id=] in the
+[[#stream-registration-packets]]
+must be ''0x41545231'' (''ATR1'').
+
+ATRAC-1 streams require no [[#stream-configuration-packets]] packets.
+
+The `packet_data` must contain regular ATRAC-1 frames,
+as contained in RIFF.
 
 
 ### ATRAC-9 encapsulation ### {#atrac9-encapsulation}

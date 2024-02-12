@@ -31,38 +31,39 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
-    AVTPktd start;
+    AVTPktd  start;
     uint32_t seg_offset;
     uint32_t pl_left;
     uint32_t seg_hdr_size;
 } AVTSchedulerPacketContext;
 
 typedef struct AVTSchedulerStream {
-    /* Staging */
-    AVTPacketFifo fifo;
+    union AVTPacketData reg;
 
-    /* Temporary */
+    AVTPacketFifo fifo;
     AVTSchedulerPacketContext pc;
 
-    /* State */
-    AVTRational tb;
-    int64_t last_pts;
-    AVTRational last_pts_tb;
+    uint64_t pl_bytes;
+    bool active;
 } AVTSchedulerStream;
 
 typedef struct AVTScheduler {
-    uint32_t max_pkt_size;
-    bool skip_interleave;
-    int64_t bandwidth;
-    uint16_t nb_registered_streams;
+    /* Master packet sequence value */
+    atomic_uint_least64_t seq;
 
-    /* Temporary data */
-    AVTSchedulerStream *streams_tmp[UINT16_MAX]; /* Sorted streams by PTS */
+    /* Settings */
+    uint32_t max_pkt_size;
+    int64_t bandwidth;
+
+    /* State */
+    uint32_t min_pkt_size; /* RR quantum */
+    AVTSchedulerStream streams[UINT16_MAX];
+    uint16_t active_stream_indices[UINT16_MAX];
+    uint16_t nb_active_stream_indices;
 
     /* Staging bucket, next for output */
     AVTPacketFifo *staging;
     int64_t staged_size;
-    uint32_t min_pkt_size;
 
     /* Available buckets */
     AVTPacketFifo **avail_buckets;
@@ -73,28 +74,27 @@ typedef struct AVTScheduler {
     AVTPacketFifo **buckets;
     int nb_buckets;
 
+
+
+
+
+
+
+
+
+
+    /* Temporary data */
+    AVTSchedulerStream *streams_tmp[UINT16_MAX]; /* Sorted streams by PTS */
+
     /* Stats */
     AVTSlidingWinCtx sw;
     int64_t bitrate;
-
-    /* State */
-    atomic_uint_least64_t seq;
-    int64_t min_pts; /* Minimum current pts */
-    AVTRational min_pts_tb; /* Minimum current pts timebase */
-    uint16_t active_stream_indices[UINT16_MAX];
-    uint16_t nb_active_stream_indices;
-    AVTSchedulerStream streams[UINT16_MAX];
 } AVTScheduler;
 
 /* Initialization function. If max_pkt_size changes, everything must
  * be torn down and recreated. */
-int avt_scheduler_init(AVTScheduler *s,
-                       uint32_t max_pkt_size,
-                       bool skip_interleave, int64_t bandwidth,
-                       uint16_t nb_registered_streams);
-
-/* Update scheduler information */
-int avt_scheduler_update(AVTScheduler *s, uint16_t nb_registered_streams);
+int avt_scheduler_init(AVTScheduler *s, uint32_t max_pkt_size,
+                       size_t buffer_limit, int64_t bandwidth);
 
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl);

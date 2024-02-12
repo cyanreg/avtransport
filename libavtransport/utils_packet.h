@@ -29,8 +29,8 @@
 
 #include <avtransport/packet_enums.h>
 #include <avtransport/packet_data.h>
-#include "../packet_encode.h"
 #include "utils_internal.h"
+#include "packet_encode.h"
 
 static inline union AVTPacketData avt_packet_create_segment(AVTPktd *p,
                                                             uint64_t seq,

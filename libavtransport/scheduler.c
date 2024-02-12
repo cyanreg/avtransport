@@ -35,25 +35,15 @@
 FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
-int avt_scheduler_init(AVTScheduler *s,
-                       uint32_t max_pkt_size,
-                       bool skip_interleave, int64_t bandwidth,
-                       uint16_t nb_registered_streams)
+int avt_scheduler_init(AVTScheduler *s, uint32_t max_pkt_size,
+                       size_t buffer_limit, int64_t bandwidth)
 {
     s->max_pkt_size = max_pkt_size;
     s->bandwidth = bandwidth;
-    s->skip_interleave = skip_interleave;
-    s->nb_registered_streams = nb_registered_streams;
     s->min_pkt_size = UINT32_MAX;
 
     atomic_init(&s->seq, 0);
 
-    return 0;
-}
-
-int avt_scheduler_update(AVTScheduler *s, uint16_t nb_registered_streams)
-{
-    s->nb_registered_streams = nb_registered_streams;
     return 0;
 }
 
@@ -154,6 +144,7 @@ resume:
     return out_acc;
 }
 
+#if 0
 static int compare_streams_pts(const void *s1, const void *s2)
 {
     const AVTSchedulerStream *st1 = s1;
@@ -175,16 +166,29 @@ static int compare_streams_pts(const void *s1, const void *s2)
 
     return avt_compare_ts(pts1, st1->tb, pts2, st2->tb);
 }
+#endif
 
 static int scheduler_process(AVTScheduler *s)
 {
     int err;
 
-    /* We need packets from all streams registered in order to schedule
-     * any output */
-    if (s->nb_active_stream_indices < s->nb_registered_streams)
-        return 0;
+    uint16_t nb_active_streams = s->nb_active_stream_indices;
+    for (auto i = 0; i < nb_active_streams; i++) {
+        AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
 
+        /* If the first packet is not a data packet, just pass them through */
+        while (st->fifo.nb && !avt_buffer_get_data_len(&st->fifo.data[0].pl)) {
+
+        }
+    }
+
+
+
+
+
+
+
+#if 0
     /* Gather streams to a temp */
     uint16_t nb_active_streams = s->nb_active_stream_indices;
     for (auto i = 0; i < nb_active_streams; i++) {
@@ -277,7 +281,7 @@ static int scheduler_process(AVTScheduler *s)
             }
         }
     }
-
+#endif
     return 0;
 }
 
@@ -293,29 +297,8 @@ int avt_scheduler_push(AVTScheduler *s,
             return AVT_ERROR(ENOMEM);
     }
 
-    /* Keep track of timebases for all streams */
-    AVTRational tb;
-    err = avt_packet_get_tb(pkt, &tb);
-    if (err >= 0)
-        s->streams[pkt.stream_id].tb = tb;
-
-    size_t payload_size = avt_buffer_get_data_len(pl);
-#if 0
-    /* Normalized average bitrate */
-    int64_t pkt_ts = avt_packet_get_pts(pkt);
-    int64_t pkt_duration = avt_packet_get_duration(pkt);
-    if (ret >= 0 && pkt_ts != INT64_MIN && pkt_duration != INT64_MIN) {
-        /* payload_size / avt_r2d(duration) */
-        int64_t norm_size = avt_rescale(8*payload_size, tb.den, pkt_duration * tb.num);
-        s->streams[pkt.stream_id].bitrate = avt_sliding_win(&s->streams[pkt.stream_id].sw,
-                                                            norm_size, pkt_ts,
-                                                            tb, tb.den, 1);
-    }
-#endif
-
-    /* Dispatch control packets ASAP */
-    if (s->skip_interleave || (pkt.stream_id == UINT16_MAX) || !pl ||
-        (s->nb_registered_streams == 1)) {
+    /* Bypass if interleaving is turned off */
+    if (s->bandwidth == INT64_MAX) {
         AVTSchedulerPacketContext state = { };
         int64_t ret = scheduler_push_internal(s, &state, s->staging, pkt, pl,
                                               s->max_pkt_size, INT64_MAX);
@@ -324,25 +307,28 @@ int avt_scheduler_push(AVTScheduler *s,
         return ret;
     }
 
-    /* Check if we have packets from this stream already buffered */
-    bool active = 0;
-    for (auto i = 0; i < s->nb_active_stream_indices; i++) {
-        if (s->active_stream_indices[i] == pkt.stream_id) {
-            active = 1;
-            break;
-        }
-    }
-
-    /* Keep track of the minimum packet size for round-robin quantum */
-    s->min_pkt_size = AVT_MIN(s->min_pkt_size,
-                              avt_pkt_hdr_size(pkt) + payload_size);
+    /* Keep track of timebases for all streams */
+    if (pkt.desc == AVT_PKT_STREAM_REGISTRATION)
+        s->streams[pkt.stream_id].reg = pkt;
 
     /* Buffer */
     err = avt_pkt_fifo_push_refd(&s->streams[pkt.stream_id].fifo, pkt, pl);
-    if (err < 0)
+    if (err < 0) {
         return err;
-    else if (!active)
+    } else if (!s->streams[pkt.stream_id].active) {
         s->active_stream_indices[s->nb_active_stream_indices++] = pkt.stream_id;
+        s->streams[pkt.stream_id].active = true;
+    }
+
+    if (pl) {
+        /* Keep track of the minimum packet size for round-robin quantum */
+        const size_t payload_size = avt_buffer_get_data_len(pl);
+        s->min_pkt_size = AVT_MIN(s->min_pkt_size,
+                                  avt_pkt_hdr_size(pkt) + payload_size);
+
+        /* Keep track of fully active streams */
+        s->streams[pkt.stream_id].pl_bytes += payload_size;
+    }
 
     return scheduler_process(s);
 }
@@ -357,19 +343,31 @@ int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
     s->staging = NULL;
     *seq = bkt;
 
-    s->nb_active_stream_indices = 0;
+    if (s->bandwidth == INT64_MAX)
+        return 0;
+
     s->staged_size = 0;
+
+    /* Redo round-robin quantum calculation */
     s->min_pkt_size = UINT32_MAX;
+    for (auto i = 0; i < s->nb_active_stream_indices; i++) {
+        const AVTPktd *p;
+        size_t payload_size;
+        const AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
+        for (auto j = 0; j < st->fifo.nb; j++) {
+            p = &st->fifo.data[j];
+            payload_size = avt_buffer_get_data_len(&p->pl);
+            s->min_pkt_size = AVT_MIN(s->min_pkt_size,
+                                      avt_pkt_hdr_size(p->pkt) + payload_size);
+        }
+    }
 
     return 0;
 }
 
 int avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq)
 {
-    if (seq->nb)
-        avt_log(s, AVT_LOG_WARN, "Scheduler FIFO was not fully consumed!\n");
-
-    avt_pkt_fifo_clear(seq);
+    avt_assert1(seq->nb); /* Scheduler FIFO was not fully consumed */
 
     if (!s->staging) {
         s->staging = seq;
@@ -412,3 +410,19 @@ void avt_scheduler_free(AVTScheduler *s)
     }
     s->nb_active_stream_indices = 0;
 }
+
+
+/* Rust */
+#if 0
+    size_t payload_size = avt_buffer_get_data_len(pl);
+    /* Normalized average bitrate */
+    int64_t pkt_ts = avt_packet_get_pts(pkt);
+    int64_t pkt_duration = avt_packet_get_duration(pkt);
+    if (ret >= 0 && pkt_ts != INT64_MIN && pkt_duration != INT64_MIN) {
+        /* payload_size / avt_r2d(duration) */
+        int64_t norm_size = avt_rescale(8*payload_size, tb.den, pkt_duration * tb.num);
+        s->streams[pkt.stream_id].bitrate = avt_sliding_win(&s->streams[pkt.stream_id].sw,
+                                                            norm_size, pkt_ts,
+                                                            tb, tb.den, 1);
+    }
+#endif

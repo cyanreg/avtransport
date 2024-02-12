@@ -22,16 +22,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# Headers
-headers = [
-    'avtransport.h',
-    'connection.h',
-    'output.h',
-    'input.h',
-    'stream.h',
-    'rational.h',
-    'utils.h'
-]
+spec2c = files('./tools/spec2c.py')
+
+avtransport_spec_pkt_headers = custom_target(
+    'packet_encode_decode',
+    input: spec_file,
+    output: ['packet_encode.h', 'packet_decode.h'],
+    command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
+)
 
 # Generate additional headers from spec and install them
 subdir('include/avtransport')
@@ -56,8 +54,7 @@ sources = [
     'io_null.c',
     'io_file.c',
 
-    conv_spec,
-    conv_spec_headers,
+    avtransport_spec_pkt_headers,
 
     # Version
     vcs_tag(command: ['git', 'rev-parse', '--short', 'HEAD'],
@@ -96,42 +93,53 @@ else
     avtransport_soversion = avtransport_api_version_major
 endif
 
-inc = include_directories('./include')
-libavtransport = library('avtransport',
+avtransport_inc = include_directories('./include')
+
+# Deps
+lib_deps = [
+    cbor_dep,
+    openssl_dep,
+    uring_dep,
+    zstd_dep,
+    brotlienc_dep,
+    brotlidec_dep,
+]
+
+avtransport_lib = library('avtransport',
     sources,
     install: true,
 
-    include_directories: inc,
+    sources: avtransport_spec_pub_headers,
+    include_directories: avtransport_inc,
     dependencies: lib_deps,
     version: avtransport_soname_version,
     soversion: avtransport_soversion,
 )
 
-libavtransport_dep = declare_dependency(
-    link_with: libavtransport,
-    include_directories: inc,
+avtransport_dep = declare_dependency(
+    link_with: avtransport_lib,
+    include_directories: avtransport_inc,
+    sources: avtransport_spec_pub_headers,
 )
 
 # Allows projects to build libavtransport by cloning into ./subprojects/libavtransport
-meson.override_dependency('libavtransport', libavtransport_dep)
-
-# Install headers
-foreach h : headers
-    parts = h.split('/')
-    path = meson.project_name()
-    foreach p : parts
-        if p != parts[-1]
-            path = path / p
-        endif
-    endforeach
-
-    install_headers('include' / meson.project_name() / h, subdir: path)
-endforeach
+meson.override_dependency('libavtransport', avtransport_dep)
 
 pkg = import('pkgconfig')
 pkg.generate(
     name: meson.project_name(),
-    description: 'Multimedia container and protocol',
-    libraries: libavtransport,
+    description: 'AVTransport reference library',
+    libraries: avtransport_lib,
     version: meson.project_version(),
 )
+
+summary({
+    'output': get_option('output').auto(),
+    'input': get_option('input').auto(),
+    'cbor': cbor_dep.found(),
+    'openssl': openssl_dep.found(),
+    'uring': uring_dep.found(),
+    'zstd': zstd_dep.found(),
+    'brotli (enc)':  brotlienc_dep.found(),
+    'brotli (dec)':  brotlidec_dep.found(),
+}, section: 'libavtransport', bool_yn: true)

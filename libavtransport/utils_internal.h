@@ -39,6 +39,15 @@
 
 #include "../config.h"
 
+#define AVT_SWAP(a, b)         \
+    do {                       \
+        typeof(a) _a = (a);    \
+        typeof(b) _b = (b);    \
+        typeof(*_a) tmp = *_a; \
+        *_a = *_b;             \
+        *_b = tmp;             \
+    } while(0)
+
 static inline void avt_assert0(int cond)
 {
     assert(cond);

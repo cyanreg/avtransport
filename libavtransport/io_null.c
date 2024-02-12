@@ -31,8 +31,9 @@
 #include "io_common.h"
 #include "utils_internal.h"
 #include "bytestream.h"
+#include "packet_encode.h"
+
 #include "../config.h"
-#include "../packet_encode.h"
 
 struct AVTIOCtx {
     atomic_uint_least64_t seq;

@@ -23,14 +23,15 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Structs and enums generated from the specs
-inc_dir = get_option('includedir') + '/libavtransport'
+inc_dir = get_option('includedir') + '/avtransport'
 
-conv_spec_headers = custom_target('packet*',
-                                  install: true,
-                                  install_dir: [ inc_dir, inc_dir ],
-                                  input: spec_file,
-                                  output: ['packet_enums.h', 'packet_data.h'],
-                                  command: [python_exe, spec2c, 'packet_enums,packet_data', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@'])
+avtransport_spec_pub_headers = custom_target('packet*',
+    install: true,
+    install_dir: [ inc_dir, inc_dir ],
+    input: spec_file,
+    output: ['packet_enums.h', 'packet_data.h'],
+    command: [python_exe, spec2c, 'packet_enums,packet_data', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
+)
 
 # Version header
 version_h_data = configuration_data()
@@ -38,5 +39,21 @@ version_h_data.set('AVTRANSPORT_API_VERSION_MAJOR', avtransport_api_version_majo
 version_h_data.set('AVTRANSPORT_API_VERSION_MINOR', avtransport_api_version_minor)
 version_h_data.set('AVTRANSPORT_API_VERSION_MICRO', avtransport_api_version_micro)
 version_h_target = configure_file(input: 'version.h.in',
-                                  output: 'version.h',
-                                  configuration: version_h_data)
+    output: 'version.h',
+    configuration: version_h_data
+)
+
+# Headers
+lib_headers = [
+    'avtransport.h',
+    'connection.h',
+    'output.h',
+    'input.h',
+    'stream.h',
+    'rational.h',
+    'utils.h',
+
+    version_h_target,
+]
+
+install_headers(lib_headers, subdir: meson.project_name())

@@ -40,10 +40,10 @@ enum AVTConnectionType {
 
     /* URL address in the form of:
      *
-     * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>][/<stream_id>[+<stream_id>][?<param1>=<val1]]
+     * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>][/<stream_id>[+<stream_id>][?<param1>=<val1>]]
      *
      * - <transport> may be either missing (default: UDP),
-     *   "udp", "udplite", "quic", or "file".
+     *   or: "udp", "udplite", "quic", or "file".
      *
      * - <mode> is an optional setting which has different meanings for
      *   senders and receivers, and transports.
@@ -172,37 +172,27 @@ typedef struct AVTConnectionInfo {
          * Zero means automatic. Approximate/best effort. */
         size_t buffer;
 
-        /* Controls interleave settings for the output scheduler.
-         * If set to true, will disable any stream interleaving
-         * and directly output all packets after segmentation.
-         * Enabling this reduces latency, as otherwise each stream
-         * must have a packet ready, but may cause streams to starve
-         * one another if the bandwidth is insufficient. */
-        bool skip_interleave;
-
-        /* Connection bandwidth, in bits per second.
+        /* Available sender or receiver bandwidth, in bits per second.
          *
-         * This lets the scheduler avoid streams from
-         * being starved by interleaving packets based
-         * on duration and bitrate.
-         * Setting this too low will result in excessive
-         * packet fragmentation, increasing overhead.
+         * This setting controls the packet scheduler, which ensures that
+         * during playback, no stream starves another stream of data
+         * due to limited bandwidth.
          *
-         * By default, the current bandwidth of all streams,
-         * plus 10% is used by default.
+         * This also serves as a bandwidth limit. Setting this lower than
+         * the total bitrate of all streams will result in the buffer
+         * filling up and new packets being rejected during calls
+         * to avt_output*().
+         *
+         * If left at zero, this takes a default value to:
+         *  - For streams: total bandwidth during the last 10 seconds
+         *    of packet duration, plus 10%.
+         *  - For files: maximum timestamp difference between packets
+         *    from all streams is limited to 500ms.
+         *
+         * If set to INT64_MAX, all interleaving is disabled, which
+         * may improve latency, at the risk of stream bitrate starvation.
          */
         int64_t bandwidth;
-
-        /* If enabled, the bandwidth field is used
-         * as a hard limit for transmission which will
-         * never be exceeded.
-         * This will result in buffering in case the current
-         * rate of all streams exceeds the limit, and
-         * if all buffers are full, will result in packets
-         * being rejected.
-         *
-         * Only enabled when bandwidth given is non-zero. */
-        bool bandwidth_limit;
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.
@@ -220,6 +210,13 @@ AVT_API int avt_connection_create(AVTContext *ctx, AVTConnection **conn,
 
 /**
  * Processes received packets and transmits scheduled packets.
+ *
+ * timeout is a value in nanoseconds to wait for the operation to
+ * complete.
+ *
+ * Recommended operation is to always use a timeout of 0 and check
+ * the return value. Errors may be delayed, but the function will
+ * not block for I/O.
  */
 AVT_API int avt_connection_process(AVTConnection *conn, int64_t timeout);
 
@@ -272,6 +269,12 @@ typedef struct AVTConnectionStatus {
 
         /* Bitrate in bits per second */
         int64_t bitrate;
+
+        /* Total number of bytes buffered */
+        int64_t buffer;
+
+        /* Total duration of all packets buffered (timebase: 1 nanosecond) */
+        int64_t buffer_duration;
     } tx;
 } AVTConnectionStatus;
 

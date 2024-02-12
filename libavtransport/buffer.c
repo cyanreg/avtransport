@@ -178,7 +178,7 @@ void *avt_buffer_get_data(AVTBuffer *buf, size_t *len)
     return buf->data;
 }
 
-size_t avt_buffer_get_data_len(AVTBuffer *buf)
+size_t avt_buffer_get_data_len(const AVTBuffer *buf)
 {
     if (!buf || !buf->refcnt)
         return 0;

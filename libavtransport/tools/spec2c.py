@@ -107,6 +107,7 @@ substructs = [ ]
 anchor_name_remap = { }
 streamid_padded_structs = [ ]
 streamid_field_exceptions = [ "stream_id", "group_id", "user_field", "session_version" ]
+codec_tags = { }
 
 extra_values = {
     "AVTStreamData": [
@@ -141,6 +142,17 @@ def iter_enum_fields(target_id):
 
     print("Parsed enum", target_id)
     enums[target_id] = enum_vals
+
+def parse_codec_tags(target_id):
+    for i in itertools.count():
+        field_tab = soup.find(id=target_id + "+" + str(i))
+        if field_tab == None:
+            break
+
+        fields = field_tab.find_all('td')
+
+        codec_tags[data_prefix + fields[2].string.strip("'")] = int(fields[0].string.strip("'"), 16)
+    print("Parsed codec_id table", target_id)
 
 # Iterate over each field of a data structure
 def iter_data_fields(target_id, struct_name, anchor_name):
@@ -364,6 +376,8 @@ for struct, fields in packet_structs.items():
     if name_sid == None and struct not in substructs:
         streamid_padded_structs.append(struct)
 
+parse_codec_tags("codec_id_map")
+
 copyright_header = "/*\n * Copyright © " + datetime.datetime.now().date().strftime("%Y") + ''', Lynne
  * All rights reserved.
  *
@@ -421,6 +435,12 @@ if f_packet_enums != None:
         for name, val in dfns.items():
             file_enums.write("    " + data_prefix + "_" + name + " = 0x" + format(val, "X") + ",\n")
         file_enums.write("};\n")
+
+    file_enums.write("\nenum AVTCodecID {\n")
+    for name, tag in codec_tags.items():
+        file_enums.write("    " + name.upper() + " = " + "0x" + format(tag, "04X") + ",\n")
+    file_enums.write("};\n")
+
     file_enums.write("\n#endif /* AVTRANSPORT_PACKET_ENUMS_H */\n")
     file_enums.close()
 

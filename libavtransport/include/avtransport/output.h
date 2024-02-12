@@ -33,18 +33,18 @@
 
 typedef struct AVTOutput AVTOutput;
 
-/* Compression mode flags. By default, AVT_OUTPUT_COMPRESS_ALL is used,
- * which compresses everything not already compressed, except video. */
+/* Compression mode flags */
 enum AVTOutputCompressionFlags {
-    AVT_SENDER_COMPRESS_NONE   = 0 << 0,        /* Don't compress anything */
-    AVT_SENDER_COMPRESS_AUX    = 1 << 0,        /* Compress auxillary payloads (ICC profiles/fonts) */
-    AVT_SENDER_COMPRESS_META   = 1 << 1,        /* Compress metadata */
-    AVT_SENDER_COMPRESS_SUBS   = 1 << 2,        /* Compress subtitles */
-    AVT_SENDER_COMPRESS_AUDIO  = 1 << 3,        /* Compress audio */
-    AVT_SENDER_COMPRESS_VIDEO  = 1 << 4,        /* Compress video */
-    AVT_SENDER_COMPRESS_USER   = 1 << 5,        /* Compress user data */
-    AVT_SENDER_COMPRESS_ALL    = (1 << 16) - 1, /* Compress everything */
-    AVT_SENDER_COMPRESS_FORCE  = 1 << 31,       /* Compress even if data is already compressed */
+    AVT_SENDER_COMPRESS_AUTO  =  0,            /* Compress everything except video and audio */
+
+    AVT_SENDER_COMPRESS_SUBS  =  1 << 0,       /* Compress subtitles */
+    AVT_SENDER_COMPRESS_AUX   =  1 << 1,       /* Compress auxillary payloads (ICC profiles/fonts) */
+    AVT_SENDER_COMPRESS_META  =  1 << 2,       /* Compress metadata */
+    AVT_SENDER_COMPRESS_VIDEO =  1 << 3,       /* Compress video */
+    AVT_SENDER_COMPRESS_AUDIO =  1 << 4,       /* Compress audio */
+
+    AVT_SENDER_COMPRESS_FORCE =  1 << 30,      /* Force compression even if data is already compressed */
+    AVT_SENDER_COMPRESS_NONE  =  INT32_MAX,    /* Do not compress anything */
 };
 
 typedef struct AVTOutputOptions {
@@ -92,7 +92,8 @@ AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
 /* Write a complete stream data packet to the output. */
 AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
 
-/* This function allows for writing of a stream data packet
+/**
+ * This function allows for writing of a stream data packet
  * in chunks.
  * Useful for extremely low-latency scenarios.
  *

@@ -25,7 +25,7 @@
 project('avtransport',
     [ 'c' ],
     license: 'BSD-2-Clause',
-    license_files: ['LICENSE.md'],
+    license_files: [ 'LICENSE.md' ],
     default_options: [
         'buildtype=debugoptimized',
         'c_std=c2x',
@@ -35,6 +35,8 @@ project('avtransport',
     version: '0.0.4',
     meson_version: '>=1.1.0',
 )
+
+spec_file = files('draft-avtransport-spec.bs')
 
 # library version
 avtransport_version_split = meson.project_version().split('.')
@@ -48,6 +50,11 @@ avtransport_api_version_split = avtransport_soname_version.split('.')
 avtransport_api_version_major = avtransport_api_version_split[0]
 avtransport_api_version_minor = avtransport_api_version_split[1]
 avtransport_api_version_micro = avtransport_api_version_split[2]
+
+# Python
+#============================================================================
+pymod = import('python')
+python_exe = pymod.find_installation()
 
 # Compiler
 #============================================================================
@@ -78,7 +85,11 @@ cc = meson.get_compiler('c')
 
 # Check for 128-bit integer support (required for timestamp handling)
 if cc.has_type('_BitInt(128)') == false and cc.has_type('__int128') == false
-    error('Compiler lacks support for 128-bit integers!')
+    if cc.has_type('__int128', args: [ '-D__SIZEOF_INT128__' ]) == false
+        error('Compiler lacks support for 128-bit integers!')
+    else
+        build_args += '-D__SIZEOF_INT128__'
+    endif
 endif
 
 # Hide all untagged API functions
@@ -145,17 +156,6 @@ if brotlienc_dep.found() == false or brotlidec_dep.found() == false
     endif
 endif
 
-# Final deps
-#===========
-lib_deps = [
-    cbor_dep,
-    openssl_dep,
-    uring_dep,
-    zstd_dep,
-    brotlienc_dep,
-    brotlidec_dep
-]
-
 # Configure file
 #============================================================================
 conf = configuration_data()
@@ -200,26 +200,11 @@ if (cc.sizeof('void *') == 4
     conf.set('_TIME_BITS', '64')
 endif
 
-
 # Check for wendys
 #============================================================================
 if host_machine.system() == 'windows'
 
 endif
-
-# spec2py
-#============================================================================
-pymod = import('python')
-python_exe = pymod.find_installation()
-spec2c = files('tools/spec2c.py')
-spec_file = files('draft-avtransport-spec.bs')
-
-conv_spec = custom_target(
-    'packet_encode_decode',
-    input: spec_file,
-    output: ['packet_encode.h', 'packet_decode.h'],
-    command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
-)
 
 # Build
 #============================================================================
@@ -233,14 +218,3 @@ configure_file(
     output: 'config.h',
     configuration: conf,
 )
-
-summary({
-    'output': get_option('output').auto(),
-    'input': get_option('input').auto(),
-    'cbor': cbor_dep.found(),
-    'openssl': openssl_dep.found(),
-    'uring': uring_dep.found(),
-    'zstd': zstd_dep.found(),
-    'brotli (enc)':  brotlienc_dep.found(),
-    'brotli (dec)':  brotlidec_dep.found(),
-}, section: 'libavtransport', bool_yn: true)

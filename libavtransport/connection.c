@@ -80,7 +80,9 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
         return ret;
 
     /* Output scheduler */
-    ret = avt_scheduler_init(&conn->out_scheduler, ret, 0, 0, 0);
+    ret = avt_scheduler_init(&conn->out_scheduler, ret,
+                             info->output_opts.buffer,
+                             info->output_opts.bandwidth);
     if (ret < 0)
         return ret;
 

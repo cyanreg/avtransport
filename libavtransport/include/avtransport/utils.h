@@ -93,7 +93,7 @@ AVT_API int avt_buffer_get_refcount(AVTBuffer *buffer);
 AVT_API void *avt_buffer_get_data(AVTBuffer *buffer, size_t *len);
 
 /* Get the data length */
-AVT_API size_t avt_buffer_get_data_len(AVTBuffer *buffer);
+AVT_API size_t avt_buffer_get_data_len(const AVTBuffer *buffer);
 
 /* Unreference a reference counted buffer. */
 AVT_API void avt_buffer_unref(AVTBuffer **buffer);

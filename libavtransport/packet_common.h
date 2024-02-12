@@ -32,6 +32,7 @@
 
 #define AVT_MAX_HEADER_BUF ((1024 - AVT_MAX_HEADER_LEN) + AVT_MAX_HEADER_LEN)
 
+/* Internal packet representation */
 typedef struct AVTPktd {
     uint8_t hdr[AVT_MAX_HEADER_BUF];
     union AVTPacketData pkt;

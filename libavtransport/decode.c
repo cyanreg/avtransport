@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../packet_decode.h"
+#include "packet_decode.h"
 
 static int avt_decode_pkt(AVTBuffer *buf)
 {
