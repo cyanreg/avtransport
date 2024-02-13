@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="defa14d55e45940480759f1d29f44adbbc2a64f3" name="document-revision">
+  <meta content="e926c8179a85f90f76ea89f3e226558aa7cd3bfd" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -5979,14 +5979,13 @@ The full block, along with the check data, shall be sent to an LDPC decoder.</p>
      </dl>
    </ul>
    <p>For reference, the following code may be used to compute the LDPC parity data:</p>
-<pre class="highlight"><c- cp>#include </c-><stdint.h>
-<c- b>void</c-> <c- nf>ldpc_encode</c-><c- p>(</c-><c- b>uint64_t</c-> <c- o>*</c-><c- n>dst</c-><c- p>,</c-> <c- b>uint8_t</c-> <c- o>*</c-><c- n>src</c-><c- p>,</c-> <c- b>uint64_t</c-> <c- o>**</c-><c- n>H</c-><c- p>,</c->
-                 <c- b>int</c-> <c- n>msg_bits</c-><c- p>,</c-> <c- b>int</c-> <c- n>parity_bits</c-><c- p>)</c->
+<pre class="highlight"><c- b>void</c-> <c- nf>ldpc_encode</c-><c- p>(</c-><c- b>uint64_t</c-> <c- o>*</c-><c- n>dst</c-><c- p>,</c-> <c- b>uint8_t</c-> <c- o>*</c-><c- n>src</c-><c- p>,</c-> <c- b>uint64_t</c-> <c- o>**</c-><c- n>H</c-><c- p>,</c->
+                 <c- b>int</c-> <c- n>message_bits</c-><c- p>,</c-> <c- b>int</c-> <c- n>parity_bits</c-><c- p>)</c->
 <c- p>{</c->
     <c- k>for</c-> <c- p>(</c-><c- b>int</c-> <c- n>i</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c-> <c- n>i</c-> <c- o>&lt;</c-> <c- p>(</c-><c- n>parity_bits</c-> <c- o>/</c-> <c- mi>64</c-><c- p>);</c-> <c- n>i</c-><c- o>++</c-><c- p>)</c-> <c- p>{</c->
         <c- d>/* Initialize parity data to zero */</c->
         <c- n>dst</c-><c- p>[</c-><c- n>i</c-><c- p>]</c-> <c- o>=</c-> <c- mh>0x0</c-><c- p>;</c->
-        <c- k>for</c-> <c- p>(</c-><c- b>int</c-> <c- n>j</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c-> <c- n>j</c-> <c- o>&lt;</c-> <c- n>msg_bits</c-><c- p>;</c-> <c- n>j</c-><c- o>++</c-><c- p>)</c-> <c- p>{</c->
+        <c- k>for</c-> <c- p>(</c-><c- b>int</c-> <c- n>j</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c-> <c- n>j</c-> <c- o>&lt;</c-> <c- n>message_bits</c-><c- p>;</c-> <c- n>j</c-><c- o>++</c-><c- p>)</c-> <c- p>{</c->
             <c- d>/* Duplicate each message bit 64 times, once for each parity bit */</c->
             <c- b>uint64_t</c-> <c- n>bit</c-> <c- o>=</c-> <c- n>j</c-> <c- o>&amp;</c-> <c- mi>7</c-><c- p>;</c->
             <c- b>uint64_t</c-> <c- n>data</c-> <c- o>=</c-> <c- p>(((</c-><c- b>uint64_t</c-><c- p>)</c-><c- n>src</c-><c- p>[</c-><c- n>j</c-> <c- o>>></c-> <c- mi>3</c-><c- p>]</c-> <c- o>>></c-> <c- n>bit</c-><c- p>)</c-> <c- o>&amp;</c-> <c- mi>1</c-><c- p>)</c-> <c- o>*</c-> <c- n>UINT64_MAX</c-><c- p>;</c->
@@ -5994,7 +5993,7 @@ The full block, along with the check data, shall be sent to an LDPC decoder.</p>
         <c- p>}</c->
     <c- p>}</c->
 <c- p>}</c->
-</stdint.h></pre>
+</pre>
    <p>Implementations are advised to use faster algorithms for encoding, such as back-substitution,
 if the overhead becomes a problem.</p>
    <h4 class="heading settled" data-level="4.1.1" id="ldpc-h-matrices"><span class="secno">4.1.1. </span><span class="content">LDPC H-matrices</span><a class="self-link" href="#ldpc-h-matrices"></a></h4>
