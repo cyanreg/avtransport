@@ -221,7 +221,7 @@ int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
     if (pkt)
         *pkt = data->pkt;
 
-    if (pkt)
+    if (pl)
         *pl = data->pl;
     else
         avt_buffer_quick_unref(&data->pl);

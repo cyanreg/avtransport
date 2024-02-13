@@ -168,18 +168,42 @@ static int compare_streams_pts(const void *s1, const void *s2)
 }
 #endif
 
-static int scheduler_process(AVTScheduler *s)
+static int scheduler_process(AVTScheduler *s,
+                             union AVTPacketData pkt, AVTBuffer *pl)
 {
     int err;
+    bool buffered = false;
+    union AVTPacketData *cp = &pkt;
+    AVTBuffer *cpl = pl;
 
+    int64_t slice = 0;
+    int64_t avail = INT64_MAX;
     uint16_t nb_active_streams = s->nb_active_stream_indices;
     for (auto i = 0; i < nb_active_streams; i++) {
         AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
 
-        /* If the first packet is not a data packet, just pass them through */
-        while (st->fifo.nb && !avt_buffer_get_data_len(&st->fifo.data[0].pl)) {
+        slice += s->min_pkt_size;
 
+        /* If the top packet is not a data packet, just pass them through */
+        while (st->fifo.nb && !avt_buffer_get_data_len(&st->fifo.data[0].pl)) {
+            err = scheduler_push_internal(s, &st->pc, s->staging,
+                                          st->fifo.data[0].pkt,
+                                          &st->fifo.data[0].pl,
+                                          s->max_pkt_size, slice);
+            if (err > 0)
+                slice -= err;
+
+            avt_pkt_fifo_pop(&st->fifo, NULL, NULL);
+            if (!st->fifo.nb) {
+                memmove(&s->active_stream_indices[i],
+                        &s->active_stream_indices[i + 1],
+                        (nb_active_streams - i - 1)*sizeof(*s->active_stream_indices));
+                nb_active_streams--;
+                s->nb_active_stream_indices = nb_active_streams;
+            }
         }
+
+
     }
 
 
@@ -311,26 +335,22 @@ int avt_scheduler_push(AVTScheduler *s,
     if (pkt.desc == AVT_PKT_STREAM_REGISTRATION)
         s->streams[pkt.stream_id].reg = pkt;
 
-    /* Buffer */
-    err = avt_pkt_fifo_push_refd(&s->streams[pkt.stream_id].fifo, pkt, pl);
-    if (err < 0) {
-        return err;
-    } else if (!s->streams[pkt.stream_id].active) {
+
+    if (!s->streams[pkt.stream_id].active) {
         s->active_stream_indices[s->nb_active_stream_indices++] = pkt.stream_id;
         s->streams[pkt.stream_id].active = true;
     }
 
-    if (pl) {
-        /* Keep track of the minimum packet size for round-robin quantum */
-        const size_t payload_size = avt_buffer_get_data_len(pl);
-        s->min_pkt_size = AVT_MIN(s->min_pkt_size,
-                                  avt_pkt_hdr_size(pkt) + payload_size);
+    /* Keep track of the minimum packet size for round-robin quantum */
+    const size_t payload_size = avt_buffer_get_data_len(pl);
+    s->min_pkt_size = AVT_MIN(s->min_pkt_size,
+                              avt_pkt_hdr_size(pkt) + payload_size);
 
-        /* Keep track of fully active streams */
+    /* Keep track of fully active streams */
+    if (pl)
         s->streams[pkt.stream_id].pl_bytes += payload_size;
-    }
 
-    return scheduler_process(s);
+    return scheduler_process(s, pkt, pl);
 }
 
 int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
