@@ -32,6 +32,8 @@
 #include <avtransport/avtransport.h>
 
 typedef struct AVTStreamPriv {
+    bool active;
+
     enum AVTCodecID codec_id;
 
     struct AVTOutput *out;

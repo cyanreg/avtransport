@@ -84,6 +84,10 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
     }
 
     AVTStream *st = &out->streams[id];
+    if (st->priv && st->priv->active) {
+        avt_log(out, AVT_LOG_ERROR, "Stream 0x%X is already active!\n", id);
+        return NULL;
+    }
 
     st->id = id;
     if (!st->priv) {
@@ -92,10 +96,30 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
             return NULL;
     }
 
+    st->priv->active = true;
     st->priv->out = out;
     out->active_stream_idx[out->nb_streams++] = id;
 
     return st;
+}
+
+int avt_output_stream_close(AVTStream **_st)
+{
+    if (!_st)
+        return 0;
+
+    AVTStream *st = *_st;
+    if (!st)
+        return 0;
+
+    if (!st->priv || !st->priv->active) {
+        avt_log(st->priv->out, AVT_LOG_ERROR, "Stream 0x%X is not active!\n", st->id);
+        return AVT_ERROR(EINVAL);
+    }
+
+    st->priv->active = false;
+
+    return 0;
 }
 
 int avt_output_stream_update(AVTOutput *out, AVTStream *st)
