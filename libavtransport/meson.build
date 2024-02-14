@@ -27,8 +27,8 @@ spec2c = files('./tools/spec2c.py')
 avtransport_spec_pkt_headers = custom_target(
     'packet_encode_decode',
     input: spec_file,
-    output: ['packet_encode.h', 'packet_decode.h'],
-    command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
+    output: ['packet_encode.h', 'packet_decode.h', 'ldpc_tables.h', 'ldpc_tables.c'],
+    command: [python_exe, spec2c, 'packet_encode,packet_decode,ldpc_tables_h,ldpc_tables_c', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@', '@OUTPUT2@', '@OUTPUT3@']
 )
 
 # Generate additional headers from spec and install them

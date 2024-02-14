@@ -299,14 +299,14 @@ of damaged or invalid stream data.
 Finally, for long-term archival on tape, or when transmitting over a noisy [[#serial-transmission]] or
 radio connection, they help correct bitflips.
 
-Their theory of operation and specifications are detailed in [[#annex-c-ldpc]].
+Their theory of operation and specifications are detailed in [[#annex-g-ldpc]].
 
 To simplify implementations, two different lengths are used:
  - <dfn>ldpc_288_224</dfn>: specified in [=LDPC(288, 224)=]
  - <dfn>ldpc_2784_2016</dfn>: specified in [=LDPC(2784, 2016)=]
 
 Note: Applying LDPC error correction is optional for receiver implementations.</br>
-Senders MUST implement it.
+Senders must implement it.
 
 
 ## Global sequence ## {#global-sequence}
@@ -4523,7 +4523,7 @@ buffering, and reordering.
 
 Additional data or recommendations for the AVTransport specification is listed here.
 
-## Annex A: LDPC ## {#annex-c-ldpc}
+## Annex G: LDPC ## {#annex-g-ldpc}
 
 This normative annex shall cover the usage and operation of [[LDPC]] within AVTransport.
 
@@ -4540,7 +4540,7 @@ To ease implementations, only two different lengths are used:
 For reference, the following code may be used to compute the LDPC parity data:
 
 <pre highlight=c>
-void ldpc_encode(uint64_t *dst, uint8_t *src, uint64_t **H,
+void ldpc_encode(uint64_t *dst, uint8_t *src, const uint64_t **H,
                  int message_bits, int parity_bits)
 {
     for (int i = 0; i < (parity_bits / 64); i++) {
@@ -4581,13 +4581,23 @@ As each value of a matrix is purely boolean, <b>64 bits in each column are repre
 the bit from the top row, and so on. In other words, <b><i>GF(2⁶)</i></b>.
 This is the format that the reference function above expects.
 
+The matrices are also listed as standard .alist files, directly usable for analysis and simulations.
+
 
 #### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224}
 
 Note: spaceholder, working and optimal tables to be done
 
-<pre line-numbers highlight=c>
-uint64_t ldpc_h_matrix_288_224[1][288] = {
+alist code:
+
+<pre line-numbers>
+# TODO
+</pre>
+
+Generated data:
+
+<pre line-numbers highlight=c id="ldpc_h_matrix_288_224">
+const uint64_t ldpc_h_matrix_288_224[1][288] = {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
       0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
       0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
@@ -4632,8 +4642,16 @@ uint64_t ldpc_h_matrix_288_224[1][288] = {
 
 Note: spaceholder, working and optimal tables to be done
 
-<pre line-numbers highlight=c>
-uint64_t ldpc_h_matrix_2784_2016[12][2784] = {
+alist code:
+
+<pre line-numbers>
+# TODO
+</pre>
+
+Generated data:
+
+<pre line-numbers highlight=c id="ldpc_h_matrix_2784_2016">
+const uint64_t ldpc_h_matrix_2784_2016[12][2784] = {
     { 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
       0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
       0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,

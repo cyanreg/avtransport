@@ -25,13 +25,36 @@
  */
 
 #include "ldpc_encode.h"
+#include "ldpc_tables.h"
 
-void avt_ldpc_encode_288_224(uint8_t *dst)
+static inline void ldpc_encode(uint64_t *dst, uint8_t *src, const uint64_t *H,
+                               int message_bits, int parity_bits)
 {
-    ;
+    uint64_t data, bits[8];
+
+    for (int i = 0; i < (parity_bits / 64); i++) {
+        dst[i] = 0x0;
+
+        for (int j = 0; j < (message_bits / 8); j++) {
+            data = src[j];
+
+            for (int k = 0; k < 8; k++)
+                bits[k] = ((data >> k) & 1) * UINT64_MAX;
+
+            for (int k = 0; k < 8; k++)
+                dst[i] ^= bits[k] & (*H++);
+        }
+
+        H += parity_bits; // Padding
+    }
 }
 
-void avt_ldpc_encode_2784_2016(uint8_t *dst)
+void avt_ldpc_encode_288_224(uint8_t *src)
 {
-    ;
+    ldpc_encode((uint64_t *)(src + 28), src, (const uint64_t *)ldpc_h_matrix_288_224, 224, 64);
+}
+
+void avt_ldpc_encode_2784_2016(uint8_t *src)
+{
+    ldpc_encode((uint64_t *)(src + 252), src, (const uint64_t *)ldpc_h_matrix_2784_2016, 2016, 768);
 }
