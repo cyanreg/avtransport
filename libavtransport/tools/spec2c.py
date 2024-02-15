@@ -874,9 +874,15 @@ if f_ldpc_tables_h != None:
     file_ldpc_tables_h.write("#include <stdalign.h>\n")
 
     for tab, len in ldpc_tables_list.items():
-        file_ldpc_tables_h.write("\nextern alignas(64) const uint64_t " + tab + "[" + str((len[0] - len[1]) >> 6) + "][" + str(len[0]) + "];\n")
+        file_ldpc_tables_h.write("\nextern const uint64_t " + tab + "[" + str(((len[0] - len[1]) >> 6) * len[0]) + "];\n")
 
-    file_ldpc_tables_h.write("\n#endif /* AVTRANSPORT_LDPC_TABLES_H */\n")
+    encode_fn = soup.find(id="ldpc_encode_fn")
+    if encode_fn == None:
+        print("Unknown ID:", "ldpc_encode_fn")
+        exit(22)
+    file_ldpc_tables_h.write("\nstatic inline" + encode_fn.get_text() + "\n")
+
+    file_ldpc_tables_h.write("#endif /* AVTRANSPORT_LDPC_TABLES_H */\n")
     file_ldpc_tables_h.close()
 
 if f_ldpc_tables_c != None:

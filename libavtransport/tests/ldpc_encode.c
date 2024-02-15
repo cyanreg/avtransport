@@ -24,16 +24,54 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "ldpc_encode.h"
-#include "ldpc_tables.h"
-#include "bytestream.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-void avt_ldpc_encode_288_224(uint8_t *src)
-{
-    ldpc_encode(src, ldpc_h_matrix_288_224, 224, 64);
-}
+#include "../ldpc_tables.h"
 
-void avt_ldpc_encode_2784_2016(uint8_t *src)
+#define DATA_LEN 1024
+#define PARITY_LEN 512
+
+int main(void)
 {
-    ldpc_encode(src, ldpc_h_matrix_2784_2016, 2016, 768);
+    uint8_t data[DATA_LEN + PARITY_LEN];
+
+    /* Get random data */
+    srand(time(NULL));
+    for (int i = 0; i < DATA_LEN; i++)
+        data[i] = rand() & 0xFF;
+
+    /* Make a matrix filled with 1s.
+     * Encoding with this is equivalent to summing all bits in GF(2). */
+    uint64_t *parity_matrix = malloc(((DATA_LEN + PARITY_LEN) * PARITY_LEN) * 8);
+    for (int i = 0; i < ((DATA_LEN + PARITY_LEN) * PARITY_LEN); i++)
+        parity_matrix[i] = UINT64_MAX;
+
+    uint8_t parity = 0;
+    for (int i = 0; i < DATA_LEN; i++) {
+        uint8_t p = data[i];
+
+        parity ^= (p >> 7) & 1;
+        parity ^= (p >> 6) & 1;
+        parity ^= (p >> 5) & 1;
+        parity ^= (p >> 4) & 1;
+        parity ^= (p >> 3) & 1;
+        parity ^= (p >> 2) & 1;
+        parity ^= (p >> 1) & 1;
+        parity ^= (p >> 0) & 1;
+    }
+    parity *= 0xFF;
+
+    ldpc_encode(data, parity_matrix, DATA_LEN * 8, PARITY_LEN * 8);
+    free(parity_matrix);
+
+    for (int i = 0; i < PARITY_LEN; i++) {
+        if (data[DATA_LEN + i] != parity) {
+            printf("Mismatch, 0x%x vs 0x%x\n", data[DATA_LEN + i], parity);
+            return 1;
+        }
+    }
+
+    return 0;
 }

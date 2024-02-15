@@ -30,6 +30,12 @@ option('tools',
     description: 'Build libavtransport CLI tools'
 )
 
+option('tests',
+    type: 'feature',
+    value: 'auto',
+    description: 'Build tests'
+)
+
 option('protocols',
     type : 'array',
     value : ['all'],

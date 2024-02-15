@@ -122,6 +122,11 @@ avtransport_dep = declare_dependency(
     sources: avtransport_spec_pub_headers,
 )
 
+# Do tests if enabled
+if get_option('tools').auto()
+    subdir('tests')
+endif
+
 # Allows projects to build libavtransport by cloning into ./subprojects/libavtransport
 meson.override_dependency('libavtransport', avtransport_dep)
 
