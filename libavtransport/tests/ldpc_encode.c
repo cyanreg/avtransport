@@ -31,7 +31,7 @@
 #include "../ldpc_tables.h"
 
 #define DATA_LEN 1024
-#define PARITY_LEN 512
+#define PARITY_LEN 1024
 
 int main(void)
 {

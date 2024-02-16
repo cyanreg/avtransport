@@ -76,6 +76,16 @@ Markup Shorthands: http no, markup no
         "published-by": "International Standards Organization",
         "date": "October 2019",
         "href": "https://www.iso.org/standard/76621.html"
+    },
+    "LDPC-encoding": {
+        "title": "Efficient encoding of low-density parity-check codes",
+        "authors": [
+            "T. J. Richardson",
+            "R. L. Urbanke"
+        ],
+        "published-by": "Institute of Electrical and Electronics Engineers",
+        "date": "February 2001",
+        "href": "https://ieeexplore.ieee.org/document/910579"
     }
 }
 </pre>
@@ -4533,9 +4543,9 @@ The full block, along with the check data, shall be sent to an LDPC decoder.
 
 To ease implementations, only two different lengths are used:
  - <dfn>LDPC(288, 224)</dfn>
-     :: 224-bit message, 64-bit parity, rate of <code>2/9</code>, [[#ldpc_h_matrix_288_224|H₆₄ₓ₂₈₈-matrix]]
+     :: 224-bit message, 64-bit parity, rate of <code>7/9</code>, [[#ldpc_h_matrix_288_224|H₆₄ₓ₂₈₈-matrix]]
  - <dfn>LDPC(2784, 2016)</dfn>
-     :: 2016-bit message, 768-bit parity, rate of <code>8/29</code>, [[#ldpc_h_matrix_2784_2016|H₇₆₈ₓ₂₇₈₄-matrix]]
+     :: 2016-bit message, 768-bit parity, rate of <code>21/29</code>, [[#ldpc_h_matrix_2784_2016|H₇₆₈ₓ₂₇₈₄-matrix]]
 
 For reference, the following code may be used to compute the LDPC parity data:
 
@@ -4574,8 +4584,11 @@ void ldpc_encode(uint8_t *pkt, const uint64_t *H,
 }
 </pre>
 
-Implementations are advised to use faster algorithms for encoding, such as back-substitution,
-if the overhead becomes a problem.
+This algorithm is quite inefficient, but even 10-year old embedded devices can
+do at least 2 million [=LDPC(288, 224)=] encodings per second.
+
+Implementations should consider using more advanced encoding algorithms, such
+as the [[LDPC-encoding|Richardson-Urbanke method]] to reduce the overhead further.
 
 
 ### LDPC H-matrices ### {#ldpc-h-matrices}
@@ -4705,7 +4718,7 @@ alist code:
 Generated data:
 
 <pre line-numbers highlight=c id="ldpc_h_matrix_2784_2016">
-const uint64_t ldpc_h_matrix_2784_2016[33408 /* (768 rows/64) * 2784 col */] = {
+const uint64_t ldpc_h_matrix_2784_2016[33408 /* (768 rows/64) * 2784 cols */] = {
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
     0x0000000000000000, 0x0000000000000000, 0x0000000000000000, 0x0000000000000000,
