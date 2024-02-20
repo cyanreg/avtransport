@@ -44,10 +44,11 @@ typedef struct AVTIO {
     const char *name;
     enum AVTIOType type;
 
-    int (*init)(AVTContext *ctx, AVTIOCtx **io,
-                AVTAddress *addr);
+    /* Use avt_io_open instead, which autodetects the best backend */
+    int (*init)(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr);
 
-    uint32_t (*get_max_pkt_len)(AVTContext *ctx, struct AVTIOCtx *io);
+    /* Get maximum packet size, including any headers */
+    uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTIOCtx *io);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr);
@@ -68,13 +69,13 @@ typedef struct AVTIO {
     /* Read input from IO. May be called with a non-zero buffer, in which
      * case the data in the buffer will be reallocated to 'len', with the
      * start contents preserved.
-     * Returns positive offset after reading on success, otherwise negative error. */
+     *
+     * Returns positive current offset after reading on success,
+     * otherwise negative error. */
     int64_t (*read_input)(AVTContext *ctx, AVTIOCtx *io,
                           AVTBuffer **buf, size_t len);
 
-    /* If only off is set, get the first packet at/after that offset.
-     * If pts is set, get the stream data packet at/after the pts time
-     * If seq is set, the get first packet at/after that seq */
+    /* Set the read position */
     int64_t (*seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off);
 
     /* Flush data written */

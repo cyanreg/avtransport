@@ -48,24 +48,19 @@
         *_b = tmp;             \
     } while(0)
 
-static inline void avt_assert0(int cond)
-{
-    assert(cond);
-}
+#define avt_assert0(cond) assert(cond)
 
-static inline void avt_assert1(int cond)
-{
 #if CONFIG_ASSERT_LEVEL > 0
-    assert(cond);
+#define avt_assert1(cond) assert(cond)
+#else
+#define avt_assert1(cond)
 #endif
-}
 
-static inline void avt_assert2(int cond)
-{
 #if CONFIG_ASSERT_LEVEL > 1
-    assert(cond);
+#define avt_assert2(cond) assert(cond)
+#else
+#define avt_assert2(cond)
 #endif
-}
 
 int64_t avt_get_time_ns(void);
 

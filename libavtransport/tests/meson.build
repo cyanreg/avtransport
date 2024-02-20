@@ -24,7 +24,14 @@
 
 ldpc_encode_test = executable('ldpc_encode',
     sources : [ 'ldpc_encode.c' ],
-    dependencies : [ avtransport_dep ],
+    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
-
 test('LDPC encoding', ldpc_encode_test)
+
+io_file_test = executable('io_file',
+    sources : [ 'io_file.c' ],
+    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('File I/O', io_file_test)

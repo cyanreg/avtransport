@@ -32,18 +32,18 @@
 #include <avtransport/utils.h>
 
 struct AVTBuffer {
-    uint8_t *data;
-    size_t len;
+    uint8_t *data;      /* Current ref's view of the buffer */
+    size_t len;         /* Current ref's size of the view of the buffer */
 
-    uint8_t *base_data;
-    uint8_t *end_data;
+    uint8_t *base_data; /* Buffer's actual start data */
+    uint8_t *end_data;  /* Buffer's end of data */
 
     void (*free)(void *opaque, void *data);
     void *opaque;
     atomic_int *refcnt;
 };
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len);
+int avt_buffer_resize(AVTBuffer *buf, size_t len);
 
 int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
                          ptrdiff_t offset, size_t len);

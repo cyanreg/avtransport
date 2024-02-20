@@ -96,7 +96,7 @@ endif
 avtransport_inc = include_directories('./include')
 
 # Deps
-lib_deps = [
+avtransport_deps_list = [
     cbor_dep,
     openssl_dep,
     uring_dep,
@@ -111,7 +111,7 @@ avtransport_lib = library('avtransport',
 
     sources: avtransport_spec_pub_headers,
     include_directories: avtransport_inc,
-    dependencies: lib_deps,
+    dependencies: avtransport_deps_list,
     version: avtransport_soname_version,
     soversion: avtransport_soversion,
 )

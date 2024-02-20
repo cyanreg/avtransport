@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdckdint.h>
 
 #include <avtransport/avtransport.h>
 
@@ -251,11 +252,7 @@ int avt_pkt_fifo_drop(AVTPacketFifo *fifo, unsigned int nb_pkts, size_t ceiling)
             }
         }
     } else {
-#if __has_include("stdckdint.h")
         if (ckd_sub(&idx, fifo->nb, nb_pkts))
-#else
-        if (__builtin_sub_overflow(fifo->nb, nb_pkts, &idx))
-#endif
             return AVT_ERROR(EINVAL);
     }
 

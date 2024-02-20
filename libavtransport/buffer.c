@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdckdint.h>
 
 #include "buffer.h"
 #include "utils_internal.h"
@@ -55,18 +56,33 @@ AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
     return buf;
 }
 
-int avt_buffer_realloc(AVTBuffer *buf, size_t len)
+int avt_buffer_resize(AVTBuffer *buf, size_t len)
 {
-    avt_assert2(avt_buffer_get_refcount(buf) == 1);
-    avt_assert2(buf->free == avt_buffer_default_free);
+    /* Sanity checking */
+    avt_assert1(avt_buffer_get_refcount(buf) == 1);
+    avt_assert1(buf->free == avt_buffer_default_free);
 
-    uint8_t *newdata = realloc(buf->base_data, len);
+    /* Simple downsize, or there's enough allocated already */
+    if ((buf->len >= len) ||
+        (len < (buf->end_data - buf->data))) {
+        buf->len = len;
+        return 0;
+    }
+
+    /* Account for data before the current ref's slice */
+    size_t tmp;
+    size_t pre_data = buf->data - buf->base_data;
+    if (ckd_add(&tmp, len, pre_data))
+        return AVT_ERROR(EINVAL);
+
+    uint8_t *newdata = realloc(buf->base_data, tmp);
     if (!newdata)
         return AVT_ERROR(ENOMEM);
 
     buf->base_data = newdata;
-    buf->end_data = newdata + len;
-    buf->len = len;
+    buf->data      = newdata + pre_data;
+    buf->end_data  = newdata + tmp;
+    buf->len       = len;
 
     return 0;
 }
@@ -195,4 +211,6 @@ void avt_buffer_unref(AVTBuffer **_buf)
     avt_buffer_quick_unref(buf);
 
     free(buf);
+
+    *_buf = NULL;
 }

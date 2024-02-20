@@ -28,10 +28,7 @@
 #define AVTRANSPORT_MEM_H
 
 #include <stdlib.h>
-
-#if __has_include("stdckdint.h")
 #include <stdckdint.h>
-#endif
 
 #if defined(__GNUC__)
     #define avt_alloc_attrib(...) __attribute__((__malloc__, alloc_size(__VA_ARGS__)))
@@ -44,11 +41,7 @@ avt_alloc_attrib(2, 3) static inline void *avt_reallocarray(void *ptr,
 {
     size_t nbytes;
 
-#if __has_include("stdckdint.h")
     if (ckd_sub(&nbytes, nmemb, size))
-#else
-    if (__builtin_sub_overflow(nmemb, size, &nbytes))
-#endif
         return NULL;
 
     return realloc(ptr, nbytes);

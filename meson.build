@@ -76,9 +76,9 @@ build_args = [
 cc = meson.get_compiler('c')
 
 # Check C23 headers
-#if cc.has_header('stdckdint.h') == false
-#    error('Compiler lacks stdckdint.h, cannot compile!')
-#endif
+if cc.has_header('stdckdint.h') == false
+    error('Compiler lacks stdckdint.h, cannot compile!')
+endif
 #if cc.has_header('stdbit.h') == false
 #    error('System lacks stdbit.h, cannot compile!')
 #endif

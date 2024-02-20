@@ -30,14 +30,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <uchar.h>
+#include <stdckdint.h>
 
 #include "io_common.h"
+#include "utils_internal.h"
 
 struct AVTIOCtx {
     FILE *f;
     off_t rpos;
     off_t wpos;
-    int is_write;
+    bool is_write;
 };
 
 static int handle_error(AVTIOCtx *io, const char *msg)
@@ -51,7 +53,7 @@ static int handle_error(AVTIOCtx *io, const char *msg)
 static int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
-    AVTIOCtx *io = malloc(sizeof(*io));
+    AVTIOCtx *io = calloc(1, sizeof(*io));
     if (!io)
         return AVT_ERROR(ENOMEM);
 
@@ -86,23 +88,33 @@ static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
             ret = handle_error(io, "Error seeking: %s\n");
             return ret;
         }
-        io->is_write = 0;
+        io->is_write = true;
     }
 
     if (!buf) {
-        buf = avt_buffer_alloc(len);
+        buf = avt_buffer_alloc(AVT_MAX(len, AVT_MAX_HEADER_BUF));
         if (!buf)
             return AVT_ERROR(ENOMEM);
+
+        *_buf = buf;
     } else {
         off = avt_buffer_get_data_len(buf);
-        ret = avt_buffer_realloc(buf, len);
+
+        if (ckd_add(&buf_len, off, len))
+            return AVT_ERROR(EINVAL);
+
+        ret = avt_buffer_resize(buf, buf_len);
         if (ret < 0)
             return ret;
     }
 
+    /* Read data */
     data = avt_buffer_get_data(buf, &buf_len);
-    len = AVT_MIN(len, buf_len - off);
-    fread(data + off, 1, len, io->f);
+    len = fread(data + off, 1, len, io->f);
+
+    /* Adjust new size in case of underreads */
+    ret = avt_buffer_resize(buf, off + len);
+    avt_assert2(ret >= 0);
 
     return (int64_t)(io->rpos = ftello(io->f));
 }
@@ -117,7 +129,7 @@ static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
             ret = handle_error(io, "Error seeking: %s\n");
             return ret;
         }
-        io->is_write = 1;
+        io->is_write = true;
     }
 
     size_t out = fwrite(p->hdr, 1, p->hdr_len, io->f);
@@ -150,7 +162,7 @@ static int64_t file_write_vec(AVTContext *ctx, AVTIOCtx *io,
             ret = handle_error(io, "Error seeking: %s\n");
             return ret;
         }
-        io->is_write = 1;
+        io->is_write = true;
     }
 
     size_t out;
@@ -187,7 +199,7 @@ static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
         return ret;
     }
 
-    io->is_write = 0;
+    io->is_write = false;
 
     return (int64_t)(io->rpos = ftello(io->f));
 }
