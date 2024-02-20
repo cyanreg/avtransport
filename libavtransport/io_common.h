@@ -64,7 +64,11 @@ typedef struct AVTIO {
 
     /* Write a single packet to the output.
      * Returns positive offset after writing on success, otherwise negative error. */
-    int64_t (*write_output)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p);
+    int64_t (*write)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p);
+
+    /* Rewrite a packet at a specific location.
+     * The old packet's size must exactly match the new packet. */
+    int64_t (*rewrite)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off);
 
     /* Read input from IO. May be called with a non-zero buffer, in which
      * case the data in the buffer will be reallocated to 'len', with the

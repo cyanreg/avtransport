@@ -84,6 +84,7 @@ int main(void)
     const AVTIO *io = &avt_io_file;
     AVTIOCtx *io_ctx;
     AVTAddress addr = { .path = "io_file_test.avt" };
+
     ret = io->init(avt, &io_ctx, &addr);
     if (ret < 0) {
         printf("Unable to create test file: %s\n", addr.path);
@@ -98,7 +99,7 @@ int main(void)
 
     /* Write packet */
     AVTBuffer *buf = NULL;
-    ret = io->write_output(avt, io_ctx, &test_pkt);
+    ret = io->write(avt, io_ctx, &test_pkt);
     if (ret < 0)
         goto fail;
 
@@ -124,6 +125,13 @@ int main(void)
 
     /* Free buffer to start over */
     avt_buffer_unref(&buf);
+
+    /* Rewrite test */
+    for (int i = 0; i < test_pkt.hdr_len; i++)
+        test_pkt.hdr[i] = ~test_pkt.hdr[i];
+    ret = io->rewrite(avt, io_ctx, &test_pkt, 0);
+    if (ret < 0)
+        goto fail;
 
     /* Read again in 1-byte chunks */
     for (int i = 0; i < 64; i++) {

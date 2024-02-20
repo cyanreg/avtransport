@@ -31,6 +31,7 @@
 #include <string.h>
 #include <uchar.h>
 #include <stdckdint.h>
+#include <inttypes.h>
 
 #include "io_common.h"
 #include "utils_internal.h"
@@ -119,7 +120,7 @@ static int64_t file_read_input(AVTContext *ctx, AVTIOCtx *io,
     return (int64_t)(io->rpos = ftello(io->f));
 }
 
-static int64_t file_write_output(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
+static int64_t file_write(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
 {
     int ret;
 
@@ -191,6 +192,67 @@ static int64_t file_write_vec(AVTContext *ctx, AVTIOCtx *io,
     return (int64_t)(io->wpos = ftello(io->f));
 }
 
+static int64_t file_rewrite(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off)
+{
+    int ret, ret2;
+
+    if (off > io->wpos) {
+        avt_log(io, AVT_LOG_ERROR, "Error rewriting: out of range: "
+                "%" PRIu64 " req vs %" PRIu64 " max\n",
+                off, io->wpos);
+        return AVT_ERROR(EOF);
+    }
+
+    if (!io->is_write || (io->wpos != off)) {
+        ret = fseeko(io->f, off, SEEK_SET);
+        if (ret < 0) {
+            ret = handle_error(io, "Error seeking: %s\n");
+            return ret;
+        }
+        io->is_write = true;
+    }
+
+    size_t out = fwrite(p->hdr, 1, p->hdr_len, io->f);
+    off += out;
+    if (out != p->hdr_len) {
+        ret = handle_error(io, "Error writing: %s\n");
+        ret2 = fseeko(io->f, io->wpos, SEEK_SET);
+        if (ret2 < 0) {
+            ret = handle_error(io, "Error seeking: %s\n");
+            io->wpos = off; /* Stuck with this */
+            return ret;
+        }
+        return ret;
+    }
+
+    size_t pl_len;
+    uint8_t *data = avt_buffer_get_data(&p->pl, &pl_len);
+    if (data) {
+        out = fwrite(data, 1, pl_len, io->f);
+        off += out;
+        if (out != pl_len) {
+            ret = handle_error(io, "Error writing: %s\n");
+            ret2 = fseeko(io->f, io->wpos, SEEK_SET);
+            if (ret2 < 0) {
+                ret = handle_error(io, "Error seeking: %s\n");
+                io->wpos = off; /* Stuck with this */
+                return ret;
+            }
+            return ret;
+        }
+    }
+
+    /* Restore */
+    ret = fseeko(io->f, io->wpos, SEEK_SET);
+    if (ret < 0) {
+        ret = handle_error(io, "Error seeking: %s\n");
+        io->wpos = off; /* Stuck with this */
+        return ret;
+    }
+
+    return off;
+}
+
 static int64_t file_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
 {
     int ret = fseeko(io->f, (off_t)off, SEEK_SET);
@@ -232,8 +294,9 @@ const AVTIO avt_io_file = {
     .init = file_init,
     .get_max_pkt_len = file_max_pkt_len,
     .read_input = file_read_input,
-    .write_output = file_write_output,
     .write_vec = file_write_vec,
+    .write = file_write,
+    .rewrite = file_rewrite,
     .seek = file_seek,
     .flush = file_flush,
     .close = file_close,
