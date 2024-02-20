@@ -30,7 +30,7 @@
 
 #include <avtransport/avtransport.h>
 
-#include "../config.h"
+#include "config.h"
 
 #ifdef HAVE_FFMPEG
 #include <libavformat/avformat.h>

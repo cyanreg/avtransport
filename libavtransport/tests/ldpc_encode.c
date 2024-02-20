@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include "../ldpc_tables.h"
+#include "ldpc_tables.h"
 
 #define DATA_LEN 1024
 #define PARITY_LEN 1024

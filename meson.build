@@ -213,8 +213,3 @@ subdir('libavtransport')
 if get_option('tools').auto()
     subdir('tools')
 endif
-
-configure_file(
-    output: 'config.h',
-    configuration: conf,
-)

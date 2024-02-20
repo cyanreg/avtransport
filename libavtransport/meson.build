@@ -95,6 +95,12 @@ endif
 
 avtransport_inc = include_directories('./include')
 
+# Generate local configure file
+configure_file(
+    output: 'config.h',
+    configuration: conf,
+)
+
 # Deps
 avtransport_deps_list = [
     cbor_dep,

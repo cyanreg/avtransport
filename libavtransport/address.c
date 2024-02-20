@@ -36,7 +36,7 @@
 
 #include <avtransport/avtransport.h>
 
-#include "../config.h"
+#include "config.h"
 
 int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
 {

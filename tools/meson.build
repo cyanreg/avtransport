@@ -32,6 +32,12 @@ if get_option('ffmpeg').auto()
     lavu_dep = dependency('libavutil', version: '>= 56.43.100', required: false)
 endif
 
+# Generate local configure file
+configure_file(
+    output: 'config.h',
+    configuration: conf,
+)
+
 # avcat
 #============================================================================
 avcat_sources = files(

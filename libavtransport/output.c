@@ -32,7 +32,7 @@
 #include "output_internal.h"
 #include "output_packet.h"
 
-#include "../config.h"
+#include "config.h"
 
 int avt_output_open(AVTContext *ctx, AVTOutput **_out,
                     AVTConnection *conn, AVTOutputOptions *opts)

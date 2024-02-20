@@ -24,6 +24,7 @@
 
 ldpc_encode_test = executable('ldpc_encode',
     sources : [ 'ldpc_encode.c' ],
+    include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
@@ -31,6 +32,7 @@ test('LDPC encoding', ldpc_encode_test)
 
 io_file_test = executable('io_file',
     sources : [ 'io_file.c' ],
+    include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
@@ -38,7 +40,16 @@ test('File I/O', io_file_test)
 
 address_test = executable('address',
     sources : [ 'address.c' ],
+    include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('Address parsing', address_test)
+
+packet_encode_decode_test = executable('packet_encode_decode',
+    sources : [ 'packet_encode_decode.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('Packet encode/decode', packet_encode_decode_test)

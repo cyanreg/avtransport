@@ -31,7 +31,7 @@
 #include "utils_internal.h"
 #include "scheduler.h"
 
-#include "../config.h"
+#include "config.h"
 
 struct AVTConnection {
     AVTAddress addr;

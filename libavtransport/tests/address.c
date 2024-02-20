@@ -27,8 +27,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "../address.h"
-#include "../../config.h"
+#include "address.h"
+#include "config.h"
 
 int main(void)
 {

@@ -30,9 +30,9 @@
 
 #include <avtransport/avtransport.h>
 #include <avtransport/utils.h>
-#include "../packet_common.h"
-#include "../io_common.h"
-#include "../address.h"
+#include "packet_common.h"
+#include "io_common.h"
+#include "address.h"
 
 /* Always available, on all platforms */
 extern const AVTIO avt_io_file;

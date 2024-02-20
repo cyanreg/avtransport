@@ -37,7 +37,7 @@
 #include "buffer.h"
 #include "packet_common.h"
 
-#include "../config.h"
+#include "config.h"
 
 #define AVT_SWAP(a, b)         \
     do {                       \

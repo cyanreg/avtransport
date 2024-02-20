@@ -58,30 +58,39 @@ static inline union AVTPacketData avt_packet_create_segment(AVTPktd *p,
 
 static inline void avt_packet_encode_header(AVTPktd *p)
 {
-    AVTBytestream bs = avt_bs_init(&p->hdr[p->hdr_off], AVT_MAX_HEADER_LEN);
+    AVTBytestream bs = avt_bs_init(&p->hdr[p->hdr_off], (AVT_MAX_HEADER_LEN - p->hdr_off));
 
     switch (p->pkt.desc) {
     case AVT_PKT_SESSION_START:
         avt_encode_session_start(&bs, p->pkt.session_start);
+        break;
     case AVT_PKT_STREAM_REGISTRATION:
         avt_encode_stream_registration(&bs, p->pkt.stream_registration);
+        break;
     case AVT_PKT_VIDEO_INFO:
         avt_encode_video_info(&bs, p->pkt.video_info);
+        break;
     case AVT_PKT_LUT_ICC:
         avt_encode_lut_icc(&bs, p->pkt.lut_icc);
+        break;
     case AVT_PKT_FONT_DATA:
         avt_encode_font_data(&bs, p->pkt.font_data);
+        break;
     case AVT_PKT_STREAM_DATA:
         avt_encode_stream_data(&bs, p->pkt.stream_data);
+        break;
     case AVT_PKT_USER_DATA:
         avt_encode_user_data(&bs, p->pkt.user_data);
+        break;
     case AVT_PKT_STREAM_INDEX:
         avt_encode_stream_index(&bs, p->pkt.stream_index);
+        break;
     case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
     case AVT_PKT_FONT_DATA_SEGMENT:   [[fallthrough]];
     case AVT_PKT_STREAM_DATA_SEGMENT: [[fallthrough]];
     case AVT_PKT_USER_DATA_SEGMENT:
         avt_encode_generic_segment(&bs, p->pkt.generic_segment);
+        break;
     default:
         avt_assert1(0);
         unreachable();

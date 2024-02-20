@@ -27,7 +27,7 @@
 #ifndef AVTRANSPORT_OS_COMPAT
 #define AVTRANSPORT_OS_COMPAT
 
-#include "../config.h"
+#include "config.h"
 
 #define strerror_s(buf, len, err) strerror_r(err, buf, len)
 

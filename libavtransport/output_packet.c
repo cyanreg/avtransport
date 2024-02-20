@@ -28,7 +28,7 @@
 
 #include "output_packet.h"
 
-#include "../config.h"
+#include "config.h"
 
 #ifdef CONFIG_HAVE_LIBZSTD
 #include <zstd.h>
