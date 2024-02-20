@@ -35,3 +35,10 @@ io_file_test = executable('io_file',
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('File I/O', io_file_test)
+
+address_test = executable('address',
+    sources : [ 'address.c' ],
+    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('Address parsing', address_test)

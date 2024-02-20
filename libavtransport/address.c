@@ -108,6 +108,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
             addr->mode = AVT_MODE_PASSIVE;
         } else if (mode && !strcmp(mode, "active")) {
             addr->mode = AVT_MODE_ACTIVE;
+        } else if (mode && !strcmp(mode, "default")) {
+            addr->mode = AVT_MODE_DEFAULT;
         } else if (mode) {
             avt_log(log_ctx, AVT_LOG_ERROR, "Invalid mode: %s\n", mode);
             ret = AVT_ERROR(EINVAL);
@@ -157,7 +159,7 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
     host = strtok_r(host, "%", &tmp);
     iface = strtok_r(NULL, "%", &tmp);
     if (iface)
-        addr->interface = iface;
+        addr->interface = strdup(iface);
 
     /* Try IPv4 */
     struct in_addr ipv4_addr;
@@ -298,4 +300,6 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
 void avt_addr_free(AVTAddress *addr)
 {
     free(addr->path);
+    free(addr->interface);
+    memset(addr, 0, sizeof(*addr));
 }

@@ -48,16 +48,17 @@ enum AVTConnectionType {
      * - <mode> is an optional setting which has different meanings for
      *   senders and receivers, and transports.
      *
-     *   For senders, the default value, active means to start continuously sending
-     *   packets to the given address. Passive means to wait for receivers to
+     *   For senders, the "default" value, "active" means to start continuously sending
+     *   packets to the given address. "passive" means to wait for receivers to
      *   send packets on the given address to begin transmitting back to them.
      *
-     *   For receivers, the default value, passive means to listen on the given
-     *   address for any packets received. Active for receivers means that receivers
+     *   For receivers, the "default" value, "passive" means to listen on the given
+     *   address for any packets received. "active" for receivers means that receivers
      *   will actively connect and try to request a stream from the target address.
      *
      * - <address> of the remote host, or local host, or multicast group
-     *   May be suffixed with %<interface> to indicate an interface to attempt to bind to.
+     *   May be suffixed with %<interface> (for IPv6, this must be in the brackets)
+     *   to indicate an interface to attempt to bind to.
      *
      * - <port> on which to listen on/transmit to
      *

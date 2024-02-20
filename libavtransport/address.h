@@ -47,11 +47,10 @@ typedef struct AVTAddress {
 
     char8_t *interface;
     char8_t *path;
-    AVTMetadata *params;
 } AVTAddress;
 
 int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path);
 int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info);
 void avt_addr_free(AVTAddress *addr);
 
-#endif /* AVTRANSPORT_URL_ADDRESS_H */
+#endif /* AVTRANSPORT_ADDRESS_H */
