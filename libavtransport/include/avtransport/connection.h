@@ -110,7 +110,8 @@ typedef struct AVTConnectionInfo {
         /* AVT_CONNECTION_SOCKET: opened and bound socket
          * AVT_CONNECTION_FILE:   opened file descriptor */
         struct {
-            /* File descriptor or bound socket */
+            /* File descriptor or bound socket
+             * NOTE: dup()-licated on success, users can close() this freely */
             int socket;
             /* AVT_CONNECTION_SOCKET senders: destination IP (IPv4: mapped in IPv6) */
             uint8_t dst[16];

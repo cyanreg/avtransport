@@ -47,6 +47,8 @@ typedef struct AVTAddress {
 
     char8_t *interface;
     char8_t *path;
+
+    int fd;
 } AVTAddress;
 
 int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path);

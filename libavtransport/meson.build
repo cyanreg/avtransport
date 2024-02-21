@@ -62,12 +62,15 @@ sources = [
                       fallback: 'release')
 ]
 
+if host_machine.system() != 'windows'
+    sources += 'io_fd.c'
+endif
+
 if get_option('output').auto()
     sources += 'output.c'
     sources += 'output_packet.c'
     sources += 'scheduler.c'
     sources += 'ldpc_encode.c'
-
 endif
 
 if get_option('input').auto()

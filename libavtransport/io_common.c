@@ -27,18 +27,39 @@
 #include "io_common.h"
 
 extern const AVTIO avt_io_null;
+
 extern const AVTIO avt_io_file;
 
-static const AVTIO *avt_io_list[] = {
-    [AVT_IO_NULL] = &avt_io_null,
-    [AVT_IO_FILE] = &avt_io_file,
+#ifndef _WIN32
+extern const AVTIO avt_io_fd;
+extern const AVTIO avt_io_fd_path;
+#endif
+
+#define MAX_NB_BACKENDS 4
+
+/* In order of preference */
+static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
+    [AVT_IO_NULL] = {
+        &avt_io_null,
+    },
+    [AVT_IO_FILE] = {
+#ifndef _WIN32
+        &avt_io_fd_path,
+#endif
+        &avt_io_file,
+    },
+    [AVT_IO_FD] = {
+#ifndef _WIN32
+        &avt_io_fd,
+#endif
+    },
 };
 
 /* For protocols to call */
 int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
                 AVTAddress *addr)
 {
-    const AVTIO *io = avt_io_list[AVT_IO_FILE];
+    const AVTIO *io = avt_io_list[AVT_IO_FILE][0];
     int err = io->init(ctx, io_ctx, addr);
     *_io = io;
     return err;

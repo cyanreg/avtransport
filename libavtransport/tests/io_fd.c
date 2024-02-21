@@ -24,16 +24,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_OS_COMPAT
-#define AVTRANSPORT_OS_COMPAT
+#include <stdio.h>
 
-#include "config.h"
+#include <avtransport/avtransport.h>
+#include "io_common.h"
 
-#ifdef _WIN32
-#define strerror_safe(buf, len, err) strerror_s(buf, len, err)
-#else
-#define _POSIX_C_SOURCE 200809L
-#define strerror_safe(buf, len, err) strerror_r(err, buf, len)
-#endif
+#include "file_io_template.c"
 
-#endif /* AVTRANSPORT_OS_COMPAT */
+extern const AVTIO avt_io_fd_path;
+
+int main(void)
+{
+    int64_t ret;
+
+    /* Open context */
+    AVTContext *avt;
+    ret = avt_init(&avt, NULL);
+    if (ret < 0)
+        return AVT_ERROR(ret);
+
+    /* Open io context */
+    const AVTIO *io = &avt_io_fd_path;
+    AVTIOCtx *io_ctx;
+    AVTAddress addr = { .path = "io_fd_test.avt" };
+
+    ret = io->init(avt, &io_ctx, &addr);
+    if (ret < 0) {
+        printf("Unable to create test file: %s\n", addr.path);
+        avt_close(&avt);
+        return AVT_ERROR(ret);
+    }
+
+    ret = test_io(avt, io, io_ctx);
+
+    if (ret)
+        io->close(avt, &io_ctx);
+    else
+        ret = io->close(avt, &io_ctx);
+    avt_close(&avt);
+    return AVT_ERROR(ret);
+}

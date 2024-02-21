@@ -25,54 +25,18 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <inttypes.h>
 
 #include <avtransport/avtransport.h>
-#include <avtransport/utils.h>
-#include "packet_common.h"
 #include "io_common.h"
-#include "address.h"
+
+#include "file_io_template.c"
 
 /* Always available, on all platforms */
 extern const AVTIO avt_io_file;
 
-static int read_fn(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx,
-                   AVTPktd *test_pkt, AVTBuffer **test_buf, int bytes)
-{
-    int64_t ret;
-    size_t pre = 0;
-    size_t test_buf_size;
-    uint8_t *test_buf_data;
-
-    if ((*test_buf))
-        avt_buffer_get_data(*test_buf, &pre);
-
-    /* Read */
-    ret = io->read_input(avt, io_ctx, test_buf, bytes);
-    if (ret <= 0) {
-        printf("No bytes read\n");
-        return AVT_ERROR(EINVAL);
-    }
-
-    if ((ret - pre) != bytes) {
-        printf("Too few bytes read: got %" PRIu64 "; wanted %i\n", ret, bytes);
-        return AVT_ERROR(EINVAL);
-    }
-
-    /* Check data read */
-    test_buf_data = avt_buffer_get_data(*test_buf, &test_buf_size);
-    if (memcmp(test_buf_data, test_pkt->hdr, test_buf_size)) {
-        printf("Mismatch between read and written data!\n");
-        return AVT_ERROR(EINVAL);
-    }
-
-    return 0;
-}
-
 int main(void)
 {
-    int ret;
+    int64_t ret;
 
     /* Open context */
     AVTContext *avt;
@@ -92,58 +56,7 @@ int main(void)
         return AVT_ERROR(ret);
     }
 
-    AVTPktd test_pkt;
-    test_pkt.hdr_len = sizeof(test_pkt.hdr);
-    for (int i = 0; i < test_pkt.hdr_len; i++)
-        test_pkt.hdr[i] = i & 0xFF;
-
-    /* Write packet */
-    AVTBuffer *buf = NULL;
-    ret = io->write(avt, io_ctx, &test_pkt);
-    if (ret < 0)
-        goto fail;
-
-    /* Flush test */
-    ret = io->flush(avt, io_ctx);
-    if (ret < 0)
-        goto fail;
-
-    /* Read 32 bytes */
-    ret = read_fn(avt, io, io_ctx, &test_pkt, &buf, 32);
-    if (ret < 0)
-        goto fail;
-
-    /* Read again */
-    ret = read_fn(avt, io, io_ctx, &test_pkt, &buf, 32);
-    if (ret < 0)
-        goto fail;
-
-    /* Seek test */
-    ret = io->seek(avt, io_ctx, 0);
-    if (ret < 0)
-        goto fail;
-
-    /* Free buffer to start over */
-    avt_buffer_unref(&buf);
-
-    /* Rewrite test */
-    for (int i = 0; i < test_pkt.hdr_len; i++)
-        test_pkt.hdr[i] = ~test_pkt.hdr[i];
-    ret = io->rewrite(avt, io_ctx, &test_pkt, 0);
-    if (ret < 0)
-        goto fail;
-
-    /* Read again in 1-byte chunks */
-    for (int i = 0; i < 64; i++) {
-        ret = read_fn(avt, io, io_ctx, &test_pkt, &buf, 1);
-        if (ret < 0)
-            goto fail;
-    }
-
-    ret = 0;
-
-fail:
-    avt_buffer_unref(&buf);
+    ret = test_io(avt, io, io_ctx);
 
     if (ret)
         io->close(avt, &io_ctx);

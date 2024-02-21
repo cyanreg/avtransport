@@ -31,11 +31,9 @@
 #include "packet_common.h"
 
 enum AVTIOType {
-    AVT_IO_NULL,
-    AVT_IO_SOCKET,
-    AVT_IO_CALLBACKS,
-    AVT_IO_FILE,
-    AVT_IO_FD,
+    AVT_IO_FILE,  /* Takes a path */
+    AVT_IO_FD,    /* Takes an integer handle socket/fd */
+    AVT_IO_NULL,  /* Takes nothing */
 };
 
 /* Low level interface */
@@ -60,7 +58,7 @@ typedef struct AVTIO {
      * Returns positive offset after writing on success, otherwise negative error.
      * May be NULL if unsupported. */
     int64_t (*write_vec)(AVTContext *ctx, AVTIOCtx *io,
-                         AVTPktd *iov, uint32_t nb_iov);
+                         AVTPktd *pkt, uint32_t nb_pkt);
 
     /* Write a single packet to the output.
      * Returns positive offset after writing on success, otherwise negative error. */

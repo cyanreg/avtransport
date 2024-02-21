@@ -25,7 +25,7 @@
 ldpc_encode_test = executable('ldpc_encode',
     sources : [ 'ldpc_encode.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers ]) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('LDPC encoding', ldpc_encode_test)
@@ -33,15 +33,25 @@ test('LDPC encoding', ldpc_encode_test)
 io_file_test = executable('io_file',
     sources : [ 'io_file.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_file.c' ]) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('File I/O', io_file_test)
 
+if host_machine.system() != 'windows'
+    io_file_test = executable('io_fd',
+        sources : [ 'io_fd.c' ],
+        include_directories : [ '../' ],
+        objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_fd.c' ]) ],
+        dependencies : [ avtransport_deps_list, avtransport_dep ],
+    )
+    test('File descriptor I/O', io_file_test)
+endif
+
 address_test = executable('address',
     sources : [ 'address.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    objects : [ avtransport_lib.extract_objects([ 'address.c' ]) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('Address parsing', address_test)
@@ -49,7 +59,7 @@ test('Address parsing', address_test)
 packet_encode_decode_test = executable('packet_encode_decode',
     sources : [ 'packet_encode_decode.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_all_objects(recursive : true) ],
+    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c' ]) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('Packet encode/decode', packet_encode_decode_test)
