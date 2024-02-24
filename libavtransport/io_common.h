@@ -32,7 +32,8 @@
 
 enum AVTIOType {
     AVT_IO_FILE,  /* Takes a path */
-    AVT_IO_FD,    /* Takes an integer handle socket/fd */
+    AVT_IO_FD,    /* Takes an integer handle fd */
+    AVT_IO_UDP,   /* UDP network connection */
     AVT_IO_NULL,  /* Takes nothing */
 };
 
@@ -45,7 +46,7 @@ typedef struct AVTIO {
     /* Use avt_io_open instead, which autodetects the best backend */
     int (*init)(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr);
 
-    /* Get maximum packet size, including any headers */
+    /* Get maximum packet size, excluding any headers */
     uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTIOCtx *io);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
@@ -58,15 +59,18 @@ typedef struct AVTIO {
      * Returns positive offset after writing on success, otherwise negative error.
      * May be NULL if unsupported. */
     int64_t (*write_vec)(AVTContext *ctx, AVTIOCtx *io,
-                         AVTPktd *pkt, uint32_t nb_pkt);
+                         AVTPktd *pkt, uint32_t nb_pkt,
+                         int64_t timeout);
 
     /* Write a single packet to the output.
      * Returns positive offset after writing on success, otherwise negative error. */
-    int64_t (*write)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p);
+    int64_t (*write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
+                         int64_t timeout);
 
     /* Rewrite a packet at a specific location.
      * The old packet's size must exactly match the new packet. */
-    int64_t (*rewrite)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off);
+    int64_t (*rewrite)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off,
+                       int64_t timeout);
 
     /* Read input from IO. May be called with a non-zero buffer, in which
      * case the data in the buffer will be reallocated to 'len', with the
@@ -75,13 +79,14 @@ typedef struct AVTIO {
      * Returns positive current offset after reading on success,
      * otherwise negative error. */
     int64_t (*read_input)(AVTContext *ctx, AVTIOCtx *io,
-                          AVTBuffer **buf, size_t len);
+                          AVTBuffer **buf, size_t len,
+                          int64_t timeout);
 
     /* Set the read position */
     int64_t (*seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off);
 
     /* Flush data written */
-    int (*flush)(AVTContext *ctx, AVTIOCtx *io);
+    int (*flush)(AVTContext *ctx, AVTIOCtx *io, int64_t timeout);
 
     /* Close */
     int (*close)(AVTContext *ctx, AVTIOCtx **io);

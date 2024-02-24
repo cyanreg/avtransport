@@ -54,6 +54,9 @@ sources = [
     'io_null.c',
     'io_file.c',
 
+    'io_udp.c',
+    'io_socket_common.c',
+
     avtransport_spec_pkt_headers,
 
     # Version

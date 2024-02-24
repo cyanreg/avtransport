@@ -42,14 +42,14 @@ static int read_fn(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx,
         avt_buffer_get_data(*test_buf, &pre);
 
     /* Read */
-    ret = io->read_input(avt, io_ctx, test_buf, bytes);
+    ret = io->read_input(avt, io_ctx, test_buf, bytes, INT64_MAX);
     if (ret <= 0) {
         printf("No bytes read\n");
         return AVT_ERROR(EINVAL);
     }
 
     if ((ret - pre) != bytes) {
-        printf("Too few bytes read: got %" PRIu64 "; wanted %i\n", ret, bytes);
+        printf("Too few bytes read: got %" PRIi64 "; wanted %i\n", ret, bytes);
         return AVT_ERROR(EINVAL);
     }
 
@@ -79,7 +79,8 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
 
     /* Write vector test */
     AVTBuffer *buf = NULL;
-    ret = io->write_vec(avt, io_ctx, test_pkt, AVT_ARRAY_ELEMS(test_pkt));
+    ret = io->write_vec(avt, io_ctx, test_pkt, AVT_ARRAY_ELEMS(test_pkt),
+                        INT64_MAX);
     if (ret < 0) {
         goto fail;
     } else if (ret == 0) {
@@ -87,14 +88,14 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
         ret = AVT_ERROR(EINVAL);
         goto fail;
     } else if (ret != sum) {
-        printf("Bytes written do not match: got %" PRIu64 "; wanted %" PRIu64 "\n",
+        printf("Bytes written do not match: got %" PRIi64 "; wanted %" PRIi64 "\n",
                ret, sum);
         ret = AVT_ERROR(EINVAL);
         goto fail;
     }
 
     /* Flush test */
-    ret = io->flush(avt, io_ctx);
+    ret = io->flush(avt, io_ctx, INT64_MAX);
     if (ret < 0)
         goto fail;
 
@@ -106,7 +107,8 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     /* Read test */
     int64_t last = 0;
     for (int i = 0; i < AVT_ARRAY_ELEMS(test_pkt); i++) {
-        int64_t off = io->read_input(avt, io_ctx, &buf, test_pkt[i].hdr_len);
+        int64_t off = io->read_input(avt, io_ctx, &buf, test_pkt[i].hdr_len,
+                                     INT64_MAX);
         if (off == 0) {
             printf("No bytes read\n");
             ret = AVT_ERROR(EINVAL);
@@ -122,7 +124,7 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
 
         if ((diff != test_pkt[i].hdr_len) ||
             ((i == (AVT_ARRAY_ELEMS(test_pkt) - 1)) && (sum != off))) {
-            printf("Too few bytes read: got %" PRIu64 "; wanted %i\n",
+            printf("Too few bytes read: got %" PRIi64 "; wanted %i\n",
                    diff, test_pkt[i].hdr_len);
             ret = AVT_ERROR(EINVAL);
             goto fail;
@@ -164,7 +166,8 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     /* Rewrite test */
     for (int i = 0; i < test_pkt[0].hdr_len; i++)
         test_pkt[0].hdr[i] = ~test_pkt[0].hdr[i];
-    ret = io->rewrite(avt, io_ctx, &test_pkt[0], 0);
+    ret = io->rewrite(avt, io_ctx, &test_pkt[0], 0,
+                      INT64_MAX);
     if (ret < 0)
         goto fail;
 

@@ -60,6 +60,34 @@ void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    vprintf(fmt, args);
+
+    FILE *std = level == AVT_LOG_ERROR ? stderr : stdout;
+
+    bool with_color = true;
+    bool colored_message = 0;
+    if (with_color) {
+        switch (level) {
+        case AVT_LOG_FATAL:
+            fprintf(std, "\033[1;031m");   colored_message = true; break;
+        case AVT_LOG_ERROR:
+            fprintf(std, "\033[1;031m");   colored_message = true; break;
+        case AVT_LOG_WARN:
+            fprintf(std, "\033[1;033m");   colored_message = true; break;
+        case AVT_LOG_VERBOSE:
+            fprintf(std, "\033[38;5;46m"); colored_message = true; break;
+        case AVT_LOG_DEBUG:
+            fprintf(std, "\033[38;5;34m"); colored_message = true; break;
+        case AVT_LOG_TRACE:
+            fprintf(std, "\033[38;5;28m"); colored_message = true; break;
+        default:
+            break;
+        }
+    }
+
+    vfprintf(std, fmt, args);
+
+    if (colored_message)
+        fprintf(std, "\033[0m");
+
     va_end(args);
 }

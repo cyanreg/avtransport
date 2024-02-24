@@ -89,10 +89,11 @@ static int64_t noop_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
 }
 
 static int64_t noop_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                   union AVTPacketData *pkt, AVTBuffer **pl)
+                                   union AVTPacketData *pkt, AVTBuffer **pl,
+                                   int64_t timeout)
 {
     AVTBuffer *buf;
-    int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0);
+    int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0, timeout);
     if (err < 0)
         return err;
 
@@ -113,9 +114,9 @@ static int64_t noop_seek(AVTContext *ctx, AVTProtocolCtx *p,
     return p->io->seek(ctx, p->io_ctx, off);
 }
 
-static int noop_flush(AVTContext *ctx, AVTProtocolCtx *p)
+static int noop_flush(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout)
 {
-    return p->io->flush(ctx, p->io_ctx);
+    return p->io->flush(ctx, p->io_ctx, timeout);
 }
 
 static int noop_close(AVTContext *ctx, AVTProtocolCtx **p)

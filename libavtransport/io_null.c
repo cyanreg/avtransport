@@ -71,7 +71,8 @@ static int null_del_dst(AVTContext *ctx, AVTIOCtx *io, AVTAddress *addr)
 }
 
 static int64_t null_input(AVTContext *ctx, AVTIOCtx *io,
-                          AVTBuffer **buf, size_t len)
+                          AVTBuffer **buf, size_t len,
+                          int64_t timeout)
 {
     avt_assert0(!(*buf));
     AVTBuffer *hdr_buf = avt_buffer_alloc(AVT_MAX_HEADER_LEN);
@@ -98,7 +99,8 @@ static int64_t null_input(AVTContext *ctx, AVTIOCtx *io,
 }
 
 static int64_t null_write_vec(AVTContext *ctx, AVTIOCtx *io,
-                              AVTPktd *iov, uint32_t nb_iov)
+                              AVTPktd *iov, uint32_t nb_iov,
+                              int64_t timeout)
 {
     int64_t acc = 0;
     for (auto i = 0; i < nb_iov; i++)
@@ -106,13 +108,15 @@ static int64_t null_write_vec(AVTContext *ctx, AVTIOCtx *io,
     return atomic_fetch_add(&io->pos_w, acc);
 }
 
-static int64_t null_write(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p)
+static int64_t null_write_pkt(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
+                              int64_t timeout)
 {
     return atomic_fetch_add(&io->pos_w,
                             p->hdr_len + avt_buffer_get_data_len(&p->pl));
 }
 
-static int64_t null_rewrite(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off)
+static int64_t null_rewrite(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p, int64_t off,
+                            int64_t timeout)
 {
     return off;
 }
@@ -122,7 +126,7 @@ static int64_t null_seek(AVTContext *ctx, AVTIOCtx *io, int64_t off)
     return atomic_load(&io->pos_r);
 }
 
-static int null_flush(AVTContext *ctx, AVTIOCtx *io)
+static int null_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 {
     return 0;
 }
@@ -144,7 +148,7 @@ const AVTIO avt_io_null = {
     .del_dst = null_del_dst,
     .read_input = null_input,
     .write_vec = null_write_vec,
-    .write = null_write,
+    .write_pkt = null_write_pkt,
     .rewrite = null_rewrite,
     .seek = null_seek,
     .flush = null_flush,

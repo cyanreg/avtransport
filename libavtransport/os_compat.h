@@ -29,11 +29,22 @@
 
 #include "config.h"
 
-#ifdef _WIN32
-#define strerror_safe(buf, len, err) strerror_s(buf, len, err)
-#else
+#if !defined(_GNU_SOURCE) && !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE)
 #define _POSIX_C_SOURCE 200809L
-#define strerror_safe(buf, len, err) strerror_r(err, buf, len)
 #endif
+
+#include <string.h>
+#include <uchar.h>
+
+static inline const char8_t *strerror_safe(char8_t *buf, size_t bufsize, int err)
+{
+#ifdef _WIN32
+    strerror_s(buf, bufsize, err);
+    return buf;
+#else
+    auto ret = strerror_r(err, buf, bufsize);
+    return _Generic(ret, const char *: ret, char *: ret, default: buf);
+#endif
+}
 
 #endif /* AVTRANSPORT_OS_COMPAT */

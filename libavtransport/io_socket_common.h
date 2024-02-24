@@ -24,52 +24,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "io_common.h"
+#ifndef AVTRANSPORT_IO_SOCKET_COMMON_H
+#define AVTRANSPORT_IO_SOCKET_COMMON_H
 
-extern const AVTIO avt_io_null;
+#include <netinet/in.h>
+#include <net/if.h>
 
-extern const AVTIO avt_io_file;
+#include <avtransport/avtransport.h>
+#include "address.h"
 
-#ifndef _WIN32
-extern const AVTIO avt_io_fd;
-extern const AVTIO avt_io_fd_path;
-#endif
+typedef struct AVTSocketCommon {
+    int socket;
 
-#ifndef _WIN32
-extern const AVTIO avt_io_udp;
-#endif
+    struct ifreq ifr;
+    struct ip6_mtuinfo mtu6;
+    struct sockaddr_in6 local_addr;
 
-#define MAX_NB_BACKENDS 4
+    struct sockaddr_in6 remote_addr;
+} AVTSocketCommon;
 
-/* In order of preference */
-static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
-    [AVT_IO_NULL] = {
-        &avt_io_null,
-    },
-    [AVT_IO_FILE] = {
-#ifndef _WIN32
-        &avt_io_fd_path,
-#endif
-        &avt_io_file,
-    },
-    [AVT_IO_FD] = {
-#ifndef _WIN32
-        &avt_io_fd,
-#endif
-    },
-    [AVT_IO_UDP] = {
-#ifndef _WIN32
-        &avt_io_udp,
-#endif
-    },
-};
+int avt_handle_errno(void *log_ctx, const char *msg);
 
-/* For protocols to call */
-int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
-                AVTAddress *addr)
-{
-    const AVTIO *io = avt_io_list[AVT_IO_FILE][0];
-    int err = io->init(ctx, io_ctx, addr);
-    *_io = io;
-    return err;
-}
+/* Open a socket with a specific address */
+int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr);
+
+/* Get MTU */
+uint32_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
+
+/* Close a socket */
+int avt_socket_close(void *log_ctx, AVTSocketCommon *sc);
+
+#endif /* AVTRANSPORT_IO_SOCKET_COMMON_H */

@@ -24,12 +24,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "os_compat.h"
 #include "address.h"
 
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <net/if.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <limits.h>
@@ -38,7 +40,53 @@
 
 #include "config.h"
 
-int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
+int avt_addr_get_scope(void *log_ctx, const uint8_t ip[16],
+                       uint32_t *scope, const char *iface)
+{
+    if (!((IN6_IS_ADDR_LINKLOCAL(ip) ||
+          (IN6_IS_ADDR_MC_LINKLOCAL(ip))) && iface))
+        return 0;
+
+    *scope = if_nametoindex(iface);
+    if (!(*scope) && errno) {
+        char8_t err_info[256];
+        avt_log(log_ctx, AVT_LOG_ERROR, "Unable to get interface \"%s\" index: %s\n",
+                iface, strerror_safe(err_info, sizeof(err_info), errno));
+        return AVT_ERROR(errno);
+    }
+
+    return 0;
+}
+
+int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4)
+{
+    memset(ip6, 0, 16);
+
+    /* Map IPv4's binary form to IPv6 */
+    if (ip4 == 0x00000000) {
+        ip6[10] = 0xFF; /* Any address */
+        ip6[11] = 0xFF;
+    } else if (ip4 == 0xFFFFFFFF) {
+        ip6[10] = 0xFF; /* No address */
+        ip6[11] = 0xFF;
+        ip6[12] = 0xFF;
+        ip6[13] = 0xFF;
+        ip6[14] = 0xFF;
+        ip6[15] = 0xFF;
+    } else {
+        ip6[10] = 0xFF; /* Any address + IPv4 */
+        ip6[11] = 0xFF;
+        ip6[12] = ((uint8_t *)&ip4)[0];
+        ip6[13] = ((uint8_t *)&ip4)[1];
+        ip6[14] = ((uint8_t *)&ip4)[2];
+        ip6[15] = ((uint8_t *)&ip4)[3];
+    }
+
+    return 0;
+}
+
+int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
+                      bool listen, const char *path)
 {
     int ret = 0;
     int native_uri = 0;
@@ -46,10 +94,12 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
     char *next = NULL;
 
     /* Zero out output */
-    memset(addr->ip, 0, sizeof(addr->ip));
+    memset(addr, 0, sizeof(*addr));
     addr->port = CONFIG_DEFAULT_PORT;
     addr->proto = CONFIG_DEFAULT_TYPE;
     addr->mode = AVT_MODE_DEFAULT;
+
+    addr->listen = listen;
 
     char *dup = next = strdup(path);
     if (!dup)
@@ -184,38 +234,26 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
             struct addrinfo hints = { 0 }, *res;
             hints.ai_socktype = SOCK_DGRAM;
             hints.ai_family   = AF_INET6;
-            hints.ai_flags    = AI_V4MAPPED | AI_NUMERICSERV;
-            hints.ai_protocol = IPPROTO_UDP;
+            hints.ai_protocol = (addr->proto == AVT_PROTOCOL_UDP_LITE) ?
+                                IPPROTO_UDP : IPPROTO_UDPLITE;
+            hints.ai_flags    = AI_V4MAPPED |
+                                AI_ADDRCONFIG |
+                                (listen ? AI_PASSIVE : 0x0);
+
             ret = getaddrinfo(host, port_str ? port_str : CONFIG_DEFAULT_PORT_STR,
                               &hints, &res);
             if (ret) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid host: %s\n", host);
+                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid host %s: %s\n",
+                        host, gai_strerror(ret));
                 ret = AVT_ERROR(EINVAL);
                 goto end;
             }
-            memcpy(addr->ip, res->ai_addr, 16);
+
+            memcpy(addr->ip, res[0].ai_addr, 16);
             freeaddrinfo(res);
         }
     } else {
-        /* Map IPv4's binary form to IPv6 */
-        if (ipv4_addr.s_addr == 0x00000000) {
-            addr->ip[10] = 0xFF; /* Any address */
-            addr->ip[11] = 0xFF;
-        } else if (ipv4_addr.s_addr == 0xFFFFFFFF) {
-            addr->ip[10] = 0xFF; /* No address */
-            addr->ip[11] = 0xFF;
-            addr->ip[12] = 0xFF;
-            addr->ip[13] = 0xFF;
-            addr->ip[14] = 0xFF;
-            addr->ip[15] = 0xFF;
-        } else {
-            addr->ip[10] = 0xFF; /* Any address + IPv4 */
-            addr->ip[11] = 0xFF;
-            addr->ip[12] = ((uint8_t *)&ipv4_addr.s_addr)[0];
-            addr->ip[13] = ((uint8_t *)&ipv4_addr.s_addr)[1];
-            addr->ip[14] = ((uint8_t *)&ipv4_addr.s_addr)[2];
-            addr->ip[15] = ((uint8_t *)&ipv4_addr.s_addr)[3];
-        }
+        avt_addr_4to6(addr->ip, ipv4_addr.s_addr);
     }
 
     if (next && next[0] != '\0') {
@@ -228,7 +266,11 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path)
         // TODO
     }
 
-    avt_log(log_ctx, AVT_LOG_DEBUG,
+    ret = avt_addr_get_scope(log_ctx, addr->ip, &addr->scope, addr->interface);
+    if (ret < 0)
+        goto end;
+
+    avt_log(log_ctx, AVT_LOG_VERBOSE,
             "URL parsed:\n"
             "    Address: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
             "    Port: %u\n"
@@ -275,12 +317,11 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         addr->proto = AVT_PROTOCOL_NOOP;
         break;
     case AVT_CONNECTION_URL:
-        err = avt_addr_from_url(log_ctx, addr, info->path);
+        err = avt_addr_from_url(log_ctx, addr, info->url.listen, info->url.url);
         if (err < 0)
             return err;
         break;
     case AVT_CONNECTION_SOCKET:
-        //determine type here
         break;
     case AVT_CONNECTION_FILE:
         addr->path = strdup(info->path);

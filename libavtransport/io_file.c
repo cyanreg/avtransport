@@ -85,12 +85,14 @@ static inline int file_seek_to(AVTIOCtx *io, int64_t pos)
     return fseeko(io->f, pos, SEEK_SET);
 }
 
-static inline size_t file_read(AVTIOCtx *io, uint8_t *dst, size_t len)
+static inline size_t file_read(AVTIOCtx *io, uint8_t *dst, size_t len,
+                               int64_t timeout)
 {
     return fread(dst, 1, len, io->f);
 }
 
-static inline size_t file_write(AVTIOCtx *io, uint8_t *src, size_t len)
+static inline size_t file_write(AVTIOCtx *io, uint8_t *src, size_t len,
+                                int64_t timeout)
 {
     return fwrite(src, 1, len, io->f);
 }
@@ -100,7 +102,7 @@ static inline int64_t file_offset(AVTIOCtx *io)
     return ftello(io->f);
 }
 
-static int file_flush(AVTContext *ctx, AVTIOCtx *io)
+static int file_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 {
     int ret = fflush(io->f);
     if (ret)
@@ -120,7 +122,7 @@ const AVTIO avt_io_file = {
     .get_max_pkt_len = file_max_pkt_len,
     .read_input = file_read_input,
     .write_vec = file_write_vec,
-    .write = file_write_pkt,
+    .write_pkt = file_write_pkt,
     .rewrite = file_rewrite,
     .seek = file_seek,
     .flush = file_flush,

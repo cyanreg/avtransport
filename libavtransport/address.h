@@ -39,20 +39,35 @@
 #define AVT_PROTOCOL_PACKET  (AVT_PROTOCOL_FD      + 1)
 
 typedef struct AVTAddress {
+    /** FILE PATH */
+    char8_t *path;
+
+    /** FILE DESCRIPTOR **/
+    int fd;
+
+    /** NETWORK **/
     enum AVTProtocolType proto;
     enum AVTProtocolMode mode;
 
     uint8_t ip[16]; /* Always mapped to IPv6 */
     uint16_t port;
+    uint32_t scope; /* sin6_scope_id */
 
     char8_t *interface;
-    char8_t *path;
 
-    int fd;
+    bool listen;
 } AVTAddress;
 
-int avt_addr_from_url(void *log_ctx, AVTAddress *addr, const char *path);
+/* Utilities */
+int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4);
+int avt_addr_get_scope(void *log_ctx, const uint8_t ip[16],
+                       uint32_t *scope, const char *iface);
+
+int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
+                      bool server, const char *path);
+
 int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info);
+
 void avt_addr_free(AVTAddress *addr);
 
 #endif /* AVTRANSPORT_ADDRESS_H */

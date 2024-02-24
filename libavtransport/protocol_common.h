@@ -64,7 +64,8 @@ typedef struct AVTProtocol {
 
     /* Receive a packet. Returns offset after reading. */
     int64_t (*receive_packet)(AVTContext *ctx, AVTProtocolCtx *p,
-                              union AVTPacketData *pkt, AVTBuffer **pl);
+                              union AVTPacketData *pkt, AVTBuffer **pl,
+                              int64_t timeout);
 
     /* Seek to a place in the stream */
     int64_t (*seek)(AVTContext *ctx, AVTProtocolCtx *p,
@@ -72,7 +73,7 @@ typedef struct AVTProtocol {
                     int64_t ts, bool ts_is_dts);
 
     /* Flush buffered data */
-    int (*flush)(AVTContext *ctx, AVTProtocolCtx *p);
+    int (*flush)(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout);
 
     /* Close */
     int (*close)(AVTContext *ctx, AVTProtocolCtx **p);

@@ -59,6 +59,7 @@ enum AVTConnectionType {
      * - <address> of the remote host, or local host, or multicast group
      *   May be suffixed with %<interface> (for IPv6, this must be in the brackets)
      *   to indicate an interface to attempt to bind to.
+     *   May be a hostname.
      *
      * - <port> on which to listen on/transmit to
      *
@@ -76,7 +77,13 @@ enum AVTConnectionType {
     /* File path */
     AVT_CONNECTION_FILE,
 
-    /* Socket or file descriptor */
+    /* Bound socket */
+    AVT_CONNECTION_NET,
+
+    /* File descriptor */
+    AVT_CONNECTION_FD,
+
+    /* UNIX domain socket */
     AVT_CONNECTION_SOCKET,
 
     /* Raw byte-level reader/writer using a callback. */
@@ -104,24 +111,37 @@ typedef struct AVTConnectionInfo {
 
     /* Connection interface */
     union {
-        /* AVT_CONNECTION_URL: url or file path using the syntax described above */
+        /* AVT_CONNECTION_FILE: file path */
         const char *path;
 
-        /* AVT_CONNECTION_SOCKET: opened and bound socket
-         * AVT_CONNECTION_FILE:   opened file descriptor */
+        /* AVT_CONNECTION_URL: url using the syntax described above */
         struct {
-            /* File descriptor or bound socket
-             * NOTE: dup()-licated on success, users can close() this freely */
+            const char *url;
+            /* Whether to listen on, or transmit to the address. */
+            bool listen;
+        } url;
+
+        /* AVT_CONNECTION_FD: regular seekable file descriptor
+         * AVT_CONNECTION_SOCKET: UNIX domain SOCK_STREAM socket
+         * NOTE: dup()-licated on success, users can close() this freely */
+        int fd;
+
+        /* AVT_CONNECTION_NET: opened and bound network socket */
+        struct {
+            /* Bound socket
+             * NOTE: dup()'d on success, users can close() this freely */
             int socket;
-            /* AVT_CONNECTION_SOCKET senders: destination IP (IPv4: mapped in IPv6) */
+            /* Sending: destination IP (IPv4: mapped in IPv6) */
             uint8_t dst[16];
-            /* AVT_CONNECTION_SOCKET: use the receiver address instead of dst */
+            /* Connection port */
+            uint16_t port;
+            /* Sending: use the last received address instead of dst */
             bool use_receiver_addr;
-            /* AVT_CONNECTION_SOCKET: which protocol to use */
+            /* Which protocol to use */
             enum AVTProtocolType protocol;
-            /* AVT_CONNECTION_SOCKET: behaviour of the protocol */
+            /* Behaviour of the protocol */
             enum AVTProtocolMode mode;
-        } fd;
+        } socket;
 
         /* AVT_CONNECTION_CALLBACK: the following structure */
         struct {
@@ -132,7 +152,7 @@ typedef struct AVTConnectionInfo {
                          AVTBuffer *payload);
 
             /* Called by libavtransport to retrieve a piece of
-             * data at a particular offset. */
+             * data with a particular offset. */
             int (*read)(void *opaque,
                         uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
                         AVTBuffer **payload, int64_t offset);
@@ -149,7 +169,7 @@ typedef struct AVTConnectionInfo {
                        union AVTPacketData pkt, AVTBuffer *buf);
 
             /* Called by libavtransport to retrieve a piece of
-             * data at a particular sequence number. */
+             * data with a particular sequence number. */
             int (*in)(void *opaque,
                       union AVTPacketData *pkt, AVTBuffer **buf,
                       uint64_t seq);

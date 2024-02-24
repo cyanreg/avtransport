@@ -141,12 +141,14 @@ static inline int fd_seek_to(AVTIOCtx *io, int64_t pos)
     return lseek(io->fd, pos, SEEK_SET);
 }
 
-static inline size_t fd_read(AVTIOCtx *io, uint8_t *dst, size_t len)
+static inline size_t fd_read(AVTIOCtx *io, uint8_t *dst, size_t len,
+                             int64_t timeout)
 {
     return read(io->fd, dst, len);
 }
 
-static inline size_t fd_write(AVTIOCtx *io, uint8_t *src, size_t len)
+static inline size_t fd_write(AVTIOCtx *io, uint8_t *src, size_t len,
+                              int64_t timeout)
 {
     return write(io->fd, src, len);
 }
@@ -156,7 +158,7 @@ static inline int64_t fd_offset(AVTIOCtx *io)
     return lseek(io->fd, 0, SEEK_CUR);
 }
 
-static int fd_flush(AVTContext *ctx, AVTIOCtx *io)
+static int fd_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 {
     int ret = fsync(io->fd);
     if (ret)
@@ -167,7 +169,7 @@ static int fd_flush(AVTContext *ctx, AVTIOCtx *io)
 
 #if IOV_MAX > 4
 static int64_t fd_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
-                                   AVTPktd *pkt, uint32_t nb_pkt)
+                                   AVTPktd *pkt, uint32_t nb_pkt, int64_t timeout)
 {
     int64_t ret;
     int nb_iov = 0;
@@ -197,7 +199,7 @@ static int64_t fd_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
 #endif
 
 static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
-                                 AVTPktd *p, int64_t off)
+                                 AVTPktd *p, int64_t off, int64_t timeout)
 {
     int64_t ret;
     ret = pwrite(io->fd, p->hdr, p->hdr_len, off);
@@ -236,7 +238,7 @@ const AVTIO avt_io_fd = {
 #else
     .write_vec = fd_write_vec,
 #endif
-    .write = fd_write_pkt,
+    .write_pkt = fd_write_pkt,
     .rewrite = fd_rewrite,
     .seek = fd_seek,
     .flush = fd_flush,
@@ -254,7 +256,7 @@ const AVTIO avt_io_fd_path = {
 #else
     .write_vec = fd_write_vec,
 #endif
-    .write = fd_write_pkt,
+    .write_pkt = fd_write_pkt,
     .rewrite = fd_rewrite_native,
     .seek = fd_seek,
     .flush = fd_flush,

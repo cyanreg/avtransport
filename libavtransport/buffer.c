@@ -186,11 +186,13 @@ int avt_buffer_get_refcount(AVTBuffer *buf)
 void *avt_buffer_get_data(AVTBuffer *buf, size_t *len)
 {
     if (!buf || !buf->refcnt) {
-        *len = 0;
+        if (len)
+            *len = 0;
         return NULL;
     }
 
-    *len = buf->len;
+    if (len)
+        *len = buf->len;
     return buf->data;
 }
 

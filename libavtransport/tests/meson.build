@@ -45,8 +45,16 @@ if host_machine.system() != 'windows'
         objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_fd.c' ]) ],
         dependencies : [ avtransport_deps_list, avtransport_dep ],
     )
-    test('File descriptor I/O', io_file_test)
+    test('FD I/O', io_file_test)
 endif
+
+io_udp_test = executable('io_udp',
+    sources : [ 'io_udp.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('UDP I/O', io_udp_test)
 
 address_test = executable('address',
     sources : [ 'address.c' ],
