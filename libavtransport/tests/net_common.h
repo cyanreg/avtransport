@@ -24,52 +24,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef TEST_NET_COMMON_H
+#define TEST_NET_COMMON_H
+
 #include "io_common.h"
 
-extern const AVTIO avt_io_null;
+typedef struct NetTestContext {
+    AVTContext *avt;
 
-extern const AVTIO avt_io_file;
+    const AVTIO *io;
+    AVTIOCtx *ioctx_sender;
+    AVTIOCtx *ioctx_listener;
+} NetTestContext;
 
-#ifndef _WIN32
-extern const AVTIO avt_io_fd;
-extern const AVTIO avt_io_fd_path;
-#endif
+int net_io_init(NetTestContext *ntc, const AVTIO *io, const char *url);
+int net_io_test(NetTestContext *ntc);
+int net_io_free(NetTestContext *ntc);
 
-extern const AVTIO avt_io_udp;
-extern const AVTIO avt_io_udp_lite;
-
-#define MAX_NB_BACKENDS 4
-
-/* In order of preference */
-static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
-    [AVT_IO_NULL] = {
-        &avt_io_null,
-    },
-    [AVT_IO_FILE] = {
-#ifndef _WIN32
-        &avt_io_fd_path,
-#endif
-        &avt_io_file,
-    },
-    [AVT_IO_FD] = {
-#ifndef _WIN32
-        &avt_io_fd,
-#endif
-    },
-    [AVT_IO_UDP] = {
-        &avt_io_udp,
-    },
-    [AVT_IO_UDP_LITE] = {
-        &avt_io_udp_lite,
-    },
-};
-
-/* For protocols to call */
-int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
-                AVTAddress *addr)
-{
-    const AVTIO *io = avt_io_list[AVT_IO_FILE][0];
-    int err = io->init(ctx, io_ctx, addr);
-    *_io = io;
-    return err;
-}
+#endif /* TEST_NET_COMMON_H */

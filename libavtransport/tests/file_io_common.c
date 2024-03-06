@@ -24,10 +24,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <inttypes.h>
 #include <string.h>
-#include <avtransport/utils.h>
+#include <inttypes.h>
 
+#include "file_io_common.h"
+
+#include <avtransport/avtransport.h>
 #include "packet_common.h"
 
 static int read_fn(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx,
@@ -44,26 +46,26 @@ static int read_fn(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx,
     /* Read */
     ret = io->read_input(avt, io_ctx, test_buf, bytes, INT64_MAX);
     if (ret <= 0) {
-        printf("No bytes read\n");
+        avt_log(avt, AVT_LOG_ERROR, "No bytes read\n");
         return AVT_ERROR(EINVAL);
     }
 
     if ((ret - pre) != bytes) {
-        printf("Too few bytes read: got %" PRIi64 "; wanted %i\n", ret, bytes);
+        avt_log(avt, AVT_LOG_ERROR, "Too few bytes read: got %" PRIi64 "; wanted %i\n", ret, bytes);
         return AVT_ERROR(EINVAL);
     }
 
     /* Check data read */
     test_buf_data = avt_buffer_get_data(*test_buf, &test_buf_size);
     if (memcmp(test_buf_data, test_pkt->hdr, test_buf_size)) {
-        printf("Mismatch between read and written data!\n");
+        avt_log(avt, AVT_LOG_ERROR, "Mismatch between read and written data!\n");
         return AVT_ERROR(EINVAL);
     }
 
     return 0;
 }
 
-static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
+int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
 {
     int64_t ret;
 
@@ -84,12 +86,12 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     if (ret < 0) {
         goto fail;
     } else if (ret == 0) {
-        printf("No bytes written\n");
+        avt_log(avt, AVT_LOG_ERROR,"No bytes written\n");
         ret = AVT_ERROR(EINVAL);
         goto fail;
     } else if (ret != sum) {
-        printf("Bytes written do not match: got %" PRIi64 "; wanted %" PRIi64 "\n",
-               ret, sum);
+        avt_log(avt, AVT_LOG_ERROR,"Bytes written do not match: got %" PRIi64 "; wanted %" PRIi64 "\n",
+                ret, sum);
         ret = AVT_ERROR(EINVAL);
         goto fail;
     }
@@ -110,11 +112,11 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
         int64_t off = io->read_input(avt, io_ctx, &buf, test_pkt[i].hdr_len,
                                      INT64_MAX);
         if (off == 0) {
-            printf("No bytes read\n");
+            avt_log(avt, AVT_LOG_ERROR,"No bytes read\n");
             ret = AVT_ERROR(EINVAL);
             goto fail;
         } else if (off < 0) {
-            printf("Error reading\n");
+            avt_log(avt, AVT_LOG_ERROR,"Error reading\n");
             ret = off;
             goto fail;
         }
@@ -124,8 +126,8 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
 
         if ((diff != test_pkt[i].hdr_len) ||
             ((i == (AVT_ARRAY_ELEMS(test_pkt) - 1)) && (sum != off))) {
-            printf("Too few bytes read: got %" PRIi64 "; wanted %i\n",
-                   diff, test_pkt[i].hdr_len);
+            avt_log(avt, AVT_LOG_ERROR,"Too few bytes read: got %" PRIi64 "; wanted %i\n",
+                    diff, test_pkt[i].hdr_len);
             ret = AVT_ERROR(EINVAL);
             goto fail;
         }
@@ -133,7 +135,7 @@ static int test_io(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
         size_t test_buf_size;
         uint8_t *test_buf_data = avt_buffer_get_data(buf, &test_buf_size);
         if (memcmp(test_buf_data, test_pkt[i].hdr, test_buf_size)) {
-            printf("Mismatch between read and written data!\n");
+            avt_log(avt, AVT_LOG_ERROR,"Mismatch between read and written data!\n");
             goto fail;
         }
 

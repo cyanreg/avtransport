@@ -201,49 +201,6 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
     return send_pkt(out, pkt, nullptr);
 }
 
-#define INIT_SEGMENTED(buf, desc)                                                   \
-    int err;                                                                        \
-    void *series = NULL;                                                            \
-    size_t maxp = avt_packet_get_max_size(out);                                     \
-    size_t payload_size = avt_buffer_get_data_len(buf);                             \
-    size_t pbytes = payload_size;                                                   \
-    size_t seg_len = AVT_MIN(pbytes, maxp);                                         \
-                                                                                    \
-    enum AVTDataCompression data_compression;                                       \
-    err = avt_payload_compress(out, &buf, desc, &data_compression);                 \
-    if (err < 0)                                                                    \
-        return err;                                                                 \
-                                                                                    \
-    AVTBuffer tmp;                                                                  \
-    avt_buffer_quick_ref(&tmp, buf, 0, seg_len);
-
-#define SEGMENT(buf, seg_desc)                                                      \
-    avt_buffer_quick_unref(&tmp);                                                   \
-    if (err < 0)                                                                    \
-        return err;                                                                 \
-                                                                                    \
-    pbytes -= seg_len;                                                              \
-    while (pbytes) {                                                                \
-        const uint32_t seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;        \
-        seg_len = AVT_MIN(pbytes, maxp);                                            \
-        avt_buffer_quick_ref(&tmp, buf, payload_size - pbytes, seg_len);            \
-        union AVTPacketData seg = { .generic_segment = {                            \
-            .generic_segment_descriptor = seg_desc,                                 \
-            .stream_id = st->id,                                                    \
-            .pkt_total_data = payload_size,                                         \
-            .seg_offset = payload_size - pbytes,                                    \
-            .seg_length = seg_len,                                                  \
-        }};                                                                         \
-                                                                                    \
-        avt_buffer_quick_unref(&tmp);                                               \
-        if (err < 0)                                                                \
-            break;                                                                  \
-                                                                                    \
-        pbytes -= seg_len;                                                          \
-    } while (pbytes);                                                               \
-                                                                                    \
-    return err;
-
 int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
 {
     /* Compress payload if necessary */

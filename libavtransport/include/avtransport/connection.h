@@ -126,12 +126,12 @@ typedef struct AVTConnectionInfo {
          * NOTE: dup()-licated on success, users can close() this freely */
         int fd;
 
-        /* AVT_CONNECTION_NET: opened and bound network socket */
+        /* AVT_CONNECTION_NET: opened and bound/connected network socket */
         struct {
             /* Bound socket
              * NOTE: dup()'d on success, users can close() this freely */
             int socket;
-            /* Sending: destination IP (IPv4: mapped in IPv6) */
+            /* Sending: destination IP (IPv4 must be always mapped in IPv6) */
             uint8_t dst[16];
             /* Connection port */
             uint16_t port;

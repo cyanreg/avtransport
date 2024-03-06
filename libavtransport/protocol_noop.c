@@ -66,7 +66,8 @@ static int noop_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
 }
 
 static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                union AVTPacketData pkt, AVTBuffer *pl)
+                                union AVTPacketData pkt, AVTBuffer *pl,
+                                int64_t timeout)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     size_t hdr_len = 0;
@@ -78,12 +79,11 @@ static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
 }
 
 static int64_t noop_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
-                             AVTPacketFifo *seq)
+                             AVTPacketFifo *seq, int64_t timeout)
 {
-    uint8_t hdr[AVT_MAX_HEADER_LEN];
-    size_t hdr_len = 0;
+    int err;
 
-    // TODO
+    err = p->io->write_vec(ctx, p->io_ctx, seq->data, seq->nb, timeout);
 
     return 0;
 }

@@ -100,6 +100,9 @@ int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl);
 
 int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq);
+
+int avt_scheduler_flush(AVTScheduler *s, AVTPacketFifo **seq);
+
 int avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq);
 
 void avt_scheduler_free(AVTScheduler *s);

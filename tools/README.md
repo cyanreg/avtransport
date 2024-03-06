@@ -12,3 +12,11 @@ anything libavformat supports (mkv, mp4, MPEG-TS).
 
 avcat can combine or append inputs, extract streams, add metadata, reconstruct timestamps,
 fix errors, and verify integrity.
+
+
+avtdump
+-------
+
+avtdump is a utility to inspect AVTransport streams and files, logging any issues,
+stream changes, packet sizes and so on. It can also provide such information as a JSON
+stream.

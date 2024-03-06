@@ -50,12 +50,13 @@ typedef struct AVTProtocol {
     /* Send. Returns positive offset on success, otherwise negative error.
      * Returns offset to which packet was written to. */
     int64_t (*send_packet)(AVTContext *ctx, AVTProtocolCtx *p,
-                           union AVTPacketData pkt, AVTBuffer *pl);
+                           union AVTPacketData pkt, AVTBuffer *pl,
+                           int64_t timeout);
 
     /* Send a sequence of packets. Returns positive offset on success,
        otherwise negative error */
     int64_t (*send_seq)(AVTContext *ctx, AVTProtocolCtx *p,
-                        AVTPacketFifo *seq);
+                        AVTPacketFifo *seq, int64_t timeout);
 
     /* Overwrite a packet at a given offset */
     int (*update_packet)(AVTContext *ctx, AVTProtocolCtx *p,

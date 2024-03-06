@@ -99,7 +99,7 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
     int ret;
     int proto = addr->proto == AVT_PROTOCOL_UDP_LITE ? IPPROTO_UDPLITE : IPPROTO_UDP;
 
-	if ((sc->socket = socket(AF_INET6, SOCK_DGRAM, proto)) < 0) {
+    if ((sc->socket = socket(AF_INET6, SOCK_DGRAM, proto)) < 0) {
         ret = avt_handle_errno(log_ctx, "Failed to open socket: %i %s\n");
         sc->socket = -1;
         return ret;
@@ -153,6 +153,14 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 
     /* Enable MTU monitoring */
 //    SET_SOCKET_OPT(log_ctx, sc, IPPROTO_IPV6, IPV6_RECVPATHMTU, (int)1);
+
+#ifdef IPV6_FREEBIND
+    /* Enable free binding when no interface is given.
+     * This lets us not have to deal with dynamic reconfiguration, new
+     * devices being added, and so on */
+    if (addr->listen && !addr->interface)
+        SET_SOCKET_OPT(log_ctx, sc, IPPROTO_IPV6, IPV6_FREEBIND, (int)1);
+#endif
 
     /* Setup binding */
     sc->local_addr.sin6_family = AF_INET6;

@@ -96,25 +96,54 @@ int avt_connection_send(AVTConnection *conn,
 {
     int err;
 
-    err = avt_pkt_fifo_push(&conn->out_fifo_pre, pkt, pl);
-    if (err < 0)
-        return err;
+//    err = avt_pkt_fifo_push(&conn->out_fifo_pre, pkt, pl);
+//    if (err < 0)
+//        return err;
 
     err = avt_scheduler_push(&conn->out_scheduler, pkt, pl);
     if (err < 0)
         return err;
+
+//    AVTPacketFifo *seq;
+//    err = avt_scheduler_pop(&conn->out_scheduler, &seq);
+//    if (err < 0)
+//        return err;
+
+    return 0;
+}
+
+int avt_connection_process(AVTConnection *conn, int64_t timeout)
+{
+    int err;
 
     AVTPacketFifo *seq;
     err = avt_scheduler_pop(&conn->out_scheduler, &seq);
     if (err < 0)
         return err;
 
+    err = conn->p->send_seq(conn->ctx, conn->p_ctx, seq, timeout);
+    if (err < 0)
+        avt_scheduler_done(&conn->out_scheduler, seq);
+
     return 0;
 }
 
 int avt_connection_flush(AVTConnection *conn, int64_t timeout)
 {
-    return 0;
+    int err;
+
+    AVTPacketFifo *seq;
+    err = avt_scheduler_flush(&conn->out_scheduler, &seq);
+    if (err < 0)
+        return err;
+
+    if (seq) {
+        err = conn->p->send_seq(conn->ctx, conn->p_ctx, seq, timeout);
+        if (err < 0)
+            avt_scheduler_done(&conn->out_scheduler, seq);
+    }
+
+    return conn->p->flush(conn->ctx, conn->p_ctx, timeout);
 }
 
 int avt_connection_destroy(AVTConnection **_conn)

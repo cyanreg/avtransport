@@ -1,5 +1,4 @@
-/*
- * Copyright © 2024, Lynne
+/* Copyright © 2024, Lynne
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,52 +23,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "io_common.h"
+#include <avtransport/avtransport.h>
 
-extern const AVTIO avt_io_null;
-
-extern const AVTIO avt_io_file;
-
-#ifndef _WIN32
-extern const AVTIO avt_io_fd;
-extern const AVTIO avt_io_fd_path;
-#endif
-
-extern const AVTIO avt_io_udp;
-extern const AVTIO avt_io_udp_lite;
-
-#define MAX_NB_BACKENDS 4
-
-/* In order of preference */
-static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
-    [AVT_IO_NULL] = {
-        &avt_io_null,
-    },
-    [AVT_IO_FILE] = {
-#ifndef _WIN32
-        &avt_io_fd_path,
-#endif
-        &avt_io_file,
-    },
-    [AVT_IO_FD] = {
-#ifndef _WIN32
-        &avt_io_fd,
-#endif
-    },
-    [AVT_IO_UDP] = {
-        &avt_io_udp,
-    },
-    [AVT_IO_UDP_LITE] = {
-        &avt_io_udp_lite,
-    },
-};
-
-/* For protocols to call */
-int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
-                AVTAddress *addr)
+int main(int argc, char **argv)
 {
-    const AVTIO *io = avt_io_list[AVT_IO_FILE][0];
-    int err = io->init(ctx, io_ctx, addr);
-    *_io = io;
-    return err;
+    return 0;
 }

@@ -263,9 +263,9 @@ Below is a table of how they're allocated:
     </table>
 </figure>
 
-Note: range ''0x8000'' to ''0x80FF'' is reserved for [[#reverse-signalling]].
+Note: Range ''0x8000'' to ''0x80FF'' is reserved for [[#reverse-signalling]].
 
-Note: the 16-bit descriptor may be split into two sections, a constant upper 8-bits
+Note: The 16-bit descriptor may be split into two sections, a constant upper 8-bits
 and variable bottom 8-bits, hence some descriptors are considered a range.
 
 Anything not specified in the table is reserved and must not be used. Future additions
@@ -281,7 +281,7 @@ A special notation is used to describe sequences of bits:
  - <code>u(N)</code> : specifies the data that follows is an unsigned integer of ''N'' bits.
  - <code>i(N)</code> : the same, but the data describes a signed integer is signed.
  - <code>b(N)</code> : the data is an opaque sequence of ''N'' bits that clients must not interpret.
- - <code>R(N)</code> : the data is a rational number, with a numerator of <code>i(N/2)</code> and following that, a denominator of <code>i(N/2)</code>. The denominator must be greater than ''0''.
+ - <code>R(N)</code> : the data is a rational number, with a numerator (''num'') of <code>i(N/2)</code> and following that, a denominator (''den'') of <code>i(N/2)</code>. The denominator must be greater than ''0''.
 
 All packets are at least 36 bytes long (288 bits), and always have an 8 byte
 (64 bits) [[#ldpc]] code after the first 28 bytes to verify and correct their data.
@@ -333,7 +333,7 @@ Note: [=global_seq=] should start at ''0x0'', but receivers MUST be prepared for
 <dfn>stream_id</dfn> is a <b>16-bit unsigned integer</b>, uniquely identifying each stream
 contained within an [TITLE] stream.
 
-Note: senders should never reuse [=stream_id=] indices, but receivers should be prepared
+Note: Senders should never reuse [=stream_id=] indices, but receivers should be prepared
 to deal with this scenario.
 
 
@@ -351,7 +351,7 @@ or duration <code>v</code> and a <i>rational</i> timebase <code>b</code> is the 
 
 <code>t = v * b.num / b.den</code>
 
-Note: all mathematical operations on timestamps should be done in the integer domain,
+Note: All mathematical operations on timestamps should be done in the integer domain,
 as floating-point operations may be inaccurate and inconsistent.
 
 The timebase of [[#stream-data-packets]], [[#stream-duration-packets]],
@@ -424,7 +424,7 @@ On every received packet:
 This is a very simple example which depends on the local receiver oscillator simply being
 *more precise* than the transmitter's oscillator.
 
-Note: the way receivers handle jitter is intentionally left undefined. As a recommendation,
+Note: The way receivers handle jitter is intentionally left undefined. As a recommendation,
 implementations <b>should</b> resampple the audio and adjust video frame duration such that
 synchronization is maintained. Otherwise, implementations can drop or duplicate frames.
 
@@ -501,7 +501,7 @@ Users are also free to measure the latency in a similar way, by measuring their 
 Finally, if <b>explicitly requested</b>, implementations are allowed to <i>delay</i> presentation by interpreting
 a negative latency value of ''Δ'' as a delay.
 
-Note: packets which had a negative timestamp before must still be dropped to permit for correct decoding
+Note: Packets which had a negative timestamp before must still be dropped to permit for correct decoding
 and presentation.
 
 Note: The ''stream latency'' and ''synchronization'' actions depend on all devices having accurately synchronized
@@ -538,6 +538,8 @@ Note: Alternatively, for UDP-only, the <code>udp://&lt;address&gt;:&lt;port&gt;<
 at the risk of conflict with other protocols (''MPEG-TS'' or ''Matroska'').
 
 Note: When handling AVTransport files, it is recommended to use the <b>.avt</b> file extension.
+Alternatively, for image-only files, <b>.ati</b> is recommended, and for subtitles,
+the recommendation is <b>.avs</b>.
 
 
 # Packet structure # {#packet-structure}
@@ -646,6 +648,10 @@ as an AVTransport session. The syntax is as follows:
 Multiple session packets may be present in a session, but must remain
 bytewise-identical.
 
+The [=producer_name=] field is a <i>fixed-length</i> string, meaning that
+the field is always 16 bytes. If the name is less than 16 bytes, it must
+be zero-padded.
+
 ## Stream Session Flags Enumeration (enum <dfn enum>SessionFlags</dfn>) ## {#enum-SessionFlags}
 
 The [=session_flags=] field must be interpreted in the following way:
@@ -731,7 +737,7 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
 The <dfn>ts_clock_freq</dfn> field is equal to <code>[=ts_clock_freq=] = [=ts_clock_hz=] + [=ts_clock_hz2=]/65536</code>.
 Implementations should prefer to use integer math, and instead have the [=ts_clock_freq=] in increments of 1/65536 Hz.
 
-Note: if [=ts_clock_freq=] is 0, then the sender should be assumed to be relying entirely on its real-time clock.
+Note: If [=ts_clock_freq=] is 0, then the sender should be assumed to be relying entirely on its real-time clock.
 
 The field defines a strictly monotonic clock signal with a rate of [=ts_clock_freq=], which atomically increments a counter,
 [=ts_clock_seq=] on the <b>rising</b> edge of the waveform.
@@ -2165,7 +2171,7 @@ The following structure MUST be followed:
             <td>
                 The stream ID for which to make the font available.
 
-                Note: may be set to ''0xffff'' to make the font available for all streams.
+                Note: May be set to ''0xffff'' to make the font available for all streams.
             </td>
         </tr>
         <tr id="0x0020+2">
@@ -2520,7 +2526,7 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>CSP_XYB</dfn> = <i>0x6</i>
       :: Video contains XYB color data, as defined by [[ISO18181]].
 
-          Note: [matrix] must be equal to ''0xFF'' and the [=custom_matrix=] must be a valid matrix to transform XYB into RGB.
+          Note: [=matrix=] must be equal to ''0xFF'' and the [=custom_matrix=] must be a valid matrix to transform XYB into RGB.
 
     : <dfn>CSP_ICTCP</dfn> = <i>0x5</i>
       :: Video contains [[BT2100]] ICtCp color data.
@@ -2543,7 +2549,7 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn>COLOR_RANGE_LIMITED</dfn> = <i>0x1</i>
       :: Video sample values contains the limited range of the [=bit_depth=].
 
-          Note: this describes the <i>cannonical</i> limited range representation:
+          Note: This describes the <i>cannonical</i> limited range representation:
                 <code>(219 * E + 16) * 2<sup>([=bit_depth=]-8)</sup></code>,
                 where <code>E</code>, the input range, is ''0.0'' to ''1.0'' for <i>luma</i> planes and
                 ''-0.5'' to ''0.5'' for <i>chroma</i> planes. This means, for 8-bits, the luma
@@ -2572,7 +2578,7 @@ to interpret the value of [=field_id=] in stream data packet headers.
     : <dfn>ILACE_PROG</dfn> = <i>0x0</i>
       :: Video contains progressive data, or interlacing does not apply.
 
-          Note: in this mode, the [=field_id=] bit is free to use by users. Implementations must ignore it, and preserve it.
+          Note: In this mode, the [=field_id=] bit is free to use by users. Implementations must ignore it, and preserve it.
 
     : <dfn>ILACE_TFF</dfn> = <i>0x1</i>
       :: Video is interlaced. One [[#stream-data-packets]] packet per <i>field</i>. If the data packet's [=field_id=] bit is <b>unset</b>, indicates the field contained is the <b>top</b> field, otherwise it's the <i>bottom</i> field.
@@ -2683,7 +2689,7 @@ These values are copied verbatim from [[H.273]].
       :: SMPTE EG 432-2 (2010)
 </div>
 
-Note: this list may not be up to date in this version of the AVTransport specifications.
+Note: This list may not be up to date in this version of the AVTransport specifications.
 Users should consult [[H.273]] for up-to-date values and how to interpret them.
 
 
@@ -4617,7 +4623,7 @@ The matrices are also listed as standard .alist files, directly usable for analy
 
 #### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224}
 
-Note: spaceholder, working and optimal tables to be done
+Note: Spaceholder, working and optimal tables to be done
 
 alist code:
 
@@ -4707,7 +4713,7 @@ const uint64_t ldpc_h_matrix_288_224[288 /* (64 rows/64) * 288 cols */] = {
 
 #### ldpc_h_matrix_2784_2016 #### {#ldpc_h_matrix_2784_2016}
 
-Note: spaceholder, working and optimal tables to be done
+Note: Spaceholder, working and optimal tables to be done
 
 alist code:
 

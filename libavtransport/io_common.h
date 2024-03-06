@@ -31,10 +31,11 @@
 #include "packet_common.h"
 
 enum AVTIOType {
-    AVT_IO_FILE,  /* Takes a path */
-    AVT_IO_FD,    /* Takes an integer handle fd */
-    AVT_IO_UDP,   /* UDP network connection */
-    AVT_IO_NULL,  /* Takes nothing */
+    AVT_IO_FILE,       /* Takes a path */
+    AVT_IO_FD,         /* Takes an integer handle fd */
+    AVT_IO_UDP,        /* UDP network connection */
+    AVT_IO_UDP_LITE,   /* UDP-Lite network connection */
+    AVT_IO_NULL,       /* Takes nothing */
 };
 
 /* Low level interface */

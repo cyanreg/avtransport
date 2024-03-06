@@ -31,7 +31,7 @@ ldpc_encode_test = executable('ldpc_encode',
 test('LDPC encoding', ldpc_encode_test)
 
 io_file_test = executable('io_file',
-    sources : [ 'io_file.c' ],
+    sources : [ 'file_io_common.c', 'io_file.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_file.c' ]) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
@@ -40,7 +40,7 @@ test('File I/O', io_file_test)
 
 if host_machine.system() != 'windows'
     io_file_test = executable('io_fd',
-        sources : [ 'io_fd.c' ],
+        sources : [ 'file_io_common.c', 'io_fd.c' ],
         include_directories : [ '../' ],
         objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_fd.c' ]) ],
         dependencies : [ avtransport_deps_list, avtransport_dep ],
@@ -49,12 +49,20 @@ if host_machine.system() != 'windows'
 endif
 
 io_udp_test = executable('io_udp',
-    sources : [ 'io_udp.c' ],
+    sources : [ 'net_common.c', 'io_udp.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
 )
 test('UDP I/O', io_udp_test)
+
+io_udp_lite_test = executable('io_udp_lite',
+    sources : [ 'net_common.c', 'io_udp_lite.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('UDP-Lite I/O', io_udp_lite_test)
 
 address_test = executable('address',
     sources : [ 'address.c' ],

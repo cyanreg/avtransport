@@ -125,7 +125,7 @@ static int64_t udp_write_vec(AVTContext *ctx, AVTIOCtx *io,
                              AVTPktd *iov, uint32_t nb_iov,
                              int64_t timeout)
 {
-    int64_t ret;
+    int64_t ret = 0;
     int64_t timeout_per = timeout / nb_iov;
     for (int i = 0; i < nb_iov; i++) {
         ret = udp_write_pkt(ctx, io, &iov[i], timeout_per);
@@ -138,7 +138,7 @@ static int64_t udp_write_vec(AVTContext *ctx, AVTIOCtx *io,
 static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
                               AVTBuffer **_buf, size_t len, int64_t timeout)
 {
-    int ret, err;
+    int ret;
     uint8_t *data;
     size_t buf_len, off = 0;
     AVTBuffer *buf = *_buf;
@@ -166,13 +166,14 @@ static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
     struct sockaddr_in6 remote_addr = { };
     socklen_t remote_addr_len = sizeof(remote_addr);
 
-    ret = recvfrom(io->sc.socket, data, buf_len,
+    ret = recvfrom(io->sc.socket, data + off, buf_len,
                    !timeout ? MSG_DONTWAIT : 0,
                    &remote_addr, &remote_addr_len);
     if (ret < 0)
         return avt_handle_errno(io, "Unable to receive message: %s");
 
     /* Adjust new size in case of underreads */
+    [[maybe_unused]] int err;
     err = avt_buffer_resize(buf, off + len);
     avt_assert2(err >= 0);
 
@@ -193,6 +194,20 @@ static int udp_close(AVTContext *ctx, AVTIOCtx **_io)
 const AVTIO avt_io_udp = {
     .name = "udp",
     .type = AVT_IO_UDP,
+    .init = udp_init,
+    .get_max_pkt_len = udp_max_pkt_len,
+    .read_input = udp_read_input,
+    .write_vec = udp_write_vec,
+    .write_pkt = udp_write_pkt,
+    .rewrite = NULL,
+    .seek = NULL,
+    .flush = NULL,
+    .close = udp_close,
+};
+
+const AVTIO avt_io_udp_lite = {
+    .name = "udp_lite",
+    .type = AVT_IO_UDP_LITE,
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
     .read_input = udp_read_input,

@@ -29,7 +29,7 @@
 #include <avtransport/avtransport.h>
 #include "io_common.h"
 
-#include "file_io_template.c"
+#include "file_io_common.h"
 
 /* Always available, on all platforms */
 extern const AVTIO avt_io_file;
@@ -56,7 +56,7 @@ int main(void)
         return AVT_ERROR(ret);
     }
 
-    ret = test_io(avt, io, io_ctx);
+    ret = file_io_test(avt, io, io_ctx);
 
     if (ret)
         io->close(avt, &io_ctx);

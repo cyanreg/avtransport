@@ -68,3 +68,17 @@ executable('avcat',
 summary({
     'ffmpeg libs': lavc_dep.found() and lavf_dep.found() and lavu_dep.found(),
 }, section: 'avcat', bool_yn: true)
+
+# avtdump
+#============================================================================
+avtdump_sources = files(
+    'avtdump.c',
+)
+
+executable('avtdump',
+    install: true,
+    sources: avtdump_sources + avtransport_spec_pub_headers,
+
+    include_directories: avtransport_inc,
+    link_with: [ avtransport_lib ]
+)

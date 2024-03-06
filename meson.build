@@ -28,12 +28,11 @@ project('avtransport',
     license_files: [ 'LICENSE.md' ],
     default_options: [
         'buildtype=debugoptimized',
-        'c_std=c2x',
-#        'c_std=c23',
+        'c_std=c23',
         'warning_level=1'
     ],
     version: '0.0.4',
-    meson_version: '>=1.1.0',
+    meson_version: '>=1.4.0',
 )
 
 spec_file = files('draft-avtransport-spec.bs')

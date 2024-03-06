@@ -385,6 +385,11 @@ int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
     return 0;
 }
 
+int avt_scheduler_flush(AVTScheduler *s, AVTPacketFifo **seq)
+{
+    return 0;
+}
+
 int avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq)
 {
     avt_assert1(seq->nb); /* Scheduler FIFO was not fully consumed */

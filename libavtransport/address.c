@@ -112,6 +112,10 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         /* Unofficial and conflicting, but let's accept it */
         addr->proto = AVT_PROTOCOL_UDP;
         next += strlen("udp://");
+    } else if (!strncmp(next, "udplite://", strlen("udplite://"))) {
+        /* Unofficial, but let's accept it */
+        addr->proto = AVT_PROTOCOL_UDP_LITE;
+        next += strlen("udplite://");
     } else if (!strncmp(next, "quic://", strlen("quic://"))) {
         /* Unofficial, but let's accept it */
         addr->proto = AVT_PROTOCOL_QUIC;

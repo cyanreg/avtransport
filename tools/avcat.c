@@ -78,21 +78,20 @@ static enum IOMode path_is_avt(const char *path, enum AVTConnectionType *conn_ty
         !strncmp(path, "file://", strlen("file://"))) {
         *conn_type = AVT_CONNECTION_URL;
         return IO_AVT;
-    } else if (!strcmp(&path[len - 4], ".avt") || !strcmp(&path[len - 3], ".at")) {
+    } else if (!strcmp(&path[len - 4], ".avt") ||
+               !strcmp(&path[len - 3], ".ati") || /* Images */
+               !strcmp(&path[len - 3], ".ats")) { /* Subtitles */
         *conn_type = AVT_CONNECTION_FILE;
         return IO_AVT;
     } else if (is_out && /* For output, anything that can be concat'd payload */
                (!strcmp(&path[len - 5], ".h264") ||
                 !strcmp(&path[len - 5], ".h265") ||
                 !strcmp(&path[len - 5], ".hevc") ||
-                !strcmp(&path[len - 5], ".tiff") ||
-                !strcmp(&path[len - 5], ".jpeg") ||
-                !strcmp(&path[len - 4], ".dng")  ||
-                !strcmp(&path[len - 4], ".png")  ||
-                !strcmp(&path[len - 4], ".jpg")  ||
                 !strcmp(&path[len - 4], ".aac")  ||
                 !strcmp(&path[len - 4], ".ac3")  ||
-                !strcmp(&path[len - 4], ".svg"))) {
+                !strcmp(&path[len - 4], ".nal")  || /* Raw MPEG NALUs */
+                !strcmp(&path[len - 4], ".obu")  || /* Raw AV1 OBUs */
+                !strcmp(&path[len - 4], ".raw"))) { /* Generic raw data */
         return IO_RAW;
     } else if (!is_out && /* Individual files do not need any framing */
                (!strcmp(&path[len - 5], ".tiff") ||
@@ -100,6 +99,7 @@ static enum IOMode path_is_avt(const char *path, enum AVTConnectionType *conn_ty
                 !strcmp(&path[len - 4], ".dng")  ||
                 !strcmp(&path[len - 4], ".png")  ||
                 !strcmp(&path[len - 4], ".jpg")  ||
+                !strcmp(&path[len - 4], ".cbor") ||
                 !strcmp(&path[len - 4], ".svg"))) {
         return IO_RAW;
     }
