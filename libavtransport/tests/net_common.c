@@ -40,12 +40,13 @@ typedef struct NetListenerContext {
     AVTBuffer *output;
     size_t pkt_len;
     int nb_pkts;
+    int64_t offset;
 } NetListenerContext;
 
 static int listener_fn(void *_ctx)
 {
-    int64_t prev = 0, ret = 0;
     NetListenerContext *ctx = _ctx;
+    int64_t prev = ctx->offset, ret = 0;
 
     /* Read */
     for (int i = 0; i < ctx->nb_pkts; i++) {
@@ -64,12 +65,15 @@ static int listener_fn(void *_ctx)
         prev = ret;
     }
 
-    if (ret != avt_buffer_get_data_len(ctx->output)) {
+    if ((ret - ctx->offset) != avt_buffer_get_data_len(ctx->output)) {
         avt_log(ctx->avt, AVT_LOG_ERROR, "Read length mismatch: received "
                 "%" PRIi64 " bytes, expected %zu bytes\n",
-                ret, avt_buffer_get_data_len(ctx->output));
+                ret - ctx->offset, avt_buffer_get_data_len(ctx->output));
         thrd_exit(AVT_ERROR(EINVAL));
     }
+
+    if (ret > 0)
+        ctx->offset = ret;
 
     thrd_exit(ret);
 }
@@ -102,10 +106,9 @@ int net_io_test(NetTestContext *ntc)
         sum += test_pkt[i].hdr_len;
         for (int j = 0; j < test_pkt[i].hdr_len; j++)
             test_pkt[i].hdr[j] = (rand() & 0xFF);
-        printf("Shit %i = %x\n", i, test_pkt[i].hdr[0]);
     }
 
-    listener_ctx.output = NULL;
+    avt_buffer_unref(&listener_ctx.output);
     listener_ctx.pkt_len = test_pkt[0].hdr_len;
     listener_ctx.nb_pkts = AVT_ARRAY_ELEMS(test_pkt);
     t_err = thrd_create(&listener_thread, listener_fn, &listener_ctx);
@@ -127,6 +130,8 @@ int net_io_test(NetTestContext *ntc)
         ret = AVT_ERROR(EINVAL);
         goto fail;
     }
+    avt_log(ntc->avt, AVT_LOG_INFO,"Send %" PRIi64 " bytes\n", ret);
+    int64_t pos = ret;
 
     if (thrd_join(listener_thread, &t_res) != thrd_success)
         goto fail;
@@ -149,6 +154,41 @@ int net_io_test(NetTestContext *ntc)
             goto fail;
         }
         buf_data += test_pkt[i].hdr_len;
+    }
+
+    avt_buffer_unref(&listener_ctx.output);
+    listener_ctx.pkt_len = test_pkt[0].hdr_len;
+    listener_ctx.nb_pkts = 1;
+
+    t_err = thrd_create(&listener_thread, listener_fn, &listener_ctx);
+    if (t_err != thrd_success)
+        goto fail;
+
+    /* Write vector test */
+    ret = ntc->io->write_pkt(ntc->avt, ntc->ioctx_sender, &test_pkt[0],
+                             INT64_MAX);
+    if (ret < 0) {
+        goto fail;
+    } else if (ret == 0) {
+        avt_log(ntc->avt, AVT_LOG_ERROR,"No bytes written\n");
+        ret = AVT_ERROR(EINVAL);
+        goto fail;
+    } else if ((ret - pos) != test_pkt[0].hdr_len) {
+        avt_log(ntc->avt, AVT_LOG_ERROR,"Bytes written do not match: got %" PRIi64 "; wanted %" PRIu16 "\n",
+                ret - pos, test_pkt[0].hdr_len);
+        ret = AVT_ERROR(EINVAL);
+        goto fail;
+    }
+    avt_log(ntc->avt, AVT_LOG_INFO,"Send %" PRIi64 " bytes\n", ret - pos);
+
+    if (thrd_join(listener_thread, &t_res) != thrd_success)
+        goto fail;
+
+    buf_data = avt_buffer_get_data(listener_ctx.output, &buf_size);
+    if (memcmp(buf_data, test_pkt[0].hdr, test_pkt[0].hdr_len)) {
+       avt_log(ntc->avt, AVT_LOG_ERROR,"Data written and read does not match\n");
+       ret = AVT_ERROR(EINVAL);
+       goto fail;
     }
 
 fail:
