@@ -1,0 +1,369 @@
+/*
+ * Copyright © 2024, Lynne
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#define _GNU_SOURCE
+
+#include "os_compat.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <uchar.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/uio.h>
+#include <limits.h>
+#include <sys/mman.h>
+
+#include "io_common.h"
+#include "utils_internal.h"
+
+struct AVTIOCtx {
+    int fd;
+    AVTBuffer *map;
+
+    off_t rpos;
+    off_t wpos;
+    bool is_write;
+
+    bool file_grew;
+};
+
+static int mmap_handle_error(AVTIOCtx *io, const char *msg)
+{
+    char8_t err_info[256];
+    strerror_safe(err_info, sizeof(err_info), errno);
+    avt_log(io, AVT_LOG_ERROR, msg, err_info);
+    return AVT_ERROR(errno);
+}
+
+static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
+{
+    munmap(base_data, size);
+    close((int)((intptr_t)opaque));
+}
+
+static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
+{
+    int ret;
+
+    size_t len = lseek(io->fd, SEEK_END, 0);
+    if (!len) {
+        /* A reasonable default */
+        len = 128*1024;
+        if (fallocate(io->fd, 0, 0, len)) {
+            ret = mmap_handle_error(io, "Error in fallocate(): %s\n");
+            return ret;
+        }
+        io->file_grew = 1;
+    }
+
+    int fd_dup = dup(io->fd);
+    if (fd_dup < 0)
+        return mmap_handle_error(io, "Error in dup(): %s\n");
+
+    void *data = mmap(NULL, len, PROT_READ | PROT_WRITE,
+                      MAP_SHARED |
+                      MAP_POPULATE,
+                      fd_dup, 0);
+
+    if (!data) {
+        ret = mmap_handle_error(io, "Error in mmap(): %s\n");
+        close(fd_dup);
+        return ret;
+    }
+
+    io->map = avt_buffer_create(data, len,
+                                (void *)((intptr_t)fd_dup),
+                                mmap_buffer_free);
+    if (!io->map) {
+        munmap(data, len);
+        close(fd_dup);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    return 0;
+}
+
+static int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+{
+    int ret;
+    AVTIOCtx *io = calloc(1, sizeof(*io));
+    if (!io)
+        return AVT_ERROR(ENOMEM);
+
+    io->fd = dup(addr->fd);
+    if (io->fd < 0) {
+        ret = mmap_handle_error(io, "Error duplicating fd: %s\n");
+        free(io);
+        return ret;
+    }
+
+    ret = mmap_init_common(ctx, io);
+    if (ret < 0) {
+        close(io->fd);
+        free(io);
+        return ret;
+    }
+
+    *_io = io;
+
+    return 0;
+}
+
+static int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+{
+    int ret;
+    AVTIOCtx *io = calloc(1, sizeof(*io));
+    if (!io)
+        return AVT_ERROR(ENOMEM);
+
+    io->fd = open(addr->path, O_CREAT | O_RDWR);
+    if (io->fd < 0) {
+        ret = mmap_handle_error(io, "Error opening: %s\n");
+        free(io);
+        return ret;
+    }
+
+    ret = mmap_init_common(ctx, io);
+    if (ret < 0) {
+        close(io->fd);
+        free(io);
+        return ret;
+    }
+
+    *_io = io;
+
+    return 0;
+}
+
+static int mmap_grow(AVTIOCtx *io, size_t amount)
+{
+    int ret;
+    size_t old_map_size;
+    uint8_t *old_map = avt_buffer_get_data(io->map, &old_map_size);
+
+    size_t new_map_size = old_map_size + amount;
+
+    /* Grow file */
+    if (fallocate(io->fd, 0, 0, new_map_size)) {
+        ret = mmap_handle_error(io, "Error in fallocate(): %s\n");
+        return ret;
+    }
+
+    if (avt_buffer_get_refcount(io->map) == 1) {
+        /* Just remap if there's no one using the buffer */
+        void *new_map = mremap(old_map, old_map_size, new_map_size,
+                               MREMAP_MAYMOVE);
+        if (new_map == MAP_FAILED) {
+            ret = mmap_handle_error(io, "Error in mremap(): %s\n");
+            return ret;
+        }
+
+        avt_buffer_update(io->map, new_map, new_map_size);
+    } else {
+        /* Recreate the mapping */
+        int fd_dup = dup(io->fd);
+        if (fd_dup < 0)
+            return mmap_handle_error(io, "Error in dup(): %s\n");
+
+        void *data = mmap(NULL, new_map_size, PROT_READ | PROT_WRITE,
+                          MAP_SHARED |
+                          MAP_POPULATE,
+                          fd_dup, 0);
+        if (data == MAP_FAILED) {
+            ret = mmap_handle_error(io, "Error in mmap(): %s\n");
+            close(fd_dup);
+            return ret;
+        }
+
+        AVTBuffer *new_map = avt_buffer_create(data, new_map_size,
+                                               (void *)((intptr_t)fd_dup),
+                                               mmap_buffer_free);
+        if (!io->map) {
+            munmap(data, new_map_size);
+            close(fd_dup);
+            return AVT_ERROR(ENOMEM);
+        }
+
+        avt_buffer_unref(&io->map);
+        io->map = new_map;
+    }
+
+    io->file_grew = 1;
+
+    return 0;
+}
+
+static int mmap_close(AVTContext *ctx, AVTIOCtx **_io)
+{
+    AVTIOCtx *io = *_io;
+    avt_buffer_unref(&io->map);
+    if (io->file_grew)
+        ftruncate(io->fd, io->wpos);
+    close(io->fd);
+    free(io);
+    *_io = NULL;
+    return 0;
+}
+
+static uint32_t mmap_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
+{
+    return UINT32_MAX;
+}
+
+static inline int64_t mmap_seek(AVTContext *ctx, AVTIOCtx *io, int64_t pos)
+{
+    if (pos > avt_buffer_get_data_len(io->map))
+        return AVT_ERROR(ERANGE);
+    return (io->rpos = pos);
+}
+
+static int64_t mmap_write_pkt(AVTContext *ctx, AVTIOCtx *io,
+                              AVTPktd *p, int64_t timeout)
+{
+    size_t pl_len;
+    uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
+
+    size_t map_size;
+    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+
+    if ((io->wpos + p->hdr_len + pl_len) > map_size) {
+        int ret = mmap_grow(io, p->hdr_len + pl_len);
+        if (ret < 0)
+            return ret;
+    }
+
+    map_data = avt_buffer_get_data(io->map, &map_size);
+    memcpy(&map_data[io->wpos], p->hdr, p->hdr_len);
+    memcpy(&map_data[io->wpos + p->hdr_len], pl_data, pl_len);
+
+    return (io->wpos += p->hdr_len + pl_len);
+}
+
+static int64_t mmap_write_vec(AVTContext *ctx, AVTIOCtx *io,
+                              AVTPktd *iov, uint32_t nb_iov,
+                              int64_t timeout)
+{
+    uint8_t *pl_data;
+    size_t pl_len, offset, sum = 0;
+    for (int i = 0; i < nb_iov; i++)
+        sum += iov[i].hdr_len + avt_buffer_get_data_len(&iov[i].pl);
+
+    size_t map_size;
+    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+
+    if ((io->wpos + sum) > map_size) {
+        int ret = mmap_grow(io, sum);
+        if (ret < 0)
+            return ret;
+    }
+
+    offset = io->wpos;
+    map_data = avt_buffer_get_data(io->map, &map_size);
+    for (int i = 0; i < nb_iov; i++) {
+        pl_data = avt_buffer_get_data(&iov[i].pl, &pl_len);
+        memcpy(&map_data[offset], iov[i].hdr, iov[i].hdr_len);
+        memcpy(&map_data[offset + iov[i].hdr_len], pl_data, pl_len);
+        offset += iov[i].hdr_len + pl_len;
+    }
+
+    return (io->wpos = offset);
+}
+
+static int64_t mmap_rewrite(AVTContext *ctx, AVTIOCtx *io,
+                            AVTPktd *p, int64_t off,
+                            int64_t timeout)
+{
+    size_t pl_len;
+    uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
+
+    size_t map_size;
+    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+
+    if ((off + p->hdr_len + pl_len) > map_size)
+        return AVT_ERROR(ERANGE);
+
+    memcpy(&map_data[off], p->hdr, p->hdr_len);
+    memcpy(&map_data[off + p->hdr_len], pl_data, pl_len);
+
+    return off + p->hdr_len + pl_len;
+}
+
+static inline int64_t mmap_read(AVTContext *ctx, AVTIOCtx *io, AVTBuffer **dst,
+                                size_t len, int64_t timeout)
+{
+    AVTBuffer *buf = *dst;
+    if (buf) {
+        int ret = avt_buffer_quick_ref(buf, io->map, io->rpos, len);
+        if (ret < 0)
+            return ret;
+    } else {
+        *dst = avt_buffer_reference(io->map, io->rpos, len);
+        if (!*dst)
+            return AVT_ERROR(ENOMEM);
+    }
+    return (io->rpos += len);
+}
+
+static int mmap_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
+{
+    size_t map_size;
+    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+
+    int ret = msync(map_data, map_size, timeout == 0 ? MS_ASYNC : MS_SYNC);
+    if (ret < 0)
+        ret = mmap_handle_error(io, "Error flushing: %s\n");
+
+    return ret;
+}
+
+const AVTIO avt_io_mmap = {
+    .name = "fd",
+    .type = AVT_IO_FD,
+    .init = mmap_init,
+    .get_max_pkt_len = mmap_max_pkt_len,
+    .read_input = mmap_read,
+    .write_vec = mmap_write_vec,
+    .write_pkt = mmap_write_pkt,
+    .rewrite = mmap_rewrite,
+    .seek = mmap_seek,
+    .flush = mmap_flush,
+    .close = mmap_close,
+};
+
+const AVTIO avt_io_mmap_path = {
+    .name = "fd_path",
+    .type = AVT_IO_FD,
+    .init = mmap_init_path,
+    .get_max_pkt_len = mmap_max_pkt_len,
+    .read_input = mmap_read,
+    .write_vec = mmap_write_vec,
+    .write_pkt = mmap_write_pkt,
+    .rewrite = mmap_rewrite,
+    .seek = mmap_seek,
+    .flush = mmap_flush,
+    .close = mmap_close,
+};

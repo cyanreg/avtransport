@@ -66,7 +66,10 @@ enum AVTConnectionType {
      * - <stream_id> of the stream(s) to present as default (overriding those
      *   signalled by the sender)
      *
-     * - <setting1>=<value1> are a key=value pair of settings for the connection
+     * - <setting1>=<value1> are a key=value pair of settings for the connection,
+     *   separated by ? signs. Currently accepted values are:
+     *     - rx_buf: receive buffer size
+     *     - tx_buf: send buffer size
      *
      * The library will also accept shorthand notations, such as "udp://",
      * "udplite://", "quic://" and "file://", but none may be followed by

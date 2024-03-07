@@ -94,7 +94,7 @@ static int fd_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
         return AVT_ERROR(ENOMEM);
 
     io->iov = calloc(IOV_MAX, sizeof(*io->iov));
-    if (!io->iov) {
+    if (io->iov < 0) {
         free(io);
         return AVT_ERROR(ENOMEM);
     }
@@ -113,15 +113,6 @@ static int fd_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 }
 
 static int fd_close(AVTContext *ctx, AVTIOCtx **_io)
-{
-    AVTIOCtx *io = *_io;
-    free(io->iov);
-    free(io);
-    *_io = NULL;
-    return 0;
-}
-
-static int fd_close_path(AVTContext *ctx, AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
 
@@ -220,7 +211,7 @@ static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
         }
     }
 
-    return (io->wpos = fd_offset(io));
+    return off + p->hdr_len + pl_len;
 }
 
 #define RENAME(x) fd_ ## x
@@ -260,5 +251,5 @@ const AVTIO avt_io_fd_path = {
     .rewrite = fd_rewrite_native,
     .seek = fd_seek,
     .flush = fd_flush,
-    .close = fd_close_path,
+    .close = fd_close,
 };

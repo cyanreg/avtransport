@@ -26,15 +26,19 @@
 
 #include "io_common.h"
 
+/* Null */
 extern const AVTIO avt_io_null;
 
+/* Files */
 extern const AVTIO avt_io_file;
-
 #ifndef _WIN32
 extern const AVTIO avt_io_fd;
 extern const AVTIO avt_io_fd_path;
+extern const AVTIO avt_io_mmap;
+extern const AVTIO avt_io_mmap_path;
 #endif
 
+/* UDP */
 extern const AVTIO avt_io_udp;
 extern const AVTIO avt_io_udp_lite;
 
@@ -47,12 +51,14 @@ static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
     },
     [AVT_IO_FILE] = {
 #ifndef _WIN32
+        &avt_io_mmap_path,
         &avt_io_fd_path,
 #endif
         &avt_io_file,
     },
     [AVT_IO_FD] = {
 #ifndef _WIN32
+        &avt_io_mmap,
         &avt_io_fd,
 #endif
     },

@@ -39,13 +39,21 @@ io_file_test = executable('io_file',
 test('File I/O', io_file_test)
 
 if host_machine.system() != 'windows'
-    io_file_test = executable('io_fd',
+    io_fd_test = executable('io_fd',
         sources : [ 'file_io_common.c', 'io_fd.c' ],
         include_directories : [ '../' ],
         objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_fd.c' ]) ],
         dependencies : [ avtransport_deps_list, avtransport_dep ],
     )
-    test('FD I/O', io_file_test)
+    test('FD I/O', io_fd_test)
+
+    io_mmap_test = executable('io_mmap',
+        sources : [ 'file_io_common.c', 'io_mmap.c' ],
+        include_directories : [ '../' ],
+        objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_mmap.c' ]) ],
+        dependencies : [ avtransport_deps_list, avtransport_dep ],
+    )
+    test('mmap I/O', io_mmap_test)
 endif
 
 io_udp_test = executable('io_udp',

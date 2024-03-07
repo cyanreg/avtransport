@@ -67,6 +67,7 @@ sources = [
 
 if host_machine.system() != 'windows'
     sources += 'io_fd.c'
+    sources += 'io_mmap.c'
 endif
 
 if get_option('output').auto()

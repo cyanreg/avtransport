@@ -72,12 +72,13 @@ typedef struct AVTBuffer AVTBuffer;
  * the start of one. Returns 'true' if so. Result is trustworthy. */
 AVT_API bool avt_data_probe(uint8_t data[36]);
 
+/* Default freeing callback for buffers that simply calls free(base_data) */
+typedef void (*avt_free_cb)(void *opaque, void *base_data, size_t len);
+AVT_API void avt_buffer_default_free(void *opaque, void *base_data, size_t len);
+
 /* Create a reference counted buffer from existing data. */
 AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
-                                     void *opaque, void (*free_fn)(void *opaque, void *base_data));
-
-/* Default freeing callback for buffers that simply calls free(base_data) */
-AVT_API void avt_buffer_default_free(void *opaque, void *base_data);
+                                     void *opaque, avt_free_cb free);
 
 /* Create and allocate a reference counted buffer. */
 AVT_API AVTBuffer *avt_buffer_alloc(size_t len);

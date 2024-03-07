@@ -24,33 +24,43 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_BUFFER
-#define LIBAVTRANSPORT_BUFFER
+#include <stdio.h>
 
-#include <stdatomic.h>
+#include <avtransport/avtransport.h>
+#include "io_common.h"
 
-#include <avtransport/utils.h>
+#include "file_io_common.h"
 
-struct AVTBuffer {
-    uint8_t *data;      /* Current ref's view of the buffer */
-    size_t len;         /* Current ref's size of the view of the buffer */
+extern const AVTIO avt_io_mmap_path;
 
-    uint8_t *base_data; /* Buffer's actual start data */
-    uint8_t *end_data;  /* Buffer's end of data */
+int main(void)
+{
+    int64_t ret;
 
-    avt_free_cb free;
-    void *opaque;
-    atomic_int *refcnt;
-};
+    /* Open context */
+    AVTContext *avt;
+    ret = avt_init(&avt, NULL);
+    if (ret < 0)
+        return AVT_ERROR(ret);
 
-void avt_buffer_update(AVTBuffer *buf, void *data, size_t len);
-int avt_buffer_resize(AVTBuffer *buf, size_t len);
+    /* Open io context */
+    const AVTIO *io = &avt_io_mmap_path;
+    AVTIOCtx *io_ctx;
+    AVTAddress addr = { .path = "io_mmap_test.avt" };
 
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
+    ret = io->init(avt, &io_ctx, &addr);
+    if (ret < 0) {
+        printf("Unable to create test file: %s\n", addr.path);
+        avt_close(&avt);
+        return AVT_ERROR(ret);
+    }
 
-void avt_buffer_quick_unref(AVTBuffer *buf);
+    ret = file_io_test(avt, io, io_ctx);
 
-int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
-
-#endif
+    if (ret)
+        io->close(avt, &io_ctx);
+    else
+        ret = io->close(avt, &io_ctx);
+    avt_close(&avt);
+    return AVT_ERROR(ret);
+}

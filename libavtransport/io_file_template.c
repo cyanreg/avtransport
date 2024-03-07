@@ -230,5 +230,5 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
         return ret;
     }
 
-    return off;
+    return off + p->hdr_len + pl_len;
 }

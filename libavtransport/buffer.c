@@ -31,8 +31,8 @@
 #include "buffer.h"
 #include "utils_internal.h"
 
-AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
-                             void *opaque, void (*free_fn)(void *opaque, void *base_data))
+AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
+                                     void *opaque, avt_free_cb free_cb)
 {
     AVTBuffer *buf = malloc(sizeof(*buf));
     if (!buf)
@@ -51,16 +51,25 @@ AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
     buf->data = data;
     buf->len = len;
     buf->opaque = opaque;
-    buf->free = free_fn;
+    buf->free = free_cb;
 
     return buf;
+}
+
+void avt_buffer_update(AVTBuffer *buf, void *data, size_t len)
+{
+    avt_assert0(avt_buffer_get_refcount(buf) == 1);
+    buf->data      = ((uint8_t *)data) + (buf->data - buf->base_data);
+    buf->base_data = data;
+    buf->end_data  = ((uint8_t *)data) + len;
+    buf->len       = len;
 }
 
 int avt_buffer_resize(AVTBuffer *buf, size_t len)
 {
     /* Sanity checking */
-    avt_assert1(avt_buffer_get_refcount(buf) == 1);
-    avt_assert1(buf->free == avt_buffer_default_free);
+    avt_assert0(avt_buffer_get_refcount(buf) == 1);
+    avt_assert0(buf->free == avt_buffer_default_free);
 
     /* Simple downsize, or there's enough allocated already */
     if ((buf->len >= len) ||
@@ -87,7 +96,7 @@ int avt_buffer_resize(AVTBuffer *buf, size_t len)
     return 0;
 }
 
-void avt_buffer_default_free(void *opaque, void *base_data)
+void avt_buffer_default_free(void *opaque, void *base_data, size_t len)
 {
     free(base_data);
 }
@@ -151,6 +160,7 @@ int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
     else if (buf->base_data + offset > buf->end_data)
         return AVT_ERROR(EINVAL);
 
+    avt_buffer_quick_unref(dst);
     atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
 
     memcpy(dst, buf, sizeof(*dst));
@@ -167,7 +177,7 @@ void avt_buffer_quick_unref(AVTBuffer *buf)
         return;
 
     if (atomic_fetch_sub_explicit(buf->refcnt, 1, memory_order_acq_rel) <= 1) {
-        buf->free(buf->opaque, buf->data);
+        buf->free(buf->opaque, buf->data, buf->end_data - buf->base_data);
         free(buf->refcnt);
     }
 
