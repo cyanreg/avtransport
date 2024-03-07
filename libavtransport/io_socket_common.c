@@ -79,11 +79,13 @@ static int get_socket_opt(void *log_ctx, AVTSocketCommon *sc,
 
 #define SET_SOCKET_OPT(log_ctx, socket_common, lvl, opt, val)                  \
     do {                                                                       \
-        [[maybe_unused]] auto tempval = val;                                   \
+        [[maybe_unused]] auto tempval = (val);                                 \
         ret = setsockopt(socket_common->socket, lvl, opt,                      \
-                         _Generic(val,                                         \
+                         _Generic((val),                                       \
                              int: &(tempval),                                  \
-                             default: val),                                    \
+                             int64_t: &(tempval),                              \
+                             uint64_t: &(tempval),                             \
+                             default: (val)),                                  \
                          sizeof(val));                                         \
         if (ret < 0) {                                                         \
             ret = avt_handle_errno(log_ctx,                                    \
@@ -117,8 +119,11 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 #endif
     }
 
-    /* Turn on address sharing */
-//    SET_SOCKET_OPT(log_ctx, sc, SOL_SOCKET, SO_REUSEADDR, (int)1);
+    /* Set receive/send buffer */
+    if (addr->opts.rx_buf)
+        SET_SOCKET_OPT(log_ctx, sc, SOL_SOCKET, SO_RCVBUF, (int)addr->opts.rx_buf);
+    if (addr->opts.tx_buf)
+        SET_SOCKET_OPT(log_ctx, sc, SOL_SOCKET, SO_SNDBUF, (int)addr->opts.tx_buf);
 
 #ifdef SO_RXQ_OVFL
     /* Turn on dropped packet counter */

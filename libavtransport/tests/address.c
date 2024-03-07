@@ -121,13 +121,13 @@ int main(void)
         avt_addr_free(&addr);
     }
 
-    /* udplite + mode + IPv6 + port + device */
+    /* quic + mode + IPv6 + port + device */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udplite:active@[2001:db8::4%eth0]:9999")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://quic:active@[2001:db8::4%eth0]:9999")) < 0)
             goto end;
 
         if (addr.port != 9999 || addr.mode != AVT_MODE_ACTIVE ||
-            addr.proto != AVT_PROTOCOL_UDP_LITE)
+            addr.proto != AVT_PROTOCOL_QUIC)
             FAIL(EINVAL);
 
         static const uint8_t ip_test_6[16] = { 0x20, 0x1, 0xd, 0xb8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x4 };
@@ -140,13 +140,13 @@ int main(void)
         avt_addr_free(&addr);
     }
 
-    /* udplite + mode + IPv4 + port + device */
+    /* udp + mode + IPv4 + port + device */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udplite:default@192.168.1.3%eth0:9999")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udp:default@192.168.1.3%eth0:9999")) < 0)
             goto end;
 
         if (addr.port != 9999 || addr.mode != AVT_MODE_DEFAULT ||
-            addr.proto != AVT_PROTOCOL_UDP_LITE)
+            addr.proto != AVT_PROTOCOL_UDP)
             FAIL(EINVAL);
 
         static const uint8_t ip_test_7[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x3 };
@@ -154,6 +154,72 @@ int main(void)
             FAIL(EINVAL);
 
         if (strcmp(addr.interface, "eth0"))
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* Stream ID */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.4/0+65534")) < 0)
+            goto end;
+
+        if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
+            addr.proto != AVT_PROTOCOL_UDP)
+            FAIL(EINVAL);
+
+        static const uint8_t ip_test_8[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x4 };
+        if (memcmp(addr.ip, ip_test_8, 16))
+            FAIL(EINVAL);
+
+        if (addr.nb_default_sid != 2)
+            FAIL(EINVAL);
+
+        if (addr.default_sid[0] != 0 || addr.default_sid[1] != 65534)
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* Options */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.5/?rx_buf=65536?tx_buf=32768")) < 0)
+            goto end;
+
+        if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
+            addr.proto != AVT_PROTOCOL_UDP)
+            FAIL(EINVAL);
+
+        static const uint8_t ip_test_9[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x5 };
+        if (memcmp(addr.ip, ip_test_9, 16))
+            FAIL(EINVAL);
+
+        if (addr.opts.rx_buf != 65536 || addr.opts.tx_buf != 32768)
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* Stream ID + options */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "quic://192.168.1.6/0+65534?rx_buf=65536?tx_buf=32768")) < 0)
+            goto end;
+
+        if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
+            addr.proto != AVT_PROTOCOL_QUIC)
+            FAIL(EINVAL);
+
+        static const uint8_t ip_test_10[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x6 };
+        if (memcmp(addr.ip, ip_test_10, 16))
+            FAIL(EINVAL);
+
+        if (addr.nb_default_sid != 2)
+            FAIL(EINVAL);
+
+        if (addr.default_sid[0] != 0 || addr.default_sid[1] != 65534)
+            FAIL(EINVAL);
+
+        if (addr.opts.rx_buf != 65536 || addr.opts.tx_buf != 32768)
             FAIL(EINVAL);
 
         avt_addr_free(&addr);

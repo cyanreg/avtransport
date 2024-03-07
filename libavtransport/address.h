@@ -53,9 +53,21 @@ typedef struct AVTAddress {
     uint16_t port;
     uint32_t scope; /* sin6_scope_id */
 
+    /* Interface */
     char8_t *interface;
 
+    /* Server or client */
     bool listen;
+
+    /* Default stream IDs */
+    uint16_t *default_sid;
+    int nb_default_sid;
+
+    /* Options */
+    struct {
+        int rx_buf; /* UDP receive buffer size */
+        int tx_buf; /* UDP transmit buffer size */
+    } opts;
 } AVTAddress;
 
 /* Utilities */
