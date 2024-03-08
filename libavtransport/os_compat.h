@@ -27,6 +27,8 @@
 #ifndef AVTRANSPORT_OS_COMPAT
 #define AVTRANSPORT_OS_COMPAT
 
+#include <uchar.h>
+
 #include "config.h"
 
 #if !defined(_GNU_SOURCE) && !defined(_XOPEN_SOURCE) && !defined(_POSIX_C_SOURCE)

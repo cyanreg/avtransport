@@ -56,7 +56,7 @@
 #include "io_socket_common.h"
 #include "utils_internal.h"
 
-int avt_handle_errno(void *log_ctx, const char *msg)
+static int avt_handle_errno(void *log_ctx, const char *msg)
 {
     char8_t err_info[256];
     avt_log(log_ctx, AVT_LOG_ERROR, msg, errno,

@@ -51,11 +51,11 @@ struct AVTIOCtx {
     bool file_grew;
 };
 
-static int mmap_handle_error(AVTIOCtx *io, const char *msg)
+static int avt_handle_errno(void *log_ctx, const char *msg)
 {
     char8_t err_info[256];
-    strerror_safe(err_info, sizeof(err_info), errno);
-    avt_log(io, AVT_LOG_ERROR, msg, err_info);
+    avt_log(log_ctx, AVT_LOG_ERROR, msg,
+            strerror_safe(err_info, sizeof(err_info), errno));
     return AVT_ERROR(errno);
 }
 
@@ -74,7 +74,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
         /* A reasonable default */
         len = 128*1024;
         if (fallocate(io->fd, 0, 0, len)) {
-            ret = mmap_handle_error(io, "Error in fallocate(): %s\n");
+            ret = avt_handle_errno(io, "Error in fallocate(): %s\n");
             return ret;
         }
         io->file_grew = 1;
@@ -82,15 +82,16 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 
     int fd_dup = dup(io->fd);
     if (fd_dup < 0)
-        return mmap_handle_error(io, "Error in dup(): %s\n");
+        return avt_handle_errno(io, "Error in dup(): %s\n");
 
     void *data = mmap(NULL, len, PROT_READ | PROT_WRITE,
                       MAP_SHARED |
-                      MAP_POPULATE,
+                      MAP_POPULATE |
+                      MAP_NONBLOCK,
                       fd_dup, 0);
 
     if (!data) {
-        ret = mmap_handle_error(io, "Error in mmap(): %s\n");
+        ret = avt_handle_errno(io, "Error in mmap(): %s\n");
         close(fd_dup);
         return ret;
     }
@@ -116,7 +117,7 @@ static int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
     io->fd = dup(addr->fd);
     if (io->fd < 0) {
-        ret = mmap_handle_error(io, "Error duplicating fd: %s\n");
+        ret = avt_handle_errno(io, "Error duplicating fd: %s\n");
         free(io);
         return ret;
     }
@@ -140,9 +141,9 @@ static int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-    io->fd = open(addr->path, O_CREAT | O_RDWR);
+    io->fd = open(addr->path, O_CREAT | O_RDWR, 0666);
     if (io->fd < 0) {
-        ret = mmap_handle_error(io, "Error opening: %s\n");
+        ret = avt_handle_errno(io, "Error opening: %s\n");
         free(io);
         return ret;
     }
@@ -164,55 +165,64 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     int ret;
     size_t old_map_size;
     uint8_t *old_map = avt_buffer_get_data(io->map, &old_map_size);
+    void *new_map = MAP_FAILED;
 
     size_t new_map_size = old_map_size + amount;
 
     /* Grow file */
     if (fallocate(io->fd, 0, 0, new_map_size)) {
-        ret = mmap_handle_error(io, "Error in fallocate(): %s\n");
+        ret = avt_handle_errno(io, "Error in fallocate(): %s\n");
         return ret;
     }
 
-    if (avt_buffer_get_refcount(io->map) == 1) {
-        /* Just remap if there's no one using the buffer */
-        void *new_map = mremap(old_map, old_map_size, new_map_size,
-                               MREMAP_MAYMOVE);
-        if (new_map == MAP_FAILED) {
-            ret = mmap_handle_error(io, "Error in mremap(): %s\n");
-            return ret;
-        }
+    /* Trim the file at the end, stripping it of padding, if it was grown */
+    io->file_grew = true;
 
+#if 1
+    /* First, attempt to remap the old mapping, and retaining its address.
+     * If there's only a single reference to the map (ours), allow it to be
+     * moved. */
+    new_map = mremap(old_map, old_map_size, new_map_size,
+                     avt_buffer_get_refcount(io->map) == 1 ? MREMAP_MAYMOVE :
+                                                             0);
+
+    /* Success */
+    if (new_map != MAP_FAILED) {
+        /* Update the existing buffer */
         avt_buffer_update(io->map, new_map, new_map_size);
-    } else {
-        /* Recreate the mapping */
-        int fd_dup = dup(io->fd);
-        if (fd_dup < 0)
-            return mmap_handle_error(io, "Error in dup(): %s\n");
+        return 0;
+    } else if (new_map == MAP_FAILED && errno != ENOMEM) {
+        ret = avt_handle_errno(io, "Error in mremap(): %s\n");
+        return ret;
+    }
+#endif
 
-        void *data = mmap(NULL, new_map_size, PROT_READ | PROT_WRITE,
-                          MAP_SHARED |
-                          MAP_POPULATE,
-                          fd_dup, 0);
-        if (data == MAP_FAILED) {
-            ret = mmap_handle_error(io, "Error in mmap(): %s\n");
-            close(fd_dup);
-            return ret;
-        }
+    /* Recreate the mapping */
+    int fd_dup = dup(io->fd);
+    if (fd_dup < 0)
+        return avt_handle_errno(io, "Error in dup(): %s\n");
 
-        AVTBuffer *new_map = avt_buffer_create(data, new_map_size,
-                                               (void *)((intptr_t)fd_dup),
-                                               mmap_buffer_free);
-        if (!io->map) {
-            munmap(data, new_map_size);
-            close(fd_dup);
-            return AVT_ERROR(ENOMEM);
-        }
-
-        avt_buffer_unref(&io->map);
-        io->map = new_map;
+    void *data = mmap(NULL, new_map_size, PROT_READ | PROT_WRITE,
+                      MAP_SHARED |
+                      MAP_POPULATE,
+                      fd_dup, 0);
+    if (data == MAP_FAILED) {
+        ret = avt_handle_errno(io, "Error in mmap(): %s\n");
+        close(fd_dup);
+        return ret;
     }
 
-    io->file_grew = 1;
+    AVTBuffer *new_buf = avt_buffer_create(data, new_map_size,
+                                           (void *)((intptr_t)fd_dup),
+                                           mmap_buffer_free);
+    if (!io->map) {
+        munmap(data, new_map_size);
+        close(fd_dup);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    avt_buffer_unref(&io->map);
+    io->map = new_buf;
 
     return 0;
 }
@@ -317,7 +327,14 @@ static inline int64_t mmap_read(AVTContext *ctx, AVTIOCtx *io, AVTBuffer **dst,
 {
     AVTBuffer *buf = *dst;
     if (buf) {
-        int ret = avt_buffer_quick_ref(buf, io->map, io->rpos, len);
+        size_t pre = avt_buffer_get_data_len(buf);
+        /* Must be called sequentially, always */
+        if (pre > io->rpos)
+            return AVT_ERROR(EINVAL);
+
+        int ret = avt_buffer_quick_ref(buf, io->map,
+                                       io->rpos - pre,
+                                       len + pre);
         if (ret < 0)
             return ret;
     } else {
@@ -335,7 +352,7 @@ static int mmap_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 
     int ret = msync(map_data, map_size, timeout == 0 ? MS_ASYNC : MS_SYNC);
     if (ret < 0)
-        ret = mmap_handle_error(io, "Error flushing: %s\n");
+        ret = avt_handle_errno(io, "Error flushing: %s\n");
 
     return ret;
 }

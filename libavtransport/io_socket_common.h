@@ -43,8 +43,6 @@ typedef struct AVTSocketCommon {
     struct sockaddr_in6 remote_addr;
 } AVTSocketCommon;
 
-int avt_handle_errno(void *log_ctx, const char *msg);
-
 /* Open a socket with a specific address */
 int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr);
 

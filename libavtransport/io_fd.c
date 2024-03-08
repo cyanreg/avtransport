@@ -99,7 +99,7 @@ static int fd_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
         return AVT_ERROR(ENOMEM);
     }
 
-    io->fd = open(addr->path, O_CREAT | O_RDWR);
+    io->fd = open(addr->path, O_CREAT | O_RDWR, 0666);
     if (!io->fd) {
         ret = fd_handle_error(io, "Error opening: %s\n");
         free(io->iov);

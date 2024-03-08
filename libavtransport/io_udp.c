@@ -55,6 +55,17 @@ struct AVTIOCtx {
     AVTBuffer *tmp_buf;
 };
 
+#include "os_compat.h"
+
+static int avt_handle_errno(void *log_ctx, const char *msg)
+{
+    char8_t err_info[256];
+    avt_log(log_ctx, AVT_LOG_ERROR, msg, errno,
+            strerror_safe(err_info, sizeof(err_info), errno));
+    return AVT_ERROR(errno);
+}
+
+
 static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;

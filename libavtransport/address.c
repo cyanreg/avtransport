@@ -86,6 +86,92 @@ int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4)
     return 0;
 }
 
+static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host, bool listen)
+{
+    int ret;
+    char *port_str;
+    char *end = NULL, *tmp = NULL;
+
+    /* Check if address is IPv6 or IPv4 */
+    if (host[0] == '[') {
+        host = strtok_r(host, "[]", &tmp);
+        port_str = strtok_r(NULL, "[:]", &tmp);
+    } else {
+        host = strtok_r(host, ":", &tmp);
+        port_str = strtok_r(NULL, ":", &tmp);
+    }
+
+    /* Parse port, if specified */
+    if (port_str) {
+        uint64_t res = strtoul(port_str, &end, 10);
+        if (!res || (end == port_str)) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid port: %s\n", port_str);
+            return AVT_ERROR(EINVAL);
+        }
+        if (((res == ULONG_MAX) && (errno == ERANGE)) || (res > UINT16_MAX)) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Port value too high: %s\n", port_str);
+            return AVT_ERROR(ERANGE);
+        }
+        addr->port = res;
+    }
+
+    /* Parse device name */
+    char *iface;
+    host = strtok_r(host, "%", &tmp);
+    iface = strtok_r(NULL, "%", &tmp);
+    if (iface)
+        addr->interface = strdup(iface);
+
+    /* Try IPv4 */
+    struct in_addr ipv4_addr;
+    ret = inet_pton(AF_INET, host, &ipv4_addr);
+    if (ret < 1) {
+        if (ret < 0) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
+            return AVT_ERROR(EINVAL);
+        }
+
+        /* IPv6? */
+        ret = inet_pton(AF_INET6, host, addr->ip);
+        if (ret < 1) {
+            if (ret < 0) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
+                return AVT_ERROR(EINVAL);
+            }
+
+            /* Is it a hostname? */
+            struct addrinfo hints = { 0 }, *res;
+            hints.ai_socktype = SOCK_DGRAM;
+            hints.ai_family   = AF_INET6;
+            hints.ai_protocol = (addr->proto == AVT_PROTOCOL_UDP_LITE) ?
+                                IPPROTO_UDP : IPPROTO_UDPLITE;
+            hints.ai_flags    = AI_V4MAPPED |
+                                AI_ADDRCONFIG |
+                                (listen ? AI_PASSIVE : 0x0);
+
+            ret = getaddrinfo(host, port_str ? port_str : CONFIG_DEFAULT_PORT_STR,
+                              &hints, &res);
+            if (ret) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid host %s: %s\n",
+                        host, gai_strerror(ret));
+                return AVT_ERROR(EINVAL);
+            }
+
+            memcpy(addr->ip, res[0].ai_addr, 16);
+            freeaddrinfo(res);
+        }
+    } else {
+        avt_addr_4to6(addr->ip, ipv4_addr.s_addr);
+    }
+
+    /* Get the scope for an IP address */
+    ret = avt_addr_get_scope(log_ctx, addr->ip, &addr->scope, addr->interface);
+    if (ret < 0)
+        return ret;
+
+    return 0;
+}
+
 static int parse_settings(void *log_ctx, AVTAddress *addr, char *next)
 {
     char *tmp;
@@ -187,7 +273,6 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
 {
     int ret = 0;
     int native_uri = 0;
-    char *end;
     char *tmp2;
     char *tmp = NULL;
     char *next = NULL;
@@ -276,99 +361,21 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         goto end;
     }
 
-    char *host = NULL;
-    char *port_str = NULL;
-
-    /* Back to front parsing. First, the settings, if any exist */
-    host = strtok_r(next, "/", &tmp);
+    /* Separate out the host from settings */
+    char *host = strtok_r(next, "/", &tmp);
     next = strtok_r(NULL, "/", &tmp);
 
-    /* Check if address is IPv6 or IPv4 */
-    if (host[0] == '[') {
-        host = strtok_r(host, "[]", &tmp);
-        port_str = strtok_r(NULL, "[:]", &tmp);
-    } else {
-        host = strtok_r(host, ":", &tmp);
-        port_str = strtok_r(NULL, ":", &tmp);
-    }
+    /* Parse host IP, address, and potentially a device */
+    ret = parse_host_addr(log_ctx, addr, host, listen);
+    if (ret < 0)
+        goto end;
 
-    /* Parse port, if specified */
-    if (port_str) {
-        uint64_t res = strtoul(port_str, &end, 10);
-        if (!res || (end == port_str)) {
-            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid port: %s\n", port_str);
-            ret = AVT_ERROR(EINVAL);
-            goto end;
-        }
-        if (((res == ULONG_MAX) && (errno == ERANGE)) || (res > UINT16_MAX)) {
-            avt_log(log_ctx, AVT_LOG_ERROR, "Port value too high: %s\n", port_str);
-            ret = AVT_ERROR(ERANGE);
-            goto end;
-        }
-        addr->port = res;
-    }
-
-    /* Parse device name */
-    char *iface;
-    host = strtok_r(host, "%", &tmp);
-    iface = strtok_r(NULL, "%", &tmp);
-    if (iface)
-        addr->interface = strdup(iface);
-
-    /* Try IPv4 */
-    struct in_addr ipv4_addr;
-    ret = inet_pton(AF_INET, host, &ipv4_addr);
-    if (ret < 1) {
-        if (ret < 0) {
-            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
-            ret = AVT_ERROR(EINVAL);
-            goto end;
-        }
-
-        /* IPv6? */
-        ret = inet_pton(AF_INET6, host, addr->ip);
-        if (ret < 1) {
-            if (ret < 0) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
-                ret = AVT_ERROR(EINVAL);
-                goto end;
-            }
-
-            /* Is it a hostname? */
-            struct addrinfo hints = { 0 }, *res;
-            hints.ai_socktype = SOCK_DGRAM;
-            hints.ai_family   = AF_INET6;
-            hints.ai_protocol = (addr->proto == AVT_PROTOCOL_UDP_LITE) ?
-                                IPPROTO_UDP : IPPROTO_UDPLITE;
-            hints.ai_flags    = AI_V4MAPPED |
-                                AI_ADDRCONFIG |
-                                (listen ? AI_PASSIVE : 0x0);
-
-            ret = getaddrinfo(host, port_str ? port_str : CONFIG_DEFAULT_PORT_STR,
-                              &hints, &res);
-            if (ret) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid host %s: %s\n",
-                        host, gai_strerror(ret));
-                ret = AVT_ERROR(EINVAL);
-                goto end;
-            }
-
-            memcpy(addr->ip, res[0].ai_addr, 16);
-            freeaddrinfo(res);
-        }
-    } else {
-        avt_addr_4to6(addr->ip, ipv4_addr.s_addr);
-    }
-
+    /* Parse settings */
     if (next && next[0] != '\0') {
         ret = parse_settings(log_ctx, addr, next);
         if (ret < 0)
             goto end;
     }
-
-    ret = avt_addr_get_scope(log_ctx, addr->ip, &addr->scope, addr->interface);
-    if (ret < 0)
-        goto end;
 
     avt_log(log_ctx, AVT_LOG_VERBOSE,
             "URL parsed:\n"
