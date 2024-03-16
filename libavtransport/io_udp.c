@@ -46,6 +46,8 @@
 #include "io_socket_common.h"
 #include "utils_internal.h"
 
+#include "os_compat.h"
+
 struct AVTIOCtx {
     AVTSocketCommon sc;
     struct iovec *iov;
@@ -55,8 +57,6 @@ struct AVTIOCtx {
     AVTBuffer *tmp_buf;
 };
 
-#include "os_compat.h"
-
 static int avt_handle_errno(void *log_ctx, const char *msg)
 {
     char8_t err_info[256];
@@ -64,7 +64,6 @@ static int avt_handle_errno(void *log_ctx, const char *msg)
             strerror_safe(err_info, sizeof(err_info), errno));
     return AVT_ERROR(errno);
 }
-
 
 static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {

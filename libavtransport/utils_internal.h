@@ -116,6 +116,7 @@ void avt_pkt_fifo_free(AVTPacketFifo *fifo);
 
 /* Sliding window */
 #define AVT_SLIDING_WINDOW_MAX_ENTRIES (1024*512)
+
 typedef struct AVTSlidingWinCtx {
     int num_entries;
     struct AVTSlidingWinEntry {

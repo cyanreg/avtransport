@@ -166,7 +166,7 @@ int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
     memcpy(dst, buf, sizeof(*dst));
 
     dst->data += offset;
-    dst->len = !len ? dst->end_data - dst->data : len;
+    dst->len = (len == AVT_BUFFER_REF_ALL) ? (dst->end_data - dst->data) : len;
 
     return 0;
 }

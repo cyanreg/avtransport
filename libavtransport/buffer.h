@@ -46,6 +46,7 @@ struct AVTBuffer {
 void avt_buffer_update(AVTBuffer *buf, void *data, size_t len);
 int avt_buffer_resize(AVTBuffer *buf, size_t len);
 
+#define AVT_BUFFER_REF_ALL (0)
 int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
                          ptrdiff_t offset, size_t len);
 

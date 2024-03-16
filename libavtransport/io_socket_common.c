@@ -82,7 +82,8 @@ static int get_socket_opt(void *log_ctx, AVTSocketCommon *sc,
         [[maybe_unused]] auto tempval = (val);                                 \
         ret = setsockopt(socket_common->socket, lvl, opt,                      \
                          _Generic((val),                                       \
-                             int: &(tempval),                                  \
+                             int32_t: &(tempval),                              \
+                             uint32_t: &(tempval),                             \
                              int64_t: &(tempval),                              \
                              uint64_t: &(tempval),                             \
                              default: (val)),                                  \
@@ -100,6 +101,7 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 {
     int ret;
     int proto = addr->proto == AVT_PROTOCOL_UDP_LITE ? IPPROTO_UDPLITE : IPPROTO_UDP;
+    bool mcast = IN6_IS_ADDR_MULTICAST(addr->ip);
 
     if ((sc->socket = socket(AF_INET6, SOCK_DGRAM, proto)) < 0) {
         ret = avt_handle_errno(log_ctx, "Failed to open socket: %i %s\n");
@@ -107,11 +109,9 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
         return ret;
     }
 
-    if (addr->interface) {
-        memcpy(sc->ifr.ifr_name, addr->interface,
-               AVT_MIN(sizeof(sc->ifr.ifr_name) - 1, strlen(addr->interface)));
+    if (addr->interface && !mcast) {
 #ifdef SO_BINDTODEVICE
-        SET_SOCKET_OPT(log_ctx, sc, SOL_SOCKET, SO_BINDTODEVICE, sc->ifr.ifr_name);
+        SET_SOCKET_OPT(log_ctx, sc, SOL_SOCKET, SO_BINDTODEVICE, addr->interface);
 #else
         avt_log(log_ctx, AVT_LOG_ERROR, "Unable to bind socket to interface, not supported!\n");
         ret = AVT_ERROR(EOPNOTSUPP);
@@ -167,6 +167,11 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
         SET_SOCKET_OPT(log_ctx, sc, IPPROTO_IPV6, IPV6_FREEBIND, (int)1);
 #endif
 
+    /* Set multicast interface */
+    if (addr->interface && mcast)
+        SET_SOCKET_OPT(log_ctx, sc, IPPROTO_IPV6, IPV6_MULTICAST_IF,
+                       (uint32_t)addr->interface_idx);
+
     /* Setup binding */
     sc->local_addr.sin6_family = AF_INET6;
     sc->local_addr.sin6_port = addr->port;
@@ -211,24 +216,16 @@ fail:
 
 uint32_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
 {
-    int ret = get_socket_opt(log_ctx, sc, IPPROTO_IPV6, IPV6_PATHMTU,
-                             &sc->mtu6, sizeof(sc->mtu6),
-                             "Unable to get MTU: %i %s\n");
+    int ret;
+
+    memcpy(&sc->mtu6.ip6m_addr, &sc->remote_addr, sizeof(sc->remote_addr));
+    ret = get_socket_opt(log_ctx, sc, IPPROTO_IPV6, IPV6_PATHMTU,
+                         &sc->mtu6, sizeof(sc->mtu6),
+                         "Unable to get MTU: %i %s\n");
     if (ret < 0)
         return ret;
 
     return sc->mtu6.ip6m_mtu;
-
-#if 0
-    struct ifreq ifr = sc->ifr;
-    int ret = ioctl(sc->socket, SIOCGIFMTU, &ifr);
-    if (ret < 0) {
-        ret = avt_handle_errno(log_ctx, "Unable to find MTU: %i %s\n");
-        return 0;
-    }
-
-    return ifr.ifr_mtu;
-#endif
 }
 
 int avt_socket_close(void *log_ctx, AVTSocketCommon *sc)

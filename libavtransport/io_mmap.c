@@ -40,13 +40,15 @@
 #include "io_common.h"
 #include "utils_internal.h"
 
+/* A reasonable default */
+#define MIN_ALLOC 1024*1024
+
 struct AVTIOCtx {
     int fd;
     AVTBuffer *map;
 
     off_t rpos;
     off_t wpos;
-    bool is_write;
 
     bool file_grew;
 };
@@ -71,8 +73,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 
     size_t len = lseek(io->fd, SEEK_END, 0);
     if (!len) {
-        /* A reasonable default */
-        len = 128*1024;
+        len = MIN_ALLOC;
         if (fallocate(io->fd, 0, 0, len)) {
             ret = avt_handle_errno(io, "Error in fallocate(): %s\n");
             return ret;
@@ -167,6 +168,7 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     uint8_t *old_map = avt_buffer_get_data(io->map, &old_map_size);
     void *new_map = MAP_FAILED;
 
+    amount = AVT_MAX(amount, MIN_ALLOC);
     size_t new_map_size = old_map_size + amount;
 
     /* Grow file */
@@ -358,7 +360,7 @@ static int mmap_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 }
 
 const AVTIO avt_io_mmap = {
-    .name = "fd",
+    .name = "mmap",
     .type = AVT_IO_FD,
     .init = mmap_init,
     .get_max_pkt_len = mmap_max_pkt_len,
@@ -372,8 +374,8 @@ const AVTIO avt_io_mmap = {
 };
 
 const AVTIO avt_io_mmap_path = {
-    .name = "fd_path",
-    .type = AVT_IO_FD,
+    .name = "mmap_path",
+    .type = AVT_IO_FILE,
     .init = mmap_init_path,
     .get_max_pkt_len = mmap_max_pkt_len,
     .read_input = mmap_read,

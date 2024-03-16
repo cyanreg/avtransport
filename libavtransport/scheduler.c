@@ -74,11 +74,18 @@ static int64_t scheduler_push_internal(AVTScheduler *s,
     if (out_limit < (hdr_size + 1))
         return AVT_ERROR(EAGAIN);
 
-    /* Rescale payload */
-    seg_pl_size = seg_size_lim - hdr_size;
-    err = avt_buffer_quick_ref(&state->start.pl, pl, 0, seg_pl_size);
+    /* Reference full payload */
+    err = avt_buffer_quick_ref(&state->pl, pl, 0, AVT_BUFFER_REF_ALL);
     if (err < 0)
         return err;
+
+    /* Rescale payload */
+    seg_pl_size = seg_size_lim - hdr_size;
+    err = avt_buffer_quick_ref(&state->start.pl, &state->pl, 0, seg_pl_size);
+    if (err < 0) {
+        avt_buffer_quick_unref(&state->pl);
+        return err;
+    }
 
     /* Modify packet */
     avt_packet_change_size(pkt, 0, seg_pl_size, pl_size);
@@ -91,6 +98,7 @@ static int64_t scheduler_push_internal(AVTScheduler *s,
     /* Enqueue start packet */
     err = avt_pkt_fifo_push_refd(dst, &state->start);
     if (err < 0) {
+        avt_buffer_quick_unref(&state->pl);
         avt_buffer_quick_unref(&state->start.pl);
         return err;
     }
@@ -101,12 +109,15 @@ static int64_t scheduler_push_internal(AVTScheduler *s,
     state->pl_left = pl_size - state->seg_offset;
     state->seg_hdr_size = avt_pkt_hdr_size(avt_packet_create_segment(&state->start, 0, 0, 0, 0));
 
+    /* Return now with what we wrote if there are not enough bytes */
     if (out_acc >= out_limit)
         return out_acc;
 
     /* Process segments */
 resume:
     hdr_size = state->seg_hdr_size;
+
+    /* Return if there are no packets we can output in the limit */
     if (out_limit < (hdr_size + 1))
         return AVT_ERROR(EAGAIN);
 
@@ -116,7 +127,7 @@ resume:
                                           state->seg_offset, seg_pl_size, pl_size);
 
         /* Create segment buffer */
-        err = avt_buffer_quick_ref(&p.pl, pl, state->seg_offset, seg_pl_size);
+        err = avt_buffer_quick_ref(&p.pl, &state->pl, state->seg_offset, seg_pl_size);
         if (err < 0)
             return err;
 
@@ -138,174 +149,31 @@ resume:
             return out_acc;
     }
 
-    if (!out_acc)
+    if (!out_acc) {
+        avt_buffer_quick_unref(&state->pl);
+        avt_buffer_quick_unref(&state->start.pl);
         memset(state, 0, sizeof(*state));
+    }
 
     return out_acc;
 }
-
-#if 0
-static int compare_streams_pts(const void *s1, const void *s2)
-{
-    const AVTSchedulerStream *st1 = s1;
-    const AVTSchedulerStream *st2 = s2;
-    union AVTPacketData p1;
-    union AVTPacketData p2;
-    int e1 = avt_pkt_fifo_peek(&st1->fifo, &p1, NULL);
-    int e2 = avt_pkt_fifo_peek(&st2->fifo, &p2, NULL);
-
-    if (e1 < 0 && e2 < 0)
-        return 0;
-    else if (e1 < 0)
-        return -1;
-    else
-        return 1;
-
-    int64_t pts1 = avt_packet_get_pts(p1);
-    int64_t pts2 = avt_packet_get_pts(p2);
-
-    return avt_compare_ts(pts1, st1->tb, pts2, st2->tb);
-}
-#endif
 
 static int scheduler_process(AVTScheduler *s,
                              union AVTPacketData pkt, AVTBuffer *pl)
 {
     int err;
-    bool buffered = false;
-    union AVTPacketData *cp = &pkt;
-    AVTBuffer *cpl = pl;
 
-    int64_t slice = 0;
-    int64_t avail = INT64_MAX;
-    uint16_t nb_active_streams = s->nb_active_stream_indices;
-    for (auto i = 0; i < nb_active_streams; i++) {
-        AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
-
-        slice += s->min_pkt_size;
-
-        /* If the top packet is not a data packet, just pass them through */
-        while (st->fifo.nb && !avt_buffer_get_data_len(&st->fifo.data[0].pl)) {
-            err = scheduler_push_internal(s, &st->pc, s->staging,
-                                          st->fifo.data[0].pkt,
-                                          &st->fifo.data[0].pl,
-                                          s->max_pkt_size, slice);
-            if (err > 0)
-                slice -= err;
-
-            avt_pkt_fifo_pop(&st->fifo, NULL, NULL);
-            if (!st->fifo.nb) {
-                memmove(&s->active_stream_indices[i],
-                        &s->active_stream_indices[i + 1],
-                        (nb_active_streams - i - 1)*sizeof(*s->active_stream_indices));
-                nb_active_streams--;
-                s->nb_active_stream_indices = nb_active_streams;
-            }
-        }
-
-
+    /* If stream already has a packet staged, put it in fifo */
+    if (s->streams[pkt.stream_id].cur.present) {
+        err = avt_pkt_fifo_push_refd(&s->streams[pkt.stream_id].fifo, pkt, pl);
+        if (err < 0)
+            return err;
     }
 
 
 
 
 
-
-
-#if 0
-    /* Gather streams to a temp */
-    uint16_t nb_active_streams = s->nb_active_stream_indices;
-    for (auto i = 0; i < nb_active_streams; i++) {
-        uint16_t idx = s->active_stream_indices[i];
-        AVTSchedulerStream *stmp = &s->streams[idx];
-        s->streams_tmp[i] = stmp;
-
-        /* Keep track of minimum PTS */
-        const AVTPktd *p = &stmp->fifo.data[0];
-        AVTRational tb;
-        int64_t pts = avt_packet_get_pts(p);
-        err = avt_packet_get_tb(p, &tb);
-        if (err >= 0 &&
-            avt_compare_ts(stmp->last_pts, stmp->last_pts_tb, pts, tb) == 1) {
-            stmp->last_pts = pts;
-            stmp->last_pts_tb = tb;
-        }
-    }
-
-    /* Sort them by PTS */
-    qsort(s->streams_tmp, nb_active_streams,
-          sizeof(*s->streams_tmp), compare_streams_pts);
-
-    /* Round-Robin scheduling */
-    int64_t accum_out = 0;
-
-    uint16_t st_id = 0;
-    AVTSchedulerStream *st = s->streams_tmp[st_id];
-
-    int next_st_id = 0;
-    AVTSchedulerStream *next_st = NULL;
-#define NEXT_STREAM()       \
-    do {                    \
-        st = next_st;       \
-        st_id = next_st_id; \
-        next_st = NULL;     \
-        next_st_id = -1;    \
-    } while (0)
-
-    /* Schedule and output */
-    while (1) {
-        accum_out += s->min_pkt_size;
-
-        for (auto i = 0; i < nb_active_streams; i++) {
-            if (i == st_id)
-                continue;
-
-            AVTSchedulerStream *stmp = s->streams_tmp[i];
-
-
-        }
-
-        /* Ready to push a packet or a slice of it for output.
-         * Only done when the current packet's timeslice ends */
-        while ((accum_out > 0) && next_st) {
-            AVTPktd *p = &st->fifo.data[0];
-            int64_t pr = scheduler_push_internal(s, &st->pc, s->staging,
-                                                 p->pkt, &p->pl,
-                                                 s->max_pkt_size, accum_out);
-            if (pr == AVT_ERROR(EAGAIN)) { /* Need more bytes to output something */
-                /* TODO: test here if we'll overrun the budget on other streams
-                 * if we don't switch at this point */
-                NEXT_STREAM();
-                break;
-            } else if (pr == 0) { /* Packet fully finished */
-                accum_out -= pr;
-
-                err = avt_pkt_fifo_pop(&st->fifo, NULL, NULL);
-
-                /* We're done with this stream, get rid of it */
-                if (err == AVT_ERROR(ENOENT)) {
-                    memmove(&s->streams_tmp[st_id],
-                            &s->streams_tmp[st_id + 1],
-                            (nb_active_streams - st_id - 1)*sizeof(*s->streams_tmp));
-                    nb_active_streams--;
-                    s->nb_active_stream_indices = nb_active_streams;
-                    NEXT_STREAM();
-                    break;
-                } else if (err < 0) {
-                    return err; /* Actual error */
-                }
-                /* Fallthrough, continue with this stream */
-            } else if (pr < 0) {
-                return pr; /* Actual error */
-            } else /* ret > 0, e.g. Packets were generated and scheduled */ {
-                s->staged_size += pr;
-                accum_out -= pr; /* Done for now */
-                NEXT_STREAM();
-                break;
-            }
-        }
-    }
-#endif
     return 0;
 }
 
@@ -326,8 +194,6 @@ int avt_scheduler_push(AVTScheduler *s,
         AVTSchedulerPacketContext state = { };
         int64_t ret = scheduler_push_internal(s, &state, s->staging, pkt, pl,
                                               s->max_pkt_size, INT64_MAX);
-        if (ret >= 0)
-            s->staged_size += ret;
         return ret;
     }
 
@@ -335,7 +201,7 @@ int avt_scheduler_push(AVTScheduler *s,
     if (pkt.desc == AVT_PKT_STREAM_REGISTRATION)
         s->streams[pkt.stream_id].reg = pkt;
 
-
+    /* Keep track of active streams */
     if (!s->streams[pkt.stream_id].active) {
         s->active_stream_indices[s->nb_active_stream_indices++] = pkt.stream_id;
         s->streams[pkt.stream_id].active = true;
@@ -345,10 +211,6 @@ int avt_scheduler_push(AVTScheduler *s,
     const size_t payload_size = avt_buffer_get_data_len(pl);
     s->min_pkt_size = AVT_MIN(s->min_pkt_size,
                               avt_pkt_hdr_size(pkt) + payload_size);
-
-    /* Keep track of fully active streams */
-    if (pl)
-        s->streams[pkt.stream_id].pl_bytes += payload_size;
 
     return scheduler_process(s, pkt, pl);
 }
@@ -366,7 +228,7 @@ int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
     if (s->bandwidth == INT64_MAX)
         return 0;
 
-    s->staged_size = 0;
+//    s->staged_size = 0;
 
     /* Redo round-robin quantum calculation */
     s->min_pkt_size = UINT32_MAX;
@@ -429,11 +291,13 @@ void avt_scheduler_free(AVTScheduler *s)
     s->buckets = NULL;
     s->nb_buckets = 0;
 
+#if 0
     for (auto i = 0; i < s->nb_active_stream_indices; i++) {
         AVTSchedulerStream *st = s->streams_tmp[s->active_stream_indices[i]];
         avt_pkt_fifo_free(&st->fifo);
     }
     s->nb_active_stream_indices = 0;
+#endif
 }
 
 

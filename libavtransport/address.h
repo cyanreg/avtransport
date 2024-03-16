@@ -31,49 +31,57 @@
 
 #include <avtransport/connection.h>
 
-/* Extend the <connection.h> definitions further */
 #define AVT_PROTOCOL_NOOP    (0)
-#define AVT_PROTOCOL_PIPE    (AVT_PROTOCOL_QUIC    + 1)
-#define AVT_PROTOCOL_FILE    (AVT_PROTOCOL_PIPE    + 1)
-#define AVT_PROTOCOL_FD      (AVT_PROTOCOL_FILE    + 1)
-#define AVT_PROTOCOL_PACKET  (AVT_PROTOCOL_FD      + 1)
+#define AVT_PROTOCOL_CALLBACK_PKT  (AVT_PROTOCOL_QUIC + 1)
+
+enum AVTAddressConnection {
+    AVT_ADDRESS_NULL,
+    AVT_ADDRESS_FILE,
+    AVT_ADDRESS_FD,
+    AVT_ADDRESS_UNIX,
+    AVT_ADDRESS_URL,
+    AVT_ADDRESS_SOCKET,
+    AVT_ADDRESS_CALLBACK,
+};
 
 typedef struct AVTAddress {
-    /** FILE PATH */
+    enum AVTAddressConnection type;
+
+    /** FILE PATH **/
     char8_t *path;
 
-    /** FILE DESCRIPTOR **/
+    /** FILE DESCRIPTOR/SOCKET/NETWORK SOCKET **/
     int fd;
 
     /** NETWORK **/
-    enum AVTProtocolType proto;
-    enum AVTProtocolMode mode;
+    bool listen; /* Server or client */
 
+    /* Interface */
+    char *interface;
+    uint32_t interface_idx;
+
+    /* Address */
     uint8_t ip[16]; /* Always mapped to IPv6 */
     uint16_t port;
     uint32_t scope; /* sin6_scope_id */
 
-    /* Interface */
-    char8_t *interface;
-
-    /* Server or client */
-    bool listen;
-
-    /* Default stream IDs */
-    uint16_t *default_sid;
-    int nb_default_sid;
+    enum AVTProtocolType proto;
+    enum AVTProtocolMode mode;
 
     /* Options */
     struct {
-        int rx_buf; /* UDP receive buffer size */
-        int tx_buf; /* UDP transmit buffer size */
+        /* UDP receive/transmit buffer sizes */
+        int rx_buf;
+        int tx_buf;
+
+        /* Default stream IDs */
+        uint16_t *default_sid;
+        int nb_default_sid;
     } opts;
 } AVTAddress;
 
 /* Utilities */
 int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4);
-int avt_addr_get_scope(void *log_ctx, const uint8_t ip[16],
-                       uint32_t *scope, const char *iface);
 
 int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
                       bool server, const char *path);

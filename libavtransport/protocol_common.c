@@ -29,7 +29,7 @@
 extern const AVTProtocol avt_protocol_noop;
 
 static const AVTProtocol *avt_protocol_list[] = {
-    [AVT_PROTOCOL_FILE] = &avt_protocol_noop,
+    [AVT_PROTOCOL_NOOP] = &avt_protocol_noop,
 };
 
 /* For connections to call */

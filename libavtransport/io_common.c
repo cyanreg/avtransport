@@ -45,7 +45,7 @@ extern const AVTIO avt_io_udp_lite;
 #define MAX_NB_BACKENDS 4
 
 /* In order of preference */
-static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
+static const AVTIO *avt_io_list[AVT_IO_INVALID][MAX_NB_BACKENDS + 1] = {
     [AVT_IO_NULL] = {
         &avt_io_null,
     },
@@ -70,12 +70,50 @@ static const AVTIO *avt_io_list[][MAX_NB_BACKENDS] = {
     },
 };
 
+static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
+{
+    switch (addr->type) {
+    case AVT_ADDRESS_NULL:
+        return AVT_IO_NULL;
+    case AVT_ADDRESS_FILE:
+        return AVT_IO_FILE;
+    case AVT_ADDRESS_FD:
+        return AVT_IO_FD;
+    case AVT_ADDRESS_CALLBACK:
+        return AVT_IO_CALLBACK;
+    case AVT_ADDRESS_UNIX:
+        return AVT_IO_UNIX;
+    case AVT_ADDRESS_URL: [[fallthrough]];
+    case AVT_ADDRESS_SOCKET:
+        if (addr->proto == AVT_PROTOCOL_UDP)
+            return AVT_IO_UDP;
+        else if (addr->proto == AVT_PROTOCOL_UDP_LITE)
+            return AVT_IO_UDP_LITE;
+        [[fallthrough]];
+    default:
+        return AVT_IO_INVALID;
+    }
+}
+
 /* For protocols to call */
 int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
                 AVTAddress *addr)
 {
-    const AVTIO *io = avt_io_list[AVT_IO_FILE][0];
-    int err = io->init(ctx, io_ctx, addr);
-    *_io = io;
-    return err;
+    enum AVTIOType io_type = map_addr_to_io(addr);
+    if (io_type == AVT_IO_INVALID)
+        return AVT_ERROR(EINVAL);
+
+    int err;
+    const AVTIO *io, **io_list = avt_io_list[AVT_IO_FILE];
+    while ((io = *io_list)) {
+        err = io->init(ctx, io_ctx, addr);
+        if (err == AVT_ERROR(ENOMEM))
+            return err;
+        else if (err < 0)
+            continue;
+        *_io = io;
+        return err;
+    }
+
+    return AVT_ERROR(EINVAL);
 }

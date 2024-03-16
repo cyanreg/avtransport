@@ -238,7 +238,7 @@ const AVTIO avt_io_fd = {
 
 const AVTIO avt_io_fd_path = {
     .name = "fd_path",
-    .type = AVT_IO_FD,
+    .type = AVT_IO_FILE,
     .init = fd_init_path,
     .get_max_pkt_len = fd_max_pkt_len,
     .read_input = fd_read_input,

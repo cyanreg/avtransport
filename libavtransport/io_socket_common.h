@@ -36,7 +36,6 @@
 typedef struct AVTSocketCommon {
     int socket;
 
-    struct ifreq ifr;
     struct ip6_mtuinfo mtu6;
     struct sockaddr_in6 local_addr;
 

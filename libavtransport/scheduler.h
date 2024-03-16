@@ -31,19 +31,24 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
+    AVTBuffer pl;
     AVTPktd  start;
     uint32_t seg_offset;
     uint32_t pl_left;
     uint32_t seg_hdr_size;
+    bool present;
 } AVTSchedulerPacketContext;
 
 typedef struct AVTSchedulerStream {
+    /* For timebase keeping */
     union AVTPacketData reg;
 
+    /* Top packet */
+    AVTSchedulerPacketContext cur;
+    /* Rest of packets, in a FIFO */
     AVTPacketFifo fifo;
-    AVTSchedulerPacketContext pc;
 
-    uint64_t pl_bytes;
+    /* Stream has had packets without a closure */
     bool active;
 } AVTSchedulerStream;
 
@@ -55,17 +60,19 @@ typedef struct AVTScheduler {
     uint32_t max_pkt_size;
     int64_t bandwidth;
 
-    /* State */
-    uint32_t min_pkt_size; /* RR quantum */
+    /* Scheduling state */
+    AVTSlidingWinCtx sw;   /* Sliding window state */
+    uint32_t min_pkt_size; /* RR quantum, in bits */
+
+    /* Streams state */
     AVTSchedulerStream streams[UINT16_MAX];
     uint16_t active_stream_indices[UINT16_MAX];
     uint16_t nb_active_stream_indices;
 
     /* Staging bucket, next for output */
     AVTPacketFifo *staging;
-    int64_t staged_size;
 
-    /* Available buckets */
+    /* Available output buckets */
     AVTPacketFifo **avail_buckets;
     int nb_avail_buckets;
     int nb_alloc_avail_buckets;
@@ -73,22 +80,6 @@ typedef struct AVTScheduler {
     /* All allocated buckets */
     AVTPacketFifo **buckets;
     int nb_buckets;
-
-
-
-
-
-
-
-
-
-
-    /* Temporary data */
-    AVTSchedulerStream *streams_tmp[UINT16_MAX]; /* Sorted streams by PTS */
-
-    /* Stats */
-    AVTSlidingWinCtx sw;
-    int64_t bitrate;
 } AVTScheduler;
 
 /* Initialization function. If max_pkt_size changes, everything must

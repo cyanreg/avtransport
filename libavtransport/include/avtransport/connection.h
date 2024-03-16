@@ -81,16 +81,16 @@ enum AVTConnectionType {
     AVT_CONNECTION_FILE,
 
     /* Bound socket */
-    AVT_CONNECTION_NET,
+    AVT_CONNECTION_SOCKET,
 
     /* File descriptor */
     AVT_CONNECTION_FD,
 
     /* UNIX domain socket */
-    AVT_CONNECTION_SOCKET,
+    AVT_CONNECTION_UNIX,
 
     /* Raw byte-level reader/writer using a callback. */
-    AVT_CONNECTION_CALLBACK,
+    AVT_CONNECTION_DATA,
 
     /* Deserialized packet-level input/output via a callback */
     AVT_CONNECTION_PACKET,
@@ -125,11 +125,11 @@ typedef struct AVTConnectionInfo {
         } url;
 
         /* AVT_CONNECTION_FD: regular seekable file descriptor
-         * AVT_CONNECTION_SOCKET: UNIX domain SOCK_STREAM socket
+         * AVT_CONNECTION_UNIX: UNIX domain SOCK_STREAM socket
          * NOTE: dup()-licated on success, users can close() this freely */
         int fd;
 
-        /* AVT_CONNECTION_NET: opened and bound/connected network socket */
+        /* AVT_CONNECTION_SOCKET: opened and bound/connected network socket */
         struct {
             /* Bound socket
              * NOTE: dup()'d on success, users can close() this freely */
@@ -146,7 +146,7 @@ typedef struct AVTConnectionInfo {
             enum AVTProtocolMode mode;
         } socket;
 
-        /* AVT_CONNECTION_CALLBACK: the following structure */
+        /* AVT_CONNECTION_DATA: the following structure */
         struct {
             /* Called by libavtransport in strictly sequential order,
              * with no holes, to write data. */

@@ -41,24 +41,6 @@
 
 #include "config.h"
 
-int avt_addr_get_scope(void *log_ctx, const uint8_t ip[16],
-                       uint32_t *scope, const char *iface)
-{
-    if (!((IN6_IS_ADDR_LINKLOCAL(ip) ||
-          (IN6_IS_ADDR_MC_LINKLOCAL(ip))) && iface))
-        return 0;
-
-    *scope = if_nametoindex(iface);
-    if (!(*scope) && errno) {
-        char8_t err_info[256];
-        avt_log(log_ctx, AVT_LOG_ERROR, "Unable to get interface \"%s\" index: %s\n",
-                iface, strerror_safe(err_info, sizeof(err_info), errno));
-        return AVT_ERROR(errno);
-    }
-
-    return 0;
-}
-
 int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4)
 {
     memset(ip6, 0, 16);
@@ -119,8 +101,17 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host, bool lis
     char *iface;
     host = strtok_r(host, "%", &tmp);
     iface = strtok_r(NULL, "%", &tmp);
-    if (iface)
+    if (iface) {
         addr->interface = strdup(iface);
+
+        /* Immediately get the interface index */
+        addr->interface_idx = if_nametoindex(iface);
+        if (!(addr->interface_idx) && errno) {
+            char8_t err_info[256];
+            avt_log(log_ctx, AVT_LOG_WARN, "Unable to get interface \"%s\" index: %s\n",
+                    iface, strerror_safe(err_info, sizeof(err_info), errno));
+        }
+    }
 
     /* Try IPv4 */
     struct in_addr ipv4_addr;
@@ -164,10 +155,14 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host, bool lis
         avt_addr_4to6(addr->ip, ipv4_addr.s_addr);
     }
 
-    /* Get the scope for an IP address */
-    ret = avt_addr_get_scope(log_ctx, addr->ip, &addr->scope, addr->interface);
-    if (ret < 0)
-        return ret;
+    /* Set the scope for an IP address */
+    if ((IN6_IS_ADDR_LINKLOCAL(addr->ip)    ||
+         IN6_IS_ADDR_MC_LINKLOCAL(addr->ip) ||
+         IN6_IS_ADDR_MULTICAST(addr->ip)) && addr->interface) {
+        addr->scope = addr->interface_idx;
+    } else {
+        addr->scope = 0;
+    }
 
     return 0;
 }
@@ -209,20 +204,20 @@ static int parse_settings(void *log_ctx, AVTAddress *addr, char *next)
                 return AVT_ERROR(EINVAL);
             }
 
-            if (!addr->default_sid) {
-                addr->default_sid = calloc(UINT16_MAX, sizeof(*addr->default_sid));
-                if (!addr->default_sid)
+            if (!addr->opts.default_sid) {
+                addr->opts.default_sid = calloc(UINT16_MAX, sizeof(*addr->opts.default_sid));
+                if (!addr->opts.default_sid)
                     return AVT_ERROR(ENOMEM);
             }
 
-            for (auto i = 0; i < addr->nb_default_sid; i++) {
-                if (addr->default_sid[i] == res) {
+            for (auto i = 0; i < addr->opts.nb_default_sid; i++) {
+                if (addr->opts.default_sid[i] == res) {
                     avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value already specified: %" PRIu64 "\n", res);
                     return AVT_ERROR(EINVAL);
                 }
             }
 
-            addr->default_sid[addr->nb_default_sid++] = res;
+            addr->opts.default_sid[addr->opts.nb_default_sid++] = res;
         } while ((def_sid = strtok_r(NULL, "+", &tmp)));
     }
 
@@ -279,6 +274,7 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
 
     /* Zero out output */
     memset(addr, 0, sizeof(*addr));
+    addr->type = AVT_ADDRESS_URL;
     addr->port = CONFIG_DEFAULT_PORT;
     addr->proto = CONFIG_DEFAULT_TYPE;
     addr->mode = AVT_MODE_DEFAULT;
@@ -306,7 +302,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         next += strlen("quic://");
     } else if (!strncmp(next, "file://", strlen("file://"))) {
         /* Whatever */
-        addr->proto = AVT_PROTOCOL_FILE;
+        addr->type = AVT_ADDRESS_FILE;
+        addr->proto = AVT_PROTOCOL_NOOP;
         next += strlen("file://");
     } else {
         avt_log(log_ctx, AVT_LOG_ERROR, "Invalid URI scheme\n");
@@ -333,7 +330,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         } else if (!strcmp(transport, "quic")) {
             addr->proto = AVT_PROTOCOL_QUIC;
         } else if (!strcmp(transport, "file")) {
-            addr->proto = AVT_PROTOCOL_FILE;
+            addr->type = AVT_ADDRESS_FILE;
+            addr->proto = AVT_PROTOCOL_NOOP;
         } else {
             avt_log(log_ctx, AVT_LOG_ERROR, "Invalid transport: %s\n", transport);
             ret = AVT_ERROR(EINVAL);
@@ -355,8 +353,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         }
     }
 
-    /* If protocol is a file, skip everything */
-    if (addr->proto == AVT_PROTOCOL_FILE) {
+    /* If type is a file, skip everything */
+    if (addr->type == AVT_ADDRESS_FILE) {
         addr->path = strdup(next);
         goto end;
     }
@@ -377,25 +375,30 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             goto end;
     }
 
+    char opts_buf[1024] = { };
+    if (addr->opts.rx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                 "      rx_buf: %i\n", addr->opts.rx_buf);
+    if (addr->opts.tx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                 "      tx_buf: %i\n", addr->opts.tx_buf);
     avt_log(log_ctx, AVT_LOG_VERBOSE,
             "URL parsed:\n"
-            "    Address: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
+            "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
             "    Port: %u\n"
             "    Interface: %s\n"
             "    Protocol: %s\n"
-            "    Mode: %s\n",
+            "    Mode: %s\n"
+            "%s%s",
+            addr->listen ? "Listening" : "Transmitting",
             host,
             addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
             addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
             addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
             addr->ip[12], addr->ip[13], addr->ip[14], addr->ip[15],
             addr->port,
-            addr->interface,
+            addr->interface ? addr->interface : "default",
             addr->proto == AVT_PROTOCOL_NOOP     ? "noop" :
-            addr->proto == AVT_PROTOCOL_PIPE     ? "pipe" :
-            addr->proto == AVT_PROTOCOL_FILE     ? "file" :
-            addr->proto == AVT_PROTOCOL_FD       ? "fd" :
-            addr->proto == AVT_PROTOCOL_PACKET   ? "packet" :
             addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
             addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
             addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
@@ -403,7 +406,9 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             addr->mode == AVT_MODE_DEFAULT ? "default" :
             addr->mode == AVT_MODE_ACTIVE  ? "active" :
             addr->mode == AVT_MODE_PASSIVE ? "passive" :
-                                             "unknown"
+                                             "unknown",
+            strlen(opts_buf) ? "    Settings:\n" : "",
+            strlen(opts_buf) ? opts_buf : ""
             );
 
 end:
@@ -416,29 +421,52 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
     int err;
     memset(addr, 0, sizeof(*addr));
 
-    if (info->type < 0 || info->type > AVT_CONNECTION_CALLBACK)
+    if (info->type < 0 || info->type > AVT_CONNECTION_PACKET)
         return AVT_ERROR(EINVAL);
 
     switch (info->type) {
     case AVT_CONNECTION_NULL:
+        addr->type = AVT_ADDRESS_NULL;
         addr->proto = AVT_PROTOCOL_NOOP;
         break;
     case AVT_CONNECTION_URL:
+        addr->type = AVT_ADDRESS_URL;
         err = avt_addr_from_url(log_ctx, addr, info->url.listen, info->url.url);
         if (err < 0)
             return err;
         break;
-    case AVT_CONNECTION_SOCKET:
-        break;
     case AVT_CONNECTION_FILE:
+        addr->type = AVT_ADDRESS_FILE;
+        addr->proto = AVT_PROTOCOL_NOOP;
         addr->path = strdup(info->path);
-        addr->proto = AVT_PROTOCOL_FILE;
+        if (!addr->path)
+            return AVT_ERROR(ENOMEM);
         break;
-    case AVT_CONNECTION_CALLBACK:
+    case AVT_CONNECTION_SOCKET:
+        addr->type = AVT_ADDRESS_SOCKET;
+        addr->fd = info->socket.socket;
+        memcpy(addr->ip, info->socket.dst, 16);
+        addr->port = info->socket.port;
+        addr->proto = info->socket.protocol;
+        addr->mode = info->socket.mode;
+        break;
+    case AVT_CONNECTION_FD:
+        addr->type = AVT_ADDRESS_FILE;
+        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->fd = info->fd;
+        break;
+    case AVT_CONNECTION_UNIX:
+        addr->type = AVT_ADDRESS_UNIX;
+        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->fd = info->fd;
+        break;
+    case AVT_CONNECTION_DATA:
+        addr->type = AVT_ADDRESS_CALLBACK;
         addr->proto = AVT_PROTOCOL_NOOP;
         break;
     case AVT_CONNECTION_PACKET:
-        addr->proto = AVT_PROTOCOL_PACKET;
+        addr->type = AVT_ADDRESS_CALLBACK;
+        addr->proto = AVT_PROTOCOL_CALLBACK_PKT;
         break;
     };
 
@@ -447,7 +475,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
 
 void avt_addr_free(AVTAddress *addr)
 {
-    free(addr->default_sid);
+    free(addr->opts.default_sid);
     free(addr->path);
     free(addr->interface);
     memset(addr, 0, sizeof(*addr));
