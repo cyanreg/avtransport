@@ -54,7 +54,6 @@ struct AVTIOCtx {
 
     int64_t wpos;
     int64_t rpos;
-    AVTBuffer *tmp_buf;
 };
 
 static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
@@ -64,24 +63,14 @@ static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-#if IOV_MAX > 4
     io->iov = calloc(IOV_MAX + 1, sizeof(*io->iov));
     if (!io->iov) {
-        free(io);
-        return AVT_ERROR(ENOMEM);
-    }
-#endif
-
-    io->tmp_buf = avt_buffer_alloc(4096);
-    if (!io->tmp_buf) {
-        free(io->iov);
         free(io);
         return AVT_ERROR(ENOMEM);
     }
 
     ret = avt_socket_open(io, &io->sc, addr);
     if (ret < 0) {
-        avt_buffer_unref(&io->tmp_buf);
         free(io->iov);
         free(io);
         return ret;
@@ -105,36 +94,63 @@ static int64_t udp_write_pkt(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     size_t pl_len;
     uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
 
-    ret = avt_buffer_resize(io->tmp_buf, p->hdr_len + pl_len);
+    struct iovec vdata[2] = {
+        { .iov_base = p->hdr, .iov_len = p->hdr_len },
+        { .iov_base = pl_data, .iov_len = pl_len },
+    };
+
+    struct msghdr pm = {
+        .msg_name = io->sc.remote_addr,
+        .msg_namelen = io->sc.addr_size,
+        .msg_iov = vdata,
+        .msg_iovlen = 1 + !!pl_len,
+        .msg_control = NULL,
+        .msg_flags = 0,
+    };
+
+    ret = sendmsg(io->sc.socket, &pm, !timeout ? MSG_DONTWAIT : 0);
     if (ret < 0)
-        return ret;
-
-    uint8_t *buf = avt_buffer_get_data(io->tmp_buf, NULL);
-
-    memcpy(&buf[0], p->hdr, p->hdr_len);
-    memcpy(&buf[p->hdr_len], pl_data, pl_len);
-
-    ret = sendto(io->sc.socket, buf, p->hdr_len + pl_len,
-                 !timeout ? MSG_DONTWAIT : 0,
-                 io->sc.remote_addr, io->sc.addr_size);
-    if (ret < 0)
-        return avt_handle_errno(io, "Unable to send message: %s");
+        return avt_handle_errno(io, "Unable to send message: %i %s");
 
     return (io->wpos += ret);
 }
 
 static int64_t udp_write_vec(AVTContext *ctx, AVTIOCtx *io,
-                             AVTPktd *iov, uint32_t nb_iov,
-                             int64_t timeout)
+                             AVTPktd *pkt, uint32_t nb_pkt, int64_t timeout)
 {
-    int64_t ret = 0;
-    int64_t timeout_per = timeout / nb_iov;
-    for (int i = 0; i < nb_iov; i++) {
-        ret = udp_write_pkt(ctx, io, &iov[i], timeout_per);
+    int64_t ret;
+    int nb_iov = 0;
+
+    while (nb_pkt) {
+        nb_iov = 0;
+        do {
+            io->iov[nb_iov + 0].iov_base = pkt->hdr;
+            io->iov[nb_iov + 0].iov_len  = pkt->hdr_len;
+            io->iov[nb_iov + 1].iov_base = avt_buffer_get_data(&pkt->pl,
+                                                               &io->iov[nb_iov + 1].iov_len);
+            nb_iov += 1 + !!io->iov[nb_iov + 1].iov_base;
+
+            pkt++;
+            nb_pkt--;
+        } while (nb_pkt && ((nb_iov + 2) > IOV_MAX));
+
+        struct msghdr pm = {
+            .msg_name = io->sc.remote_addr,
+            .msg_namelen = io->sc.addr_size,
+            .msg_iov = io->iov,
+            .msg_iovlen = nb_iov,
+            .msg_control = NULL,
+            .msg_flags = 0,
+        };
+
+        ret = sendmsg(io->sc.socket, &pm, !timeout ? MSG_DONTWAIT : 0);
         if (ret < 0)
-            return ret;
+            return avt_handle_errno(io, "Unable to send message: %i %s");
+
+        io->wpos += ret;
     }
-    return ret;
+
+    return io->wpos;
 }
 
 static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
@@ -187,7 +203,6 @@ static int udp_close(AVTContext *ctx, AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     int ret = avt_socket_close(io, &io->sc);
-    avt_buffer_unref(&io->tmp_buf);
     free(io->iov);
     free(io);
     *_io = NULL;
@@ -200,11 +215,7 @@ const AVTIO avt_io_udp = {
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
     .read_input = udp_read_input,
-#if IOV_MAX > 4
     .write_vec = udp_write_vec,
-#else
-    .write_vec = udp_write_vec,
-#endif
     .write_pkt = udp_write_pkt,
     .rewrite = NULL,
     .seek = NULL,
@@ -218,11 +229,7 @@ const AVTIO avt_io_udp_lite = {
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
     .read_input = udp_read_input,
-#if IOV_MAX > 4
     .write_vec = udp_write_vec,
-#else
-    .write_vec = udp_write_vec,
-#endif
     .write_pkt = udp_write_pkt,
     .rewrite = NULL,
     .seek = NULL,

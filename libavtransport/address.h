@@ -46,6 +46,19 @@ enum AVTAddressConnection {
     AVT_ADDRESS_CALLBACK,
 };
 
+typedef struct AVTCallbacksPacket {
+    void *opaque;
+    int (*out)(void *opaque, union AVTPacketData pkt, AVTBuffer *buf);
+    int (*in)(void *opaque, union AVTPacketData *pkt, AVTBuffer **buf, uint64_t seq);
+} AVTCallbacksPacket;
+
+typedef struct AVTCallbacksData {
+    void *opaque;
+    int64_t (*write)(void *opaque, uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                     AVTBuffer *payload);
+    int64_t (*read)(void *opaque, AVTBuffer **data, size_t len, int64_t offset);
+} AVTCallbacksData;
+
 typedef struct AVTAddress {
     enum AVTAddressConnection type;
 
@@ -80,6 +93,10 @@ typedef struct AVTAddress {
         uint16_t *default_sid;
         int nb_default_sid;
     } opts;
+
+    /** CALLBACKS **/
+    AVTCallbacksPacket pcb;
+    AVTCallbacksData dcb;
 } AVTAddress;
 
 /* Utilities */

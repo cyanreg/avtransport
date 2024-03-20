@@ -412,43 +412,43 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             goto end;
     }
 
- end:
-    if (ret >= 0 && addr->type == AVT_ADDRESS_URL) {
-        char opts_buf[1024] = { };
-        if (addr->opts.rx_buf)
-            snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                     "      rx_buf: %i\n", addr->opts.rx_buf);
-        if (addr->opts.tx_buf)
-            snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                     "      tx_buf: %i\n", addr->opts.tx_buf);
+    char opts_buf[1024] = { };
+    if (addr->opts.rx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                 "      rx_buf: %i\n", addr->opts.rx_buf);
+    if (addr->opts.tx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                 "      tx_buf: %i\n", addr->opts.tx_buf);
 
-        avt_log(log_ctx, AVT_LOG_VERBOSE,
-                "URL parsed:\n"
-                "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
-                "    Port: %u\n"
-                "    Interface: %s\n"
-                "    Protocol: %s\n"
-                "    Mode: %s\n"
-                "%s%s",
-                addr->listen ? "Listening" : "Transmitting",
-                host,
-                addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
-                addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
-                addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
-                addr->ip[12], addr->ip[13], addr->ip[14], addr->ip[15],
-                addr->port,
-                addr->interface ? addr->interface : "default",
-                addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
-                addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
-                addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
-                                                       "unknown",
-                addr->mode == AVT_MODE_DEFAULT ? "default" :
-                addr->mode == AVT_MODE_ACTIVE  ? "active" :
-                addr->mode == AVT_MODE_PASSIVE ? "passive" :
-                                                 "unknown",
-                strlen(opts_buf) ? "    Settings:\n" : "",
-                strlen(opts_buf) ? opts_buf : "");
-    } else if (ret >= 0 && addr->type == AVT_ADDRESS_FILE) {
+    avt_log(log_ctx, AVT_LOG_VERBOSE,
+            "URL parsed:\n"
+            "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
+            "    Port: %u\n"
+            "    Interface: %s\n"
+            "    Protocol: %s\n"
+            "    Mode: %s\n"
+            "%s%s",
+            addr->listen ? "Listening" : "Transmitting",
+            host,
+            addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
+            addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
+            addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
+            addr->ip[12], addr->ip[13], addr->ip[14], addr->ip[15],
+            addr->port,
+            addr->interface ? addr->interface : "default",
+            addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
+            addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
+            addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
+                                                   "unknown",
+            addr->mode == AVT_MODE_DEFAULT ? "default" :
+            addr->mode == AVT_MODE_ACTIVE  ? "active" :
+            addr->mode == AVT_MODE_PASSIVE ? "passive" :
+                                             "unknown",
+            strlen(opts_buf) ? "    Settings:\n" : "",
+            strlen(opts_buf) ? opts_buf : "");
+
+ end:
+    if (ret >= 0 && addr->type == AVT_ADDRESS_FILE) {
         avt_log(log_ctx, AVT_LOG_VERBOSE,
                 "File path:\n    %s\n", addr->path);
     } else if (ret >= 0 && addr->type == AVT_ADDRESS_FD) {
@@ -456,7 +456,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
                 "FD:\n    %i\n", addr->fd);
     } else if (ret >= 0 && addr->type == AVT_ADDRESS_UNIX) {
         avt_log(log_ctx, AVT_LOG_VERBOSE,
-                "Socket path:\n    %s\n", addr->path);
+                "Socket path:\n    %s: %s\n",
+                addr->listen ? "Listening" : "Transmitting", addr->path);
     }
 
     free(dup);
@@ -511,10 +512,16 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
     case AVT_CONNECTION_DATA:
         addr->type = AVT_ADDRESS_CALLBACK;
         addr->proto = AVT_PROTOCOL_STREAM;
+        addr->dcb.opaque = info->cb.opaque;
+        addr->dcb.write = info->cb.write;
+        addr->dcb.read = info->cb.read;
         break;
     case AVT_CONNECTION_PACKET:
         addr->type = AVT_ADDRESS_CALLBACK;
         addr->proto = AVT_PROTOCOL_CALLBACK_PKT;
+        addr->pcb.opaque = info->pkt.opaque;
+        addr->pcb.out = info->pkt.out;
+        addr->pcb.in = info->pkt.in;
         break;
     };
 

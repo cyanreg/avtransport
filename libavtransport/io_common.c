@@ -26,10 +26,9 @@
 
 #include "io_common.h"
 
-/* Null */
 extern const AVTIO avt_io_null;
+extern const AVTIO avt_io_dcb;
 
-/* Files */
 extern const AVTIO avt_io_file;
 #ifndef _WIN32
 extern const AVTIO avt_io_fd;
@@ -38,9 +37,10 @@ extern const AVTIO avt_io_mmap;
 extern const AVTIO avt_io_mmap_path;
 #endif
 
-/* UDP */
 extern const AVTIO avt_io_udp;
 extern const AVTIO avt_io_udp_lite;
+
+extern const AVTIO avt_io_unix;
 
 #define MAX_NB_BACKENDS 4
 
@@ -48,6 +48,9 @@ extern const AVTIO avt_io_udp_lite;
 static const AVTIO *avt_io_list[AVT_IO_INVALID][MAX_NB_BACKENDS + 1] = {
     [AVT_IO_NULL] = {
         &avt_io_null,
+    },
+    [AVT_IO_CALLBACK] = {
+        &avt_io_dcb,
     },
     [AVT_IO_FILE] = {
 #ifndef _WIN32
@@ -64,6 +67,9 @@ static const AVTIO *avt_io_list[AVT_IO_INVALID][MAX_NB_BACKENDS + 1] = {
     },
     [AVT_IO_UDP] = {
         &avt_io_udp,
+    },
+    [AVT_IO_UNIX] = {
+        &avt_io_unix,
     },
     [AVT_IO_UDP_LITE] = {
         &avt_io_udp_lite,

@@ -149,16 +149,23 @@ typedef struct AVTConnectionInfo {
         /* AVT_CONNECTION_DATA: the following structure */
         struct {
             /* Called by libavtransport in strictly sequential order,
-             * with no holes, to write data. */
-            int (*write)(void *opaque,
-                         uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                         AVTBuffer *payload);
+             * with no holes, to write data. Returns the offset after
+             * writing, or a negative error. */
+            int64_t (*write)(void *opaque,
+                             uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
+                             AVTBuffer *payload);
 
             /* Called by libavtransport to retrieve a piece of
-             * data with a particular offset. */
-            int (*read)(void *opaque,
-                        uint8_t hdr[AVT_MAX_HEADER_LEN], size_t hdr_len,
-                        AVTBuffer **payload, int64_t offset);
+             * data with a particular offset. Returns the offset after
+             * reading, or a negative error.
+             * The buffer `data` is set to a buffer with the data requested.
+             *
+             * Note, `data` MAY be non-NULL. In which case, it will contain
+             * data from the previous read. The buffer must be expanded to
+             * include `len` more bytes. Only the data matters, the buffer
+             * may be recreated. */
+            int64_t (*read)(void *opaque, AVTBuffer **data,
+                            size_t len, int64_t offset);
 
             /* Opaque pointer which will be used for the data() callback. */
             void *opaque;

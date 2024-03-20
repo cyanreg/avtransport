@@ -220,11 +220,8 @@ static int64_t unix_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
         } while (nb_pkt && ((nb_iov + 2) > IOV_MAX));
 
         ret = writev(io->fd, io->iov, nb_iov);
-        if (ret < 0) {
-            ret = avt_handle_errno(io, "Error flushing: %i %s\n");
-            io->wpos = unix_offset(io);
-            return ret;
-        }
+        if (ret < 0)
+            return avt_handle_errno(io, "Error flushing: %i %s\n");
 
         io->wpos += ret;
     }

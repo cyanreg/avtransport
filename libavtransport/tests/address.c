@@ -165,7 +165,7 @@ int main(void)
 
     /* quic + mode + IPv6 + port + device */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, true, "avt://quic:active@[2001:db8::4%eth0]:9999")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, true, "avt://quic:active@[2001:db8::4%lo]:9999")) < 0)
             goto end;
 
         if (addr.port != 9999 || addr.mode != AVT_MODE_ACTIVE ||
@@ -176,7 +176,7 @@ int main(void)
         if (memcmp(addr.ip, ip_test_6, 16))
             FAIL(EINVAL);
 
-        if (strcmp(addr.interface, "eth0"))
+        if (strcmp(addr.interface, "lo"))
             FAIL(EINVAL);
 
         avt_addr_free(&addr);
@@ -184,7 +184,7 @@ int main(void)
 
     /* udp + mode + IPv4 + port + device */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udp:default@192.168.1.3%eth0:9999")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udp:default@192.168.1.3%lo:9999")) < 0)
             goto end;
 
         if (addr.port != 9999 || addr.mode != AVT_MODE_DEFAULT ||
@@ -195,7 +195,7 @@ int main(void)
         if (memcmp(addr.ip, ip_test_7, 16))
             FAIL(EINVAL);
 
-        if (strcmp(addr.interface, "eth0"))
+        if (strcmp(addr.interface, "lo"))
             FAIL(EINVAL);
 
         avt_addr_free(&addr);

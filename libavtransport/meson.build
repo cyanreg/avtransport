@@ -55,6 +55,7 @@ sources = [
     'io_null.c',
     'io_file.c',
     'io_unix.c',
+    'io_dcb.c',
 
     'io_udp.c',
     'io_socket_common.c',
