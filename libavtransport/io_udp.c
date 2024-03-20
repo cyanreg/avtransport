@@ -24,11 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if 1
-#define _GNU_SOURCE // SO_BINDTODEVICE
-#else
 #define _XOPEN_SOURCE 700 // pwrite, IOV_MAX
-#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,10 +39,14 @@
 #include <net/if.h>
 
 #include "io_common.h"
+#include "io_utils.h"
 #include "io_socket_common.h"
 #include "utils_internal.h"
 
-#include "os_compat.h"
+#ifndef IOV_MAX
+#warning "IOV_MAX not defined!"
+#define IOV_MAX 0
+#endif
 
 struct AVTIOCtx {
     AVTSocketCommon sc;
@@ -57,14 +57,6 @@ struct AVTIOCtx {
     AVTBuffer *tmp_buf;
 };
 
-static int avt_handle_errno(void *log_ctx, const char *msg)
-{
-    char8_t err_info[256];
-    avt_log(log_ctx, AVT_LOG_ERROR, msg, errno,
-            strerror_safe(err_info, sizeof(err_info), errno));
-    return AVT_ERROR(errno);
-}
-
 static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
@@ -72,7 +64,7 @@ static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-#ifdef IOV_MAX
+#if IOV_MAX > 4
     io->iov = calloc(IOV_MAX + 1, sizeof(*io->iov));
     if (!io->iov) {
         free(io);
@@ -124,7 +116,7 @@ static int64_t udp_write_pkt(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
 
     ret = sendto(io->sc.socket, buf, p->hdr_len + pl_len,
                  !timeout ? MSG_DONTWAIT : 0,
-                 &io->sc.remote_addr, sizeof(io->sc.remote_addr));
+                 io->sc.remote_addr, io->sc.addr_size);
     if (ret < 0)
         return avt_handle_errno(io, "Unable to send message: %s");
 
@@ -180,7 +172,7 @@ static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
 
     ret = recvfrom(io->sc.socket, data + off, len,
                    !timeout ? MSG_DONTWAIT : 0,
-                   &remote_addr, &remote_addr_len);
+                   (struct sockaddr *)&remote_addr, &remote_addr_len);
     if (ret < 0)
         return avt_handle_errno(io, "Unable to receive message: %s");
 
@@ -208,7 +200,11 @@ const AVTIO avt_io_udp = {
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
     .read_input = udp_read_input,
+#if IOV_MAX > 4
     .write_vec = udp_write_vec,
+#else
+    .write_vec = udp_write_vec,
+#endif
     .write_pkt = udp_write_pkt,
     .rewrite = NULL,
     .seek = NULL,
@@ -222,7 +218,11 @@ const AVTIO avt_io_udp_lite = {
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
     .read_input = udp_read_input,
+#if IOV_MAX > 4
     .write_vec = udp_write_vec,
+#else
+    .write_vec = udp_write_vec,
+#endif
     .write_pkt = udp_write_pkt,
     .rewrite = NULL,
     .seek = NULL,

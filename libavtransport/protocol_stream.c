@@ -36,7 +36,7 @@ struct AVTProtocolCtx {
     AVTIOCtx *io_ctx;
 };
 
-static int noop_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
+static int stream_proto_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
 {
     AVTProtocolCtx *priv = malloc(sizeof(*priv));
     if (!priv)
@@ -51,23 +51,23 @@ static int noop_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
     return err;
 }
 
-static int noop_add_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_proto_add_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->add_dst)
         return AVT_ERROR(ENOTSUP);
     return p->io->add_dst(ctx, p->io_ctx, addr);
 }
 
-static int noop_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_proto_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->del_dst)
         return AVT_ERROR(ENOTSUP);
     return p->io->del_dst(ctx, p->io_ctx, addr);
 }
 
-static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                union AVTPacketData pkt, AVTBuffer *pl,
-                                int64_t timeout)
+static int64_t stream_proto_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
+                                        union AVTPacketData pkt, AVTBuffer *pl,
+                                        int64_t timeout)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     size_t hdr_len = 0;
@@ -78,8 +78,8 @@ static int64_t noop_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
     return 0;
 }
 
-static int64_t noop_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
-                             AVTPacketFifo *seq, int64_t timeout)
+static int64_t stream_proto_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
+                                     AVTPacketFifo *seq, int64_t timeout)
 {
     int err;
 
@@ -88,9 +88,9 @@ static int64_t noop_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
     return 0;
 }
 
-static int64_t noop_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                   union AVTPacketData *pkt, AVTBuffer **pl,
-                                   int64_t timeout)
+static int64_t stream_proto_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
+                                           union AVTPacketData *pkt, AVTBuffer **pl,
+                                           int64_t timeout)
 {
     AVTBuffer *buf;
     int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0, timeout);
@@ -102,24 +102,24 @@ static int64_t noop_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
     return err;
 }
 
-static uint32_t noop_max_pkt_len(AVTContext *ctx, AVTProtocolCtx *p)
+static uint32_t stream_proto_max_pkt_len(AVTContext *ctx, AVTProtocolCtx *p)
 {
     return p->io->get_max_pkt_len(ctx, p->io_ctx);
 }
 
-static int64_t noop_seek(AVTContext *ctx, AVTProtocolCtx *p,
+static int64_t stream_proto_seek(AVTContext *ctx, AVTProtocolCtx *p,
                          int64_t off, uint32_t seq,
                          int64_t ts, bool ts_is_dts)
 {
     return p->io->seek(ctx, p->io_ctx, off);
 }
 
-static int noop_flush(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout)
+static int stream_proto_flush(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout)
 {
     return p->io->flush(ctx, p->io_ctx, timeout);
 }
 
-static int noop_close(AVTContext *ctx, AVTProtocolCtx **p)
+static int stream_proto_close(AVTContext *ctx, AVTProtocolCtx **p)
 {
     AVTProtocolCtx *priv = *p;
     int err = priv->io->close(ctx, &priv->io_ctx);
@@ -128,18 +128,18 @@ static int noop_close(AVTContext *ctx, AVTProtocolCtx **p)
     return err;
 }
 
-const AVTProtocol avt_protocol_noop = {
-    .name = "noop",
-    .type = AVT_PROTOCOL_NOOP,
-    .init = noop_init,
-    .add_dst = noop_add_dst,
-    .rm_dst = noop_rm_dst,
-    .get_max_pkt_len = noop_max_pkt_len,
-    .send_packet = noop_send_packet,
-    .send_seq = noop_send_seq,
+const AVTProtocol avt_protocol_stream = {
+    .name = "stream",
+    .type = AVT_PROTOCOL_STREAM,
+    .init = stream_proto_init,
+    .add_dst = stream_proto_add_dst,
+    .rm_dst = stream_proto_rm_dst,
+    .get_max_pkt_len = stream_proto_max_pkt_len,
+    .send_packet = stream_proto_send_packet,
+    .send_seq = stream_proto_send_seq,
     .update_packet = NULL,
-    .receive_packet = noop_receive_packet,
-    .seek = noop_seek,
-    .flush = noop_flush,
-    .close = noop_close,
+    .receive_packet = stream_proto_receive_packet,
+    .seek = stream_proto_seek,
+    .flush = stream_proto_flush,
+    .close = stream_proto_close,
 };

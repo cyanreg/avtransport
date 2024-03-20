@@ -38,6 +38,7 @@
 #include <sys/mman.h>
 
 #include "io_common.h"
+#include "io_utils.h"
 #include "utils_internal.h"
 
 /* A reasonable default */
@@ -53,14 +54,6 @@ struct AVTIOCtx {
     bool file_grew;
 };
 
-static int avt_handle_errno(void *log_ctx, const char *msg)
-{
-    char8_t err_info[256];
-    avt_log(log_ctx, AVT_LOG_ERROR, msg,
-            strerror_safe(err_info, sizeof(err_info), errno));
-    return AVT_ERROR(errno);
-}
-
 static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
 {
     munmap(base_data, size);
@@ -75,7 +68,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
     if (!len) {
         len = MIN_ALLOC;
         if (fallocate(io->fd, 0, 0, len)) {
-            ret = avt_handle_errno(io, "Error in fallocate(): %s\n");
+            ret = avt_handle_errno(io, "Error in fallocate(): %i %s\n");
             return ret;
         }
         io->file_grew = 1;
@@ -83,7 +76,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 
     int fd_dup = dup(io->fd);
     if (fd_dup < 0)
-        return avt_handle_errno(io, "Error in dup(): %s\n");
+        return avt_handle_errno(io, "Error in dup(): %i %s\n");
 
     void *data = mmap(NULL, len, PROT_READ | PROT_WRITE,
                       MAP_SHARED |
@@ -92,7 +85,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
                       fd_dup, 0);
 
     if (!data) {
-        ret = avt_handle_errno(io, "Error in mmap(): %s\n");
+        ret = avt_handle_errno(io, "Error in mmap(): %i %s\n");
         close(fd_dup);
         return ret;
     }
@@ -118,7 +111,7 @@ static int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
     io->fd = dup(addr->fd);
     if (io->fd < 0) {
-        ret = avt_handle_errno(io, "Error duplicating fd: %s\n");
+        ret = avt_handle_errno(io, "Error duplicating fd: %i %s\n");
         free(io);
         return ret;
     }
@@ -142,9 +135,9 @@ static int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-    io->fd = open(addr->path, O_CREAT | O_RDWR, 0666);
+    io->fd = open(addr->path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if (io->fd < 0) {
-        ret = avt_handle_errno(io, "Error opening: %s\n");
+        ret = avt_handle_errno(io, "Error opening: %i %s\n");
         free(io);
         return ret;
     }
@@ -173,7 +166,7 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
 
     /* Grow file */
     if (fallocate(io->fd, 0, 0, new_map_size)) {
-        ret = avt_handle_errno(io, "Error in fallocate(): %s\n");
+        ret = avt_handle_errno(io, "Error in fallocate(): %i %s\n");
         return ret;
     }
 
@@ -194,7 +187,7 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
         avt_buffer_update(io->map, new_map, new_map_size);
         return 0;
     } else if (new_map == MAP_FAILED && errno != ENOMEM) {
-        ret = avt_handle_errno(io, "Error in mremap(): %s\n");
+        ret = avt_handle_errno(io, "Error in mremap(): %i %s\n");
         return ret;
     }
 #endif
@@ -202,14 +195,20 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     /* Recreate the mapping */
     int fd_dup = dup(io->fd);
     if (fd_dup < 0)
-        return avt_handle_errno(io, "Error in dup(): %s\n");
+        return avt_handle_errno(io, "Error in dup(): %i %s\n");
+
+    if (fcntl(fd_dup, F_SETFD, FD_CLOEXEC) == -1) {
+        ret = avt_handle_errno(io, "Error in fcntl(F_SETFD, FD_CLOEXEC): %i %s\n");
+        close(fd_dup);
+        return ret;
+    }
 
     void *data = mmap(NULL, new_map_size, PROT_READ | PROT_WRITE,
                       MAP_SHARED |
                       MAP_POPULATE,
                       fd_dup, 0);
     if (data == MAP_FAILED) {
-        ret = avt_handle_errno(io, "Error in mmap(): %s\n");
+        ret = avt_handle_errno(io, "Error in mmap(): %i %s\n");
         close(fd_dup);
         return ret;
     }
@@ -354,7 +353,7 @@ static int mmap_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 
     int ret = msync(map_data, map_size, timeout == 0 ? MS_ASYNC : MS_SYNC);
     if (ret < 0)
-        ret = avt_handle_errno(io, "Error flushing: %s\n");
+        ret = avt_handle_errno(io, "Error flushing: %i %s\n");
 
     return ret;
 }

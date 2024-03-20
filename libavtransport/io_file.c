@@ -31,6 +31,7 @@
 #include <uchar.h>
 
 #include "io_common.h"
+#include "io_utils.h"
 #include "utils_internal.h"
 
 struct AVTIOCtx {
@@ -113,7 +114,7 @@ static int file_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 
 #define RENAME(x) file_ ## x
 
-#include "io_file_template.c"
+#include "io_template.c"
 
 const AVTIO avt_io_file = {
     .name = "file",

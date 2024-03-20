@@ -31,8 +31,10 @@
 
 #include <avtransport/connection.h>
 
-#define AVT_PROTOCOL_NOOP    (0)
-#define AVT_PROTOCOL_CALLBACK_PKT  (AVT_PROTOCOL_QUIC + 1)
+#define AVT_PROTOCOL_STREAM        (0)
+#define AVT_PROTOCOL_FILE          (AVT_PROTOCOL_QUIC + 1)
+#define AVT_PROTOCOL_CALLBACK_PKT  (AVT_PROTOCOL_QUIC + 2)
+#define AVT_PROTOCOL_MAX           (AVT_PROTOCOL_QUIC + 3)
 
 enum AVTAddressConnection {
     AVT_ADDRESS_NULL,
@@ -47,7 +49,7 @@ enum AVTAddressConnection {
 typedef struct AVTAddress {
     enum AVTAddressConnection type;
 
-    /** FILE PATH **/
+    /** FILE PATH/SOCKET PATH **/
     char8_t *path;
 
     /** FILE DESCRIPTOR/SOCKET/NETWORK SOCKET **/

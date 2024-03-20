@@ -29,7 +29,7 @@
 #include <inttypes.h>
 #include <threads.h>
 
-#include "net_common.h"
+#include "net_io_common.h"
 
 #include <stdio.h>
 

@@ -24,19 +24,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "net_io_common.h"
+#ifndef AVTRANSPORT_IO_UTILS_H
+#define AVTRANSPORT_IO_UTILS_H
 
-extern const AVTIO avt_io_udp;
+#include <avtransport/avtransport.h>
+#include "os_compat.h"
 
-int main(void)
+static inline int avt_handle_errno(void *log_ctx, const char *msg)
 {
-    NetTestContext ntc;
-    int ret = net_io_init(&ntc, &avt_io_udp, "udp://[::1]");
-    if (ret < 0)
-        return AVT_ERROR(ret);
-
-    ret = net_io_test(&ntc);
-
-    net_io_free(&ntc);
-    return AVT_ERROR(ret);
+    char8_t err_info[256];
+    avt_log(log_ctx, AVT_LOG_ERROR, msg, errno,
+            strerror_safe(err_info, sizeof(err_info), errno));
+    return AVT_ERROR(errno);
 }
+
+#endif /* AVTRANSPORT_IO_UTILS_H */

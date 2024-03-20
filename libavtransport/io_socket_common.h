@@ -29,6 +29,7 @@
 
 #include <netinet/in.h>
 #include <net/if.h>
+#include <sys/un.h>
 
 #include <avtransport/avtransport.h>
 #include "address.h"
@@ -36,10 +37,20 @@
 typedef struct AVTSocketCommon {
     int socket;
 
-    struct ip6_mtuinfo mtu6;
-    struct sockaddr_in6 local_addr;
+    struct sockaddr *local_addr;
+    struct sockaddr *remote_addr;
+    socklen_t addr_size;
 
-    struct sockaddr_in6 remote_addr;
+    union {
+        struct {
+            struct sockaddr_in6 local_addr;
+            struct sockaddr_in6 remote_addr;
+        } ip;
+        struct {
+            struct sockaddr_un local_addr;
+            struct sockaddr_un remote_addr;
+        } un;
+    };
 } AVTSocketCommon;
 
 /* Open a socket with a specific address */
@@ -48,7 +59,32 @@ int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr);
 /* Get MTU */
 uint32_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
 
-/* Close a socket */
+/* Close a socket context */
 int avt_socket_close(void *log_ctx, AVTSocketCommon *sc);
+
+/* Macro to set socket options */
+#define SET_SOCKET_OPT(log_ctx, socket, lvl, opt, val)                         \
+    do {                                                                       \
+        [[maybe_unused]] auto tempval = (val);                                 \
+        ret = setsockopt(socket, lvl, opt,                                     \
+                         _Generic((val),                                       \
+                             int32_t: &(tempval),                              \
+                             uint32_t: &(tempval),                             \
+                             int64_t: &(tempval),                              \
+                             uint64_t: &(tempval),                             \
+                             default: (val)),                                  \
+                         sizeof(val));                                         \
+        if (ret < 0) {                                                         \
+            ret = avt_handle_errno(log_ctx,                                    \
+                                   "setsockopt(" #lvl ", " #opt ") "           \
+                                   "failed: %i %s\n");                         \
+            return ret;                                                        \
+        }                                                                      \
+    } while (0)
+
+/* Read a socket option */
+int avt_get_socket_opt(void *log_ctx, int socket,
+                       int lvl, int opt, void *data, int len,
+                       const char *errmsg);
 
 #endif /* AVTRANSPORT_IO_SOCKET_COMMON_H */

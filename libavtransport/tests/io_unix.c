@@ -24,14 +24,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include "net_io_common.h"
 
-extern const AVTIO avt_io_udp;
+extern const AVTIO avt_io_unix;
 
 int main(void)
 {
     NetTestContext ntc;
-    int ret = net_io_init(&ntc, &avt_io_udp, "udp://[::1]");
+    int ret = net_io_init(&ntc, &avt_io_unix, "socket://test.sock");
     if (ret < 0)
         return AVT_ERROR(ret);
 

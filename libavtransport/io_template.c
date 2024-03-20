@@ -28,16 +28,18 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "utils_internal.h"
+
 static uint32_t RENAME(max_pkt_len)(AVTContext *ctx, AVTIOCtx *io)
 {
     return UINT32_MAX;
 }
 
-static int64_t RENAME(seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off)
+[[maybe_unused]] static int64_t RENAME(seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off)
 {
     int ret = RENAME(seek_to)(io, (int64_t)off);
     if (ret < 0) {
-        ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+        ret = avt_handle_errno(io, "Error seeking: %i %s\n");
         return ret;
     }
 
@@ -58,7 +60,7 @@ static int64_t RENAME(read_input)(AVTContext *ctx, AVTIOCtx *io,
     if (io->is_write) {
         ret = RENAME(seek_to)(io, io->rpos);
         if (ret < 0) {
-            ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             return ret;
         }
         io->is_write = true;
@@ -68,8 +70,6 @@ static int64_t RENAME(read_input)(AVTContext *ctx, AVTIOCtx *io,
         buf = avt_buffer_alloc(AVT_MAX(len, len));
         if (!buf)
             return AVT_ERROR(ENOMEM);
-
-        *_buf = buf;
     } else {
         off = avt_buffer_get_data_len(buf);
 
@@ -83,11 +83,20 @@ static int64_t RENAME(read_input)(AVTContext *ctx, AVTIOCtx *io,
 
     /* Read data */
     data = avt_buffer_get_data(buf, &buf_len);
-    len = RENAME(read)(io, data + off, len, timeout);
+    ssize_t rval = RENAME(read)(io, data + off, len, timeout);
+    if (rval < 0) {
+        ret = avt_handle_errno(io, "Error reading: %i %s\n");
+        if (!*_buf)
+            avt_buffer_unref(&buf);
+        return ret;
+    }
+    len = rval;
 
     /* Adjust new size in case of underreads */
     ret = avt_buffer_resize(buf, off + len);
     avt_assert2(ret >= 0);
+
+    *_buf = buf;
 
     return (io->rpos = RENAME(offset)(io));
 }
@@ -100,7 +109,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     if (!io->is_write) {
         ret = RENAME(seek_to)(io, io->wpos);
         if (ret < 0) {
-            ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             return ret;
         }
         io->is_write = true;
@@ -108,7 +117,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
 
     size_t out = RENAME(write)(io, p->hdr, p->hdr_len, timeout);
     if (out != p->hdr_len) {
-        ret = RENAME(handle_error)(io, "Error writing: %s\n");
+        ret = avt_handle_errno(io, "Error writing: %i %s\n");
         io->wpos = RENAME(offset)(io);
         return ret;
     }
@@ -118,7 +127,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     if (data) {
         out = RENAME(write)(io, data, pl_len, timeout);
         if (out != pl_len) {
-            ret = RENAME(handle_error)(io, "Error writing: %s\n");
+            ret = avt_handle_errno(io, "Error writing: %i %s\n");
             io->wpos = RENAME(offset)(io);
             return ret;
         }
@@ -136,7 +145,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     if (!io->is_write) {
         ret = RENAME(seek_to)(io, io->wpos);
         if (ret < 0) {
-            ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             return ret;
         }
         io->is_write = true;
@@ -151,7 +160,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
 
         out = RENAME(write)(io, v->hdr, v->hdr_len, timeout);
         if (out != v->hdr_len) {
-            ret = RENAME(handle_error)(io, "Error writing: %s\n");
+            ret = avt_handle_errno(io, "Error writing: %i %s\n");
             io->wpos = RENAME(offset)(io);
             return ret;
         }
@@ -160,7 +169,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
         if (pl_data) {
             out = RENAME(write)(io, pl_data, pl_len, timeout);
             if (out != pl_len) {
-                ret = RENAME(handle_error)(io, "Error writing: %s\n");
+                ret = avt_handle_errno(io, "Error writing: %i %s\n");
                 io->wpos = RENAME(offset)(io);
                 return ret;
             }
@@ -186,7 +195,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     if (!io->is_write || (io->wpos != off)) {
         ret = RENAME(seek_to)(io, off);
         if (ret < 0) {
-            ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             return ret;
         }
         io->is_write = true;
@@ -195,10 +204,10 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     size_t out = RENAME(write)(io, p->hdr, p->hdr_len, timeout);
     off += out;
     if (out != p->hdr_len) {
-        ret = RENAME(handle_error)(io, "Error writing: %s\n");
+        ret = avt_handle_errno(io, "Error writing: %i %s\n");
         ret2 = RENAME(seek_to)(io, io->wpos);
         if (ret2 < 0) {
-            ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             io->wpos = off; /* Stuck with this */
             return ret;
         }
@@ -211,10 +220,10 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
         out = RENAME(write)(io, data, pl_len, timeout);
         off += out;
         if (out != pl_len) {
-            ret = RENAME(handle_error)(io, "Error writing: %s\n");
+            ret = avt_handle_errno(io, "Error writing: %i %s\n");
             ret2 = RENAME(seek_to)(io, io->wpos);
             if (ret2 < 0) {
-                ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+                ret = avt_handle_errno(io, "Error seeking: %i %s\n");
                 io->wpos = off; /* Stuck with this */
                 return ret;
             }
@@ -225,7 +234,7 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     /* Restore */
     ret = RENAME(seek_to)(io, io->wpos);
     if (ret < 0) {
-        ret = RENAME(handle_error)(io, "Error seeking: %s\n");
+        ret = avt_handle_errno(io, "Error seeking: %i %s\n");
         io->wpos = off; /* Stuck with this */
         return ret;
     }

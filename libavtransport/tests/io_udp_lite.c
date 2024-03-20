@@ -24,7 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "net_common.h"
+#include "net_io_common.h"
 
 extern const AVTIO avt_io_udp_lite;
 

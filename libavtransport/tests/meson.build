@@ -38,6 +38,14 @@ io_file_test = executable('io_file',
 )
 test('File I/O', io_file_test)
 
+io_unix_test = executable('io_unix',
+    sources : [ 'net_io_common.c', 'io_unix.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_unix.c', 'io_socket_common.c', 'address.c' ]) ],
+    dependencies : [ avtransport_deps_list, avtransport_dep ],
+)
+test('UNIX I/O', io_unix_test)
+
 if host_machine.system() != 'windows'
     io_fd_test = executable('io_fd',
         sources : [ 'file_io_common.c', 'io_fd.c' ],
@@ -57,7 +65,7 @@ if host_machine.system() != 'windows'
 endif
 
 io_udp_test = executable('io_udp',
-    sources : [ 'net_common.c', 'io_udp.c' ],
+    sources : [ 'net_io_common.c', 'io_udp.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],
@@ -65,7 +73,7 @@ io_udp_test = executable('io_udp',
 test('UDP I/O', io_udp_test)
 
 io_udp_lite_test = executable('io_udp_lite',
-    sources : [ 'net_common.c', 'io_udp_lite.c' ],
+    sources : [ 'net_io_common.c', 'io_udp_lite.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
     dependencies : [ avtransport_deps_list, avtransport_dep ],

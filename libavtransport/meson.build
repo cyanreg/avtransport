@@ -48,11 +48,13 @@ sources = [
     'connection.c',
 
     'protocol_common.c',
-    'protocol_noop.c',
+    'protocol_stream.c',
+    'protocol_file.c',
 
     'io_common.c',
     'io_null.c',
     'io_file.c',
+    'io_unix.c',
 
     'io_udp.c',
     'io_socket_common.c',

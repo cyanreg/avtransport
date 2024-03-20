@@ -274,6 +274,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
 
     /* Zero out output */
     memset(addr, 0, sizeof(*addr));
+    addr->fd = -1;
+
     addr->type = AVT_ADDRESS_URL;
     addr->port = CONFIG_DEFAULT_PORT;
     addr->proto = CONFIG_DEFAULT_TYPE;
@@ -303,8 +305,18 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     } else if (!strncmp(next, "file://", strlen("file://"))) {
         /* Whatever */
         addr->type = AVT_ADDRESS_FILE;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_FILE;
         next += strlen("file://");
+    } else if (!strncmp(next, "socket://", strlen("socket://"))) {
+        /* Why? */
+        addr->type = AVT_ADDRESS_UNIX;
+        addr->proto = AVT_PROTOCOL_STREAM;
+        next += strlen("socket://");
+    } else if (!strncmp(next, "fd://", strlen("fd://"))) {
+        /* I give up */
+        addr->type = AVT_ADDRESS_FD;
+        addr->proto = AVT_PROTOCOL_FILE;
+        next += strlen("fd://");
     } else {
         avt_log(log_ctx, AVT_LOG_ERROR, "Invalid URI scheme\n");
         ret = AVT_ERROR(EINVAL);
@@ -331,7 +343,13 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             addr->proto = AVT_PROTOCOL_QUIC;
         } else if (!strcmp(transport, "file")) {
             addr->type = AVT_ADDRESS_FILE;
-            addr->proto = AVT_PROTOCOL_NOOP;
+            addr->proto = AVT_PROTOCOL_FILE;
+        } else if (!strcmp(transport, "fd")) {
+            addr->type = AVT_ADDRESS_FD;
+            addr->proto = AVT_PROTOCOL_FILE;
+        } else if (!strcmp(transport, "socket")) {
+            addr->type = AVT_ADDRESS_UNIX;
+            addr->proto = AVT_PROTOCOL_STREAM;
         } else {
             avt_log(log_ctx, AVT_LOG_ERROR, "Invalid transport: %s\n", transport);
             ret = AVT_ERROR(EINVAL);
@@ -357,6 +375,25 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     if (addr->type == AVT_ADDRESS_FILE) {
         addr->path = strdup(next);
         goto end;
+    } else if (addr->type == AVT_ADDRESS_UNIX) {
+        addr->path = strdup(next);
+        goto end;
+    } else if (addr->type == AVT_ADDRESS_FD) {
+        char *end;
+        int64_t res = strtol(next, &end, 10);
+        if (!res || (end == next)) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid fd: %s\n", next);
+            ret = AVT_ERROR(EINVAL);
+            goto end;
+        }
+        if ((((res == LONG_MAX) || (res == LONG_MIN)) && (errno == ERANGE)) ||
+            (res > INT32_MAX) || (res < 0)) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "FD value invalid: %s\n", next);
+            ret = AVT_ERROR(ERANGE);
+            goto end;
+        }
+        addr->fd = res;
+        goto end;
     }
 
     /* Separate out the host from settings */
@@ -375,43 +412,53 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             goto end;
     }
 
-    char opts_buf[1024] = { };
-    if (addr->opts.rx_buf)
-        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                 "      rx_buf: %i\n", addr->opts.rx_buf);
-    if (addr->opts.tx_buf)
-        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                 "      tx_buf: %i\n", addr->opts.tx_buf);
-    avt_log(log_ctx, AVT_LOG_VERBOSE,
-            "URL parsed:\n"
-            "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
-            "    Port: %u\n"
-            "    Interface: %s\n"
-            "    Protocol: %s\n"
-            "    Mode: %s\n"
-            "%s%s",
-            addr->listen ? "Listening" : "Transmitting",
-            host,
-            addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
-            addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
-            addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
-            addr->ip[12], addr->ip[13], addr->ip[14], addr->ip[15],
-            addr->port,
-            addr->interface ? addr->interface : "default",
-            addr->proto == AVT_PROTOCOL_NOOP     ? "noop" :
-            addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
-            addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
-            addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
-                                                   "unknown",
-            addr->mode == AVT_MODE_DEFAULT ? "default" :
-            addr->mode == AVT_MODE_ACTIVE  ? "active" :
-            addr->mode == AVT_MODE_PASSIVE ? "passive" :
-                                             "unknown",
-            strlen(opts_buf) ? "    Settings:\n" : "",
-            strlen(opts_buf) ? opts_buf : ""
-            );
+ end:
+    if (ret >= 0 && addr->type == AVT_ADDRESS_URL) {
+        char opts_buf[1024] = { };
+        if (addr->opts.rx_buf)
+            snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                     "      rx_buf: %i\n", addr->opts.rx_buf);
+        if (addr->opts.tx_buf)
+            snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
+                     "      tx_buf: %i\n", addr->opts.tx_buf);
 
-end:
+        avt_log(log_ctx, AVT_LOG_VERBOSE,
+                "URL parsed:\n"
+                "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
+                "    Port: %u\n"
+                "    Interface: %s\n"
+                "    Protocol: %s\n"
+                "    Mode: %s\n"
+                "%s%s",
+                addr->listen ? "Listening" : "Transmitting",
+                host,
+                addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
+                addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
+                addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
+                addr->ip[12], addr->ip[13], addr->ip[14], addr->ip[15],
+                addr->port,
+                addr->interface ? addr->interface : "default",
+                addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
+                addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
+                addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
+                                                       "unknown",
+                addr->mode == AVT_MODE_DEFAULT ? "default" :
+                addr->mode == AVT_MODE_ACTIVE  ? "active" :
+                addr->mode == AVT_MODE_PASSIVE ? "passive" :
+                                                 "unknown",
+                strlen(opts_buf) ? "    Settings:\n" : "",
+                strlen(opts_buf) ? opts_buf : "");
+    } else if (ret >= 0 && addr->type == AVT_ADDRESS_FILE) {
+        avt_log(log_ctx, AVT_LOG_VERBOSE,
+                "File path:\n    %s\n", addr->path);
+    } else if (ret >= 0 && addr->type == AVT_ADDRESS_FD) {
+        avt_log(log_ctx, AVT_LOG_VERBOSE,
+                "FD:\n    %i\n", addr->fd);
+    } else if (ret >= 0 && addr->type == AVT_ADDRESS_UNIX) {
+        avt_log(log_ctx, AVT_LOG_VERBOSE,
+                "Socket path:\n    %s\n", addr->path);
+    }
+
     free(dup);
     return ret;
 }
@@ -420,6 +467,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
 {
     int err;
     memset(addr, 0, sizeof(*addr));
+    addr->fd = -1;
 
     if (info->type < 0 || info->type > AVT_CONNECTION_PACKET)
         return AVT_ERROR(EINVAL);
@@ -427,7 +475,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
     switch (info->type) {
     case AVT_CONNECTION_NULL:
         addr->type = AVT_ADDRESS_NULL;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_STREAM;
         break;
     case AVT_CONNECTION_URL:
         addr->type = AVT_ADDRESS_URL;
@@ -437,7 +485,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         break;
     case AVT_CONNECTION_FILE:
         addr->type = AVT_ADDRESS_FILE;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_FILE;
         addr->path = strdup(info->path);
         if (!addr->path)
             return AVT_ERROR(ENOMEM);
@@ -452,17 +500,17 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         break;
     case AVT_CONNECTION_FD:
         addr->type = AVT_ADDRESS_FILE;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_FILE;
         addr->fd = info->fd;
         break;
     case AVT_CONNECTION_UNIX:
         addr->type = AVT_ADDRESS_UNIX;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_STREAM;
         addr->fd = info->fd;
         break;
     case AVT_CONNECTION_DATA:
         addr->type = AVT_ADDRESS_CALLBACK;
-        addr->proto = AVT_PROTOCOL_NOOP;
+        addr->proto = AVT_PROTOCOL_STREAM;
         break;
     case AVT_CONNECTION_PACKET:
         addr->type = AVT_ADDRESS_CALLBACK;

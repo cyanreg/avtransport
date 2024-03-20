@@ -26,10 +26,18 @@
 
 #include "protocol_common.h"
 
-extern const AVTProtocol avt_protocol_noop;
+extern const AVTProtocol avt_protocol_stream;
+extern const AVTProtocol avt_protocol_file;
+extern const AVTProtocol avt_protocol_quic;
+extern const AVTProtocol avt_protocol_pkt;
 
-static const AVTProtocol *avt_protocol_list[] = {
-    [AVT_PROTOCOL_NOOP] = &avt_protocol_noop,
+static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
+    [AVT_PROTOCOL_STREAM]       = &avt_protocol_stream,
+    [AVT_PROTOCOL_UDP]          = &avt_protocol_stream,
+    [AVT_PROTOCOL_UDP_LITE]     = &avt_protocol_stream,
+    [AVT_PROTOCOL_FILE]         = &avt_protocol_file,
+//    [AVT_PROTOCOL_QUIC]         = &avt_protocol_quic,
+//    [AVT_PROTOCOL_CALLBACK_PKT] = &avt_protocol_pkt,
 };
 
 /* For connections to call */
@@ -37,12 +45,15 @@ int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
                       AVTProtocolCtx **p_ctx, AVTAddress *addr)
 {
     const AVTProtocol *p = avt_protocol_list[addr->proto];
+    if (!p) {
+        avt_log(ctx, AVT_LOG_ERROR, "No support for protocol #%i\n",
+                addr->proto);
+        return AVT_ERROR(ENOTSUP);
+    }
 
     int err = p->init(ctx, p_ctx, addr);
-    if (err < 0)
-        return err;
-
-    *_p = p;
+    if (err >= 0)
+        *_p = p;
 
     return err;
 }

@@ -37,6 +37,7 @@
 #include <limits.h>
 
 #include "io_common.h"
+#include "io_utils.h"
 #include "utils_internal.h"
 
 #ifndef IOV_MAX
@@ -53,16 +54,24 @@ struct AVTIOCtx {
     bool is_write;
 };
 
-static int fd_handle_error(AVTIOCtx *io, const char *msg)
+static int fd_close(AVTContext *ctx, AVTIOCtx **_io)
 {
-    char8_t err_info[256];
-    strerror_safe(err_info, sizeof(err_info), errno);
-    avt_log(io, AVT_LOG_ERROR, msg, err_info);
-    return AVT_ERROR(errno);
+    AVTIOCtx *io = *_io;
+
+    int ret = close(io->fd);
+    if (ret)
+        ret = avt_handle_errno(io, "Error closing: %i %s\n");
+
+    free(io->iov);
+    free(io);
+    *_io = NULL;
+
+    return ret;
 }
 
 static int fd_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
+    int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));
     if (!io)
         return AVT_ERROR(ENOMEM);
@@ -75,9 +84,15 @@ static int fd_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
     io->fd = dup(addr->fd);
     if (io->fd < 0) {
-        int ret = fd_handle_error(io, "Error duplicating fd: %s\n");
+        ret = avt_handle_errno(io, "Error duplicating fd: %i %s\n");
         free(io->iov);
         free(io);
+        return ret;
+    }
+
+    if (fcntl(addr->fd, F_SETFD, FD_CLOEXEC) == -1) {
+        ret = avt_handle_errno(io, "Error in fcntl(F_SETFD, FD_CLOEXEC): %i %s\n");
+        fd_close(ctx, &io);
         return ret;
     }
 
@@ -99,9 +114,9 @@ static int fd_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
         return AVT_ERROR(ENOMEM);
     }
 
-    io->fd = open(addr->path, O_CREAT | O_RDWR, 0666);
+    io->fd = open(addr->path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if (!io->fd) {
-        ret = fd_handle_error(io, "Error opening: %s\n");
+        ret = avt_handle_errno(io, "Error opening: %i %s\n");
         free(io->iov);
         free(io);
         return ret;
@@ -112,34 +127,19 @@ static int fd_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static int fd_close(AVTContext *ctx, AVTIOCtx **_io)
-{
-    AVTIOCtx *io = *_io;
-
-    int ret = close(io->fd);
-    if (ret)
-        ret = fd_handle_error(io, "Error closing: %s\n");
-
-    free(io->iov);
-    free(io);
-    *_io = NULL;
-
-    return ret;
-}
-
 static inline int fd_seek_to(AVTIOCtx *io, int64_t pos)
 {
     return lseek(io->fd, pos, SEEK_SET);
 }
 
-static inline size_t fd_read(AVTIOCtx *io, uint8_t *dst, size_t len,
-                             int64_t timeout)
+static inline ssize_t fd_read(AVTIOCtx *io, uint8_t *dst, size_t len,
+                              int64_t timeout)
 {
     return read(io->fd, dst, len);
 }
 
-static inline size_t fd_write(AVTIOCtx *io, uint8_t *src, size_t len,
-                              int64_t timeout)
+static inline ssize_t fd_write(AVTIOCtx *io, uint8_t *src, size_t len,
+                               int64_t timeout)
 {
     return write(io->fd, src, len);
 }
@@ -153,7 +153,7 @@ static int fd_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 {
     int ret = fsync(io->fd);
     if (ret)
-        ret = fd_handle_error(io, "Error flushing: %s\n");
+        ret = avt_handle_errno(io, "Error flushing: %i %s\n");
 
     return ret;
 }
@@ -179,7 +179,7 @@ static int64_t fd_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
         } while (nb_pkt && ((nb_iov + 2) > IOV_MAX));
         ret = writev(io->fd, io->iov, nb_iov);
         if (ret < 0) {
-            ret = fd_handle_error(io, "Error flushing: %s\n");
+            ret = avt_handle_errno(io, "Error flushing: %i %s\n");
             io->wpos = fd_offset(io);
             return ret;
         }
@@ -195,7 +195,7 @@ static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
     int64_t ret;
     ret = pwrite(io->fd, p->hdr, p->hdr_len, off);
     if (ret < 0) {
-        ret = fd_handle_error(io, "Error writing: %s\n");
+        ret = avt_handle_errno(io, "Error writing: %i %s\n");
         io->wpos = fd_offset(io);
         return ret;
     }
@@ -205,7 +205,7 @@ static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
     if (data) {
         ret = pwrite(io->fd, data, pl_len, off);
         if (ret < 0) {
-            ret = fd_handle_error(io, "Error writing: %s\n");
+            ret = avt_handle_errno(io, "Error writing: %i %s\n");
             io->wpos = fd_offset(io);
             return ret;
         }
@@ -216,7 +216,7 @@ static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
 
 #define RENAME(x) fd_ ## x
 
-#include "io_file_template.c"
+#include "io_template.c"
 
 const AVTIO avt_io_fd = {
     .name = "fd",

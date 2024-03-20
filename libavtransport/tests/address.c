@@ -46,10 +46,38 @@ int main(void)
         if ((ret = avt_addr_from_url(NULL, &addr, false, "file://test.avt")) < 0)
             goto end;
 
-        if (addr.type != AVT_ADDRESS_FILE || addr.proto != AVT_PROTOCOL_NOOP)
+        if (addr.type != AVT_ADDRESS_FILE || addr.proto != AVT_PROTOCOL_FILE)
             FAIL(EINVAL);
 
         if (strcmp(addr.path, "test.avt"))
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* FD */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "fd://231")) < 0)
+            goto end;
+
+        if (addr.type != AVT_ADDRESS_FD || addr.proto != AVT_PROTOCOL_FILE)
+            FAIL(EINVAL);
+
+        if (addr.fd != 231)
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* Socket */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "socket:///tmp/avt.sock")) < 0)
+            goto end;
+
+        if (addr.type != AVT_ADDRESS_UNIX || addr.proto != AVT_PROTOCOL_STREAM)
+            FAIL(EINVAL);
+
+        if (strcmp(addr.path, "/tmp/avt.sock"))
             FAIL(EINVAL);
 
         avt_addr_free(&addr);
