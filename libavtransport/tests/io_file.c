@@ -59,9 +59,9 @@ int main(void)
     ret = file_io_test(avt, io, io_ctx);
 
     if (ret)
-        io->close(avt, &io_ctx);
+        io->close(&io_ctx);
     else
-        ret = io->close(avt, &io_ctx);
+        ret = io->close(&io_ctx);
     avt_close(&avt);
     return AVT_ERROR(ret);
 }

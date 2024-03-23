@@ -24,14 +24,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#define _GNU_SOURCE // ipv6_mtuinfo
 #define _XOPEN_SOURCE 700 // pwrite, IOV_MAX
 
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <stdckdint.h>
-
 #include <unistd.h>
+
 #include <sys/uio.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -41,7 +42,11 @@
 #include "io_common.h"
 #include "io_utils.h"
 #include "io_socket_common.h"
-#include "utils_internal.h"
+#include "attributes.h"
+
+#if __has_include(<linux/errqueue.h>)
+#include <linux/errqueue.h>
+#endif
 
 #ifndef IOV_MAX
 #warning "IOV_MAX not defined!"
@@ -55,6 +60,16 @@ struct AVTIOCtx {
     int64_t wpos;
     int64_t rpos;
 };
+
+static int udp_close(AVTIOCtx **_io)
+{
+    AVTIOCtx *io = *_io;
+    int ret = avt_socket_close(io, &io->sc);
+    free(io->iov);
+    free(io);
+    *_io = NULL;
+    return ret;
+}
 
 static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
@@ -81,13 +96,12 @@ static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static uint32_t udp_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
+static int64_t udp_max_pkt_len(AVTIOCtx *io)
 {
     return avt_socket_get_mtu(io, &io->sc);
 }
 
-static int64_t udp_write_pkt(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
-                             int64_t timeout)
+static int64_t udp_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     int64_t ret;
 
@@ -115,8 +129,8 @@ static int64_t udp_write_pkt(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     return (io->wpos += ret);
 }
 
-static int64_t udp_write_vec(AVTContext *ctx, AVTIOCtx *io,
-                             AVTPktd *pkt, uint32_t nb_pkt, int64_t timeout)
+static int64_t udp_write_vec(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+                             int64_t timeout)
 {
     int64_t ret;
     int nb_iov = 0;
@@ -153,8 +167,8 @@ static int64_t udp_write_vec(AVTContext *ctx, AVTIOCtx *io,
     return io->wpos;
 }
 
-static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
-                              AVTBuffer **_buf, size_t len, int64_t timeout)
+static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
+                              size_t len, int64_t timeout)
 {
     int ret;
     [[maybe_unused]] int err;
@@ -167,8 +181,6 @@ static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
         buf = avt_buffer_alloc(len);
         if (!buf)
             return AVT_ERROR(ENOMEM);
-
-        *_buf = buf;
     } else {
         off = avt_buffer_get_data_len(buf);
 
@@ -184,29 +196,76 @@ static int64_t udp_read_input(AVTContext *ctx, AVTIOCtx *io,
     data = avt_buffer_get_data(buf, &buf_len);
 
     struct sockaddr_in6 remote_addr = { };
-    socklen_t remote_addr_len = sizeof(remote_addr);
 
-    ret = recvfrom(io->sc.socket, data + off, len,
-                   !timeout ? MSG_DONTWAIT : 0,
-                   (struct sockaddr *)&remote_addr, &remote_addr_len);
-    if (ret < 0)
+    struct iovec iov = {
+        .iov_base = data + off,
+        .iov_len = len,
+    };
+
+    struct msghdr msg = {
+        .msg_name = &remote_addr,
+        .msg_namelen = sizeof(remote_addr),
+        .msg_iov = &iov,
+        .msg_iovlen = 1,
+        .msg_control = NULL,
+        .msg_controllen = 0,
+        .msg_flags = 0x0,
+    };
+
+#ifdef IPV6_RECVPATHMTU
+    union {
+        struct cmsghdr hdr;
+        uint8_t buf[CMSG_SPACE(
+#ifdef IPV6_RECVPATHMTU
+                               sizeof(struct ip6_mtuinfo) +
+#endif
+#ifdef SCM_TIMESTAMPING
+                               sizeof(struct scm_timestamping) +
+#endif
+                               0)];
+    } cmsgbuf;
+    msg.msg_control = &cmsgbuf.buf;
+    msg.msg_controllen = sizeof(cmsgbuf.buf);
+#endif
+
+    ret = recvmsg(io->sc.socket, &msg, 0x0);
+    if (ret < 0) {
+        if (*_buf != buf)
+            avt_buffer_unref(&buf);
         return avt_handle_errno(io, "Unable to receive message: %s");
+    } else if (msg.msg_flags & MSG_TRUNC) {
+        avt_log(io, AVT_LOG_ERROR, "Packet truncated! MTU changed?\n");
+        // TODO: signal to the protocol layer to update the MTU
+    } else if (ret == 0) { /* Ancillary message only */
+        struct cmsghdr *cmsg;
+        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+#ifdef IPV6_RECVPATHMTU
+            if (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_PATHMTU &&
+                cmsg->cmsg_len == CMSG_LEN(sizeof(struct ip6_mtuinfo))) {
+                struct ip6_mtuinfo *mtu = (struct ip6_mtuinfo *)CMSG_DATA(cmsg);
+                avt_log(io, AVT_LOG_VERBOSE, "MTU changed to %i\n", mtu->ip6m_mtu);
+            }
+#endif
+        }
+    } else if (ret > 0) { /* Ancillary message with the data */
+        struct cmsghdr *cmsg;
+        for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+#ifdef SCM_TIMESTAMPING
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
+                struct scm_timestamping *t = (struct scm_timestamping *)CMSG_DATA(cmsg);
+//                avt_log(io, AVT_LOG_VERBOSE, "New ts = %li %li\n", t->ts[0].tv_sec, t->ts[0].tv_nsec);
+            }
+#endif
+        }
+    }
 
     /* Adjust new size in case of underreads */
     err = avt_buffer_resize(buf, off + len);
     avt_assert2(err >= 0);
 
-    return (io->rpos += ret);
-}
+    *_buf = buf;
 
-static int udp_close(AVTContext *ctx, AVTIOCtx **_io)
-{
-    AVTIOCtx *io = *_io;
-    int ret = avt_socket_close(io, &io->sc);
-    free(io->iov);
-    free(io);
-    *_io = NULL;
-    return ret;
+    return (io->rpos += ret);
 }
 
 const AVTIO avt_io_udp = {

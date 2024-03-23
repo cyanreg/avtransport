@@ -60,7 +60,7 @@ struct AVTIOCtx {
     bool is_write;
 };
 
-static int unix_close(AVTContext *ctx, AVTIOCtx **_io)
+static int unix_close(AVTIOCtx **_io)
 {
     int ret;
     AVTIOCtx *io = *_io;
@@ -105,7 +105,7 @@ static int unix_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
         if ((fcntl(io->fd, F_SETFD, FD_CLOEXEC) == -1) ||
             (fcntl(io->fd, F_SETFD, O_NONBLOCK) == -1)) {
             ret = avt_handle_errno(io, "Error in fcntl(FD_CLOEXEC && O_NONBLOCK): %i %s\n");
-            unix_close(ctx, &io);
+            unix_close(&io);
             return ret;
         }
     }
@@ -187,8 +187,8 @@ static inline ssize_t unix_write(AVTIOCtx *io, uint8_t *src, size_t len,
 }
 
 #if IOV_MAX > 4
-static int64_t unix_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
-                                     AVTPktd *pkt, uint32_t nb_pkt, int64_t timeout)
+static int64_t unix_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+                                     int64_t timeout)
 {
     int64_t ret;
     int nb_iov = 0;

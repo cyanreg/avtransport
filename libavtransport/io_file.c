@@ -49,6 +49,19 @@ static int file_handle_error(AVTIOCtx *io, const char *msg)
     return AVT_ERROR(errno);
 }
 
+static int file_close(AVTIOCtx **_io)
+{
+    AVTIOCtx *io = *_io;
+    int ret = fclose(io->f);
+    if (ret)
+        ret = file_handle_error(io, "Error closing: %s\n");
+
+    free(io);
+    *_io = NULL;
+
+    return ret;
+}
+
 static int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
@@ -66,19 +79,6 @@ static int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     *_io = io;
 
     return 0;
-}
-
-static int file_close(AVTContext *ctx, AVTIOCtx **_io)
-{
-    AVTIOCtx *io = *_io;
-    int ret = fclose(io->f);
-    if (ret)
-        ret = file_handle_error(io, "Error closing: %s\n");
-
-    free(io);
-    *_io = NULL;
-
-    return ret;
 }
 
 static inline int file_seek_to(AVTIOCtx *io, int64_t pos)
@@ -103,7 +103,7 @@ static inline int64_t file_offset(AVTIOCtx *io)
     return ftello(io->f);
 }
 
-static int file_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
+static int file_flush(AVTIOCtx *io, int64_t timeout)
 {
     int ret = fflush(io->f);
     if (ret)

@@ -31,8 +31,6 @@
 #include "utils_internal.h"
 #include "scheduler.h"
 
-#include "config.h"
-
 struct AVTConnection {
     AVTAddress addr;
     AVTContext *ctx;
@@ -75,7 +73,7 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     }
 
     /* Get max packet size */
-    ret = conn->p->get_max_pkt_len(ctx, conn->p_ctx);
+    ret = conn->p->get_max_pkt_len(conn->p_ctx);
     if (ret < 0)
         return ret;
 
@@ -121,7 +119,7 @@ int avt_connection_process(AVTConnection *conn, int64_t timeout)
     if (err < 0)
         return err;
 
-    err = conn->p->send_seq(conn->ctx, conn->p_ctx, seq, timeout);
+    err = conn->p->send_seq(conn->p_ctx, seq, timeout);
     if (err < 0)
         avt_scheduler_done(&conn->out_scheduler, seq);
 
@@ -138,12 +136,12 @@ int avt_connection_flush(AVTConnection *conn, int64_t timeout)
         return err;
 
     if (seq) {
-        err = conn->p->send_seq(conn->ctx, conn->p_ctx, seq, timeout);
+        err = conn->p->send_seq(conn->p_ctx, seq, timeout);
         if (err < 0)
             avt_scheduler_done(&conn->out_scheduler, seq);
     }
 
-    return conn->p->flush(conn->ctx, conn->p_ctx, timeout);
+    return conn->p->flush(conn->p_ctx, timeout);
 }
 
 int avt_connection_destroy(AVTConnection **_conn)
@@ -152,7 +150,7 @@ int avt_connection_destroy(AVTConnection **_conn)
     if (conn)
         return 0;
 
-    int err = conn->p->close(conn->ctx, &conn->p_ctx);
+    int err = conn->p->close(&conn->p_ctx);
 
     avt_pkt_fifo_free(&conn->out_fifo_post);
     avt_scheduler_free(&conn->out_scheduler);
@@ -164,12 +162,13 @@ int avt_connection_destroy(AVTConnection **_conn)
     return err;
 }
 
-int avt_connection_mirror_open(AVTConnection *conn, const char *path)
+int avt_connection_mirror_open(AVTContext *ctx, AVTConnection *conn,
+                               AVTConnectionInfo *info)
 {
     return  0;
 }
 
-int avt_connection_mirror_close(AVTConnection *conn)
+int avt_connection_mirror_close(AVTContext *ctx, AVTConnection *conn)
 {
     return  0;
 }

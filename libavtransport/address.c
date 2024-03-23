@@ -68,7 +68,8 @@ int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4)
     return 0;
 }
 
-static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host, bool listen)
+static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
+                           bool listen, bool *pure_ipv6)
 {
     int ret;
     char *port_str;
@@ -150,6 +151,8 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host, bool lis
 
             memcpy(addr->ip, res[0].ai_addr, 16);
             freeaddrinfo(res);
+        } else {
+            *pure_ipv6 = true;
         }
     } else {
         avt_addr_4to6(addr->ip, ipv4_addr.s_addr);
@@ -401,7 +404,9 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     next = strtok_r(NULL, "/", &tmp);
 
     /* Parse host IP, address, and potentially a device */
-    ret = parse_host_addr(log_ctx, addr, host, listen);
+    bool pure_ipv6 = false;
+
+    ret = parse_host_addr(log_ctx, addr, host, listen, &pure_ipv6);
     if (ret < 0)
         goto end;
 
@@ -422,14 +427,14 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
 
     avt_log(log_ctx, AVT_LOG_VERBOSE,
             "URL parsed:\n"
-            "    %s: %s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
+            "    %s: %s%c (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
             "    Port: %u\n"
             "    Interface: %s\n"
             "    Protocol: %s\n"
             "    Mode: %s\n"
             "%s%s",
             addr->listen ? "Listening" : "Transmitting",
-            host,
+            host, pure_ipv6 ? ']' : '\0',
             addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
             addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
             addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],

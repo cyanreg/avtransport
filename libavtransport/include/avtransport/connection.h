@@ -253,48 +253,76 @@ AVT_API int avt_connection_create(AVTContext *ctx, AVTConnection **conn,
 AVT_API int avt_connection_process(AVTConnection *conn, int64_t timeout);
 
 /**
- * Creates an AVTransport file with the given <path>.
+ * Creates an AVTransport stream mirror.
  *
  * The resulting stream contains every single packet going in or out,
  * allowing for exact backing up and preservation of ephemeral streams,
  * as well as debugging, and more expensive offline FEC.
  *
- * The file will also be used as a retransmit cache, reducing memory usage
- * and allowing infinite retransmission (actual retransmitted data packets
- * are omitted from the mirror as they're redundant).
+ * When the URL specified is a file, it will be used for caching and retransmit
+ * cache, reducing memory usage and allowing infinite retransmission.
  *
  * NOTE: avt_connection_flush() should be called before calling
  *       avt_connection_mirror_close().
  */
-AVT_API int avt_connection_mirror_open(AVTConnection *conn, const char *path);
-AVT_API int avt_connection_mirror_close(AVTConnection *conn);
+AVT_API int avt_connection_mirror_open(AVTContext *ctx, AVTConnection *conn,
+                                       AVTConnectionInfo *info);
+AVT_API int avt_connection_mirror_close(AVTContext *ctx, AVTConnection *conn);
+
+enum AVTConnectionStatusFlags {
+    AVT_CONN_STATE_MTU,
+    AVT_CONN_STATE_ERR,
+    AVT_CONN_STATE_RX_FEC,
+    AVT_CONN_STATE_RX_CORRUPT,
+    AVT_CONN_STATE_RX_DROPPED,
+    AVT_CONN_STATE_RX_LOST,
+    AVT_CONN_STATE_RX_TOTAL,
+    /* Bitrate is intentionally absent -- it very likely always changes. */
+    AVT_CONN_STATE_TX_SENT,
+    /* Same with sender bitrate */
+    /* Same with buffer */
+    /* Same with buffered duration */
+};
 
 /**
  * Queries connection status.
  * Depending on connection configuration, may query the receiver.
  */
 typedef struct AVTConnectionStatus {
+    /* Only valid for avt_connection_status_cb. Indicates what changed. */
+    enum AVTConnectionStatusFlags flags;
+
+    /* Raw MTU of the connection */
+    uint32_t mtu;
+
+    /* If a non-fatal error occurs */
+    int err;
+
     /* Receive statistics */
     struct {
-        /* A counter that indicates the total amount of repaired packets
-         * (packets with errors that FEC was able to correct). */
+        /* Indicates the total number of missing packets that FEC was able to
+         * reconstruct. */
         uint64_t fec_corrections;
 
         /* Indicates the total number of corrupt packets. This also counts
          * corrupt packets FEC was not able to correct. */
         uint64_t corrupt_packets;
 
-        /* Indicates the total number of dropped packets. */
+        /* Indicates the total number of dropped packets due to slow processing
+         * (socket side). */
         uint64_t dropped_packets;
 
-        /* The total number of packets received */
+        /* Indicates the total number of packets missed. */
+        uint64_t lost_packets;
+
+        /* The total number of packets correctly received */
         uint64_t packets;
 
-        /* Bitrate in bits per second */
+        /* Receive bitrate in bits per second */
         int64_t bitrate;
     } rx;
 
-    /* Send statistics */
+    /* Sent statistics */
     struct {
         /* The total number of packets send */
         uint64_t packets;
@@ -310,8 +338,12 @@ typedef struct AVTConnectionStatus {
     } tx;
 } AVTConnectionStatus;
 
-AVT_API int avt_connection_status(AVTConnection *conn, AVTConnectionStatus *s,
-                                  int64_t timeout);
+/**
+ * Subscribe to receive status notifications.
+ */
+AVT_API int avt_connection_status_cb(AVTConnection *conn, void *opaque,
+                                     void (*status_cb)(void *opaque,
+                                                       AVTConnectionStatus *s));
 
 /**
  * Immediately flush all buffered data for a connection.

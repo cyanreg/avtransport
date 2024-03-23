@@ -73,6 +73,7 @@ You can talk about the project and get in touch with developers on:
  - IRC: **`#avtransport`** on the [Libera.Chat](ircs://irc.libera.chat:6697) network
   - [Libera.Chat’s guide on how to connect](https://libera.chat/guides/connect)
     - Or use the [Kiwi web client](https://kiwiirc.com/nextclient/irc.libera.chat/?#avtransport)
+ - Matrix: **`#avtransport`** on the [pars.ee](https://matrix.to/#/#avtransport:pars.ee) network
 
 ## License
 The [specifications document)(draft-avtransport-spec.bs), and generated [HTML](https://cyanreg.github.io/avtransport/) are licensed under the **MIT-Zero** license.

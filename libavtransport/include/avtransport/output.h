@@ -35,7 +35,8 @@ typedef struct AVTOutput AVTOutput;
 
 /* Compression mode flags */
 enum AVTOutputCompressionFlags {
-    AVT_SENDER_COMPRESS_AUTO  =  0,            /* Compress everything except video and audio */
+    /* Compress everything not already compressed, except uncompressed video */
+    AVT_SENDER_COMPRESS_AUTO  =  0,
 
     AVT_SENDER_COMPRESS_SUBS  =  1 << 0,       /* Compress subtitles */
     AVT_SENDER_COMPRESS_AUX   =  1 << 1,       /* Compress auxillary payloads (ICC profiles/fonts) */
@@ -52,8 +53,9 @@ typedef struct AVTOutputOptions {
     enum AVTOutputCompressionFlags compress;
 
     /* Compression algorithm.
-     * If left as 0 (AVT_DATA_COMPRESSION_NONE), will automatically
-     * decide the best algorithm (Brotli for subtitles, Zstd for everything else)
+     * If left as 0 (AVT_DATA_COMPRESSION_AUTO), will automatically
+     * decide the best algorithm (Brotli for subtitles, Zstd for everything
+     * else not already compressed, except uncompressed video)
      *
      * Otherwise, will force the use of this compression algorithm. */
     enum AVTDataCompression compress_algo;

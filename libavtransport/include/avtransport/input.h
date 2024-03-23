@@ -27,30 +27,12 @@
 #ifndef AVTRANSPORT_INPUT_H
 #define AVTRANSPORT_INPUT_H
 
+#include "connection.h"
 #include "stream.h"
 #include "utils.h"
 
 typedef struct AVTInputOptions {
-    /**
-     * Time in nanoseconds to wait on new data before giving up.
-     * Default: infinite.
-     */
-    uint64_t timeout;
-
-    struct {
-        /**
-         * Whether to always check and correct using Raptor codes in the headers.
-         * Default: false
-         */
-        bool always_test_headers;
-
-        /**
-         * Number of decoding steps. Higher values increase performance overhead,
-         * but allow for better correction of errors.
-         * Default: 1
-         */
-        uint8_t iterations;
-    } ldpc;
+    ;
 } AVTInputOptions;
 
 /* List of callbacks. All are optional. */
@@ -118,18 +100,8 @@ AVT_API int avt_input_open(AVTContext *ctx, AVTConnection *conn,
 /* Adjusts input options on the fly. */
 AVT_API int avt_input_set_options(AVTContext *ctx, AVTInputOptions *opts);
 
-/* Seek into the stream, if possible. */
+/* Seek into the stream. */
 AVT_API int avt_input_seek(AVTContext *ctx, AVTStream *st, int64_t offset, int absolute);
-
-/* Process a single packet and call its relevant callback. If no input is
- * available within the timeout duration (nanoseconds),
- * will return AVT_ERROR(EAGAIN).
- * Can be called multiple times from different threads. */
-AVT_API int avt_input_process(AVTContext *ctx, int64_t timeout);
-
-/* Start a thread that will call avt_input_process as data becomes available.
- * Otherwise, avt_input_process() may be called manually. */
-AVT_API int avt_input_start_thread(AVTContext *ctx);
 
 /* Close input and free all associated data with it. */
 AVT_API int avt_input_close(AVTContext *ctx);

@@ -29,6 +29,7 @@
 #include <inttypes.h>
 #include <threads.h>
 
+#include <avtransport/avtransport.h>
 #include "net_io_common.h"
 
 #include <stdio.h>
@@ -50,7 +51,7 @@ static int listener_fn(void *_ctx)
 
     /* Read */
     for (int i = 0; i < ctx->nb_pkts; i++) {
-        ret = ctx->io->read_input(ctx->avt, ctx->ioctx, &ctx->output,
+        ret = ctx->io->read_input(ctx->ioctx, &ctx->output,
                                   ctx->pkt_len, INT64_MAX);
         if (ret < 0) {
             avt_log(ctx->avt, AVT_LOG_ERROR, "No bytes read\n");
@@ -89,14 +90,14 @@ int net_io_test(NetTestContext *ntc)
         .ioctx = ntc->ioctx_listener,
     };
 
-    uint32_t mtu = ntc->io->get_max_pkt_len(ntc->avt, ntc->ioctx_sender);
-    if (!mtu) {
-        avt_log(ntc->avt, AVT_LOG_ERROR, "MTU received of zero!\n");
+    int64_t mtu = ntc->io->get_max_pkt_len(ntc->ioctx_sender);
+    if (mtu <= 0) {
+        avt_log(ntc->avt, AVT_LOG_ERROR, "Error getting MTU!\n");
         ret = AVT_ERROR(EINVAL);
         goto fail;
     }
 
-    avt_log(ntc->avt, AVT_LOG_INFO, "MTU received = %u\n", mtu);
+    avt_log(ntc->avt, AVT_LOG_INFO, "MTU received = %" PRIi64 "\n", mtu);
 
     /* Random packet data */
     int64_t sum = 0;
@@ -116,7 +117,7 @@ int net_io_test(NetTestContext *ntc)
         goto fail;
 
     /* Write vector test */
-    ret = ntc->io->write_vec(ntc->avt, ntc->ioctx_sender, test_pkt,
+    ret = ntc->io->write_vec(ntc->ioctx_sender, test_pkt,
                              AVT_ARRAY_ELEMS(test_pkt), INT64_MAX);
     if (ret < 0) {
         goto fail;
@@ -165,7 +166,7 @@ int net_io_test(NetTestContext *ntc)
         goto fail;
 
     /* Write vector test */
-    ret = ntc->io->write_pkt(ntc->avt, ntc->ioctx_sender, &test_pkt[0],
+    ret = ntc->io->write_pkt(ntc->ioctx_sender, &test_pkt[0],
                              INT64_MAX);
     if (ret < 0) {
         goto fail;
@@ -253,11 +254,11 @@ fail:
 
 int net_io_free(NetTestContext *ntc)
 {
-    int err = ntc->io->close(ntc->avt, &ntc->ioctx_sender);
+    int err = ntc->io->close(&ntc->ioctx_sender);
     if (err)
-        ntc->io->close(ntc->avt, &ntc->ioctx_listener);
+        ntc->io->close(&ntc->ioctx_listener);
     else
-        err = ntc->io->close(ntc->avt, &ntc->ioctx_listener);
+        err = ntc->io->close(&ntc->ioctx_listener);
     avt_close(&ntc->avt);
     return err;
 }

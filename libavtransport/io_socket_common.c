@@ -24,17 +24,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _GNU_SOURCE // SO_BINDTODEVICE
+#define _GNU_SOURCE // SO_BINDTODEVICE + ipv6_mtuinfo
 #define _XOPEN_SOURCE 700 // pwrite, IOV_MAX
-
-#include "os_compat.h"
 
 #include <string.h>
 #include <unistd.h>
-#include <sys/socket.h>
+
 #include <arpa/inet.h>
-#include <sys/ioctl.h>
 #include <netinet/udp.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 
 /* Fallback */
@@ -50,6 +49,10 @@
 #ifndef UDPLITE_RECV_CSCOV
 #define UDPLITE_RECV_CSCOV  11
 #endif
+#endif
+
+#if __has_include(<linux/net_tstamp.h>)
+#include <linux/net_tstamp.h>
 #endif
 
 #include <ifaddrs.h>
@@ -122,8 +125,7 @@ static int setup_ip_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr,
         SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_BINDTODEVICE, addr->interface);
 #else
         avt_log(log_ctx, AVT_LOG_ERROR, "Unable to bind socket to interface, not supported!\n");
-        ret = AVT_ERROR(EOPNOTSUPP);
-        goto fail;
+        return AVT_ERROR(EOPNOTSUPP);
 #endif
     }
 
@@ -132,6 +134,14 @@ static int setup_ip_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr,
         SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_RCVBUF, (int)addr->opts.rx_buf);
     if (addr->opts.tx_buf)
         SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_SNDBUF, (int)addr->opts.tx_buf);
+
+#ifdef SOF_TIMESTAMPING_TX_RECORD_MASK
+    {
+        int ts_flags = SOF_TIMESTAMPING_RX_SOFTWARE |
+                       SOF_TIMESTAMPING_SOFTWARE;
+        SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_TIMESTAMPING, (int)ts_flags);
+    }
+#endif
 
 #ifdef SO_RXQ_OVFL
     /* Turn on dropped packet counter */
@@ -164,8 +174,10 @@ static int setup_ip_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr,
     /* Disable fragmentation */
     SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_DONTFRAG, (int)1);
 
+#ifdef IPV6_RECVPATHMTU
     /* Enable MTU monitoring */
-//    SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_RECVPATHMTU, (int)1);
+    SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_RECVPATHMTU, (int)1);
+#endif
 
 #ifdef IPV6_FREEBIND
     /* Enable free binding when no interface is given.
@@ -316,19 +328,25 @@ fail:
     return ret;
 }
 
-uint32_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
+int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
 {
-    int ret;
+    int64_t ret = 1280;
+
+    if (sc->addr_size != sizeof(sc->ip.local_addr))
+        return AVT_ERROR(EINVAL);
+
+#ifdef IPV6_RECVPATHMTU
     struct ip6_mtuinfo mtu6;
 
     memcpy(&mtu6.ip6m_addr, sc->remote_addr, sc->addr_size);
     ret = avt_get_socket_opt(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_PATHMTU,
                              &mtu6, sizeof(mtu6),
                              "Unable to get MTU: %i %s\n");
-    if (ret < 0)
-        return ret;
+    if (ret >= 0)
+        ret = mtu6.ip6m_mtu;
+#endif
 
-    return mtu6.ip6m_mtu;
+    return ret;
 }
 
 int avt_socket_close(void *log_ctx, AVTSocketCommon *sc)

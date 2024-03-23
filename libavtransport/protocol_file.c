@@ -30,6 +30,7 @@
 
 #include "protocol_common.h"
 #include "io_common.h"
+#include "bytestream.h"
 
 struct AVTProtocolCtx {
     const AVTIO *io;
@@ -51,78 +52,97 @@ static int file_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
     return err;
 }
 
-static int file_add_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int file_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->add_dst)
         return AVT_ERROR(ENOTSUP);
-    return p->io->add_dst(ctx, p->io_ctx, addr);
+    return p->io->add_dst(p->io_ctx, addr);
 }
 
-static int file_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int file_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->del_dst)
         return AVT_ERROR(ENOTSUP);
-    return p->io->del_dst(ctx, p->io_ctx, addr);
+    return p->io->del_dst(p->io_ctx, addr);
 }
 
-static int64_t file_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                union AVTPacketData pkt, AVTBuffer *pl,
-                                int64_t timeout)
+static int64_t file_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
+                                      int64_t timeout)
 {
-    uint8_t hdr[AVT_MAX_HEADER_LEN];
-    size_t hdr_len = 0;
-
-    // TODO
-
-    //    return p->io->write_output(ctx, p->io_ctx, hdr, hdr_len, pl);
-    return 0;
+    return p->io->write_pkt(p->io_ctx, pkt, timeout);
 }
 
-static int64_t file_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
+static int64_t file_send_seq(AVTProtocolCtx *p,
                              AVTPacketFifo *seq, int64_t timeout)
 {
-    int err;
-
-    err = p->io->write_vec(ctx, p->io_ctx, seq->data, seq->nb, timeout);
-
-    return 0;
+    return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
 }
 
-static int64_t file_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
+#include "packet_decode.h"
+
+static int64_t file_receive_packet(AVTProtocolCtx *p,
                                    union AVTPacketData *pkt, AVTBuffer **pl,
                                    int64_t timeout)
 {
+    /* Request the maximum length. If any data gets caught, it's fine. */
+    size_t req_len = AVT_MAX_HEADER_LEN;
+
+    /* Get header */
     AVTBuffer *buf;
-    int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0, timeout);
+    int64_t err = p->io->read_input(p->io_ctx, &buf, req_len, timeout);
     if (err < 0)
         return err;
 
-    // TODO
+    size_t len;
+    uint8_t *data = avt_buffer_get_data(buf, &len);
+    if (!data || len != req_len) { // EOF handling too probably
+    }
+
+    // EC happens here
+
+    int64_t off;
+    uint16_t desc = AVT_RB24(&data[0]);
+    switch (desc) {
+    case AVT_PKT_SESSION_START:
+        off = avt_decode_session_start(buf, &pkt->session_start);
+        break;
+    case AVT_PKT_STREAM_REGISTRATION:
+        off = avt_decode_stream_registration(buf, &pkt->stream_registration);
+        break;
+    case AVT_PKT_STREAM_DATA & 0xFF00:
+        AVTBuffer tmp;
+        off = avt_decode_stream_data(buf, &pkt->stream_data, &tmp);
+        break;
+    };
 
     return err;
 }
 
-static uint32_t file_max_pkt_len(AVTContext *ctx, AVTProtocolCtx *p)
+static int64_t file_proto_max_pkt_len(AVTProtocolCtx *p)
 {
-    return p->io->get_max_pkt_len(ctx, p->io_ctx);
+    return p->io->get_max_pkt_len(p->io_ctx);
 }
 
-static int64_t file_seek(AVTContext *ctx, AVTProtocolCtx *p,
-                         int64_t off, uint32_t seq,
-                         int64_t ts, bool ts_is_dts)
+static int64_t file_proto_seek(AVTProtocolCtx *p,
+                               int64_t off, uint32_t seq,
+                               int64_t ts, bool ts_is_dts)
 {
-    return p->io->seek(ctx, p->io_ctx, off);
+    if (p->io->seek)
+        return p->io->seek(p->io_ctx, off);
+    return AVT_ERROR(ENOTSUP);
 }
 
-static int file_flush(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout)
+static int file_proto_flush(AVTProtocolCtx *p, int64_t timeout)
 {
-    return p->io->flush(ctx, p->io_ctx, timeout);
+    if (p->io->flush)
+        return p->io->flush(p->io_ctx, timeout);
+    return AVT_ERROR(ENOTSUP);
 }
 
-static int file_close(AVTContext *ctx, AVTProtocolCtx **p)
+static int file_proto_close(AVTProtocolCtx **p)
 {
     AVTProtocolCtx *priv = *p;
-    int err = priv->io->close(ctx, &priv->io_ctx);
+    int err = priv->io->close(&priv->io_ctx);
     free(priv);
     *p = NULL;
     return err;
@@ -134,12 +154,12 @@ const AVTProtocol avt_protocol_file = {
     .init = file_init,
     .add_dst = file_add_dst,
     .rm_dst = file_rm_dst,
-    .get_max_pkt_len = file_max_pkt_len,
-    .send_packet = file_send_packet,
+    .get_max_pkt_len = file_proto_max_pkt_len,
+    .send_packet = file_proto_send_packet,
     .send_seq = file_send_seq,
     .update_packet = NULL,
     .receive_packet = file_receive_packet,
-    .seek = file_seek,
-    .flush = file_flush,
-    .close = file_close,
+    .seek = file_proto_seek,
+    .flush = file_proto_flush,
+    .close = file_proto_close,
 };

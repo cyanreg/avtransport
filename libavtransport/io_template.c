@@ -30,12 +30,12 @@
 
 #include "utils_internal.h"
 
-static uint32_t RENAME(max_pkt_len)(AVTContext *ctx, AVTIOCtx *io)
+static int64_t RENAME(max_pkt_len)(AVTIOCtx *io)
 {
     return UINT32_MAX;
 }
 
-[[maybe_unused]] static int64_t RENAME(seek)(AVTContext *ctx, AVTIOCtx *io, int64_t off)
+[[maybe_unused]] static int64_t RENAME(seek)(AVTIOCtx *io, int64_t off)
 {
     int ret = RENAME(seek_to)(io, (int64_t)off);
     if (ret < 0) {
@@ -48,8 +48,7 @@ static uint32_t RENAME(max_pkt_len)(AVTContext *ctx, AVTIOCtx *io)
     return (io->rpos = RENAME(offset)(io));
 }
 
-static int64_t RENAME(read_input)(AVTContext *ctx, AVTIOCtx *io,
-                                  AVTBuffer **_buf, size_t len,
+static int64_t RENAME(read_input)(AVTIOCtx *io, AVTBuffer **_buf, size_t len,
                                   int64_t timeout)
 {
     int ret;
@@ -101,8 +100,7 @@ static int64_t RENAME(read_input)(AVTContext *ctx, AVTIOCtx *io,
     return (io->rpos = RENAME(offset)(io));
 }
 
-static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
-                                 int64_t timeout)
+static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     int ret;
 
@@ -136,9 +134,8 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     return (io->wpos = RENAME(offset)(io));
 }
 
-[[maybe_unused]] static int64_t RENAME(write_vec)(AVTContext *ctx, AVTIOCtx *io,
-                                                  AVTPktd *pkt, uint32_t nb_pkt,
-                                                  int64_t timeout)
+[[maybe_unused]] static int64_t RENAME(write_vec)(AVTIOCtx *io, AVTPktd *pkt,
+                                                  uint32_t nb_pkt, int64_t timeout)
 {
     int ret;
 
@@ -179,9 +176,8 @@ static int64_t RENAME(write_pkt)(AVTContext *ctx, AVTIOCtx *io, AVTPktd *p,
     return (io->wpos = RENAME(offset)(io));
 }
 
-[[maybe_unused]] static int64_t RENAME(rewrite)(AVTContext *ctx, AVTIOCtx *io,
-                                                AVTPktd *p, int64_t off,
-                                                int64_t timeout)
+[[maybe_unused]] static int64_t RENAME(rewrite)(AVTIOCtx *io, AVTPktd *p,
+                                                int64_t off, int64_t timeout)
 {
     int ret, ret2;
 

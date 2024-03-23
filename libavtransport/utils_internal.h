@@ -38,6 +38,7 @@
 #include "packet_common.h"
 
 #include "config.h"
+#include "attributes.h"
 
 #define AVT_SWAP(a, b)         \
     do {                       \
@@ -46,21 +47,7 @@
         typeof(*_a) tmp = *_a; \
         *_a = *_b;             \
         *_b = tmp;             \
-    } while(0)
-
-#define avt_assert0(cond) assert(cond)
-
-#if CONFIG_ASSERT_LEVEL > 0
-#define avt_assert1(cond) assert(cond)
-#else
-#define avt_assert1(cond)
-#endif
-
-#if CONFIG_ASSERT_LEVEL > 1
-#define avt_assert2(cond) assert(cond)
-#else
-#define avt_assert2(cond)
-#endif
+    } while (0)
 
 int64_t avt_get_time_ns(void);
 

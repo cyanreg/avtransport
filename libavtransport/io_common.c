@@ -89,7 +89,8 @@ static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
         return AVT_IO_CALLBACK;
     case AVT_ADDRESS_UNIX:
         return AVT_IO_UNIX;
-    case AVT_ADDRESS_URL: [[fallthrough]];
+    case AVT_ADDRESS_URL:
+        [[fallthrough]];
     case AVT_ADDRESS_SOCKET:
         if (addr->proto == AVT_PROTOCOL_UDP)
             return AVT_IO_UDP;
@@ -110,7 +111,7 @@ int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
         return AVT_ERROR(EINVAL);
 
     int err;
-    const AVTIO *io, **io_list = avt_io_list[AVT_IO_FILE];
+    const AVTIO *io, **io_list = avt_io_list[io_type];
     while ((io = *io_list)) {
         err = io->init(ctx, io_ctx, addr);
         if (err == AVT_ERROR(ENOMEM))

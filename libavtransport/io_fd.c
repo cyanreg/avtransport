@@ -54,7 +54,7 @@ struct AVTIOCtx {
     bool is_write;
 };
 
-static int fd_close(AVTContext *ctx, AVTIOCtx **_io)
+static int fd_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
 
@@ -92,7 +92,7 @@ static int fd_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
     if (fcntl(addr->fd, F_SETFD, FD_CLOEXEC) == -1) {
         ret = avt_handle_errno(io, "Error in fcntl(F_SETFD, FD_CLOEXEC): %i %s\n");
-        fd_close(ctx, &io);
+        fd_close(&io);
         return ret;
     }
 
@@ -149,7 +149,7 @@ static inline int64_t fd_offset(AVTIOCtx *io)
     return lseek(io->fd, 0, SEEK_CUR);
 }
 
-static int fd_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
+static int fd_flush(AVTIOCtx *io, int64_t timeout)
 {
     int ret = fsync(io->fd);
     if (ret)
@@ -159,8 +159,8 @@ static int fd_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
 }
 
 #if IOV_MAX > 4
-static int64_t fd_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
-                                   AVTPktd *pkt, uint32_t nb_pkt, int64_t timeout)
+static int64_t fd_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+                                   int64_t timeout)
 {
     int64_t ret;
     int nb_iov = 0;
@@ -189,8 +189,8 @@ static int64_t fd_write_vec_native(AVTContext *ctx, AVTIOCtx *io,
 }
 #endif
 
-static int64_t fd_rewrite_native(AVTContext *ctx, AVTIOCtx *io,
-                                 AVTPktd *p, int64_t off, int64_t timeout)
+static int64_t fd_rewrite_native(AVTIOCtx *io, AVTPktd *p, int64_t off,
+                                 int64_t timeout)
 {
     int64_t ret;
     ret = pwrite(io->fd, p->hdr, p->hdr_len, off);

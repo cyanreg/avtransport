@@ -51,78 +51,71 @@ static int stream_proto_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *ad
     return err;
 }
 
-static int stream_proto_add_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_proto_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->add_dst)
         return AVT_ERROR(ENOTSUP);
-    return p->io->add_dst(ctx, p->io_ctx, addr);
+    return p->io->add_dst(p->io_ctx, addr);
 }
 
-static int stream_proto_rm_dst(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_proto_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->del_dst)
         return AVT_ERROR(ENOTSUP);
-    return p->io->del_dst(ctx, p->io_ctx, addr);
+    return p->io->del_dst(p->io_ctx, addr);
 }
 
-static int64_t stream_proto_send_packet(AVTContext *ctx, AVTProtocolCtx *p,
-                                        union AVTPacketData pkt, AVTBuffer *pl,
+static int64_t stream_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
                                         int64_t timeout)
 {
-    uint8_t hdr[AVT_MAX_HEADER_LEN];
-    size_t hdr_len = 0;
-
-    // TODO
-
-    //    return p->io->write_output(ctx, p->io_ctx, hdr, hdr_len, pl);
-    return 0;
+    return p->io->write_pkt(p->io_ctx, pkt, timeout);
 }
 
-static int64_t stream_proto_send_seq(AVTContext *ctx, AVTProtocolCtx *p,
-                                     AVTPacketFifo *seq, int64_t timeout)
+static int64_t stream_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
+                                     int64_t timeout)
 {
-    int err;
-
-    err = p->io->write_vec(ctx, p->io_ctx, seq->data, seq->nb, timeout);
-
-    return 0;
+    return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
 }
 
-static int64_t stream_proto_receive_packet(AVTContext *ctx, AVTProtocolCtx *p,
+static int64_t stream_proto_receive_packet(AVTProtocolCtx *p,
                                            union AVTPacketData *pkt, AVTBuffer **pl,
                                            int64_t timeout)
 {
     AVTBuffer *buf;
-    int64_t err = p->io->read_input(ctx, p->io_ctx, &buf, 0, timeout);
+    int64_t err = p->io->read_input(p->io_ctx, &buf, 0, timeout);
     if (err < 0)
         return err;
 
-    // TODO
+    // TODO - deserialize packet here
 
     return err;
 }
 
-static uint32_t stream_proto_max_pkt_len(AVTContext *ctx, AVTProtocolCtx *p)
+static int64_t stream_proto_max_pkt_len(AVTProtocolCtx *p)
 {
-    return p->io->get_max_pkt_len(ctx, p->io_ctx);
+    return p->io->get_max_pkt_len(p->io_ctx);
 }
 
-static int64_t stream_proto_seek(AVTContext *ctx, AVTProtocolCtx *p,
-                         int64_t off, uint32_t seq,
-                         int64_t ts, bool ts_is_dts)
+static int64_t stream_proto_seek(AVTProtocolCtx *p,
+                                 int64_t off, uint32_t seq,
+                                 int64_t ts, bool ts_is_dts)
 {
-    return p->io->seek(ctx, p->io_ctx, off);
+    if (p->io->seek)
+        return p->io->seek(p->io_ctx, off);
+    return AVT_ERROR(ENOTSUP);
 }
 
-static int stream_proto_flush(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout)
+static int stream_proto_flush(AVTProtocolCtx *p, int64_t timeout)
 {
-    return p->io->flush(ctx, p->io_ctx, timeout);
+    if (p->io->flush)
+        return p->io->flush(p->io_ctx, timeout);
+    return AVT_ERROR(ENOTSUP);
 }
 
-static int stream_proto_close(AVTContext *ctx, AVTProtocolCtx **p)
+static int stream_proto_close(AVTProtocolCtx **p)
 {
     AVTProtocolCtx *priv = *p;
-    int err = priv->io->close(ctx, &priv->io_ctx);
+    int err = priv->io->close(&priv->io_ctx);
     free(priv);
     *p = NULL;
     return err;

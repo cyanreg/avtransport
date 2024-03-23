@@ -60,6 +60,18 @@ static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
     close((int)((intptr_t)opaque));
 }
 
+static int mmap_close(AVTIOCtx **_io)
+{
+    AVTIOCtx *io = *_io;
+    avt_buffer_unref(&io->map);
+    if (io->file_grew)
+        ftruncate(io->fd, io->wpos);
+    close(io->fd);
+    free(io);
+    *_io = NULL;
+    return 0;
+}
+
 static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 {
     int ret;
@@ -228,32 +240,19 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     return 0;
 }
 
-static int mmap_close(AVTContext *ctx, AVTIOCtx **_io)
-{
-    AVTIOCtx *io = *_io;
-    avt_buffer_unref(&io->map);
-    if (io->file_grew)
-        ftruncate(io->fd, io->wpos);
-    close(io->fd);
-    free(io);
-    *_io = NULL;
-    return 0;
-}
-
-static uint32_t mmap_max_pkt_len(AVTContext *ctx, AVTIOCtx *io)
+static int64_t mmap_max_pkt_len(AVTIOCtx *io)
 {
     return UINT32_MAX;
 }
 
-static inline int64_t mmap_seek(AVTContext *ctx, AVTIOCtx *io, int64_t pos)
+static inline int64_t mmap_seek(AVTIOCtx *io, int64_t pos)
 {
     if (pos > avt_buffer_get_data_len(io->map))
         return AVT_ERROR(ERANGE);
     return (io->rpos = pos);
 }
 
-static int64_t mmap_write_pkt(AVTContext *ctx, AVTIOCtx *io,
-                              AVTPktd *p, int64_t timeout)
+static int64_t mmap_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     size_t pl_len;
     uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
@@ -274,8 +273,7 @@ static int64_t mmap_write_pkt(AVTContext *ctx, AVTIOCtx *io,
     return (io->wpos += p->hdr_len + pl_len);
 }
 
-static int64_t mmap_write_vec(AVTContext *ctx, AVTIOCtx *io,
-                              AVTPktd *iov, uint32_t nb_iov,
+static int64_t mmap_write_vec(AVTIOCtx *io, AVTPktd *iov, uint32_t nb_iov,
                               int64_t timeout)
 {
     uint8_t *pl_data;
@@ -304,8 +302,7 @@ static int64_t mmap_write_vec(AVTContext *ctx, AVTIOCtx *io,
     return (io->wpos = offset);
 }
 
-static int64_t mmap_rewrite(AVTContext *ctx, AVTIOCtx *io,
-                            AVTPktd *p, int64_t off,
+static int64_t mmap_rewrite(AVTIOCtx *io, AVTPktd *p, int64_t off,
                             int64_t timeout)
 {
     size_t pl_len;
@@ -323,7 +320,7 @@ static int64_t mmap_rewrite(AVTContext *ctx, AVTIOCtx *io,
     return off + p->hdr_len + pl_len;
 }
 
-static inline int64_t mmap_read(AVTContext *ctx, AVTIOCtx *io, AVTBuffer **dst,
+static inline int64_t mmap_read(AVTIOCtx *io, AVTBuffer **dst,
                                 size_t len, int64_t timeout)
 {
     AVTBuffer *buf = *dst;
@@ -346,7 +343,7 @@ static inline int64_t mmap_read(AVTContext *ctx, AVTIOCtx *io, AVTBuffer **dst,
     return (io->rpos += len);
 }
 
-static int mmap_flush(AVTContext *ctx, AVTIOCtx *io, int64_t timeout)
+static int mmap_flush(AVTIOCtx *io, int64_t timeout)
 {
     size_t map_size;
     uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);

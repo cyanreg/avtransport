@@ -44,7 +44,7 @@ static int read_fn(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx,
         avt_buffer_get_data(*test_buf, &pre);
 
     /* Read */
-    ret = io->read_input(avt, io_ctx, test_buf, bytes, INT64_MAX);
+    ret = io->read_input(io_ctx, test_buf, bytes, INT64_MAX);
     if (ret <= 0) {
         avt_log(avt, AVT_LOG_ERROR, "No bytes read\n");
         return AVT_ERROR(EINVAL);
@@ -81,7 +81,7 @@ int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
 
     /* Write vector test */
     AVTBuffer *buf = NULL;
-    ret = io->write_vec(avt, io_ctx, test_pkt, AVT_ARRAY_ELEMS(test_pkt),
+    ret = io->write_vec(io_ctx, test_pkt, AVT_ARRAY_ELEMS(test_pkt),
                         INT64_MAX);
     if (ret < 0) {
         goto fail;
@@ -97,19 +97,19 @@ int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     }
 
     /* Flush test */
-    ret = io->flush(avt, io_ctx, INT64_MAX);
+    ret = io->flush(io_ctx, INT64_MAX);
     if (ret < 0)
         goto fail;
 
     /* Seek test */
-    ret = io->seek(avt, io_ctx, 0);
+    ret = io->seek(io_ctx, 0);
     if (ret < 0)
         goto fail;
 
     /* Read test */
     int64_t last = 0;
     for (int i = 0; i < AVT_ARRAY_ELEMS(test_pkt); i++) {
-        int64_t off = io->read_input(avt, io_ctx, &buf, test_pkt[i].hdr_len,
+        int64_t off = io->read_input(io_ctx, &buf, test_pkt[i].hdr_len,
                                      INT64_MAX);
         if (off == 0) {
             avt_log(avt, AVT_LOG_ERROR,"No bytes read\n");
@@ -143,7 +143,7 @@ int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     }
 
     /* Seek test */
-    ret = io->seek(avt, io_ctx, 0);
+    ret = io->seek(io_ctx, 0);
     if (ret < 0)
         goto fail;
 
@@ -158,7 +158,7 @@ int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
         goto fail;
 
     /* Seek test */
-    ret = io->seek(avt, io_ctx, 0);
+    ret = io->seek(io_ctx, 0);
     if (ret < 0)
         goto fail;
 
@@ -168,7 +168,7 @@ int file_io_test(AVTContext *avt, const AVTIO *io, AVTIOCtx *io_ctx)
     /* Rewrite test */
     for (int i = 0; i < test_pkt[0].hdr_len; i++)
         test_pkt[0].hdr[i] = ~test_pkt[0].hdr[i];
-    ret = io->rewrite(avt, io_ctx, &test_pkt[0], 0,
+    ret = io->rewrite(io_ctx, &test_pkt[0], 0,
                       INT64_MAX);
     if (ret < 0)
         goto fail;

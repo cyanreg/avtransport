@@ -32,6 +32,8 @@
 
 #include <avtransport/utils.h>
 #include <avtransport/rational.h>
+
+#include "attributes.h"
 #include "utils_internal.h"
 
 #ifndef AVT_WB8
@@ -257,7 +259,7 @@ static inline void avt_bsw_u ##len ##n (AVTBytestream *bs, const uint##tlen##_t 
 static inline void avt_bsw_i ##len ##n (AVTBytestream *bs, const int##tlen##_t val)  \
 {                                                                                    \
     avt_assert1(((bs->ptr) + (len >> 3)) <= bs->end);                                \
-    union { int##tlen##_t ival; uint##tlen##_t uval; } t;                            \
+    union { int##tlen##_t ival; uint##tlen##_t uval; } ATTR_ALIAS t;                 \
     t.ival = val;                                                                    \
     en##len(bs->ptr, t.uval);                                                        \
     bs->ptr += len >> 3;                                                             \
@@ -279,7 +281,7 @@ AVT_WRITE_FN(AVT_WL, l, 64, 64)
 static inline void avt_bsw_rt##n(AVTBytestream *bs, const AVTRational r) \
 {                                                                        \
     avt_assert1(((bs->ptr) + 8) <= bs->end);                             \
-    union { int32_t _val; uint32_t val; } t[2];                          \
+    union { int32_t _val; uint32_t val; } ATTR_ALIAS t[2];               \
     t[0]._val = r.num;                                                   \
     t[1]._val = r.den;                                                   \
     en##32(bs->ptr, t[0].val);                                           \
@@ -365,7 +367,7 @@ static inline int##tlen##_t avt_bsr_i ##len ##n (AVTBytestream *bs)   \
 {                                                                     \
     if (((bs->ptr) + (len >> 3)) > bs->end)                           \
         return 0;                                                     \
-    union { int##tlen##_t ival; uint##tlen##_t uval; } t;             \
+    union { int##tlen##_t ival; uint##tlen##_t uval; } ATTR_ALIAS t;  \
     t.uval = en##len(bs->ptr);                                        \
     bs->ptr += len >> 3;                                              \
     return t.ival;                                                    \
@@ -388,7 +390,7 @@ static inline AVTRational avt_bsr_rt##n(AVTBytestream *bs)               \
 {                                                                        \
     if (((bs->ptr) + 8) > bs->end)                                       \
         return (AVTRational){ 0, 0 };                                    \
-    union { int32_t ival; uint32_t uval; } t[2];                         \
+    union { int32_t ival; uint32_t uval; } ATTR_ALIAS t[2];              \
     t[0].uval = en##32(bs->ptr + 0);                                     \
     t[1].uval = en##32(bs->ptr + 4);                                     \
     bs->ptr += 8;                                                        \

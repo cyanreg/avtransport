@@ -57,7 +57,7 @@ typedef struct AVTSocketCommon {
 int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr);
 
 /* Get MTU */
-uint32_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
+int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
 
 /* Close a socket context */
 int avt_socket_close(void *log_ctx, AVTSocketCommon *sc);

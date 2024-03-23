@@ -40,44 +40,40 @@ typedef struct AVTProtocol {
     int (*init)(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
-    int (*add_dst)(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr);
+    int (*add_dst)(AVTProtocolCtx *p, AVTAddress *addr);
     /* Removes a secondary destination, NULL if unsupported */
-    int (*rm_dst)(AVTContext *ctx, AVTProtocolCtx *p, AVTAddress *addr);
+    int (*rm_dst)(AVTProtocolCtx *p, AVTAddress *addr);
 
     /* Return the maximum packet length */
-    uint32_t (*get_max_pkt_len)(AVTContext *ctx, AVTProtocolCtx *p);
+    int64_t (*get_max_pkt_len)(AVTProtocolCtx *p);
 
     /* Send. Returns positive offset on success, otherwise negative error.
      * Returns offset to which packet was written to. */
-    int64_t (*send_packet)(AVTContext *ctx, AVTProtocolCtx *p,
-                           union AVTPacketData pkt, AVTBuffer *pl,
-                           int64_t timeout);
+    int64_t (*send_packet)(AVTProtocolCtx *p, AVTPktd *pkt, int64_t timeout);
 
     /* Send a sequence of packets. Returns positive offset on success,
        otherwise negative error */
-    int64_t (*send_seq)(AVTContext *ctx, AVTProtocolCtx *p,
-                        AVTPacketFifo *seq, int64_t timeout);
+    int64_t (*send_seq)(AVTProtocolCtx *p, AVTPacketFifo *seq, int64_t timeout);
 
     /* Overwrite a packet at a given offset */
-    int (*update_packet)(AVTContext *ctx, AVTProtocolCtx *p,
+    int (*update_packet)(AVTProtocolCtx *p,
                          union AVTPacketData pkt, AVTBuffer *pl,
                          void **series, int64_t pos);
 
     /* Receive a packet. Returns offset after reading. */
-    int64_t (*receive_packet)(AVTContext *ctx, AVTProtocolCtx *p,
+    int64_t (*receive_packet)(AVTProtocolCtx *p,
                               union AVTPacketData *pkt, AVTBuffer **pl,
                               int64_t timeout);
 
     /* Seek to a place in the stream */
-    int64_t (*seek)(AVTContext *ctx, AVTProtocolCtx *p,
-                    int64_t off, uint32_t seq,
+    int64_t (*seek)(AVTProtocolCtx *p, int64_t off, uint32_t seq,
                     int64_t ts, bool ts_is_dts);
 
     /* Flush buffered data */
-    int (*flush)(AVTContext *ctx, AVTProtocolCtx *p, int64_t timeout);
+    int (*flush)(AVTProtocolCtx *p, int64_t timeout);
 
     /* Close */
-    int (*close)(AVTContext *ctx, AVTProtocolCtx **p);
+    int (*close)(AVTProtocolCtx **p);
 } AVTProtocol;
 
 int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
