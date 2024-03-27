@@ -54,7 +54,7 @@ struct AVTIOCtx {
     bool is_write;
 };
 
-static int fd_close(AVTIOCtx **_io)
+static COLD int fd_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
 
@@ -69,7 +69,7 @@ static int fd_close(AVTIOCtx **_io)
     return ret;
 }
 
-static int fd_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int fd_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));

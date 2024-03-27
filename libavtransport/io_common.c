@@ -25,6 +25,7 @@
  */
 
 #include "io_common.h"
+#include "attributes.h"
 
 extern const AVTIO avt_io_null;
 extern const AVTIO avt_io_dcb;
@@ -103,8 +104,8 @@ static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
 }
 
 /* For protocols to call */
-int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
-                AVTAddress *addr)
+COLD int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
+                     AVTAddress *addr)
 {
     enum AVTIOType io_type = map_addr_to_io(addr);
     if (io_type == AVT_IO_INVALID)

@@ -40,6 +40,29 @@
 #include <avtransport/avtransport.h>
 
 #include "config.h"
+#include "utils_internal.h"
+
+int avt_parse_uuid(uint8_t out[16], const char *src)
+{
+    if (strlen(src) != 36)
+        return AVT_ERROR(EINVAL);
+
+    for (int i = 0; i < 16; i++) {
+        /* Skip dashes */
+        if (i == 4 || i == 6 || i == 8 || i == 10)
+            src++;
+
+        int hi = avt_ascii_to_int(*src++);
+        int lo = avt_ascii_to_int(*src++);
+
+        if (hi == -1 || lo == -1)
+            return AVT_ERROR(EINVAL);
+
+        out[i] = (hi << 4) + lo;
+    }
+
+    return 0;
+}
 
 int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4)
 {
@@ -170,97 +193,144 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
     return 0;
 }
 
-static int parse_settings(void *log_ctx, AVTAddress *addr, char *next)
+static int parse_default_streams(void *log_ctx, AVTAddress *addr, char *next)
 {
+    char *end;
+    char *tmp;
+
+    free(addr->opts.default_sid);
+    addr->opts.default_sid = NULL;
+
+    char *val = strtok_r(next, ",", &tmp);
+    do {
+        uint64_t res = strtoul(val, &end, 10);
+
+        if (end == val) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid stream ID: %s\n", val);
+            return AVT_ERROR(EINVAL);
+        } else if (((res == ULONG_MAX) && (errno == ERANGE)) || (res > UINT16_MAX)) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value too high: %s\n", val);
+            return AVT_ERROR(ERANGE);
+        } else if (res == UINT16_MAX) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value reserved: %s\n", val);
+            return AVT_ERROR(EINVAL);
+        }
+
+        if (!addr->opts.default_sid) {
+            addr->opts.default_sid = calloc(UINT16_MAX, sizeof(*addr->opts.default_sid));
+            if (!addr->opts.default_sid)
+                return AVT_ERROR(ENOMEM);
+        }
+
+        for (auto i = 0; i < addr->opts.nb_default_sid; i++) {
+            if (addr->opts.default_sid[i] == res) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value already specified: %" PRIu64 "\n", res);
+                return AVT_ERROR(EINVAL);
+            }
+        }
+
+        addr->opts.default_sid[addr->opts.nb_default_sid++] = res;
+    } while ((val = strtok_r(NULL, ",", &tmp)));
+
+    return 0;
+}
+
+static int parse_settings(void *log_ctx, AVTAddress *addr,
+                          char *next, char *opts_buf, size_t opts_buf_size)
+{
+    int ret;
     char *tmp;
     char *tmp2;
     char *end;
-    char *def_sid = NULL;
 
-    if (next[0] != '?') {
-        def_sid = next;
-        next = NULL;
+    if (!next || next[0] == '\0') {
+        return 0;
+    } else if (next[0] != '#') {
+        char uuid_tmp[36 + 1];
+        strncpy(uuid_tmp, next, sizeof(uuid_tmp) - 1);
+        uuid_tmp[36] = '\0';
 
-        int len = strlen(def_sid);
-        for (auto i = 0; i < len; i++) {
-            if (def_sid[i] == '?') {
-                def_sid[i] = 0;
-                next = &def_sid[i + 1];
-                break;
-            }
+        ret = avt_parse_uuid(addr->uuid, uuid_tmp);
+        if (ret < 0) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid UUID: %s\n", uuid_tmp);
+            return ret;
         }
+
+        next += 36;
+
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      UUID: %s\n", uuid_tmp);
     }
 
-    if (def_sid) {
-        def_sid = strtok_r(def_sid, "+", &tmp);
-        do {
-            uint64_t res = strtoul(def_sid, &end, 10);
-
-            if (end == def_sid) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid stream ID: %s\n", def_sid);
-                return AVT_ERROR(EINVAL);
-            } else if (((res == ULONG_MAX) && (errno == ERANGE)) || (res > UINT16_MAX)) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value too high: %s\n", def_sid);
-                return AVT_ERROR(ERANGE);
-            } else if (res == UINT16_MAX) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value reserved: %s\n", def_sid);
-                return AVT_ERROR(EINVAL);
-            }
-
-            if (!addr->opts.default_sid) {
-                addr->opts.default_sid = calloc(UINT16_MAX, sizeof(*addr->opts.default_sid));
-                if (!addr->opts.default_sid)
-                    return AVT_ERROR(ENOMEM);
-            }
-
-            for (auto i = 0; i < addr->opts.nb_default_sid; i++) {
-                if (addr->opts.default_sid[i] == res) {
-                    avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value already specified: %" PRIu64 "\n", res);
-                    return AVT_ERROR(EINVAL);
-                }
-            }
-
-            addr->opts.default_sid[addr->opts.nb_default_sid++] = res;
-        } while ((def_sid = strtok_r(NULL, "+", &tmp)));
+    if (next[0] == '\0') {
+        return 0;
+    } else if (next[0] != '#') {
+        avt_log(log_ctx, AVT_LOG_ERROR, "Invalid settings string: %s\n", next);
+        return AVT_ERROR(EINVAL);
     }
 
-    if (next && next[0] != '\0') {
-        char *option = strtok_r(next, "?", &tmp);
-        do {
+    next++;
+
+    char *option = strtok_r(next, "&", &tmp);
+    do {
         char *key = strtok_r(option, "=", &tmp2);
-            char *val = strtok_r(NULL, "=", &tmp2);
-            if (!val) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Key %s has no value!\n", key);
+        char *val = strtok_r(NULL, "=", &tmp2);
+        if (!val) {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Key %s has no value!\n", key);
+            return AVT_ERROR(EINVAL);
+        }
+
+        if (!strcmp(key, "t")) {
+            double res = strtod(val, &end);
+            if (end == val) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid option %s value: %s\n", key, val);
                 return AVT_ERROR(EINVAL);
             }
 
-            if (!strcmp(key, "rx_buf")) {
-                uint64_t res = strtoul(val, &end, 10);
-                if (end == val) {
-                    avt_log(log_ctx, AVT_LOG_ERROR, "Invalid option %s value: %s\n", key, val);
-                    return AVT_ERROR(EINVAL);
-                } else if (((res == ULONG_MAX) && (errno == ERANGE)) || res > INT32_MAX) {
-                    avt_log(log_ctx, AVT_LOG_ERROR, "Option %s value too high: %s\n", key, val);
-                    return AVT_ERROR(ERANGE);
-                }
+            addr->opts.start_time = res * 1000 * 1000 * 1000;
+        } else if (!strcmp(key, "default")) {
+            ret = parse_default_streams(log_ctx, addr, val);
+            if (ret < 0)
+                return ret;
+        } else if (!strcmp(key, "tx_buf") || !strcmp(key, "rx_buf")) {
+            uint64_t res = strtoul(val, &end, 10);
+            if (end == val) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid option %s value: %s\n", key, val);
+                return AVT_ERROR(EINVAL);
+            } else if (((res == ULONG_MAX) && (errno == ERANGE)) || res > INT32_MAX) {
+                avt_log(log_ctx, AVT_LOG_ERROR, "Option %s value too high: %s\n", key, val);
+                return AVT_ERROR(ERANGE);
+            }
 
-                addr->opts.rx_buf = res;
-            } else if (!strcmp(key, "tx_buf")) {
-                uint64_t res = strtoul(val, &end, 10);
-                if (end == val) {
-                    avt_log(log_ctx, AVT_LOG_ERROR, "Invalid option %s value: %s\n", key, val);
-                    return AVT_ERROR(EINVAL);
-                } else if (((res == ULONG_MAX) && (errno == ERANGE)) || res > INT32_MAX) {
-                    avt_log(log_ctx, AVT_LOG_ERROR, "Option %s value too high: %s\n", key, val);
-                    return AVT_ERROR(ERANGE);
-                }
-
+            if (!strcmp(key, "tx_buf"))
                 addr->opts.tx_buf = res;
-            } else {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Option %s not recognized!\n", key);
-                return AVT_ERROR(EINVAL);
-            }
-        } while ((option = strtok_r(NULL, "?", &tmp)));
+            else if (!strcmp(key, "rx_buf"))
+                addr->opts.rx_buf = res;
+        } else {
+            avt_log(log_ctx, AVT_LOG_ERROR, "Option %s not recognized!\n", key);
+            return AVT_ERROR(EINVAL);
+        }
+    } while ((option = strtok_r(NULL, "&", &tmp)));
+
+    /* Write parsed settings to the logging buffer */
+    if (addr->opts.start_time)
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      start time: %" PRIi64 "\n", addr->opts.start_time);
+    if (addr->opts.rx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      rx_buf: %i\n", addr->opts.rx_buf);
+    if (addr->opts.tx_buf)
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      tx_buf: %i\n", addr->opts.tx_buf);
+    if (addr->opts.nb_default_sid) {
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      default streams: ");
+        for (int i = 0; i < addr->opts.nb_default_sid; i++)
+            snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                     "%i%s", addr->opts.default_sid[i],
+                     (i == (addr->opts.nb_default_sid - 1) ? "\0" : ", "));
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "\n");
     }
 
     return 0;
@@ -274,6 +344,8 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     char *tmp2;
     char *tmp = NULL;
     char *next = NULL;
+    bool pure_ipv6 = false;
+    char opts_buf[1024] = { };
 
     /* Zero out output */
     memset(addr, 0, sizeof(*addr));
@@ -377,9 +449,44 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     /* If type is a file, skip everything */
     if (addr->type == AVT_ADDRESS_FILE) {
         addr->path = strdup(next);
+        if (!addr->path)
+            ret = AVT_ERROR(ENOMEM);
         goto end;
     } else if (addr->type == AVT_ADDRESS_UNIX) {
-        addr->path = strdup(next);
+        char *location = next;
+        int len = strlen(next);
+        bool found_opts = false;
+
+        /* Scan for options */
+        for (int i = (len - 1); i >= 0; i--) {
+            if (next[i] == '#' && i && (next[i - 1] != '\\')) {
+                next[i] = '\0';
+                next += i + 1;
+                found_opts = true;
+                break;
+            }
+        }
+        if (location[0] == '\0') {
+            avt_log(log_ctx, AVT_LOG_ERROR, "No path to socket specified!\n");
+            ret = AVT_ERROR(EINVAL);
+            goto end;
+        }
+
+        addr->path = strdup(location);
+        if (!addr->path) {
+            ret = AVT_ERROR(ENOMEM);
+            goto end;
+        }
+
+        if (found_opts) {
+            next--;
+            next[0] = '#';
+            /* Parse settings */
+            ret = parse_settings(log_ctx, addr, next, opts_buf, sizeof(opts_buf));
+                if (ret < 0)
+                    goto end;
+        }
+
         goto end;
     } else if (addr->type == AVT_ADDRESS_FD) {
         char *end;
@@ -404,37 +511,25 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
     next = strtok_r(NULL, "/", &tmp);
 
     /* Parse host IP, address, and potentially a device */
-    bool pure_ipv6 = false;
-
     ret = parse_host_addr(log_ctx, addr, host, listen, &pure_ipv6);
     if (ret < 0)
         goto end;
 
     /* Parse settings */
-    if (next && next[0] != '\0') {
-        ret = parse_settings(log_ctx, addr, next);
-        if (ret < 0)
-            goto end;
-    }
-
-    char opts_buf[1024] = { };
-    if (addr->opts.rx_buf)
-        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                 "      rx_buf: %i\n", addr->opts.rx_buf);
-    if (addr->opts.tx_buf)
-        snprintf(&opts_buf[strlen(opts_buf)], sizeof(opts_buf) - strlen(opts_buf),
-                 "      tx_buf: %i\n", addr->opts.tx_buf);
+    ret = parse_settings(log_ctx, addr, next, opts_buf, sizeof(opts_buf));
+    if (ret < 0)
+        goto end;
 
     avt_log(log_ctx, AVT_LOG_VERBOSE,
             "URL parsed:\n"
-            "    %s: %s%c (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
+            "    %s: %s%s (%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x)\n"
             "    Port: %u\n"
             "    Interface: %s\n"
             "    Protocol: %s\n"
             "    Mode: %s\n"
             "%s%s",
             addr->listen ? "Listening" : "Transmitting",
-            host, pure_ipv6 ? ']' : '\0',
+            host, pure_ipv6 ? "]" : "\0",
             addr->ip[ 0], addr->ip[ 1], addr->ip[ 2], addr->ip[ 3],
             addr->ip[ 4], addr->ip[ 5], addr->ip[ 6], addr->ip[ 7],
             addr->ip[ 8], addr->ip[ 9], addr->ip[10], addr->ip[11],
@@ -461,8 +556,11 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
                 "FD:\n    %i\n", addr->fd);
     } else if (ret >= 0 && addr->type == AVT_ADDRESS_UNIX) {
         avt_log(log_ctx, AVT_LOG_VERBOSE,
-                "Socket path:\n    %s: %s\n",
-                addr->listen ? "Listening" : "Transmitting", addr->path);
+                "Socket path:\n    %s: %s\n"
+                "%s%s",
+                addr->listen ? "Listening" : "Transmitting", addr->path,
+                strlen(opts_buf) ? "    Settings:\n" : "",
+                strlen(opts_buf) ? opts_buf : "");
     }
 
     free(dup);
@@ -481,7 +579,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
     switch (info->type) {
     case AVT_CONNECTION_NULL:
         addr->type = AVT_ADDRESS_NULL;
-        addr->proto = AVT_PROTOCOL_STREAM;
+        addr->proto = AVT_PROTOCOL_DATAGRAM;
         break;
     case AVT_CONNECTION_URL:
         addr->type = AVT_ADDRESS_URL;
@@ -516,7 +614,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         break;
     case AVT_CONNECTION_DATA:
         addr->type = AVT_ADDRESS_CALLBACK;
-        addr->proto = AVT_PROTOCOL_STREAM;
+        addr->proto = AVT_PROTOCOL_DATAGRAM;
         addr->dcb.opaque = info->cb.opaque;
         addr->dcb.write = info->cb.write;
         addr->dcb.read = info->cb.read;

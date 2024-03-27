@@ -51,6 +51,23 @@
 
 int64_t avt_get_time_ns(void);
 
+static inline int avt_tolower(int c)
+{
+    if (c >= 'A' && c <= 'Z')
+        return c ^ 0x20;
+    return c;
+}
+
+static inline int avt_ascii_to_int(int c)
+{
+    c = avt_tolower(c);
+    if (c >= 'a' && c <= 'f')
+        return c - 'a' + 10;
+    else if (c >= '0' && c <= '9')
+        return c - '0';
+    return -1;
+}
+
 /* Zero (usually) alloc FIFO. Payload is ref'd, and leaves with a ref. */
 typedef struct AVTPacketFifo {
     AVTPktd *data;

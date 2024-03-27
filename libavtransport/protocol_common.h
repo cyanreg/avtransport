@@ -76,7 +76,7 @@ typedef struct AVTProtocol {
     int (*close)(AVTProtocolCtx **p);
 } AVTProtocol;
 
-int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
-                      AVTProtocolCtx **p_ctx, AVTAddress *addr);
+COLD int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
+                           AVTProtocolCtx **p_ctx, AVTAddress *addr);
 
 #endif /* AVTRANSPORT_PROTOCOL_COMMON */

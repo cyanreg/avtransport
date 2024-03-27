@@ -30,13 +30,14 @@
 
 #include "protocol_common.h"
 #include "io_common.h"
+#include "bytestream.h"
 
 struct AVTProtocolCtx {
     const AVTIO *io;
     AVTIOCtx *io_ctx;
 };
 
-static int stream_proto_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
+static int stream_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
 {
     AVTProtocolCtx *priv = malloc(sizeof(*priv));
     if (!priv)
@@ -51,14 +52,14 @@ static int stream_proto_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *ad
     return err;
 }
 
-static int stream_proto_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->add_dst)
         return AVT_ERROR(ENOTSUP);
     return p->io->add_dst(p->io_ctx, addr);
 }
 
-static int stream_proto_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
+static int stream_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
 {
     if (!p->io->del_dst)
         return AVT_ERROR(ENOTSUP);
@@ -71,22 +72,48 @@ static int64_t stream_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
     return p->io->write_pkt(p->io_ctx, pkt, timeout);
 }
 
-static int64_t stream_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
-                                     int64_t timeout)
+static int64_t stream_send_seq(AVTProtocolCtx *p,
+                               AVTPacketFifo *seq, int64_t timeout)
 {
     return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
 }
 
-static int64_t stream_proto_receive_packet(AVTProtocolCtx *p,
-                                           union AVTPacketData *pkt, AVTBuffer **pl,
-                                           int64_t timeout)
+#include "packet_decode.h"
+
+static int64_t stream_receive_packet(AVTProtocolCtx *p,
+                                     union AVTPacketData *pkt, AVTBuffer **pl,
+                                     int64_t timeout)
 {
+    /* Request the maximum header length. If any data gets caught, it's fine. */
+    size_t req_len = AVT_MAX_HEADER_LEN;
+
+    /* Get data */
     AVTBuffer *buf;
-    int64_t err = p->io->read_input(p->io_ctx, &buf, 0, timeout);
+    int64_t err = p->io->read_input(p->io_ctx, &buf, req_len, timeout);
     if (err < 0)
         return err;
 
-    // TODO - deserialize packet here
+    size_t len;
+    uint8_t *data = avt_buffer_get_data(buf, &len);
+    if (!data || len != req_len) { // EOF handling too probably
+    }
+
+    // EC/checking happens here
+
+    int64_t off;
+    uint16_t desc = AVT_RB24(&data[0]);
+    switch (desc) {
+    case AVT_PKT_SESSION_START:
+        off = avt_decode_session_start(buf, &pkt->session_start);
+        break;
+    case AVT_PKT_STREAM_REGISTRATION:
+        off = avt_decode_stream_registration(buf, &pkt->stream_registration);
+        break;
+    case AVT_PKT_STREAM_DATA & 0xFF00:
+        AVTBuffer tmp;
+        off = avt_decode_stream_data(buf, &pkt->stream_data, &tmp);
+        break;
+    };
 
     return err;
 }
@@ -124,14 +151,14 @@ static int stream_proto_close(AVTProtocolCtx **p)
 const AVTProtocol avt_protocol_stream = {
     .name = "stream",
     .type = AVT_PROTOCOL_STREAM,
-    .init = stream_proto_init,
-    .add_dst = stream_proto_add_dst,
-    .rm_dst = stream_proto_rm_dst,
+    .init = stream_init,
+    .add_dst = stream_add_dst,
+    .rm_dst = stream_rm_dst,
     .get_max_pkt_len = stream_proto_max_pkt_len,
     .send_packet = stream_proto_send_packet,
-    .send_seq = stream_proto_send_seq,
+    .send_seq = stream_send_seq,
     .update_packet = NULL,
-    .receive_packet = stream_proto_receive_packet,
+    .receive_packet = stream_receive_packet,
     .seek = stream_proto_seek,
     .flush = stream_proto_flush,
     .close = stream_proto_close,

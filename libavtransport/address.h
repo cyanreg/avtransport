@@ -31,10 +31,11 @@
 
 #include <avtransport/connection.h>
 
-#define AVT_PROTOCOL_STREAM        (0)
-#define AVT_PROTOCOL_FILE          (AVT_PROTOCOL_QUIC + 1)
-#define AVT_PROTOCOL_CALLBACK_PKT  (AVT_PROTOCOL_QUIC + 2)
-#define AVT_PROTOCOL_MAX           (AVT_PROTOCOL_QUIC + 3)
+#define AVT_PROTOCOL_DATAGRAM      (0)
+#define AVT_PROTOCOL_STREAM        (AVT_PROTOCOL_QUIC + 1)
+#define AVT_PROTOCOL_FILE          (AVT_PROTOCOL_QUIC + 2)
+#define AVT_PROTOCOL_CALLBACK_PKT  (AVT_PROTOCOL_QUIC + 3)
+#define AVT_PROTOCOL_MAX           (AVT_PROTOCOL_QUIC + 4)
 
 enum AVTAddressConnection {
     AVT_ADDRESS_NULL,
@@ -69,6 +70,7 @@ typedef struct AVTAddress {
     int fd;
 
     /** NETWORK **/
+    uint8_t uuid[16];
     bool listen; /* Server or client */
 
     /* Interface */
@@ -92,6 +94,8 @@ typedef struct AVTAddress {
         /* Default stream IDs */
         uint16_t *default_sid;
         int nb_default_sid;
+
+        int64_t start_time; // 1ns timebase
     } opts;
 
     /** CALLBACKS **/
@@ -100,6 +104,8 @@ typedef struct AVTAddress {
 } AVTAddress;
 
 /* Utilities */
+int avt_parse_uuid(uint8_t out[16], const char *src);
+
 int avt_addr_4to6(uint8_t ip6[16], uint32_t ip4);
 
 int avt_addr_from_url(void *log_ctx, AVTAddress *addr,

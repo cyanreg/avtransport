@@ -26,16 +26,17 @@
 
 #include "protocol_common.h"
 
+extern const AVTProtocol avt_protocol_datagram;
 extern const AVTProtocol avt_protocol_stream;
-extern const AVTProtocol avt_protocol_file;
 extern const AVTProtocol avt_protocol_quic;
 extern const AVTProtocol avt_protocol_pkt;
 
 static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
+    [AVT_PROTOCOL_DATAGRAM]     = &avt_protocol_datagram,
+    [AVT_PROTOCOL_UDP]          = &avt_protocol_datagram,
+    [AVT_PROTOCOL_UDP_LITE]     = &avt_protocol_datagram,
     [AVT_PROTOCOL_STREAM]       = &avt_protocol_stream,
-    [AVT_PROTOCOL_UDP]          = &avt_protocol_stream,
-    [AVT_PROTOCOL_UDP_LITE]     = &avt_protocol_stream,
-    [AVT_PROTOCOL_FILE]         = &avt_protocol_file,
+    [AVT_PROTOCOL_FILE]         = &avt_protocol_stream,
 //    [AVT_PROTOCOL_QUIC]         = &avt_protocol_quic,
 //    [AVT_PROTOCOL_CALLBACK_PKT] = &avt_protocol_pkt,
 };

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "io_common.h"
+#include "attributes.h"
 
 struct AVTIOCtx {
     AVTCallbacksData cb;
@@ -41,7 +42,7 @@ static int dcb_close(AVTIOCtx **_io)
     return 0;
 }
 
-static int dcb_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int dcb_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     AVTIOCtx *io = malloc(sizeof(*io));
     if (!io)

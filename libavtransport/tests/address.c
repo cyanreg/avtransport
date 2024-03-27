@@ -83,6 +83,23 @@ int main(void)
         avt_addr_free(&addr);
     }
 
+    /* Socket plus options */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "socket:///tmp/avt.sock#rx_buf=65536")) < 0)
+            goto end;
+
+        if (addr.type != AVT_ADDRESS_UNIX || addr.proto != AVT_PROTOCOL_STREAM)
+            FAIL(EINVAL);
+
+        if (strcmp(addr.path, "/tmp/avt.sock"))
+            FAIL(EINVAL);
+
+        if (addr.opts.rx_buf != 65536)
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
     /* IP */
     {
         if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.1")) < 0)
@@ -203,7 +220,7 @@ int main(void)
 
     /* Stream ID */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, true, "udp://192.168.1.4/0+65534")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, true, "udp://192.168.1.4/#default=0,65534")) < 0)
             goto end;
 
         if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
@@ -225,7 +242,7 @@ int main(void)
 
     /* Options */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.5/?rx_buf=65536")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.5/#rx_buf=65536")) < 0)
             goto end;
 
         if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
@@ -244,7 +261,7 @@ int main(void)
 
     /* Stream ID + options */
     {
-        if ((ret = avt_addr_from_url(NULL, &addr, true, "quic://192.168.1.6/0+65534?rx_buf=65536?tx_buf=32768")) < 0)
+        if ((ret = avt_addr_from_url(NULL, &addr, true, "quic://192.168.1.6/#default=0,65534&rx_buf=65536&tx_buf=32768")) < 0)
             goto end;
 
         if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
@@ -262,6 +279,26 @@ int main(void)
             FAIL(EINVAL);
 
         if (addr.opts.rx_buf != 65536 || addr.opts.tx_buf != 32768)
+            FAIL(EINVAL);
+
+        avt_addr_free(&addr);
+    }
+
+    /* UUID */
+    {
+        if ((ret = avt_addr_from_url(NULL, &addr, false, "udp://192.168.1.6/123e4567-e89b-12d3-a456-426614174000")) < 0)
+            goto end;
+
+        if (addr.port != CONFIG_DEFAULT_PORT || addr.mode != AVT_MODE_DEFAULT ||
+            addr.type != AVT_ADDRESS_URL || addr.proto != AVT_PROTOCOL_UDP)
+            FAIL(EINVAL);
+
+        static const uint8_t ip_test_11[16] = { 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xc0, 0xa8, 0x1, 0x6 };
+        if (memcmp(addr.ip, ip_test_11, 16))
+            FAIL(EINVAL);
+
+        static const uint8_t uuid_test_11[16] = { 0x12, 0x3e, 0x45, 0x67, 0xe8, 0x9b, 0x12, 0xd3, 0xa4, 0x56, 0x42, 0x66, 0x14, 0x17, 0x40, 0x00 };
+        if (memcmp(addr.uuid, uuid_test_11, 16))
             FAIL(EINVAL);
 
         avt_addr_free(&addr);

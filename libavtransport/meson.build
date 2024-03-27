@@ -49,7 +49,7 @@ sources = [
 
     'protocol_common.c',
     'protocol_stream.c',
-    'protocol_file.c',
+    'protocol_datagram.c',
 
     'io_common.c',
     'io_null.c',

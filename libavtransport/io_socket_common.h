@@ -56,9 +56,6 @@ typedef struct AVTSocketCommon {
 /* Open a socket with a specific address */
 int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr);
 
-/* Get MTU */
-int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
-
 /* Close a socket context */
 int avt_socket_close(void *log_ctx, AVTSocketCommon *sc);
 
@@ -83,8 +80,11 @@ int avt_socket_close(void *log_ctx, AVTSocketCommon *sc);
     } while (0)
 
 /* Read a socket option */
-int avt_get_socket_opt(void *log_ctx, int socket,
+int avt_socket_get_opt(void *log_ctx, int socket,
                        int lvl, int opt, void *data, int len,
                        const char *errmsg);
+
+/* Get MTU */
+int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
 
 #endif /* AVTRANSPORT_IO_SOCKET_COMMON_H */

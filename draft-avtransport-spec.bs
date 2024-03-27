@@ -514,7 +514,7 @@ simply assume all device are already synchronized.
 
 The recommended URI scheme is:
 
-<code><xmp>avt://[<transport>[:<mode>]@]<address>[:<port>][/[<sender_uuid>][?<params>]]</xmp></code>
+<code><xmp>avt://[<transport>[:<mode>]@]<address>[:<port>][/[<sender_uuid>][#<params>]]</xmp></code>
 
  - &lt;transport&gt; may be either missing (default: ''udp'') or:
      * ''udp'': for [[#udp-streaming]] streams
@@ -531,8 +531,10 @@ The recommended URI scheme is:
  - &lt;address&gt; of the remote host, or local host, multicast group, or local file.
  - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols. If not specified, port <b>8212</b> shall be the default port.
  - &lt;sender_uuid&gt; is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID ([[RFC4122]]) value.
- - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by a comma:
-     * default=&lt;stream_id1&gt;+&lt;stream_id2&gt;: Specifies streams to assign as being the default
+ - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by an <code>&</code> sign:
+     * default=&lt;stream_id1&gt;,&lt;stream_id2&gt;: Specifies streams to assign as being the default
+
+The syntax complies with [[RFC8820]] and can be parsed by existing code. Implementations are free to extend the syntax.
 
 Note: Alternatively, for UDP-only, the <code>udp://&lt;address&gt;:&lt;port&gt;</code> URI scheme may be used,
 at the risk of conflict with other protocols (''MPEG-TS'' or ''Matroska'').

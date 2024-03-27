@@ -60,7 +60,7 @@ static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
     close((int)((intptr_t)opaque));
 }
 
-static int mmap_close(AVTIOCtx **_io)
+static COLD int mmap_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     avt_buffer_unref(&io->map);
@@ -72,7 +72,7 @@ static int mmap_close(AVTIOCtx **_io)
     return 0;
 }
 
-static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
+static COLD int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 {
     int ret;
 
@@ -114,7 +114,7 @@ static int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
     return 0;
 }
 
-static int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));
@@ -140,7 +140,7 @@ static int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));

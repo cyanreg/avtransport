@@ -61,7 +61,7 @@ struct AVTIOCtx {
     int64_t rpos;
 };
 
-static int udp_close(AVTIOCtx **_io)
+static COLD int udp_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     int ret = avt_socket_close(io, &io->sc);
@@ -71,7 +71,7 @@ static int udp_close(AVTIOCtx **_io)
     return ret;
 }
 
-static int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));
@@ -219,6 +219,9 @@ static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
 #ifdef IPV6_RECVPATHMTU
                                sizeof(struct ip6_mtuinfo) +
 #endif
+#ifdef SO_RXQ_OVFL
+                               32 +
+#endif
 #ifdef SCM_TIMESTAMPING
                                sizeof(struct scm_timestamping) +
 #endif
@@ -233,34 +236,47 @@ static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
         if (*_buf != buf)
             avt_buffer_unref(&buf);
         return avt_handle_errno(io, "Unable to receive message: %s");
-    } else if (msg.msg_flags & MSG_TRUNC) {
-        avt_log(io, AVT_LOG_ERROR, "Packet truncated! MTU changed?\n");
-        // TODO: signal to the protocol layer to update the MTU
     } else if (ret == 0) { /* Ancillary message only */
         struct cmsghdr *cmsg;
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+#ifdef SO_RXQ_OVFL
+            if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_RXQ_OVFL) {
+                const uint32_t *t = (uint32_t *)CMSG_DATA(cmsg);
+//                avt_log(io, AVT_LOG_VERBOSE, "New ts = %li %li\n", t->ts[0].tv_sec, t->ts[0].tv_nsec);
+            }
+#endif
 #ifdef IPV6_RECVPATHMTU
             if (cmsg->cmsg_level == IPPROTO_IPV6 && cmsg->cmsg_type == IPV6_PATHMTU &&
                 cmsg->cmsg_len == CMSG_LEN(sizeof(struct ip6_mtuinfo))) {
-                struct ip6_mtuinfo *mtu = (struct ip6_mtuinfo *)CMSG_DATA(cmsg);
+                const struct ip6_mtuinfo *mtu = (struct ip6_mtuinfo *)CMSG_DATA(cmsg);
                 avt_log(io, AVT_LOG_VERBOSE, "MTU changed to %i\n", mtu->ip6m_mtu);
             }
 #endif
         }
+
+        if (*_buf != buf)
+            avt_buffer_unref(&buf);
+
+        return 0;
     } else if (ret > 0) { /* Ancillary message with the data */
         struct cmsghdr *cmsg;
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 #ifdef SCM_TIMESTAMPING
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
-                struct scm_timestamping *t = (struct scm_timestamping *)CMSG_DATA(cmsg);
+                const struct scm_timestamping *t = (struct scm_timestamping *)CMSG_DATA(cmsg);
 //                avt_log(io, AVT_LOG_VERBOSE, "New ts = %li %li\n", t->ts[0].tv_sec, t->ts[0].tv_nsec);
             }
 #endif
         }
     }
 
+    if (msg.msg_flags & MSG_TRUNC) {
+        avt_log(io, AVT_LOG_ERROR, "Packet truncated! MTU changed?\n");
+        // TODO: signal to the protocol layer to update the MTU
+    }
+
     /* Adjust new size in case of underreads */
-    err = avt_buffer_resize(buf, off + len);
+    err = avt_buffer_resize(buf, off + ret);
     avt_assert2(err >= 0);
 
     *_buf = buf;

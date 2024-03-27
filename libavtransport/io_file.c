@@ -49,7 +49,7 @@ static int file_handle_error(AVTIOCtx *io, const char *msg)
     return AVT_ERROR(errno);
 }
 
-static int file_close(AVTIOCtx **_io)
+static COLD int file_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     int ret = fclose(io->f);
@@ -62,7 +62,7 @@ static int file_close(AVTIOCtx **_io)
     return ret;
 }
 
-static int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
+static COLD int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 {
     int ret;
     AVTIOCtx *io = calloc(1, sizeof(*io));

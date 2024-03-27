@@ -59,8 +59,9 @@
 
 #include "io_socket_common.h"
 #include "io_utils.h"
+#include "attributes.h"
 
-int avt_get_socket_opt(void *log_ctx, int socket,
+int avt_socket_get_opt(void *log_ctx, int socket,
                        int lvl, int opt, void *data, int len,
                        const char *errmsg)
 {
@@ -73,11 +74,40 @@ int avt_get_socket_opt(void *log_ctx, int socket,
     return 0;
 }
 
+int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
+{
+    int64_t ret = 1280;
+
+    if (sc->addr_size != sizeof(sc->ip.local_addr))
+        return AVT_ERROR(EINVAL);
+
+#ifdef IPV6_RECVPATHMTU
+    struct ip6_mtuinfo mtu6;
+
+    memcpy(&mtu6.ip6m_addr, sc->remote_addr, sc->addr_size);
+    ret = avt_socket_get_opt(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_PATHMTU,
+                             &mtu6, sizeof(mtu6),
+                             "Unable to get MTU: %i %s\n");
+    if (ret >= 0)
+        ret = mtu6.ip6m_mtu;
+#endif
+
+    return ret;
+}
+
 static int setup_unix_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 {
+    int ret;
+
     if ((fcntl(sc->socket, F_SETFD, FD_CLOEXEC) == -1) ||
         (fcntl(sc->socket, F_SETFD, O_NONBLOCK) == -1))
         return avt_handle_errno(log_ctx, "Error in fcntl(FD_CLOEXEC && O_NONBLOCK): %i %s\n");
+
+    /* Set receive/send buffer */
+    if (addr->opts.rx_buf)
+        SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_RCVBUF, (int)addr->opts.rx_buf);
+    if (addr->opts.tx_buf)
+        SET_SOCKET_OPT(log_ctx, sc->socket, SOL_SOCKET, SO_SNDBUF, (int)addr->opts.tx_buf);
 
     /* Setup addresses */
     sc->local_addr = (struct sockaddr *)&sc->un.local_addr;
@@ -219,7 +249,7 @@ static int setup_ip_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr,
     return 0;
 }
 
-int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
+COLD int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 {
     int ret;
 
@@ -328,28 +358,7 @@ fail:
     return ret;
 }
 
-int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
-{
-    int64_t ret = 1280;
-
-    if (sc->addr_size != sizeof(sc->ip.local_addr))
-        return AVT_ERROR(EINVAL);
-
-#ifdef IPV6_RECVPATHMTU
-    struct ip6_mtuinfo mtu6;
-
-    memcpy(&mtu6.ip6m_addr, sc->remote_addr, sc->addr_size);
-    ret = avt_get_socket_opt(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_PATHMTU,
-                             &mtu6, sizeof(mtu6),
-                             "Unable to get MTU: %i %s\n");
-    if (ret >= 0)
-        ret = mtu6.ip6m_mtu;
-#endif
-
-    return ret;
-}
-
-int avt_socket_close(void *log_ctx, AVTSocketCommon *sc)
+COLD int avt_socket_close(void *log_ctx, AVTSocketCommon *sc)
 {
     int ret = 0;
 

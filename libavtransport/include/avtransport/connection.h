@@ -38,9 +38,14 @@ enum AVTConnectionType {
     /* Null connection. Transmits nothing. Receives only session start packets. */
     AVT_CONNECTION_NULL = 0,
 
-    /* URL address in the form of:
+    /* URL in the form of:
      *
-     * avt://[<transport>[:<mode>]@]<address>[:<port>][?<setting1>=<value1>][/<stream_id>[+<stream_id>][?<param1>=<val1>]]
+     * <scheme>://[<transport>[:<mode>]@]<address>[:<port>][/[<uuid>][#<param1>=<val1>[&<param2>=<val2>]]]
+     *
+     * - <scheme> may be "avt", "udp", "udplite", "quic", "socket", "file".
+     *   <transport> and <mode> may only be present for "avt".
+     *   <uuid>, <param1> are only for "avt", "udp", "udplite", "quic", "socket".
+     *   Using "avt" is strongly recommended.
      *
      * - <transport> may be either missing (default: UDP),
      *   or: "udp", "udplite", "quic", or "file".
@@ -63,17 +68,25 @@ enum AVTConnectionType {
      *
      * - <port> on which to listen on/transmit to
      *
-     * - <stream_id> of the stream(s) to present as default (overriding those
-     *   signalled by the sender)
+     * - <uuid> a unique identifier of the stream
      *
-     * - <setting1>=<value1> are a key=value pair of settings for the connection,
-     *   separated by ? signs. Currently accepted values are:
+     * - <param1>=<val1> are a key=value pair of settings for the connection,
+     *   separated by `&` signs. Currently accepted values are:
+     *     - t=<seconds> to immediately seek upon playback to the given timestamp
+     *     - default=<stream_id>[,<stream_id>] of the stream(s) to present as default
+     *       (overriding those signalled by the sender)
      *     - rx_buf: receive buffer size
      *     - tx_buf: send buffer size
+     *     - cert: certificate file path for QUIC
+     *     - key: key file path for QUIC
      *
-     * The library will also accept shorthand notations, such as "udp://",
-     * "udplite://", "quic://" and "file://", but none may be followed by
-     * <transport>:<mode>, only <address>[:<port>]. Using "avt://" is recommended.
+     * Examples:
+     *     - "avt://192.168.1.1"
+     *     - "avt://quic@[2001:db8::2]:9999"
+     *     - "avt://udp:active@[2001:db8::2]:9999"
+     *     - "quic://[2001:db8::1]:9999"
+     *     - "udp://192.168.1.2:9999"
+     *     - "udp://192.168.1.5/#rx_buf=65536"
      */
     AVT_CONNECTION_URL,
 
