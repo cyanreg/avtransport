@@ -68,6 +68,10 @@ sources = [
                       fallback: 'release')
 ]
 
+if openssl_dep.found()
+   sources += 'protocol_quic.c'
+endif
+
 if host_machine.system() != 'windows'
     sources += 'io_fd.c'
     sources += 'io_mmap.c'

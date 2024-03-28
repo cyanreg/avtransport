@@ -28,8 +28,11 @@
 
 extern const AVTProtocol avt_protocol_datagram;
 extern const AVTProtocol avt_protocol_stream;
-extern const AVTProtocol avt_protocol_quic;
 extern const AVTProtocol avt_protocol_pkt;
+
+#ifdef CONFIG_HAVE_OPENSSL
+extern const AVTProtocol avt_protocol_quic;
+#endif
 
 static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
     [AVT_PROTOCOL_DATAGRAM]     = &avt_protocol_datagram,
@@ -37,7 +40,9 @@ static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
     [AVT_PROTOCOL_UDP_LITE]     = &avt_protocol_datagram,
     [AVT_PROTOCOL_STREAM]       = &avt_protocol_stream,
     [AVT_PROTOCOL_FILE]         = &avt_protocol_stream,
-//    [AVT_PROTOCOL_QUIC]         = &avt_protocol_quic,
+#ifdef CONFIG_HAVE_OPENSSL
+    [AVT_PROTOCOL_QUIC]         = &avt_protocol_quic,
+#endif
 //    [AVT_PROTOCOL_CALLBACK_PKT] = &avt_protocol_pkt,
 };
 

@@ -119,7 +119,7 @@ endif
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
 cbor_dep = dependency('libcbor', required: false)
-openssl_dep = dependency('openssl', required: false)
+openssl_dep = dependency('openssl', required: false, version : '3.3.0')
 brotlienc_dep = dependency('', required:false)
 brotlidec_dep = dependency('', required:false)
 

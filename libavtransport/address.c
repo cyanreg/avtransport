@@ -172,6 +172,9 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
                 return AVT_ERROR(EINVAL);
             }
 
+            strncpy(addr->host, host, sizeof(addr->host) - 1);
+            addr->host[255] = '\0';
+
             memcpy(addr->ip, res[0].ai_addr, 16);
             freeaddrinfo(res);
         } else {

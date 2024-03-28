@@ -93,7 +93,7 @@ static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
     case AVT_ADDRESS_URL:
         [[fallthrough]];
     case AVT_ADDRESS_SOCKET:
-        if (addr->proto == AVT_PROTOCOL_UDP)
+        if (addr->proto == AVT_PROTOCOL_UDP || addr->proto == AVT_PROTOCOL_QUIC)
             return AVT_IO_UDP;
         else if (addr->proto == AVT_PROTOCOL_UDP_LITE)
             return AVT_IO_UDP_LITE;

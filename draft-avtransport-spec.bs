@@ -4229,8 +4229,9 @@ as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.
 
 All data packets with descriptors ''0x01**'', ''0xFF'', ''0xFE'', ''0xFD'' and ''0xFC''
-MUST be sent over in an <i>unreliable</i> QUIC DATAGRAM stream, as per
-[[RFC9221]].
+must be sent over in an <i>unreliable</i> QUIC datagram stream, as per
+[[RFC9221]]. Each stream must map to a different QUIC stream, though their AVTransport
+and QUIC stream IDs do not have to match.
 
 All other packets must be sent over a reliable steam. FEC data for those packets
 should not be signalled.
@@ -4241,6 +4242,8 @@ exceeded and no packet fragmentation occurs.
 The <b>minimum</b> network MTU required for the protocol is <b>384 bytes</b>,
 as to allow [[#video-information-packets]] or any future large packets to be sent
 without fragmentation.
+
+The ALPN must contain the extension 0x61, 0x76, 0x74, 0x30 (''avt0'').
 
 Jumbograms may be used where supported to reduce overhead and increase efficiency.
 

@@ -70,6 +70,7 @@ typedef struct AVTAddress {
     int fd;
 
     /** NETWORK **/
+    uint8_t host[256];
     uint8_t uuid[16];
     bool listen; /* Server or client */
 
