@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="f78c1c6ac54efbd0e603987e464dd7eb9203e6cc" name="document-revision">
+  <meta content="33a03850a3d5b4a0eb38e647942fef1f6e419f49" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-03-23">23 March 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-03-28">28 March 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 23 March 2024,
+In addition, as of 28 March 2024,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2677,7 +2677,7 @@ simply assume all device are already synchronized.</p>
    <h3 class="heading settled" data-level="1.9" id="uri-scheme"><span class="secno">1.9. </span><span class="content">URI scheme</span><a class="self-link" href="#uri-scheme"></a></h3>
    <p>The recommended URI scheme is:</p>
    <p><code></code></p>
-   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/[&lt;sender_uuid>][?&lt;params>]]</pre></code>
+   <code><pre>avt://[&lt;transport>[:&lt;mode>]@]&lt;address>[:&lt;port>][/[&lt;sender_uuid>][#&lt;params>]]</pre></code>
    <p></p>
    <ul>
     <li data-md>
@@ -2719,12 +2719,13 @@ simply assume all device are already synchronized.</p>
     <li data-md>
      <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc4122" title="A Universally Unique IDentifier (UUID) URN Namespace">[RFC4122]</a>) value.</p>
     <li data-md>
-     <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by a comma:</p>
+     <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by an <code>&amp;</code> sign:</p>
      <ul>
       <li data-md>
-       <p>default=&lt;stream_id1>+&lt;stream_id2>: Specifies streams to assign as being the default</p>
+       <p>default=&lt;stream_id1>,&lt;stream_id2>: Specifies streams to assign as being the default</p>
      </ul>
    </ul>
+   <p>The syntax complies with <a data-link-type="biblio" href="#biblio-rfc8820" title="URI Design and Ownership">[RFC8820]</a> and can be parsed by existing code. Implementations are free to extend the syntax.</p>
    <p class="note" role="note"><span class="marker">Note:</span> Alternatively, for UDP-only, the <code>udp://&lt;address>:&lt;port></code> URI scheme may be used,
 at the risk of conflict with other protocols (<span class="css">MPEG-TS</span> or <span class="css">Matroska</span>).</p>
    <p class="note" role="note"><span class="marker">Note:</span> When handling AVTransport files, it is recommended to use the <b>.avt</b> file extension.
@@ -5731,7 +5732,8 @@ be used for reverse signalling as the sender’s.</p>
    <h4 class="heading settled" data-level="3.3.3" id="quic-streaming"><span class="secno">3.3.3. </span><span class="content">QUIC</span><a class="self-link" href="#quic-streaming"></a></h4>
    <p>AVTransport tries to use as much of the modern conveniences of <a href="https://www.rfc-editor.org/rfc/rfc9000/QUIC#">QUIC: A UDP-Based Multiplexed and Secure Transport § QUIC#</a> as possible. As such, it uses both reliable and unreliable streams, as well
 as bidirectionality features of the transport mechanism.</p>
-   <p>All data packets with descriptors <span class="css">0x01**</span>, <span class="css">0xFF</span>, <span class="css">0xFE</span>, <span class="css">0xFD</span> and <span class="css">0xFC</span> MUST be sent over in an <i>unreliable</i> QUIC DATAGRAM stream, as per <a data-link-type="biblio" href="#biblio-rfc9221" title="An Unreliable Datagram Extension to QUIC">[RFC9221]</a>.</p>
+   <p>All data packets with descriptors <span class="css">0x01**</span>, <span class="css">0xFF</span>, <span class="css">0xFE</span>, <span class="css">0xFD</span> and <span class="css">0xFC</span> must be sent over in an <i>unreliable</i> QUIC datagram stream, as per <a data-link-type="biblio" href="#biblio-rfc9221" title="An Unreliable Datagram Extension to QUIC">[RFC9221]</a>. Each stream must map to a different QUIC stream, though their AVTransport
+and QUIC stream IDs do not have to match.</p>
    <p>All other packets must be sent over a reliable steam. FEC data for those packets
 should not be signalled.</p>
    <p>Implementations must segment the data such that the network MTU is never
@@ -5739,6 +5741,7 @@ exceeded and no packet fragmentation occurs.</p>
    <p>The <b>minimum</b> network MTU required for the protocol is <b>384 bytes</b>,
 as to allow <a href="#video-information-packets">§ 2.18 Video information</a> or any future large packets to be sent
 without fragmentation.</p>
+   <p>The ALPN must contain the extension 0x61, 0x76, 0x74, 0x30 (<span class="css">avt0</span>).</p>
    <p>Jumbograms may be used where supported to reduce overhead and increase efficiency.</p>
    <p><a href="#reverse-signalling">§ 3.4 Reverse signalling</a> is natively supported on QUIC.</p>
    <h4 class="heading settled" data-level="3.3.4" id="packetized-network-streaming"><span class="secno">3.3.4. </span><span class="content">Packetized networks</span><a class="self-link" href="#packetized-network-streaming"></a></h4>
@@ -6715,6 +6718,8 @@ This is the format that the reference function above expects.</p>
    <dd>J. Alakuijala; Z. Szabadka. <a href="https://www.rfc-editor.org/rfc/rfc7932"><cite>Brotli Compressed Data Format</cite></a>. July 2016. Informational. URL: <a href="https://www.rfc-editor.org/rfc/rfc7932">https://www.rfc-editor.org/rfc/rfc7932</a>
    <dt id="biblio-rfc8486">[RFC8486]
    <dd>J. Skoglund; M. Graczyk. <a href="https://www.rfc-editor.org/rfc/rfc8486"><cite>Ambisonics in an Ogg Opus Container</cite></a>. October 2018. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc8486">https://www.rfc-editor.org/rfc/rfc8486</a>
+   <dt id="biblio-rfc8820">[RFC8820]
+   <dd>M. Nottingham. <a href="https://www.rfc-editor.org/rfc/rfc8820"><cite>URI Design and Ownership</cite></a>. June 2020. Best Current Practice. URL: <a href="https://www.rfc-editor.org/rfc/rfc8820">https://www.rfc-editor.org/rfc/rfc8820</a>
    <dt id="biblio-rfc8878">[RFC8878]
    <dd>Y. Collet; M. Kucherawy, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc8878"><cite>Zstandard Compression and the 'application/zstd' Media Type</cite></a>. February 2021. Informational. URL: <a href="https://www.rfc-editor.org/rfc/rfc8878">https://www.rfc-editor.org/rfc/rfc8878</a>
    <dt id="biblio-rfc8949">[RFC8949]
