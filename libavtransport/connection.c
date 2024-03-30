@@ -28,12 +28,16 @@
 
 #include "connection_internal.h"
 #include "protocol_common.h"
+#include "io_common.h"
 #include "utils_internal.h"
 #include "scheduler.h"
 
 struct AVTConnection {
     AVTAddress addr;
-    AVTContext *ctx;
+
+    /* I/O */
+    const AVTIO *io;
+    AVTIOCtx *io_ctx;
 
     /* Protocol */
     const AVTProtocol *p;
@@ -43,8 +47,8 @@ struct AVTConnection {
     const AVTProtocol *mirror;
     AVTProtocolCtx *mirror_ctx;
 
-    /* Input reorder buffer */
-    AVTReorderBuffer in_buffer;
+    /* Input buffer */
+    AVTPacketFifo in_fifo;
 
     /* Output FIFO, pre-scheduler */
     AVTPacketFifo out_fifo_pre;
@@ -52,41 +56,72 @@ struct AVTConnection {
     AVTScheduler  out_scheduler;
 };
 
+int avt_connection_destroy(AVTConnection **_conn)
+{
+    AVTConnection *conn = *_conn;
+    if (conn)
+        return 0;
+
+    int err = conn->p->close(&conn->p_ctx);
+
+    avt_pkt_fifo_free(&conn->out_fifo_post);
+    avt_scheduler_free(&conn->out_scheduler);
+    avt_pkt_fifo_free(&conn->out_fifo_pre);
+    avt_addr_free(&conn->addr);
+
+    if (conn->p_ctx)
+        conn->p->close(&conn->p_ctx);
+
+    if (conn->io_ctx)
+        conn->io->close(&conn->io_ctx);
+
+    free(conn);
+    *_conn = NULL;
+    return err;
+}
+
 int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
                           AVTConnectionInfo *info)
 {
-    AVTAddress addr;
-    int ret = avt_addr_from_info(ctx, &addr, info);
-    if (ret < 0)
-        return ret;
-
+    int ret;
     AVTConnection *conn = calloc(1, sizeof(*conn));
+    if (!conn)
+        return AVT_ERROR(ENOMEM);
 
-    conn->addr = addr;
-    conn->ctx = ctx;
+    /* Address parsing */
+    ret = avt_addr_from_info(ctx, &conn->addr, info);
+    if (ret < 0)
+        goto fail;
+
+    /* I/O init */
+    ret = avt_io_init(ctx, &conn->io, &conn->io_ctx, &conn->addr);
+    if (ret < 0)
+        goto fail;
 
     /* Protocol init */
-    ret = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &addr);
-    if (ret < 0) {
-        free(conn);
-        return ret;
-    }
+    ret = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &conn->addr,
+                            conn->io, conn->io_ctx);
+    if (ret < 0)
+        goto fail;
 
     /* Get max packet size */
     ret = conn->p->get_max_pkt_len(conn->p_ctx);
     if (ret < 0)
-        return ret;
+        goto fail;
 
     /* Output scheduler */
     ret = avt_scheduler_init(&conn->out_scheduler, ret,
                              info->output_opts.buffer,
                              info->output_opts.bandwidth);
     if (ret < 0)
-        return ret;
+        goto fail;
 
     *_conn = conn;
 
     return 0;
+fail:
+    avt_connection_destroy(&conn);
+    return ret;
 }
 
 int avt_connection_send(AVTConnection *conn,
@@ -142,24 +177,6 @@ int avt_connection_flush(AVTConnection *conn, int64_t timeout)
     }
 
     return conn->p->flush(conn->p_ctx, timeout);
-}
-
-int avt_connection_destroy(AVTConnection **_conn)
-{
-    AVTConnection *conn = *_conn;
-    if (conn)
-        return 0;
-
-    int err = conn->p->close(&conn->p_ctx);
-
-    avt_pkt_fifo_free(&conn->out_fifo_post);
-    avt_scheduler_free(&conn->out_scheduler);
-    avt_pkt_fifo_free(&conn->out_fifo_pre);
-    avt_addr_free(&conn->addr);
-
-    free(conn);
-    *_conn = NULL;
-    return err;
 }
 
 int avt_connection_mirror_open(AVTContext *ctx, AVTConnection *conn,

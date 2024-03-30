@@ -22,19 +22,43 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+## Address tests
+## =============
+address_test = executable('address',
+    sources : [ 'address.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'address.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('Address parsing', address_test)
+
+## LDPC tests
+## ==========
 ldpc_encode_test = executable('ldpc_encode',
     sources : [ 'ldpc_encode.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers ]) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
+    dependencies : [ avtransport_dep ],
 )
 test('LDPC encoding', ldpc_encode_test)
 
+## Packet encode/decode primitives tests
+## =====================================
+packet_encode_decode_test = executable('packet_encode_decode',
+    sources : [ 'packet_encode_decode.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('Packet encode/decode', packet_encode_decode_test)
+
+## I/O tests
+## =========
 io_file_test = executable('io_file',
     sources : [ 'file_io_common.c', 'io_file.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_file.c' ]) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
+    dependencies : [ avtransport_dep ],
 )
 test('File I/O', io_file_test)
 
@@ -42,7 +66,7 @@ io_unix_test = executable('io_unix',
     sources : [ 'net_io_common.c', 'io_unix.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_unix.c', 'io_socket_common.c', 'address.c' ]) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
+    dependencies : [ avtransport_dep ],
 )
 test('UNIX I/O', io_unix_test)
 
@@ -51,7 +75,7 @@ if host_machine.system() != 'windows'
         sources : [ 'file_io_common.c', 'io_fd.c' ],
         include_directories : [ '../' ],
         objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_fd.c' ]) ],
-        dependencies : [ avtransport_deps_list, avtransport_dep ],
+        dependencies : [ avtransport_dep ],
     )
     test('FD I/O', io_fd_test)
 
@@ -59,7 +83,7 @@ if host_machine.system() != 'windows'
         sources : [ 'file_io_common.c', 'io_mmap.c' ],
         include_directories : [ '../' ],
         objects : [ avtransport_lib.extract_objects([ 'buffer.c', 'io_mmap.c' ]) ],
-        dependencies : [ avtransport_deps_list, avtransport_dep ],
+        dependencies : [ avtransport_dep ],
     )
     test('mmap I/O', io_mmap_test)
 endif
@@ -68,7 +92,7 @@ io_udp_test = executable('io_udp',
     sources : [ 'net_io_common.c', 'io_udp.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
+    dependencies : [ avtransport_dep ],
 )
 test('UDP I/O', io_udp_test)
 
@@ -76,22 +100,19 @@ io_udp_lite_test = executable('io_udp_lite',
     sources : [ 'net_io_common.c', 'io_udp_lite.c' ],
     include_directories : [ '../' ],
     objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
+    dependencies : [ avtransport_dep ],
 )
 test('UDP-Lite I/O', io_udp_lite_test)
 
-address_test = executable('address',
-    sources : [ 'address.c' ],
-    include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ 'address.c' ]) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
-)
-test('Address parsing', address_test)
-
-packet_encode_decode_test = executable('packet_encode_decode',
-    sources : [ 'packet_encode_decode.c' ],
-    include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c' ]) ],
-    dependencies : [ avtransport_deps_list, avtransport_dep ],
-)
-test('Packet encode/decode', packet_encode_decode_test)
+## Protocol tests
+## ==============
+if openssl_dep.found()
+    protocol_quic_test = executable('protocol_quic',
+        sources : [ 'proto_quic.c' ],
+        include_directories : [ '../' ],
+        objects : [ avtransport_lib.extract_objects([ 'protocol_quic.c', 'io_dcb.c',
+                                                      'address.c', 'buffer.c' ]) ],
+        dependencies : [ avtransport_dep, openssl_dep ],
+    )
+    test('QUIC protocol', protocol_quic_test)
+endif

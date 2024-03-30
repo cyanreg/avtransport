@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdckdint.h>
+#include <arpa/inet.h>
 
 #include <avtransport/avtransport.h>
 
@@ -61,22 +62,28 @@ void avt_pkt_fifo_free(AVTPacketFifo *fifo)
     memset(fifo, 0, sizeof(*fifo));
 }
 
+static int fifo_resize(AVTPacketFifo *fifo, unsigned int alloc_new)
+{
+    alloc_new = AVT_MAX(alloc_new, 1);
+
+    AVTPktd *alloc_pkt = avt_reallocarray(fifo->data, alloc_new,
+                                          sizeof(*fifo->data));
+    if (!alloc_pkt)
+        return AVT_ERROR(ENOMEM);
+    fifo->data = alloc_pkt;
+
+    fifo->alloc = alloc_new;
+
+    return 0;
+}
+
 int avt_pkt_fifo_push(AVTPacketFifo *fifo,
                       union AVTPacketData pkt, AVTBuffer *pl)
 {
     if ((fifo->nb + 1) >= fifo->alloc) {
-        if (!fifo->alloc)
-            fifo->alloc = 1;
-
         /* Ptwo allocations */
-        AVTPktd *alloc = avt_reallocarray(fifo->data,
-                                          fifo->alloc << 1,
-                                          sizeof(*fifo->data));
-        if (!alloc)
+        if (fifo_resize(fifo, fifo->alloc << 1))
             return AVT_ERROR(ENOMEM);
-
-        fifo->data = alloc;
-        fifo->alloc <<= 1;
     }
 
     AVTPktd *data = &fifo->data[fifo->nb];
@@ -91,18 +98,9 @@ int avt_pkt_fifo_push(AVTPacketFifo *fifo,
 int avt_pkt_fifo_push_refd_d(AVTPacketFifo *fifo, AVTPktd *p)
 {
     if ((fifo->nb + 1) >= fifo->alloc) {
-        if (!fifo->alloc)
-            fifo->alloc = 1;
-
         /* Ptwo allocations */
-        AVTPktd *alloc = avt_reallocarray(fifo->data,
-                                          fifo->alloc << 1,
-                                          sizeof(*fifo->data));
-        if (!alloc)
+        if (fifo_resize(fifo, fifo->alloc << 1))
             return AVT_ERROR(ENOMEM);
-
-        fifo->data = alloc;
-        fifo->alloc <<= 1;
     }
 
     fifo->data[fifo->nb++] = *p;
@@ -117,18 +115,9 @@ int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
                              union AVTPacketData pkt, AVTBuffer *pl)
 {
     if ((fifo->nb + 1) >= fifo->alloc) {
-        if (!fifo->alloc)
-            fifo->alloc = 1;
-
         /* Ptwo allocations */
-        AVTPktd *alloc = avt_reallocarray(fifo->data,
-                                          fifo->alloc << 1,
-                                          sizeof(*fifo->data));
-        if (!alloc)
+        if (fifo_resize(fifo, fifo->alloc << 1))
             return AVT_ERROR(ENOMEM);
-
-        fifo->data = alloc;
-        fifo->alloc <<= 1;
     }
 
     AVTPktd *data = &fifo->data[fifo->nb++];
@@ -145,17 +134,8 @@ int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
 int avt_pkt_fifo_copy(AVTPacketFifo *dst, const AVTPacketFifo *src)
 {
     if ((dst->nb + src->nb) >= dst->alloc) {
-        if (!dst->alloc)
-            dst->alloc = src->nb;
-
-        AVTPktd *alloc = avt_reallocarray(dst->data,
-                                          dst->alloc + src->nb,
-                                          sizeof(*dst->data));
-        if (!alloc)
+        if (fifo_resize(dst, dst->alloc + src->nb))
             return AVT_ERROR(ENOMEM);
-
-        dst->data = alloc;
-        dst->alloc += src->nb;
     }
 
     for (int i = 0; i < src->nb; i++) {
@@ -177,17 +157,8 @@ int avt_pkt_fifo_copy(AVTPacketFifo *dst, const AVTPacketFifo *src)
 int avt_pkt_fifo_move(AVTPacketFifo *dst, AVTPacketFifo *src)
 {
     if ((dst->nb + src->nb) >= dst->alloc) {
-        if (!dst->alloc)
-            dst->alloc = src->nb;
-
-        AVTPktd *alloc = avt_reallocarray(dst->data,
-                                          dst->alloc + src->nb,
-                                          sizeof(*dst->data));
-        if (!alloc)
+        if (fifo_resize(dst, dst->alloc + src->nb))
             return AVT_ERROR(ENOMEM);
-
-        dst->data = alloc;
-        dst->alloc += src->nb;
     }
 
     memcpy(&dst->data[dst->nb], src->data, src->nb*sizeof(*dst->data));

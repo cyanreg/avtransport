@@ -37,19 +37,26 @@ struct AVTProtocolCtx {
     AVTIOCtx *io_ctx;
 };
 
-static int stream_init(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr)
+static COLD int stream_proto_close(AVTProtocolCtx **p)
 {
-    AVTProtocolCtx *priv = malloc(sizeof(*priv));
-    if (!priv)
+    AVTProtocolCtx *priv = *p;
+    free(priv);
+    *p = NULL;
+    return 0;
+}
+
+static COLD int stream_init(AVTContext *ctx, AVTProtocolCtx **_p, AVTAddress *addr,
+                            const AVTIO *io, AVTIOCtx *io_ctx)
+{
+    AVTProtocolCtx *p = malloc(sizeof(*p));
+    if (!p)
         return AVT_ERROR(ENOMEM);
 
-    int err = avt_io_init(ctx, &priv->io, &priv->io_ctx, addr);
-    if (err < 0)
-        free(priv);
-    else
-        *p = priv;
+    p->io = io;
+    p->io_ctx = io_ctx;
+    *_p = p;
 
-    return err;
+    return 0;
 }
 
 static int stream_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
@@ -137,15 +144,6 @@ static int stream_proto_flush(AVTProtocolCtx *p, int64_t timeout)
     if (p->io->flush)
         return p->io->flush(p->io_ctx, timeout);
     return AVT_ERROR(ENOTSUP);
-}
-
-static int stream_proto_close(AVTProtocolCtx **p)
-{
-    AVTProtocolCtx *priv = *p;
-    int err = priv->io->close(&priv->io_ctx);
-    free(priv);
-    *p = NULL;
-    return err;
 }
 
 const AVTProtocol avt_protocol_stream = {

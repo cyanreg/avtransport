@@ -29,90 +29,230 @@
 #include <errno.h>
 
 #include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #include "protocol_common.h"
 #include "io_common.h"
+
+/* NOTE: when updating the spec version, update the last digit of the ALPN */
+static const uint8_t avt_alpn[] = { 4, 'a', 'v', 't', '0' };
+
+typedef struct AVTSSL {
+    SSL *ssl;
+    BIO *b_in;
+    BIO *b_out;
+} AVTSSL;
 
 struct AVTProtocolCtx {
     const AVTIO *io;
     AVTIOCtx *io_ctx;
 
-    SSL_CTX *ssl_ctx;
+    OSSL_LIB_CTX *ossl;
+    SSL_CTX *ssl;
 
-    BIO *bio;
-    SSL *ssl;
+    BIO_ADDR *addr_local;
+    BIO_ADDR *addr_remote;
+    char hostname[256];
+
+    /* Client */
+    AVTSSL client;
+
+    /* Server */
+    AVTSSL listeners[64];
+    int nb_listeners;
 };
+
+static inline int reason_to_err(unsigned long sslerr)
+{
+    switch (ERR_GET_REASON(sslerr)) {
+    case ERR_R_MALLOC_FAILURE: return AVT_ERROR(ENOMEM);
+    default: return AVT_ERROR(EINVAL);
+    }
+}
+
+static void free_ssl(AVTSSL *s)
+{
+    /* BIOs are not ref'd by SSL, so they get freed with it */
+    SSL_free(s->ssl);
+}
+
+static int create_ssl(AVTProtocolCtx *p, AVTSSL *s, bool listener)
+{
+    unsigned long sslerr;
+
+    s->ssl = listener ? SSL_new_listener(p->ssl, 0) :
+                        SSL_new(p->ssl);
+    if (!s->ssl)
+        return AVT_ERROR(ENOMEM);
+
+    const BIO_METHOD *b_dgram = BIO_s_dgram_mem();
+    if (!(s->b_out = BIO_new(b_dgram))) {
+        SSL_free(s->ssl);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    if (!(s->b_in  = BIO_new(b_dgram))) {
+        BIO_free_all(s->b_out);
+        SSL_free(s->ssl);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    /* We'll handle dst addr on output */
+    if (!BIO_dgram_set_caps(s->b_out,
+                            BIO_DGRAM_CAP_HANDLES_DST_ADDR)) {
+        sslerr = ERR_get_error();
+        avt_log(p, AVT_LOG_ERROR, "Unable to set output BIO capability: %s\n",
+                ERR_error_string(sslerr, NULL));
+        free_ssl(s);
+        return reason_to_err(sslerr);
+    }
+
+    /* We'll provide src addr in input */
+    if (!BIO_dgram_set_caps(s->b_in,
+                            BIO_DGRAM_CAP_PROVIDES_SRC_ADDR)) {
+        sslerr = ERR_get_error();
+        avt_log(p, AVT_LOG_ERROR, "Unable to set input BIO capability: %s\n",
+                ERR_error_string(sslerr, NULL));
+        free_ssl(s);
+        return reason_to_err(sslerr);
+    }
+
+    SSL_set_bio(s->ssl, s->b_in, s->b_out);
+
+    if (!listener) {
+        /* Set hostname, important for clients */
+        if (!SSL_set1_host(s->ssl, p->hostname)) {
+            sslerr = ERR_get_error();
+            avt_log(p, AVT_LOG_ERROR, "Unable to set connection hostname: %s\n",
+                    ERR_error_string(sslerr, NULL));
+            free_ssl(s);
+            return reason_to_err(sslerr);
+        }
+
+        /* Configure ALPN, which is required for QUIC */
+        if (SSL_set_alpn_protos(s->ssl, avt_alpn, sizeof(avt_alpn))) {
+            sslerr = ERR_get_error();
+            avt_log(p, AVT_LOG_ERROR, "Unable to set SSL ALPN: %s\n",
+                    ERR_error_string(sslerr, NULL));
+            free_ssl(s);
+            return reason_to_err(sslerr);
+        }
+    }
+
+    return 0;
+}
 
 static COLD int quic_proto_close(AVTProtocolCtx **_p)
 {
     AVTProtocolCtx *p = *_p;
-    int err = p->io->close(&p->io_ctx);
 
-    BIO_free_all(p->bio);
-    SSL_CTX_free(p->ssl_ctx);
+    free_ssl(&p->client);
+    for (int i = 0; i < p->nb_listeners; i++)
+        free_ssl(&p->listeners[i]);
+
+    SSL_CTX_free(p->ssl);
+    OSSL_LIB_CTX_free(p->ossl);
 
     free(p);
     *_p = NULL;
-    return err;
+    return 0;
 }
 
-static COLD int quic_proto_init(AVTContext *ctx, AVTProtocolCtx **_p, AVTAddress *addr)
+static int alpn_select_cb(SSL *ssl, const unsigned char **out,
+                          unsigned char *outlen, const unsigned char *in,
+                          unsigned int inlen, void *arg)
 {
-    AVTProtocolCtx *p = malloc(sizeof(*p));
+    int ret = SSL_select_next_proto((uint8_t **)out, outlen,
+                                    avt_alpn, sizeof(avt_alpn),
+                                    in, inlen);
+    if (ret != OPENSSL_NPN_NEGOTIATED)
+        return SSL_TLSEXT_ERR_ALERT_FATAL;
+    return SSL_TLSEXT_ERR_OK;
+}
+
+static COLD int quic_proto_init(AVTContext *ctx, AVTProtocolCtx **_p, AVTAddress *addr,
+                                const AVTIO *io, AVTIOCtx *io_ctx)
+{
+    int ret;
+    unsigned long sslerr;
+    AVTProtocolCtx *p = calloc(1, sizeof(*p));
     if (!p)
         return AVT_ERROR(ENOMEM);
 
-    int err = avt_io_init(ctx, &p->io, &p->io_ctx, addr);
-    if (err < 0)
-        free(p);
+    p->io = io;
+    p->io_ctx = io_ctx;
+    memcpy(p->hostname, addr->host, sizeof(p->hostname));
 
-    p->ssl_ctx = SSL_CTX_new(OSSL_QUIC_client_method());
-    if (!p->ssl_ctx) {
-        quic_proto_close(&p);
-        return AVT_ERROR(ENOMEM);
+    p->ossl = OSSL_LIB_CTX_new();
+    if (!p->ossl) {
+        ret = AVT_ERROR(ENOMEM);
+        goto fail;
+    }
+
+    p->ssl = SSL_CTX_new_ex(p->ossl, NULL,
+                            addr->listen ? OSSL_QUIC_server_method() :
+                                           OSSL_QUIC_client_method());
+    if (!p->ssl) {
+        ret = AVT_ERROR(ENOMEM);
+        goto fail;
     }
 
     /* Enable trust chain verification */
-    SSL_CTX_set_verify(p->ssl_ctx, SSL_VERIFY_PEER, NULL);
+    SSL_CTX_set_verify(p->ssl, SSL_VERIFY_PEER, NULL);
 
-    /* Load default root CA store */
-    if (!SSL_CTX_set_default_verify_paths(p->ssl_ctx)) {
-        avt_log(p, AVT_LOG_ERROR, "Unable to load default root CA store\n");
-        quic_proto_close(&p);
-    }
-
-    p->bio = BIO_new_ssl_connect(p->ssl_ctx);
-    if (!p->bio) {
-        quic_proto_close(&p);
-        return AVT_ERROR(EINVAL);
-    }
-
-    if (!BIO_get_ssl(p->bio, &p->ssl)) {
-        avt_log(p, AVT_LOG_ERROR, "Unable to get SSL context\n");
-        quic_proto_close(&p);
-        return AVT_ERROR(EINVAL);
-    }
-
-    if (strlen(addr->host)) {
-        /* Tell the SSL object the hostname to check certificates against. */
-        if (SSL_set1_host(p->ssl, addr->host) <= 0) {
-            avt_log(p, AVT_LOG_ERROR, "Unable to set SSL hostname\n");
-            quic_proto_close(&p);
-            return AVT_ERROR(EINVAL);
+    /* Load certificate, if any */
+    if (addr->opts.certfile) {
+        if (SSL_CTX_use_certificate_file(p->ssl, addr->opts.certfile, SSL_FILETYPE_PEM) <= 0) {
+            sslerr = ERR_get_error();
+            avt_log(p, AVT_LOG_ERROR, "Unable to load certificate file \"%s\": %s\n",
+                    addr->opts.certfile, ERR_error_string(sslerr, NULL));
+            ret = reason_to_err(sslerr);
+            goto fail;
+        }
+    } else {
+        /* Load default root CA store */
+        if (!SSL_CTX_set_default_verify_paths(p->ssl)) {
+            sslerr = ERR_get_error();
+            avt_log(p, AVT_LOG_ERROR, "Unable to load default root CA store: %s\n",
+                    ERR_error_string(sslerr, NULL));
+            ret = reason_to_err(sslerr);
+            goto fail;
         }
     }
 
-    /* Configure ALPN, which is required for QUIC */
-    static const uint8_t alpn[] = { 4, 'a', 'v', 't', '0' };
-    if (SSL_set_alpn_protos(p->ssl, alpn, sizeof(alpn))) {
-        /* Note: SSL_set_alpn_protos returns 1 for failure */
-        avt_log(p, AVT_LOG_ERROR, "Unable to set ALPN\n");
-        quic_proto_close(&p);
-        return AVT_ERROR(EINVAL);
+    if (addr->listen) {
+        /* Load keyfile, if any */
+        if (addr->opts.keyfile) {
+            if (SSL_CTX_use_PrivateKey_file(p->ssl, addr->opts.keyfile, SSL_FILETYPE_PEM) <= 0) {
+                sslerr = ERR_get_error();
+                avt_log(p, AVT_LOG_ERROR, "Unable to load key file \"%s\": %s\n", addr->opts.keyfile,
+                        ERR_error_string(sslerr, NULL));
+                ret = reason_to_err(sslerr);
+                goto fail;
+            }
+
+            if (!SSL_CTX_check_private_key(p->ssl)) {
+                sslerr = ERR_get_error();
+                avt_log(p, AVT_LOG_ERROR, "Private key does not match the public certificate: %s\n",
+                        ERR_error_string(sslerr, NULL));
+                ret = reason_to_err(sslerr);
+                goto fail;
+            }
+        }
+
+        SSL_CTX_set_alpn_select_cb(p->ssl, alpn_select_cb, NULL);
     }
 
+    ret = create_ssl(p, &p->client, addr->listen);
+    if (ret < 0)
+        goto fail;
+
     *_p = p;
-    return err;
+    return 0;
+
+fail:
+    quic_proto_close(&p);
+    return ret;
 }
 
 static int quic_proto_add_dst(AVTProtocolCtx *p, AVTAddress *addr)
@@ -150,7 +290,9 @@ static int64_t quic_proto_receive_packet(AVTProtocolCtx *p,
     if (err < 0)
         return err;
 
-    // TODO - deserialize packet here
+    size_t buf_len;
+    uint8_t *data = avt_buffer_get_data(buf, &buf_len);
+//    BIO_write(p->bio, data, buf_len);
 
     return err;
 }

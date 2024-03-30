@@ -97,6 +97,10 @@ typedef struct AVTAddress {
         int nb_default_sid;
 
         int64_t start_time; // 1ns timebase
+
+        /* For QUIC */
+        char *certfile;
+        char *keyfile;
     } opts;
 
     /** CALLBACKS **/

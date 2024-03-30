@@ -32,6 +32,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <sys/socket.h>
+
 #include <avtransport/utils.h>
 #include <avtransport/packet_data.h>
 #include "buffer.h"

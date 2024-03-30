@@ -309,6 +309,15 @@ static int parse_settings(void *log_ctx, AVTAddress *addr,
                 addr->opts.tx_buf = res;
             else if (!strcmp(key, "rx_buf"))
                 addr->opts.rx_buf = res;
+        } else if (!strcmp(key, "certfile") || !strcmp(key, "keyfile")) {
+            char *dupd = strdup(val);
+            if (!dupd)
+                return AVT_ERROR(ENOMEM);
+
+            if (!strcmp(key, "certfile"))
+                addr->opts.certfile = dupd;
+            else if (!strcmp(key, "keyfile"))
+                addr->opts.keyfile = dupd;
         } else {
             avt_log(log_ctx, AVT_LOG_ERROR, "Option %s not recognized!\n", key);
             return AVT_ERROR(EINVAL);
@@ -335,6 +344,12 @@ static int parse_settings(void *log_ctx, AVTAddress *addr,
         snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
                  "\n");
     }
+    if (addr->opts.certfile)
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      Certificate: %s\n", addr->opts.certfile);
+    if (addr->opts.keyfile)
+        snprintf(&opts_buf[strlen(opts_buf)], opts_buf_size - strlen(opts_buf),
+                 "      Private key: %s\n", addr->opts.keyfile);
 
     return 0;
 }
@@ -636,6 +651,8 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
 
 void avt_addr_free(AVTAddress *addr)
 {
+    free(addr->opts.certfile);
+    free(addr->opts.keyfile);
     free(addr->opts.default_sid);
     free(addr->path);
     free(addr->interface);

@@ -29,6 +29,7 @@
 
 #include "connection_internal.h"
 #include "utils_internal.h"
+#include "io_common.h"
 
 /* High level interface */
 typedef struct AVTProtocolCtx AVTProtocolCtx;
@@ -37,7 +38,8 @@ typedef struct AVTProtocol {
     enum AVTProtocolType type;
 
     /* Initialize a context */
-    int (*init)(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr);
+    int (*init)(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr,
+                const AVTIO *io, AVTIOCtx *io_ctx);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTProtocolCtx *p, AVTAddress *addr);
@@ -77,6 +79,7 @@ typedef struct AVTProtocol {
 } AVTProtocol;
 
 COLD int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
-                           AVTProtocolCtx **p_ctx, AVTAddress *addr);
+                           AVTProtocolCtx **p_ctx, AVTAddress *addr,
+                           const AVTIO *io, AVTIOCtx *io_ctx);
 
 #endif /* AVTRANSPORT_PROTOCOL_COMMON */
