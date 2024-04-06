@@ -115,38 +115,51 @@ static inline void avt_packet_encode_header(AVTPktd *p)
 #undef GET
 #undef TYPE
 
+#define RENAME(x) x ## _pp
+#define GET(x) p->x
+#define TYPE union AVTPacketData *
+#include "utils_packet_template.h"
+#undef RENAME
+#undef GET
+#undef TYPE
+
 #define avt_packet_get_duration(x, ...)                          \
     _Generic((x),                                                \
              AVTPktd *: avt_packet_get_duration_d,               \
              const AVTPktd *: avt_packet_get_duration_d,         \
-             union AVTPacketData: avt_packet_get_duration_p      \
+             union AVTPacketData: avt_packet_get_duration_p,     \
+             union AVTPacketData *: avt_packet_get_duration_pp   \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
 #define avt_packet_get_pts(x, ...)                          \
     _Generic((x),                                           \
              AVTPktd *: avt_packet_get_pts_d,               \
              const AVTPktd *: avt_packet_get_pts_d,         \
-             union AVTPacketData: avt_packet_get_pts_p      \
+             union AVTPacketData: avt_packet_get_pts_p,     \
+             union AVTPacketData *: avt_packet_get_pts_pp   \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
 #define avt_packet_get_size(x, ...)                         \
     _Generic((x),                                           \
              AVTPktd *: avt_packet_get_size_d,              \
              const AVTPktd *: avt_packet_get_size_d,        \
-             union AVTPacketData: avt_packet_get_size_p     \
+             union AVTPacketData: avt_packet_get_size_p,    \
+             union AVTPacketData *: avt_packet_get_size_pp, \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
 #define avt_packet_get_tb(x, ...)                           \
     _Generic((x),                                           \
              AVTPktd *: avt_packet_get_tb_d,                \
              const AVTPktd *: avt_packet_get_tb_d,          \
-             union AVTPacketData: avt_packet_get_tb_p       \
+             union AVTPacketData: avt_packet_get_tb_p,      \
+             union AVTPacketData *: avt_packet_get_tb_pp    \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
-#define avt_packet_change_size(x, ...)                       \
-    _Generic((x),                                            \
-             AVTPktd *: avt_packet_change_size_d,            \
-             union AVTPacketData: avt_packet_change_size_p   \
+#define avt_packet_change_size(x, ...)                        \
+    _Generic((x),                                             \
+             AVTPktd *: avt_packet_change_size_d,             \
+             union AVTPacketData: avt_packet_change_size_p,   \
+             union AVTPacketData *: avt_packet_change_size_pp \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
 #endif /* AVTRANSPORT_UTILS_PACKET_H */

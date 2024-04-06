@@ -499,8 +499,8 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
         }
 
         for (int j = 0; j < opts_list_nb; j++) {
-            if (!strcmp(argv[i], opts_list[j].flag) ||
-                !strcmp(argv[i], opts_list[j].flagname)) {
+            if ((opts_list[j].flag && !strcmp(argv[i], opts_list[j].flag)) ||
+                (opts_list[j].flagname && !strcmp(argv[i], opts_list[j].flagname))) {
                 l = &opts_list[j];
                 break;
             }

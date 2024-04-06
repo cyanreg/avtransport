@@ -51,7 +51,10 @@ AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
     buf->data = data;
     buf->len = len;
     buf->opaque = opaque;
-    buf->free = free_cb;
+    if (!free_cb)
+        buf->free = avt_buffer_default_free;
+    else
+        buf->free = free_cb;
 
     return buf;
 }

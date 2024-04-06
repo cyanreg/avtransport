@@ -1482,7 +1482,7 @@ recovery.
 FEC grouping allows for multiple buffered packets and segments from multiple
 streams to be FEC corrected in order to ensure no stream is starved of data.
 
-FEC grouped streams MUST be registered first via a special packet:
+FEC grouped streams must be registered first via a special packet:
 
 <figure id="table-FECGrouping" class="table">
     <table class="complex data longlastcol" dfn-for="#fec-grouping-packets">
@@ -1580,7 +1580,7 @@ FEC grouped streams MUST be registered first via a special packet:
 It is hightly recommended that the common OTI parameters never change once transmitted.
 This lets implementations attempt to apply FEC if they miss a [[#fec-grouping-packets]] packet.
 
-The `fec_scheme_oti` field MUST be interpreted as the following, given in [RFC 6330 Section 3.2.3. Common](https://datatracker.ietf.org/doc/html/rfc6330#section-3.3.3):
+The [=fec_scheme_oti=] field must be interpreted as the following, given in [[RFC6330#section-3.3.3]]:
 
 All streams in an FEC group must have timestamps that cover the same period
 of time.
@@ -1676,7 +1676,7 @@ FEC groups use a different packet for the FEC data.
     </table>
 </figure>
 
-The `fec_source` data is defined as follows:
+The [=fec_source=] data is defined as follows:
 
 ### FEC Group Source ### {#struct-FECSource}
 
@@ -3090,7 +3090,7 @@ This section expands on certain aspects of the specification.
 The following section lists the supported codecs, along with their encapsulation
 definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
 
-<figure id="table-EOS" class="table">
+<figure id="table-codec_id_map" class="table">
     <table class="complex data longlastcol" dfn-for="#codec-encapsulation" id="codec_id_map">
         <tr>
             <th>[=codec_id=]</th>
@@ -4554,9 +4554,9 @@ The full block, along with the check data, shall be sent to an LDPC decoder.
 
 To ease implementations, only two different lengths are used:
  - <dfn>LDPC(288, 224)</dfn>
-     :: 224-bit message, 64-bit parity, rate of <code>7/9</code>, [[#ldpc_h_matrix_288_224|H₆₄ₓ₂₈₈-matrix]]
+     :: 224-bit message, 64-bit parity, rate of <code>7/9</code>, [[#ldpc_h_matrix_288_224_def|H₆₄ₓ₂₈₈-matrix]]
  - <dfn>LDPC(2784, 2016)</dfn>
-     :: 2016-bit message, 768-bit parity, rate of <code>21/29</code>, [[#ldpc_h_matrix_2784_2016|H₇₆₈ₓ₂₇₈₄-matrix]]
+     :: 2016-bit message, 768-bit parity, rate of <code>21/29</code>, [[#ldpc_h_matrix_2784_2016_def|H₇₆₈ₓ₂₇₈₄-matrix]]
 
 For reference, the following code may be used to compute the LDPC parity data:
 
@@ -4626,7 +4626,7 @@ This is the format that the reference function above expects.
 The matrices are also listed as standard .alist files, directly usable for analysis and simulations.
 
 
-#### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224}
+#### ldpc_h_matrix_288_224 #### {#ldpc_h_matrix_288_224_def}
 
 Note: Spaceholder, working and optimal tables to be done
 
@@ -4716,7 +4716,7 @@ const uint64_t ldpc_h_matrix_288_224[288 /* (64 rows/64) * 288 cols */] = {
 </pre>
 
 
-#### ldpc_h_matrix_2784_2016 #### {#ldpc_h_matrix_2784_2016}
+#### ldpc_h_matrix_2784_2016 #### {#ldpc_h_matrix_2784_2016_def}
 
 Note: Spaceholder, working and optimal tables to be done
 

@@ -27,6 +27,7 @@
 #ifndef AVTRANSPORT_ATTRIBUTES_H
 #define AVTRANSPORT_ATTRIBUTES_H
 
+#include <assert.h>
 #include "config.h"
 
 #ifndef __has_attribute

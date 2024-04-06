@@ -24,6 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <inttypes.h>
 #include <string.h>
 #include <avtransport/avtransport.h>
 
@@ -35,74 +36,100 @@
 FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
-int avt_scheduler_init(AVTScheduler *s, uint32_t max_pkt_size,
-                       size_t buffer_limit, int64_t bandwidth)
+int avt_scheduler_init(AVTScheduler *s,
+                       uint32_t max_pkt_size, int64_t bandwidth)
 {
+    s->seq = 0;
     s->max_pkt_size = max_pkt_size;
     s->bandwidth = bandwidth;
-    s->min_pkt_size = UINT32_MAX;
+    s->avail = bandwidth;
 
-    atomic_init(&s->seq, 0);
+//    s->min_pkt_size = UINT32_MAX;
 
     return 0;
 }
 
 static inline uint64_t get_seq(AVTScheduler *s)
 {
-    return atomic_fetch_add(&s->seq, 1ULL);
+    return s->seq++;
 }
 
-static int64_t scheduler_push_internal(AVTScheduler *s,
-                                       AVTSchedulerPacketContext *state,
-                                       AVTPacketFifo *dst,
-                                       union AVTPacketData pkt, AVTBuffer *pl,
-                                       uint32_t seg_size_lim, int64_t out_limit)
+static inline void update_sw(AVTScheduler *s, size_t size)
 {
-    int err;
+    size *= 8;
+
+    static const AVTRational target_tb = (AVTRational){ 1, 1000000000 };
+    int64_t duration = avt_rescale(size, s->bandwidth, target_tb.den);
+    int64_t sum = avt_sliding_win(&s->sw, size, s->time, target_tb,
+                                  target_tb.den, 0);
+
+    s->avail = s->bandwidth - sum;
+    avt_log(s, AVT_LOG_TRACE, "Updating bw: %" PRIi64 " bits in, "
+                              "%" PRIi64 " t, %" PRIi64 " dt, "
+                              "%" PRIi64 " bps, %" PRIi64 " avail\n",
+            size, s->time, duration, sum, s->avail);
+
+    s->time += duration;
+}
+
+static inline int64_t scheduler_push_internal(AVTScheduler *s,
+                                              AVTSchedulerPacketContext *state,
+                                              AVTPacketFifo *dst,
+                                              uint32_t seg_size_lim,
+                                              int64_t out_limit)
+{
     uint32_t hdr_size;
+    size_t acc;
     size_t out_acc = 0;
-    uint32_t pl_size = avt_buffer_get_data_len(pl);
+    uint32_t pl_size = avt_buffer_get_data_len(&state->pl);
     uint32_t seg_pl_size;
-    AVTPktd p;
+    AVTPktd *p;
 
     if (state->seg_offset)
         goto resume;
 
-    hdr_size = avt_pkt_hdr_size(pkt);
+    /* Header size of the encoded packet */
+    hdr_size = avt_pkt_hdr_size(state->start.pkt);
 
     /* Signal we need more bytes to output something coherent */
-    if (out_limit < (hdr_size + 1))
+    if (out_limit < (hdr_size + 1 /* 1 byte of payload ? */))
         return AVT_ERROR(EAGAIN);
 
-    /* Reference full payload */
-    err = avt_buffer_quick_ref(&state->pl, pl, 0, AVT_BUFFER_REF_ALL);
-    if (err < 0)
-        return err;
+    if (!pl_size) {
+        p = avt_pkt_fifo_push_new(dst, NULL, 0, 0);
+        if (!p)
+            return AVT_ERROR(ENOMEM);
 
-    /* Rescale payload */
-    seg_pl_size = seg_size_lim - hdr_size;
-    err = avt_buffer_quick_ref(&state->start.pl, &state->pl, 0, seg_pl_size);
-    if (err < 0) {
-        avt_buffer_quick_unref(&state->pl);
-        return err;
+        p->pkt = state->start.pkt;
+        avt_packet_encode_header(p);
+        out_acc += hdr_size;
+        update_sw(s, hdr_size);
+        state->seg_offset = 0;
+        state->present = 0;
+
+        return 0;
     }
+
+    /* Reserve new packet in the output bucket FIFO */
+    seg_pl_size = seg_size_lim - hdr_size;
+    p = avt_pkt_fifo_push_new(dst, &state->pl, 0, seg_pl_size);
+    if (!p)
+        return AVT_ERROR(ENOMEM);
 
     /* Modify packet */
-    avt_packet_change_size(pkt, 0, seg_pl_size, pl_size);
-    pkt.seq = get_seq(s);
+    avt_packet_change_size(state->start.pkt, 0, seg_pl_size, pl_size);
+    state->start.pkt.seq = get_seq(s);
 
     /* Encode packet */
-    state->start.pkt = pkt;
     avt_packet_encode_header(&state->start);
 
-    /* Enqueue start packet */
-    err = avt_pkt_fifo_push_refd(dst, &state->start);
-    if (err < 0) {
-        avt_buffer_quick_unref(&state->pl);
-        avt_buffer_quick_unref(&state->start.pl);
-        return err;
-    }
-    out_acc += avt_pkt_hdr_size(state->start.pkt) + seg_pl_size;
+    /* Update accumulated output */
+    acc = avt_pkt_hdr_size(state->start.pkt) + seg_pl_size;
+    out_acc += acc;
+    update_sw(s, acc);
+
+    /* Update packet in FIFO */
+    *p = state->start;
 
     /* Setup segmentation context */
     state->seg_offset = seg_pl_size;
@@ -123,24 +150,21 @@ resume:
 
     while (state->pl_left) {
         seg_pl_size = seg_size_lim - hdr_size;
-        p.pkt = avt_packet_create_segment(&state->start, get_seq(s),
-                                          state->seg_offset, seg_pl_size, pl_size);
 
-        /* Create segment buffer */
-        err = avt_buffer_quick_ref(&p.pl, &state->pl, state->seg_offset, seg_pl_size);
-        if (err < 0)
-            return err;
+        p = avt_pkt_fifo_push_new(dst, &state->pl, state->seg_offset, seg_pl_size);
+        if (!p)
+            return AVT_ERROR(ENOMEM);
+
+        p->pkt = avt_packet_create_segment(&state->start, get_seq(s),
+                                           state->seg_offset, seg_pl_size, pl_size);
 
         /* Encode packet */
-        avt_packet_encode_header(&p);
+        avt_packet_encode_header(p);
 
         /* Enqueue packet */
-        err = avt_pkt_fifo_push_refd(dst, &p);
-        if (err < 0) {
-            avt_buffer_quick_unref(&p.pl);
-            return err;
-        }
-        out_acc += avt_pkt_hdr_size(p.pkt) + seg_pl_size;
+        acc = avt_pkt_hdr_size(p->pkt) + seg_pl_size;
+        out_acc += acc;
+        update_sw(s, acc);
 
         state->seg_offset += seg_pl_size;
         state->pl_left -= seg_pl_size;
@@ -150,29 +174,220 @@ resume:
     }
 
     if (!out_acc) {
-        avt_buffer_quick_unref(&state->pl);
-        avt_buffer_quick_unref(&state->start.pl);
-        memset(state, 0, sizeof(*state));
+        state->seg_offset = 0;
+        state->present = 0;
     }
 
     return out_acc;
 }
 
-static int scheduler_process(AVTScheduler *s,
-                             union AVTPacketData pkt, AVTBuffer *pl)
+static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
 {
-    int err;
+    if (pctx->cur.present)
+        return 0;
 
-    /* If stream already has a packet staged, put it in fifo */
-    if (s->streams[pkt.stream_id].cur.present) {
-        err = avt_pkt_fifo_push_refd(&s->streams[pkt.stream_id].fifo, pkt, pl);
-        if (err < 0)
-            return err;
+    int ret = avt_pkt_fifo_pop(&pctx->fifo, &pctx->cur.start.pkt, &pctx->cur.pl);
+    if (ret < 0)
+        return ret;
+
+    AVTRational s_tb;
+    avt_packet_get_tb(pctx->reg, &s_tb);
+
+    static const AVTRational target_tb = (AVTRational){ 1, 1000000000 };
+
+    /* TODO: take into account index packets having larger length */
+    const size_t size = (avt_pkt_hdr_size(pctx->cur.start.pkt) +
+                         avt_buffer_get_data_len(&pctx->cur.pl)) * 8;
+
+    int64_t duration = avt_packet_get_duration(&pctx->cur.start.pkt);
+    if (duration == INT64_MIN) {
+        /* How many nanoseconds would take to transmit this number of bits */
+        duration = avt_rescale(size, s->bandwidth, target_tb.den);
+    } else {
+        duration = avt_rescale_rational(duration, s_tb, target_tb);
     }
 
+    int64_t pts = avt_packet_get_pts(&pctx->cur.start.pkt);
+    if (pts != INT64_MIN)
+        pts = avt_rescale_rational(pts, s_tb, target_tb);
 
+    pctx->cur.pts = pts;
+    pctx->cur.duration = duration;
+    pctx->cur.present = true;
+    pctx->cur.size = size;
 
+    return ret;
+}
 
+static void remove_stream(AVTScheduler *s, int active_id, int overlap_id)
+{
+    if (overlap_id >= 0) {
+        memcpy(&s->tmp.overlap[overlap_id], &s->tmp.overlap[overlap_id + 1],
+               (s->tmp.nb_overlap - overlap_id)*sizeof(*s->tmp.overlap));
+        s->tmp.nb_overlap--;
+    }
+
+    if (active_id >= 0) {
+        s->streams[s->active_stream_indices[active_id]].active = false;
+        memcpy(&s->active_stream_indices[active_id],
+               &s->active_stream_indices[active_id + 1],
+               (s->nb_active_stream_indices - active_id) *
+               sizeof(*s->active_stream_indices));
+        s->nb_active_stream_indices--;
+    }
+}
+
+static int direct_push(AVTScheduler *s, uint16_t id)
+{
+    int ret;
+    AVTSchedulerStream *pctx = &s->streams[id];
+    avt_log(s, AVT_LOG_TRACE, "Pushing stream 0x%X: 0x%X pkt, "
+                              "%" PRIi64 " avail bits\n",
+            id, pctx->cur.start.pkt.desc, s->avail);
+    do {
+        ret = scheduler_push_internal(s, &pctx->cur, s->staging,
+                                      s->max_pkt_size, s->avail >> 3);
+    } while (ret > 0);
+
+    if (ret < 0) {
+        avt_buffer_quick_unref(&pctx->cur.pl);
+        return ret;
+    } else if (!ret) {
+        avt_buffer_quick_unref(&pctx->cur.pl);
+        ret = preload_pkt(s, &s->streams[id]);
+        if (ret == AVT_ERROR(ENOENT)) {
+            remove_stream(s, 0, -1);
+            ret = 0;
+        } else if (ret < 0) {
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
+static int scheduler_process(AVTScheduler *s)
+{
+    int ret;
+    AVTSchedulerStream *pctx;
+
+    for (auto i = 0; i < s->nb_active_stream_indices; i++) {
+        const uint16_t id = s->active_stream_indices[i];
+        ret = preload_pkt(s, &s->streams[id]);
+        if (ret < 0)
+            return ret;
+    }
+
+ repeat:
+    if (!s->nb_active_stream_indices)
+        return 0;
+    else if (s->nb_active_stream_indices == 1)
+        return direct_push(s, s->active_stream_indices[0]);
+
+    /* Get the first (time-wise) ending timestamp of a packet */
+    int64_t min_end = INT64_MAX;
+    uint16_t min_end_id = 0;
+    for (int i = 0; i < s->nb_active_stream_indices; i++) {
+        const uint16_t id = s->active_stream_indices[i];
+        pctx = &s->streams[id];
+        if ((pctx->cur.pts + pctx->cur.duration) < min_end) {
+            min_end = (pctx->cur.pts + pctx->cur.duration);
+            min_end_id = id;
+        }
+    }
+
+    /* Get a list of packets whose start time overlaps with the first end */
+    s->tmp.nb_overlap = 0;
+    s->tmp.overlap[s->tmp.nb_overlap++] = min_end_id;
+    size_t overlap_size = s->streams[min_end_id].cur.size;
+    size_t min_overlap_size = AVT_MIN(s->streams[min_end_id].cur.size,
+                                      s->max_pkt_size);
+    for (int i = 0; i < s->nb_active_stream_indices; i++) {
+        const uint16_t id = s->active_stream_indices[i];
+        if (id == min_end_id)
+            continue;
+        pctx = &s->streams[id];
+        if (pctx->cur.pts < min_end) {
+            if (pctx->cur.size < min_overlap_size)
+                min_overlap_size = pctx->cur.size;
+            overlap_size += pctx->cur.size;
+            s->tmp.overlap[s->tmp.nb_overlap++] = id;
+        }
+    }
+
+    /* No overlaps, nothing to schedule */
+    if (s->tmp.nb_overlap == 1) {
+        ret = direct_push(s, s->active_stream_indices[0]);
+        if (ret < 0)
+            return ret;
+        goto repeat;
+    }
+
+    /* We should really sort overlaps by start time here */
+
+    /* We need to do a while loop for each time we call
+     * scheduler_push_internal, as it needs a flush.
+     *
+     * So, rather than using a for loop, and then a while loop,
+     * which would output all segments of a single packet sequentially,
+     * just do a do/while loop, iterating over all overlapping streams,
+     * until either we run out of bits to spare,
+     * or packet starts have all moved on past the point of min_end.
+     *
+     * This essentially interleaves segments of all streams, giving
+     * some amount of resilience towards packet drops, which happen in
+     * bursts. */
+    avt_log(s, AVT_LOG_DEBUG, "Interleaving: %" PRIu16 " streams, "
+                              "%" PRIu16 " overlaps, %" PRIi64 " end ts, "
+                              "%" PRIi64 "/%" PRIi64 " left/avail bits\n",
+            s->nb_active_stream_indices, s->tmp.nb_overlap, min_end,
+            overlap_size, s->avail);
+
+    /* Per-stream limit */
+    int64_t local_limit = (s->avail / overlap_size) * s->max_pkt_size;
+    unsigned int idx = 0;
+    do {
+        const int i = (idx++) % s->tmp.nb_overlap;
+        const uint16_t id = s->tmp.overlap[i];
+        pctx = &s->streams[id];
+
+        avt_log(s, AVT_LOG_TRACE, "Pushing stream 0x%X: 0x%X pkt, "
+                                  "%" PRIi64 " limit, "
+                                  "%" PRIi64 "/%" PRIi64 " left/avail bits\n",
+                id, pctx->cur.start.pkt.desc, local_limit, overlap_size, s->avail);
+
+        ret = scheduler_push_internal(s, &pctx->cur, s->staging,
+                                      s->max_pkt_size, local_limit);
+        if (ret == AVT_ERROR(EAGAIN)) {
+            /* No bits left at all. Just return. */
+            return 0;
+        } else if (ret < 0) {
+            avt_buffer_quick_unref(&pctx->cur.pl);
+            return ret;
+        } else if (ret > 0) {
+            s->avail -= ret;
+            overlap_size -= ret;
+        } else if (ret == 0) {
+            avt_buffer_quick_unref(&pctx->cur.pl);
+            /* Preload next */
+            ret = preload_pkt(s, pctx);
+            if (ret == 0) {
+                /* Remove from list if we don't have enough bits to fit
+                 * it into, or if it doesn't overlap */
+                if (((overlap_size + pctx->cur.size) < s->avail) ||
+                    (pctx->cur.pts >= min_end))
+                    remove_stream(s, -1, i);
+                else
+                    overlap_size += pctx->cur.size;
+            } else if (ret == AVT_ERROR(ENOENT)) {
+                remove_stream(s, pctx->active_id, i);
+            } else if (ret < 0) {
+                return ret;
+            }
+        }
+    } while ((overlap_size < s->avail) && s->tmp.nb_overlap);
+
+    goto repeat;
 
     return 0;
 }
@@ -180,7 +395,7 @@ static int scheduler_process(AVTScheduler *s,
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl)
 {
-    int err;
+    int ret;
 
     /* Allocate a staging buffer if one doesn't exist */
     if (!s->staging) {
@@ -189,30 +404,37 @@ int avt_scheduler_push(AVTScheduler *s,
             return AVT_ERROR(ENOMEM);
     }
 
-    /* Bypass if interleaving is turned off */
+    /* Bypass everything if interleaving is turned off */
     if (s->bandwidth == INT64_MAX) {
-        AVTSchedulerPacketContext state = { };
-        int64_t ret = scheduler_push_internal(s, &state, s->staging, pkt, pl,
-                                              s->max_pkt_size, INT64_MAX);
-        return ret;
+        AVTSchedulerPacketContext state = {
+            .start.pkt = pkt,
+            .pl = pl ? *pl : (AVTBuffer){ 0 },
+        };
+        return scheduler_push_internal(s, &state, s->staging,
+                                       s->max_pkt_size, INT64_MAX);
     }
 
     /* Keep track of timebases for all streams */
     if (pkt.desc == AVT_PKT_STREAM_REGISTRATION)
         s->streams[pkt.stream_id].reg = pkt;
 
+    uint16_t sid = pkt.stream_id;
+    if (pkt.desc == AVT_PKT_SESSION_START || pkt.desc == AVT_PKT_TIME_SYNC)
+        sid = 0xFFFF;
+
     /* Keep track of active streams */
-    if (!s->streams[pkt.stream_id].active) {
-        s->active_stream_indices[s->nb_active_stream_indices++] = pkt.stream_id;
-        s->streams[pkt.stream_id].active = true;
+    if (!s->streams[sid].active) {
+        s->streams[sid].active = true;
+        s->streams[sid].active_id = s->nb_active_stream_indices;
+        s->active_stream_indices[s->nb_active_stream_indices++] = sid;
     }
 
-    /* Keep track of the minimum packet size for round-robin quantum */
-    const size_t payload_size = avt_buffer_get_data_len(pl);
-    s->min_pkt_size = AVT_MIN(s->min_pkt_size,
-                              avt_pkt_hdr_size(pkt) + payload_size);
+    /* Add packet to stream FIFO */
+    ret = avt_pkt_fifo_push_refd(&s->streams[sid].fifo, pkt, pl);
+    if (ret < 0)
+        return ret;
 
-    return scheduler_process(s, pkt, pl);
+    return scheduler_process(s);
 }
 
 int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
@@ -225,30 +447,14 @@ int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq)
     s->staging = NULL;
     *seq = bkt;
 
-    if (s->bandwidth == INT64_MAX)
-        return 0;
-
-//    s->staged_size = 0;
-
-    /* Redo round-robin quantum calculation */
-    s->min_pkt_size = UINT32_MAX;
-    for (auto i = 0; i < s->nb_active_stream_indices; i++) {
-        const AVTPktd *p;
-        size_t payload_size;
-        const AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
-        for (auto j = 0; j < st->fifo.nb; j++) {
-            p = &st->fifo.data[j];
-            payload_size = avt_buffer_get_data_len(&p->pl);
-            s->min_pkt_size = AVT_MIN(s->min_pkt_size,
-                                      avt_pkt_hdr_size(p->pkt) + payload_size);
-        }
-    }
-
     return 0;
 }
 
 int avt_scheduler_flush(AVTScheduler *s, AVTPacketFifo **seq)
 {
+    AVTPacketFifo *bkt = s->staging;
+    s->staging = NULL;
+    *seq = bkt;
     return 0;
 }
 
@@ -291,27 +497,10 @@ void avt_scheduler_free(AVTScheduler *s)
     s->buckets = NULL;
     s->nb_buckets = 0;
 
-#if 0
     for (auto i = 0; i < s->nb_active_stream_indices; i++) {
-        AVTSchedulerStream *st = s->streams_tmp[s->active_stream_indices[i]];
+        AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
+        avt_buffer_quick_unref(&st->cur.pl);
         avt_pkt_fifo_free(&st->fifo);
     }
     s->nb_active_stream_indices = 0;
-#endif
 }
-
-
-/* Rust */
-#if 0
-    size_t payload_size = avt_buffer_get_data_len(pl);
-    /* Normalized average bitrate */
-    int64_t pkt_ts = avt_packet_get_pts(pkt);
-    int64_t pkt_duration = avt_packet_get_duration(pkt);
-    if (ret >= 0 && pkt_ts != INT64_MIN && pkt_duration != INT64_MIN) {
-        /* payload_size / avt_r2d(duration) */
-        int64_t norm_size = avt_rescale(8*payload_size, tb.den, pkt_duration * tb.num);
-        s->streams[pkt.stream_id].bitrate = avt_sliding_win(&s->streams[pkt.stream_id].sw,
-                                                            norm_size, pkt_ts,
-                                                            tb, tb.den, 1);
-    }
-#endif

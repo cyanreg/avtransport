@@ -26,7 +26,10 @@
 
 static inline int64_t RENAME(avt_packet_get_duration)(const TYPE p)
 {
-    switch (GET(desc)) {
+    int desc = GET(desc);
+    if (desc & AVT_PKT_FLAG_LSB_BITMASK)
+        desc = (desc & 0xF) << 8;
+    switch (desc) {
     case AVT_PKT_STREAM_DATA:
         return GET(stream_data.duration);
     default:

@@ -105,13 +105,12 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
         goto fail;
 
     /* Get max packet size */
-    ret = conn->p->get_max_pkt_len(conn->p_ctx);
-    if (ret < 0)
+    int64_t max_pkt_size = conn->p->get_max_pkt_len(conn->p_ctx);
+    if (max_pkt_size < 0)
         goto fail;
 
     /* Output scheduler */
-    ret = avt_scheduler_init(&conn->out_scheduler, ret,
-                             info->output_opts.buffer,
+    ret = avt_scheduler_init(&conn->out_scheduler, max_pkt_size,
                              info->output_opts.bandwidth);
     if (ret < 0)
         goto fail;
@@ -158,7 +157,7 @@ int avt_connection_process(AVTConnection *conn, int64_t timeout)
     if (err < 0)
         avt_scheduler_done(&conn->out_scheduler, seq);
 
-    return 0;
+    return err;
 }
 
 int avt_connection_flush(AVTConnection *conn, int64_t timeout)

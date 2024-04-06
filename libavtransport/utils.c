@@ -77,22 +77,33 @@ static int fifo_resize(AVTPacketFifo *fifo, unsigned int alloc_new)
     return 0;
 }
 
-int avt_pkt_fifo_push(AVTPacketFifo *fifo,
-                      union AVTPacketData pkt, AVTBuffer *pl)
+AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
+                               ptrdiff_t offset, size_t len)
 {
     if ((fifo->nb + 1) >= fifo->alloc) {
         /* Ptwo allocations */
         if (fifo_resize(fifo, fifo->alloc << 1))
-            return AVT_ERROR(ENOMEM);
+            return NULL;
     }
 
     AVTPktd *data = &fifo->data[fifo->nb];
-    int err = avt_buffer_quick_ref(&data->pl, pl, 0, 0);
-    data->pkt = pkt;
-    if (err >= 0)
-        fifo->nb++;
+    if (pl) {
+        if (avt_buffer_quick_ref(&data->pl, pl, offset, len) < 0)
+            return NULL;
+    }
+    fifo->nb++;
 
-    return err;
+    return data;
+}
+
+int avt_pkt_fifo_push(AVTPacketFifo *fifo,
+                      union AVTPacketData pkt, AVTBuffer *pl)
+{
+    AVTPktd *p = avt_pkt_fifo_push_new(fifo, pl, 0, AVT_BUFFER_REF_ALL);
+    if (!p)
+        return AVT_ERROR(ENOMEM);
+    p->pkt = pkt;
+    return 0;
 }
 
 int avt_pkt_fifo_push_refd_d(AVTPacketFifo *fifo, AVTPktd *p)
@@ -122,11 +133,11 @@ int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
 
     AVTPktd *data = &fifo->data[fifo->nb++];
     data->pkt = pkt;
-    if (pl)
+    if (pl) {
         data->pl = *pl;
-
-    /* Zero to prevent leaks */
-    *pl = (AVTBuffer){ };
+        /* Zero to prevent leaks */
+        *pl = (AVTBuffer){ };
+    }
 
     return 0;
 }

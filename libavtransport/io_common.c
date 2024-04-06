@@ -24,6 +24,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <avtransport/avtransport.h>
 #include "io_common.h"
 #include "attributes.h"
 
@@ -115,10 +116,14 @@ COLD int avt_io_init(AVTContext *ctx, const AVTIO **_io, AVTIOCtx **io_ctx,
     const AVTIO *io, **io_list = avt_io_list[io_type];
     while ((io = *io_list)) {
         err = io->init(ctx, io_ctx, addr);
-        if (err == AVT_ERROR(ENOMEM))
+        if (err == AVT_ERROR(ENOMEM)) {
             return err;
-        else if (err < 0)
+        } else if (err < 0) {
+            avt_log(ctx, AVT_LOG_TRACE, "Unable to open with I/O \"%s\": %i\n",
+                    io->name, err);
             continue;
+        }
+        avt_log(ctx, AVT_LOG_VERBOSE, "Using I/O \"%s\"\n", io->name);
         *_io = io;
         return err;
     }

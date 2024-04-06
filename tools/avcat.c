@@ -70,12 +70,19 @@ typedef struct IOContext {
 #endif
 } IOContext;
 
-static enum IOMode path_is_avt(const char *path, enum AVTConnectionType *conn_type, int is_out)
+static enum IOMode path_id(const char *path, enum AVTConnectionType *conn_type, int is_out)
 {
     int len = strlen(path);
 
     if (!strncmp(path, "avt://", strlen("avt://")) ||
+        !strncmp(path, "quic://", strlen("quic://")) ||
+        !strncmp(path, "udp://", strlen("udp://")) ||
+        !strncmp(path, "udplite://", strlen("udplite://")) ||
+        !strncmp(path, "socket://", strlen("socket://")) ||
         !strncmp(path, "file://", strlen("file://"))) {
+        if (!strncmp(path, "udp://", strlen("udp://")))
+            printf("Note: udp:// is AVTransport over UDP. "
+                   "Use mpegts:// or rtp:// for anything else\n");
         *conn_type = AVT_CONNECTION_URL;
         return IO_AVT;
     } else if (!strcmp(&path[len - 4], ".avt") ||
@@ -102,6 +109,8 @@ static enum IOMode path_is_avt(const char *path, enum AVTConnectionType *conn_ty
                 !strcmp(&path[len - 4], ".cbor") ||
                 !strcmp(&path[len - 4], ".svg"))) {
         return IO_RAW;
+    } else {
+        return IO_LAVF;
     }
 
     return 0;
@@ -146,7 +155,7 @@ static int open_io(IOContext *io, const char *path, int is_out)
 {
     int err;
 
-    io->mode = path_is_avt(path, &io->type, is_out);
+    io->mode = path_id(path, &io->type, is_out);
 
     switch (io->mode) {
     case IO_AVT: {
@@ -164,10 +173,11 @@ static int open_io(IOContext *io, const char *path, int is_out)
         AVTConnectionInfo conn_info = {
             .path = path,
             .type = io->type,
+            .output_opts.bandwidth = 80 * 1000 * 1000,
         };
         err = avt_connection_create(io->avt, &io->conn, &conn_info);
         if (err < 0) {
-            avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s: %i!\n", path,
+            avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path,
                     err);
             return err;
         }
@@ -178,12 +188,13 @@ static int open_io(IOContext *io, const char *path, int is_out)
 
             err = avt_output_open(io->avt, &io->out, io->conn, &opts);
             if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s for writing: %i!\n", path,
+                avt_log(NULL, AVT_LOG_ERROR, "Could not open %s as an output: %i\n", path,
                         err);
                 return err;
             }
 
-            io->st = avt_output_stream_add(io->out, 12765);
+            io->st = avt_output_stream_add(io->out, 0);
+            io->st->timebase = (AVTRational) { 1, 1000 * 1000 * 1000 };
 
             avt_output_stream_update(io->out, io->st);
         } else {
@@ -194,7 +205,7 @@ static int open_io(IOContext *io, const char *path, int is_out)
     case IO_RAW: {
         io->raw = fopen(path, is_out ? "w+" : "r");
         if (!io->raw) {
-            avt_log(NULL, AVT_LOG_ERROR, "Couldn't open %s: %i!\n", path, errno);
+            avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path, errno);
             return AVT_ERROR(errno);
         }
         break;
@@ -244,10 +255,10 @@ static int open_io(IOContext *io, const char *path, int is_out)
     return 0;
 }
 
-static noreturn void on_quit_signal(int signo)
+static volatile sig_atomic_t signal_terminate;
+static void on_quit_signal(const int signo)
 {
-    int err = 0;
-    exit(err);
+    signal_terminate = 1;
 }
 
 int main(int argc, char **argv)
@@ -270,7 +281,17 @@ int main(int argc, char **argv)
         return EINVAL;
     }
 
-    if (signal(SIGINT, on_quit_signal) == SIG_ERR)
+#ifdef _WIN32
+    if (signal(SIGINT,  on_quit_signal) < 0 ||
+        signal(SIGTERM, on_quit_signal) < 0)
+#else
+    static const struct sigaction sa = {
+        .sa_handler = on_quit_signal,
+        .sa_flags = SA_RESETHAND,
+    };
+    if (sigaction(SIGINT,  &sa, NULL) < 0 ||
+        sigaction(SIGTERM, &sa, NULL) < 0)
+#endif
         avt_log(NULL, AVT_LOG_ERROR, "Can't init signal handler!\n");
 
     /* Create inputs */
@@ -307,6 +328,7 @@ int main(int argc, char **argv)
         AVTPacket pkt = {
             .type = AVT_FRAME_TYPE_KEY,
             .data = buf,
+            .pts = 0,
         };
 
         avt_output_stream_data(out.st, &pkt);

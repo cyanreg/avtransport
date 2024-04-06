@@ -31,12 +31,17 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
+    AVTPktd   start;
     AVTBuffer pl;
-    AVTPktd  start;
-    uint32_t seg_offset;
-    uint32_t pl_left;
-    uint32_t seg_hdr_size;
-    bool present;
+
+    uint32_t  seg_offset;
+    uint32_t  pl_left;
+    uint32_t  seg_hdr_size;
+    bool      present;
+
+    int64_t   pts; // in 1ns timebase
+    int64_t   duration;
+    size_t    size;
 } AVTSchedulerPacketContext;
 
 typedef struct AVTSchedulerStream {
@@ -50,27 +55,30 @@ typedef struct AVTSchedulerStream {
 
     /* Stream has had packets without a closure */
     bool active;
+    uint16_t active_id;
 } AVTSchedulerStream;
 
 typedef struct AVTScheduler {
-    /* Master packet sequence value */
-    atomic_uint_least64_t seq;
-
     /* Settings */
     uint32_t max_pkt_size;
     int64_t bandwidth;
+    int64_t protocol_header;
 
     /* Scheduling state */
-    AVTSlidingWinCtx sw;   /* Sliding window state */
-    uint32_t min_pkt_size; /* RR quantum, in bits */
+    uint64_t seq;           /* Next packet seq */
+    AVTPacketFifo *staging; /* Staging bucket, next for output */
+    AVTSlidingWinCtx sw;    /* Sliding window state */
+    int64_t avail;
+    int64_t time;
 
     /* Streams state */
     AVTSchedulerStream streams[UINT16_MAX];
     uint16_t active_stream_indices[UINT16_MAX];
     uint16_t nb_active_stream_indices;
-
-    /* Staging bucket, next for output */
-    AVTPacketFifo *staging;
+    struct {
+        uint16_t overlap[UINT16_MAX];
+        uint16_t nb_overlap;
+    } tmp;
 
     /* Available output buckets */
     AVTPacketFifo **avail_buckets;
@@ -84,8 +92,8 @@ typedef struct AVTScheduler {
 
 /* Initialization function. If max_pkt_size changes, everything must
  * be torn down and recreated. */
-int avt_scheduler_init(AVTScheduler *s, uint32_t max_pkt_size,
-                       size_t buffer_limit, int64_t bandwidth);
+int avt_scheduler_init(AVTScheduler *s,
+                       uint32_t max_pkt_size, int64_t bandwidth);
 
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl);

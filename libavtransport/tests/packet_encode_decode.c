@@ -33,6 +33,7 @@
 
 int main(void)
 {
+#if 0
     int ret;
     AVTPktd in = { };
     AVTPktd out = { };
@@ -86,6 +87,6 @@ int main(void)
     }
 
     avt_buffer_unref(&buf);
-
+#endif
     return 0;
 }

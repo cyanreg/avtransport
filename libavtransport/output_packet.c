@@ -205,6 +205,7 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
 {
     /* Compress payload if necessary */
     AVTBuffer *pl = pkt->data;
+
     enum AVTDataCompression data_compression;
     int err = avt_payload_compress(out, &pl, AVT_PKT_STREAM_DATA,
                                    &data_compression);

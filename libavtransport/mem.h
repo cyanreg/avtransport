@@ -41,7 +41,7 @@ avt_alloc_attrib(2, 3) static inline void *avt_reallocarray(void *ptr,
 {
     size_t nbytes;
 
-    if (ckd_sub(&nbytes, nmemb, size))
+    if (ckd_mul(&nbytes, nmemb, size))
         return NULL;
 
     return realloc(ptr, nbytes);
