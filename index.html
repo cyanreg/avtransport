@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="2f733a763fd50c2a80ccf202185a1b4bdc15aeac" name="document-revision">
+  <meta content="4e5b7f73ce08498798281671e0fdb19ea05ed225" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-04-06">6 April 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-04-07">7 April 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 6 April 2024,
+In addition, as of 7 April 2024,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2764,14 +2764,14 @@ as an AVTransport session. The syntax is as follows:</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x4156+4">
        <td><code>16*b(8)</code>
-       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-sender_uuid">sender_uuid<a class="self-link" href="#session-start-packets-sender_uuid"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_uuid">session_uuid</dfn>
        <td><a data-link-type="biblio" href="#biblio-rfc4122" title="A Universally Unique IDentifier (UUID) URN Namespace">UUID</a>
-       <td>UUID of the sender.
+       <td>Lasting session UUID.
       <tr id="0x4156+3">
        <td><code>u(32)</code>
-       <td><dfn data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_id">session_id<a class="self-link" href="#session-start-packets-session_id"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_seq">session_seq</dfn>
        <td>
-       <td>32-bit session identification of the sender.
+       <td>32-bit current session sequence number.
       <tr id="0x4156+5">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224">ldpc_288_224</a>
@@ -2819,6 +2819,8 @@ bytewise-identical.</p>
    <p>The <a data-link-type="dfn" href="#session-start-packets-producer_name" id="ref-for-session-start-packets-producer_name">producer_name</a> field is a <i>fixed-length</i> string, meaning that
 the field is always 16 bytes. If the name is less than 16 bytes, it must
 be zero-padded.</p>
+   <p><a data-link-type="dfn" href="#session-start-packets-session_uuid" id="ref-for-session-start-packets-session_uuid">session_uuid</a> is a long-term pre-agreed token between the sender and receiver. It is meant to represent a user ID, or a generic access token. If no pre-agreed token is required, it must contain random data.</p>
+   <p><a data-link-type="dfn" href="#session-start-packets-session_seq" id="ref-for-session-start-packets-session_seq">session_seq</a> is an ephemeral ID that is supposed to change each time a transmission is initiated. It is meant to help with longer duration disconnections.</p>
    <h3 class="heading settled" data-level="2.2" id="enum-SessionFlags"><span class="secno">2.2. </span><span class="content">Stream Session Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-sessionflags"><code>SessionFlags</code></dfn>)</span><a class="self-link" href="#enum-SessionFlags"></a></h3>
    <p>The <a data-link-type="dfn" href="#session-start-packets-session_flags" id="ref-for-session-start-packets-session_flags">session_flags</a> field must be interpreted in the following way:</p>
    <div id="SessionFlags">
@@ -6520,14 +6522,14 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-control-data-packets-seek_seq">seek_seq</a><span>, in § 3.4.1</span>
    <li><a href="#generic-data-segment-packets-seg_length">seg_length</a><span>, in § 2.5.1</span>
    <li><a href="#generic-data-segment-packets-seg_offset">seg_offset</a><span>, in § 2.5.1</span>
-   <li><a href="#session-start-packets-sender_uuid">sender_uuid</a><span>, in § 2.1</span>
    <li><a href="#session-control-data-packets-session_control_descriptor">session_control_descriptor</a><span>, in § 3.4.1</span>
    <li><a href="#session-start-packets-session_flags">session_flags</a><span>, in § 2.1</span>
    <li><a href="#enumdef-sessionflags">SessionFlags</a><span>, in § 2.2</span>
-   <li><a href="#session-start-packets-session_id">session_id</a><span>, in § 2.1</span>
    <li><a href="#dom-enum-streamflags-session_low_quality">SESSION_LOW_QUALITY</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-sessionflags-session_reverse_signal_ready">SESSION_REVERSE_SIGNAL_READY</a><span>, in § 2.2</span>
+   <li><a href="#session-start-packets-session_seq">session_seq</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_start_descriptor">session_start_descriptor</a><span>, in § 2.1</span>
+   <li><a href="#session-start-packets-session_uuid">session_uuid</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_version">session_version</a><span>, in § 2.1</span>
    <li><a href="#time-synchronization-packets-signal_aspect">signal_aspect</a><span>, in § 2.18</span>
    <li><a href="#stream-registration-packets-skip_preroll">skip_preroll</a><span>, in § 2.4</span>
@@ -7056,6 +7058,8 @@ window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "
 window.dfnpanelData['dts'] = {"dfnID": "dts", "url": "#dts", "dfnText": "dts", "refSections": [{"refs": [{"id": "ref-for-dts"}, {"id": "ref-for-dts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-dts\u2461"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-dts\u2462"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2463"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2464"}], "title": "3.1.16. ASS encapsulation"}], "external": false};
 window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2460"}, {"id": "ref-for-duration\u2461"}, {"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}, {"id": "ref-for-duration\u2464"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2466"}, {"id": "ref-for-duration\u2467"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2460\u24ea"}], "title": "3.1.16. ASS encapsulation"}], "external": false};
 window.dfnpanelData['epoch'] = {"dfnID": "epoch", "url": "#epoch", "dfnText": "epoch", "refSections": [{"refs": [{"id": "ref-for-epoch"}, {"id": "ref-for-epoch\u2460"}, {"id": "ref-for-epoch\u2461"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-epoch\u2462"}, {"id": "ref-for-epoch\u2463"}, {"id": "ref-for-epoch\u2464"}, {"id": "ref-for-epoch\u2465"}, {"id": "ref-for-epoch\u2466"}, {"id": "ref-for-epoch\u2467"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-epoch\u2468"}], "title": "3.5.1. Feedback"}], "external": false};
+window.dfnpanelData['session-start-packets-session_uuid'] = {"dfnID": "session-start-packets-session_uuid", "url": "#session-start-packets-session_uuid", "dfnText": "session_uuid", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-session_uuid"}], "title": "2.1. Session start"}], "external": false};
+window.dfnpanelData['session-start-packets-session_seq'] = {"dfnID": "session-start-packets-session_seq", "url": "#session-start-packets-session_seq", "dfnText": "session_seq", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-session_seq"}], "title": "2.1. Session start"}], "external": false};
 window.dfnpanelData['session-start-packets-session_flags'] = {"dfnID": "session-start-packets-session_flags", "url": "#session-start-packets-session_flags", "dfnText": "session_flags", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-session_flags"}], "title": "2.2. Stream Session Flags Enumeration (enum SessionFlags)"}, {"refs": [{"id": "ref-for-session-start-packets-session_flags\u2460"}], "title": "3.4. Reverse signalling"}], "external": false};
 window.dfnpanelData['session-start-packets-producer_name'] = {"dfnID": "session-start-packets-producer_name", "url": "#session-start-packets-producer_name", "dfnText": "producer_name", "refSections": [{"refs": [{"id": "ref-for-session-start-packets-producer_name"}], "title": "2.1. Session start"}], "external": false};
 window.dfnpanelData['enumdef-sessionflags'] = {"dfnID": "enumdef-sessionflags", "url": "#enumdef-sessionflags", "dfnText": "SessionFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-sessionflags"}], "title": "2.1. Session start"}], "external": false};
