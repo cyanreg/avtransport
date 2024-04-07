@@ -24,17 +24,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdnoreturn.h>
 #include <signal.h>
 
 #include <avtransport/avtransport.h>
 
-#include "config.h"
-
 #ifdef HAVE_FFMPEG
 #include <libavformat/avformat.h>
 #endif
+
+#include "avcat/io.h"
 
 #define GEN_OPT_MAX_ARR 16
 #define GEN_OPT_LOG avt_log
@@ -47,213 +49,14 @@
 
 #define MAX_INPUTS 4
 
-enum IOMode {
-    IO_RAW,
-    IO_AVT,
-    IO_LAVF,
-};
-
-typedef struct IOContext {
-    enum IOMode mode;
-    int64_t val;
-
-    enum AVTConnectionType type;
+typedef struct CatContext {
     AVTContext *avt;
-    AVTConnection *conn;
-    AVTStream *st;
-    AVTOutput *out;
 
-    FILE *raw;
+    IOContext in[MAX_INPUTS];
+    int nb_in;
 
-#ifdef HAVE_FFMPEG
-    AVFormatContext *avf;
-#endif
-} IOContext;
-
-static enum IOMode path_id(const char *path, enum AVTConnectionType *conn_type, int is_out)
-{
-    int len = strlen(path);
-
-    if (!strncmp(path, "avt://", strlen("avt://")) ||
-        !strncmp(path, "quic://", strlen("quic://")) ||
-        !strncmp(path, "udp://", strlen("udp://")) ||
-        !strncmp(path, "udplite://", strlen("udplite://")) ||
-        !strncmp(path, "socket://", strlen("socket://")) ||
-        !strncmp(path, "file://", strlen("file://"))) {
-        if (!strncmp(path, "udp://", strlen("udp://")))
-            printf("Note: udp:// is AVTransport over UDP. "
-                   "Use mpegts:// or rtp:// for anything else\n");
-        *conn_type = AVT_CONNECTION_URL;
-        return IO_AVT;
-    } else if (!strcmp(&path[len - 4], ".avt") ||
-               !strcmp(&path[len - 3], ".ati") || /* Images */
-               !strcmp(&path[len - 3], ".ats")) { /* Subtitles */
-        *conn_type = AVT_CONNECTION_FILE;
-        return IO_AVT;
-    } else if (is_out && /* For output, anything that can be concat'd payload */
-               (!strcmp(&path[len - 5], ".h264") ||
-                !strcmp(&path[len - 5], ".h265") ||
-                !strcmp(&path[len - 5], ".hevc") ||
-                !strcmp(&path[len - 4], ".aac")  ||
-                !strcmp(&path[len - 4], ".ac3")  ||
-                !strcmp(&path[len - 4], ".nal")  || /* Raw MPEG NALUs */
-                !strcmp(&path[len - 4], ".obu")  || /* Raw AV1 OBUs */
-                !strcmp(&path[len - 4], ".raw"))) { /* Generic raw data */
-        return IO_RAW;
-    } else if (!is_out && /* Individual files do not need any framing */
-               (!strcmp(&path[len - 5], ".tiff") ||
-                !strcmp(&path[len - 5], ".jpeg") ||
-                !strcmp(&path[len - 4], ".dng")  ||
-                !strcmp(&path[len - 4], ".png")  ||
-                !strcmp(&path[len - 4], ".jpg")  ||
-                !strcmp(&path[len - 4], ".cbor") ||
-                !strcmp(&path[len - 4], ".svg"))) {
-        return IO_RAW;
-    } else {
-        return IO_LAVF;
-    }
-
-    return 0;
-}
-
-static int close_io(IOContext *io, int is_out)
-{
-    switch (io->mode) {
-    case IO_AVT: {
-        avt_output_close(&io->out);
-        avt_connection_flush(io->conn, INT64_MAX);
-        avt_connection_destroy(&io->conn);
-        avt_close(&io->avt);
-        break;
-    }
-    case IO_RAW: {
-        fclose(io->raw);
-        break;
-    }
-    case IO_LAVF: {
-#ifdef HAVE_FFMPEG
-        if (is_out) {
-            av_write_trailer(io->avf);
-            avformat_flush(io->avf);
-            avio_closep(&io->avf->pb);
-            avformat_free_context(io->avf);
-            io->avf = NULL;
-        } else {
-            avformat_close_input(&io->avf);
-        }
-        break;
-#else
-        return AVT_ERROR(EINVAL);
-#endif
-    }
-    };
-
-    return 0;
-}
-
-static int open_io(IOContext *io, const char *path, int is_out)
-{
-    int err;
-
-    io->mode = path_id(path, &io->type, is_out);
-
-    switch (io->mode) {
-    case IO_AVT: {
-        AVTContextOptions ctx_opts = {
-            .log_cb = NULL,
-            .producer_name = "avcat",
-            .producer_ver = { PROJECT_VERSION_MAJOR,
-                              PROJECT_VERSION_MICRO,
-                              PROJECT_VERSION_MINOR },
-        };
-        err = avt_init(&io->avt, &ctx_opts);
-        if (err < 0)
-            return err;
-
-        AVTConnectionInfo conn_info = {
-            .path = path,
-            .type = io->type,
-            .output_opts.bandwidth = 80 * 1000 * 1000,
-        };
-        err = avt_connection_create(io->avt, &io->conn, &conn_info);
-        if (err < 0) {
-            avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path,
-                    err);
-            return err;
-        }
-
-        if (is_out) {
-            AVTOutputOptions opts = {
-            };
-
-            err = avt_output_open(io->avt, &io->out, io->conn, &opts);
-            if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Could not open %s as an output: %i\n", path,
-                        err);
-                return err;
-            }
-
-            io->st = avt_output_stream_add(io->out, 0);
-            io->st->timebase = (AVTRational) { 1, 1000 * 1000 * 1000 };
-
-            avt_output_stream_update(io->out, io->st);
-        } else {
-
-        }
-        break;
-    }
-    case IO_RAW: {
-        io->raw = fopen(path, is_out ? "w+" : "r");
-        if (!io->raw) {
-            avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path, errno);
-            return AVT_ERROR(errno);
-        }
-        break;
-    }
-    case IO_LAVF: {
-#ifdef HAVE_FFMPEG
-        if (is_out) {
-            err = avformat_alloc_output_context2(&io->avf, NULL, NULL, path);
-            if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output %s: %s!\n", path,
-                        av_err2str(err));
-                return err;
-            }
-
-            /* Open for writing */
-            err = avio_open(&io->avf->pb, path, AVIO_FLAG_WRITE);
-            if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Couldn't open output %s: %s!\n", path,
-                        av_err2str(err));
-                return err;
-            }
-        } else {
-            err = avformat_open_input(&io->avf, path, NULL, NULL);
-            if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Couldn't initialize demuxer: %s!\n",
-                        av_err2str(err));
-                return err;
-            }
-
-            err = avformat_find_stream_info(io->avf, NULL);
-            if (err < 0) {
-                avt_log(NULL, AVT_LOG_ERROR, "Couldn't find stream info: %s!\n",
-                        av_err2str(err));
-                return err;
-            }
-        }
-#else
-        avt_log(NULL, AVT_LOG_ERROR, "FFmpeg support not compiled in, cannot open %s!\n", path);
-        return AVT_ERROR(EINVAL);
-#endif
-        break;
-    }
-    };
-
-    avt_log(NULL, AVT_LOG_INFO, "Opened file %s for %s\n", path, is_out ? "writing" : "reading");
-
-    return 0;
-}
+    IOContext out;
+} CatContext;
 
 static volatile sig_atomic_t signal_terminate;
 static void on_quit_signal(const int signo)
@@ -297,14 +100,14 @@ int main(int argc, char **argv)
     /* Create inputs */
     IOContext in[MAX_INPUTS] = { 0 };
     for (int i = 0; input[i]; i++) {
-        err = open_io(&in[i], input[i], 0);
+        err = io_open(&in[i], input[i], 0);
         if (err < 0)
             goto end;
     }
 
     IOContext out = { 0 };
     if (output) {
-        err = open_io(&out, output, 1);
+        err = io_open(&out, output, 1);
         if (err < 0)
             goto end;
     }
@@ -355,8 +158,8 @@ int main(int argc, char **argv)
     };
 
     for (int i = 0; input[i]; i++)
-        close_io(&in[i], 0);
-    close_io(&out, 1);
+        io_close(&in[i], 0);
+    io_close(&out, 1);
 
 end:
     return 0;

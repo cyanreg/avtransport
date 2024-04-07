@@ -152,8 +152,8 @@ static inline int avt_payload_compress(AVTOutput *out,
 int avt_send_session_start(AVTOutput *out)
 {
     union AVTPacketData pkt = AVT_SESSION_START_HDR(
-        .session_id = 0x0,
-        .sender_uuid = { 0 },
+        .session_uuid = { 0 },
+        .session_seq = 0x0,
 
         .session_flags = 0x0,
         .producer_major = PROJECT_VERSION_MAJOR,

@@ -586,15 +586,15 @@ as an AVTransport session. The syntax is as follows:
         </tr>
         <tr id="0x4156+4">
             <td><code>16*b(8)</code></td>
-            <td><dfn>sender_uuid</dfn></td>
+            <td><dfn>session_uuid</dfn></td>
             <td>[[RFC4122|UUID]]</td>
-            <td>UUID of the sender.</td>
+            <td>Lasting session UUID.</td>
         </tr>
         <tr id="0x4156+3">
             <td><code>u(32)</code></td>
-            <td><dfn>session_id</dfn></td>
+            <td><dfn>session_seq</dfn></td>
             <td></td>
-            <td>32-bit session identification of the sender.</td>
+            <td>32-bit current session sequence number.</td>
         </tr>
         <tr id="0x4156+5">
             <td><code>b(64)</code></td>
@@ -653,6 +653,10 @@ bytewise-identical.
 The [=producer_name=] field is a <i>fixed-length</i> string, meaning that
 the field is always 16 bytes. If the name is less than 16 bytes, it must
 be zero-padded.
+
+[=session_uuid=] is a long-term pre-agreed token between the sender and receiver. It is meant to represent a user ID, or a generic access token. If no pre-agreed token is required, it must contain random data.
+
+[=session_seq=] is an ephemeral ID that is supposed to change each time a transmission is initiated. It is meant to help with longer duration disconnections.
 
 ## Stream Session Flags Enumeration (enum <dfn enum>SessionFlags</dfn>) ## {#enum-SessionFlags}
 

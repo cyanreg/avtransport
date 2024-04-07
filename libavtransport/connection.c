@@ -106,8 +106,10 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
 
     /* Get max packet size */
     int64_t max_pkt_size = conn->p->get_max_pkt_len(conn->p_ctx);
-    if (max_pkt_size < 0)
+    if (max_pkt_size < 0) {
+        ret = max_pkt_size;
         goto fail;
+    }
 
     /* Output scheduler */
     ret = avt_scheduler_init(&conn->out_scheduler, max_pkt_size,

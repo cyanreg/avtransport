@@ -42,6 +42,7 @@ configure_file(
 #============================================================================
 avcat_sources = files(
     'avcat.c',
+    'avcat/io.c',
 )
 
 avcat_deps = [
