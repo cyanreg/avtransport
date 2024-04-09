@@ -78,11 +78,13 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
                                               uint32_t seg_size_lim,
                                               int64_t out_limit)
 {
+    int ret;
     uint32_t hdr_size;
     size_t acc;
     size_t out_acc = 0;
     uint32_t pl_size = avt_buffer_get_data_len(&state->pl);
     uint32_t seg_pl_size;
+    const int64_t lim = AVT_MIN(seg_size_lim, out_limit);
     AVTPktd *p;
 
     if (state->seg_offset)
@@ -91,8 +93,9 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     /* Header size of the encoded packet */
     hdr_size = avt_pkt_hdr_size(state->start.pkt);
 
-    /* Signal we need more bytes to output something coherent */
-    if (out_limit < (hdr_size + 1 /* 1 byte of payload ? */))
+    /* Signal we need more bytes to output something coherent.
+     * If there's payload, make sure we can send off at least a byte of it. */
+    if (out_limit < (hdr_size + !!pl_size))
         return AVT_ERROR(EAGAIN);
 
     if (!pl_size) {
@@ -111,7 +114,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     }
 
     /* Reserve new packet in the output bucket FIFO */
-    seg_pl_size = seg_size_lim - hdr_size;
+    seg_pl_size = AVT_MIN(lim - hdr_size, pl_size);
     p = avt_pkt_fifo_push_new(dst, &state->pl, 0, seg_pl_size);
     if (!p)
         return AVT_ERROR(ENOMEM);
@@ -129,7 +132,9 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     update_sw(s, acc);
 
     /* Update packet in FIFO */
-    *p = state->start;
+    p->pkt = state->start.pkt;
+    p->hdr_len = state->start.hdr_len;
+    memcpy(p->hdr, state->start.hdr, state->start.hdr_len);
 
     /* Setup segmentation context */
     state->seg_offset = seg_pl_size;
@@ -149,7 +154,7 @@ resume:
         return AVT_ERROR(EAGAIN);
 
     while (state->pl_left) {
-        seg_pl_size = seg_size_lim - hdr_size;
+        seg_pl_size = AVT_MIN(lim - hdr_size, state->pl_left);
 
         p = avt_pkt_fifo_push_new(dst, &state->pl, state->seg_offset, seg_pl_size);
         if (!p)
@@ -169,7 +174,8 @@ resume:
         state->seg_offset += seg_pl_size;
         state->pl_left -= seg_pl_size;
 
-        if (out_acc >= out_limit)
+        /* Exit if we run out */
+        if ((out_acc + hdr_size + 1) > out_limit)
             return out_acc;
     }
 

@@ -252,6 +252,8 @@ static inline int64_t mmap_seek(AVTIOCtx *io, int64_t pos)
     return (io->rpos = pos);
 }
 
+#include <inttypes.h>
+
 static int64_t mmap_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     size_t pl_len;
@@ -259,6 +261,9 @@ static int64_t mmap_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 
     size_t map_size;
     uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+
+    avt_log(io, AVT_LOG_TRACE, "Writing %i b hdr + %" PRIi64 " b pl\n",
+            p->hdr_len, avt_buffer_get_data_len(&p->pl));
 
     if ((io->wpos + p->hdr_len + pl_len) > map_size) {
         int ret = mmap_grow(io, p->hdr_len + pl_len);

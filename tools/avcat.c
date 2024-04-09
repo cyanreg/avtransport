@@ -49,15 +49,6 @@
 
 #define MAX_INPUTS 4
 
-typedef struct CatContext {
-    AVTContext *avt;
-
-    IOContext in[MAX_INPUTS];
-    int nb_in;
-
-    IOContext out;
-} CatContext;
-
 static volatile sig_atomic_t signal_terminate;
 static void on_quit_signal(const int signo)
 {
