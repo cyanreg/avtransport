@@ -28,9 +28,5 @@
 
 static int avt_decode_pkt(AVTBuffer *buf)
 {
-
-    AVTSessionStart session_start;
-    avt_decode_session_start(buf, &session_start);
-
     return 0;
 }

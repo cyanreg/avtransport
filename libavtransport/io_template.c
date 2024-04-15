@@ -30,89 +30,64 @@
 
 #include "utils_internal.h"
 
-static int64_t RENAME(max_pkt_len)(AVTIOCtx *io)
+static int RENAME(max_pkt_len)(AVTIOCtx *io, size_t *mtu)
 {
-    return UINT32_MAX;
+    *mtu = SIZE_MAX;
+    return 0;
 }
 
-[[maybe_unused]] static int64_t RENAME(seek)(AVTIOCtx *io, int64_t off)
+[[maybe_unused]] static avt_pos RENAME(seek)(AVTIOCtx *io, avt_pos off)
 {
-    int ret = RENAME(seek_to)(io, (int64_t)off);
-    if (ret < 0) {
-        ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-        return ret;
-    }
+    avt_pos ret = RENAME(seek_to)(io, off);
+    if (ret < 0)
+        return avt_handle_errno(io, "Error seeking: %i %s\n");
 
     io->is_write = false;
 
-    return (io->rpos = RENAME(offset)(io));
+    return (io->rpos = off);
 }
 
-static int64_t RENAME(read_input)(AVTIOCtx *io, AVTBuffer **_buf, size_t len,
-                                  int64_t timeout)
+static avt_pos RENAME(read_input)(AVTIOCtx *io, AVTBuffer *buf, size_t len,
+                                  int64_t timeout, enum AVTIOReadFlags flags)
 {
-    int ret;
-    uint8_t *data;
-    size_t buf_len, off = 0;
-    AVTBuffer *buf = *_buf;
+    int64_t ret;
 
     if (io->is_write) {
         ret = RENAME(seek_to)(io, io->rpos);
-        if (ret < 0) {
-            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-            return ret;
-        }
-        io->is_write = true;
-    }
-
-    if (!buf) {
-        buf = avt_buffer_alloc(AVT_MAX(len, len));
-        if (!buf)
-            return AVT_ERROR(ENOMEM);
-    } else {
-        off = avt_buffer_get_data_len(buf);
-
-        if (ckd_add(&buf_len, off, len))
-            return AVT_ERROR(EINVAL);
-
-        ret = avt_buffer_resize(buf, buf_len);
         if (ret < 0)
-            return ret;
+            return avt_handle_errno(io, "Error seeking: %i %s\n");
+        io->is_write = false;
     }
 
     /* Read data */
-    data = avt_buffer_get_data(buf, &buf_len);
-    ssize_t rval = RENAME(read)(io, data + off, len, timeout);
-    if (rval < 0) {
-        ret = avt_handle_errno(io, "Error reading: %i %s\n");
-        if (!*_buf)
-            avt_buffer_unref(&buf);
-        return ret;
-    }
-    len = rval;
+    size_t buf_len;
+    uint8_t *data = avt_buffer_get_data(buf, &buf_len);
+
+    ret = RENAME(read)(io, data, len, timeout);
+    if (ret < 0)
+        return avt_handle_errno(io, "Error reading: %i %s\n");
 
     /* Adjust new size in case of underreads */
-    ret = avt_buffer_resize(buf, off + len);
-    avt_assert2(ret >= 0);
+    [[maybe_unused]] int tmp = avt_buffer_resize(buf, ret);
+    avt_assert2(tmp >= 0);
 
-    *_buf = buf;
-
-    return (io->rpos = RENAME(offset)(io));
+    ret = io->rpos + ret;
+    AVT_SWAP(io->rpos, ret);
+    return ret;
 }
 
-static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
+static avt_pos RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
-    int ret;
+    int64_t ret;
 
     if (!io->is_write) {
         ret = RENAME(seek_to)(io, io->wpos);
-        if (ret < 0) {
-            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-            return ret;
-        }
+        if (ret < 0)
+            return avt_handle_errno(io, "Error seeking: %i %s\n");
         io->is_write = true;
     }
 
+    /* Write header */
     size_t out = RENAME(write)(io, p->hdr, p->hdr_len, timeout);
     if (out != p->hdr_len) {
         ret = avt_handle_errno(io, "Error writing: %i %s\n");
@@ -120,6 +95,7 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
         return ret;
     }
 
+    /* Write payload */
     size_t pl_len;
     uint8_t *data = avt_buffer_get_data(&p->pl, &pl_len);
     if (data) {
@@ -131,30 +107,32 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
         }
     }
 
-    return (io->wpos = RENAME(offset)(io));
+    ret = io->wpos + p->hdr_len + pl_len;
+    AVT_SWAP(io->wpos, ret);
+    return ret;
 }
 
-[[maybe_unused]] static int64_t RENAME(write_vec)(AVTIOCtx *io, AVTPktd *pkt,
+[[maybe_unused]] static avt_pos RENAME(write_vec)(AVTIOCtx *io, AVTPktd *pkt,
                                                   uint32_t nb_pkt, int64_t timeout)
 {
-    int ret;
+    avt_pos ret;
 
     if (!io->is_write) {
         ret = RENAME(seek_to)(io, io->wpos);
-        if (ret < 0) {
-            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-            return ret;
-        }
+        if (ret < 0)
+            return avt_handle_errno(io, "Error seeking: %i %s\n");
         io->is_write = true;
     }
 
-    size_t out;
+    avt_pos out;
     size_t pl_len;
     uint8_t *pl_data;
     AVTPktd *v;
+
     for (auto i = 0; i < nb_pkt; i++) {
         v = &pkt[i];
 
+        /* Header */
         out = RENAME(write)(io, v->hdr, v->hdr_len, timeout);
         if (out != v->hdr_len) {
             ret = avt_handle_errno(io, "Error writing: %i %s\n");
@@ -162,6 +140,7 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
             return ret;
         }
 
+        /* Payload */
         pl_data = avt_buffer_get_data(&v->pl, &pl_len);
         if (pl_data) {
             out = RENAME(write)(io, pl_data, pl_len, timeout);
@@ -173,13 +152,16 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
         }
     }
 
-    return (io->wpos = RENAME(offset)(io));
+    out = RENAME(offset)(io);
+    AVT_SWAP(io->wpos, out);
+    return out;
 }
 
-[[maybe_unused]] static int64_t RENAME(rewrite)(AVTIOCtx *io, AVTPktd *p,
-                                                int64_t off, int64_t timeout)
+[[maybe_unused]] static avt_pos RENAME(rewrite)(AVTIOCtx *io, AVTPktd *p,
+                                                avt_pos off, int64_t timeout)
 {
-    int ret, ret2;
+    int ret;
+    const avt_pos backup_pos = io->is_write ? io->wpos : io->rpos;
 
     if (off > io->wpos) {
         avt_log(io, AVT_LOG_ERROR, "Error rewriting: out of range: "
@@ -188,26 +170,19 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
         return AVT_ERROR(EOF);
     }
 
-    if (!io->is_write || (io->wpos != off)) {
+    if (backup_pos != off) {
         ret = RENAME(seek_to)(io, off);
         if (ret < 0) {
             ret = avt_handle_errno(io, "Error seeking: %i %s\n");
             return ret;
         }
-        io->is_write = true;
     }
 
-    size_t out = RENAME(write)(io, p->hdr, p->hdr_len, timeout);
+    avt_pos out = RENAME(write)(io, p->hdr, p->hdr_len, timeout);
     off += out;
     if (out != p->hdr_len) {
         ret = avt_handle_errno(io, "Error writing: %i %s\n");
-        ret2 = RENAME(seek_to)(io, io->wpos);
-        if (ret2 < 0) {
-            ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-            io->wpos = off; /* Stuck with this */
-            return ret;
-        }
-        return ret;
+        goto restore;
     }
 
     size_t pl_len;
@@ -217,23 +192,20 @@ static int64_t RENAME(write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
         off += out;
         if (out != pl_len) {
             ret = avt_handle_errno(io, "Error writing: %i %s\n");
-            ret2 = RENAME(seek_to)(io, io->wpos);
-            if (ret2 < 0) {
-                ret = avt_handle_errno(io, "Error seeking: %i %s\n");
-                io->wpos = off; /* Stuck with this */
-                return ret;
-            }
-            return ret;
+            goto restore;
         }
     }
 
+restore:
+
     /* Restore */
-    ret = RENAME(seek_to)(io, io->wpos);
+    ret = RENAME(seek_to)(io, backup_pos);
     if (ret < 0) {
         ret = avt_handle_errno(io, "Error seeking: %i %s\n");
+        io->is_write = true;
         io->wpos = off; /* Stuck with this */
         return ret;
     }
 
-    return off + p->hdr_len + pl_len;
+    return off;
 }

@@ -419,6 +419,7 @@ if f_packet_enums != None:
     file_enums.write("#ifndef AVTRANSPORT_PACKET_ENUMS_H\n")
     file_enums.write("#define AVTRANSPORT_PACKET_ENUMS_H\n" + "\n")
 
+    file_enums.write("#define AVT_MIN_HEADER_LEN " + str(36) + "\n\n")
     file_enums.write("#define AVT_MAX_HEADER_LEN " + str(384) + "\n\n")
 
     file_enums.write("#define AVT_SESSION_ID " + "((0x" + format(descriptors["session_start"], "X") + ") << 16)")
@@ -434,6 +435,21 @@ if f_packet_enums != None:
         if add_flag:
             file_enums.write(" | AVT_PKT_FLAG_LSB_BITMASK")
         file_enums.write(",\n")
+    file_enums.write("};\n")
+
+    file_enums.write("\nenum " + data_prefix + "PktDataSizes {\n")
+    for name, size in struct_sizes.items():
+        if name in substructs or orig_desc_names[name].startswith("generic"):
+            continue
+
+        file_enums.write("    " + (data_prefix + "_PKT_" + orig_desc_names[name]).upper() + "_SIZE = " + str(size >> 3) + ",\n")
+        for struct, fields in packet_structs[name].items():
+            if fields["struct"] != None:
+                file_enums.write("    " + (data_prefix + "_PKT_" + orig_desc_names[data_prefix + fields["struct"]]).upper() + "_SIZE = " + str(struct_sizes[data_prefix + fields["struct"]] >> 3) + ",\n")
+
+    for name, tstruct in templated_structs.items():
+        file_enums.write("    " + (data_prefix + "_PKT_" + tstruct["descriptor_name"]).upper() + "_SIZE = " + str(struct_sizes[tstruct["template"]] >> 3) + ",\n")
+
     file_enums.write("};\n")
 
     for enum, dfns in enums.items():
@@ -471,6 +487,8 @@ if f_packet_data != None:
             newline_carryover = False;
         if field["ldpc"] != None:
             newline_carryover = True
+            return
+        if field["struct"] != None:
             return
         file_structs.write("    " + field["datatype"] + " ")
         if type(field["array_len"]) != int:
@@ -556,18 +574,22 @@ if f_packet_data != None:
             file_structs.write("    " + struct + " " + orig_desc_names[struct] + ";\n")
     file_structs.write("};\n")
 
-    file_structs.write("\nstatic inline size_t avt_pkt_hdr_size(union AVTPacketData pkt)\n")
+    file_structs.write("\nstatic inline int avt_pkt_hdr_size(uint32_t desc)\n")
     file_structs.write("{\n")
-    file_structs.write("    switch (pkt.desc) {\n")
+    file_structs.write("    switch (desc) {\n")
 
     for name, size in struct_sizes.items():
         if name in substructs or orig_desc_names[name].startswith("generic"):
             continue
+
+        if descriptors[orig_desc_names[name]] > descriptors["FLAG_LSB_BITMASK"]:
+            file_structs.write("    case " + (data_prefix + "_PKT_" + orig_desc_names[name]).upper() + " & (~AVT_PKT_FLAG_LSB_BITMASK):\n")
+
         file_structs.write("    case " + (data_prefix + "_PKT_" + orig_desc_names[name]).upper() + ":\n")
-        file_structs.write("        return " + str(size >> 3) + ";\n")
+        file_structs.write("        return " + (data_prefix + "_PKT_" + orig_desc_names[name]).upper() + "_SIZE;\n")
     for name, tstruct in templated_structs.items():
         file_structs.write("    case " + (data_prefix + "_PKT_" + tstruct["descriptor_name"]).upper() + ":\n")
-        file_structs.write("        return " + str(struct_sizes[tstruct["template"]] >> 3) + ";\n")
+        file_structs.write("        return " + (data_prefix + "_PKT_" + tstruct["descriptor_name"]).upper() + "_SIZE;\n")
 
     file_structs.write("    default:\n")
     file_structs.write("        break;\n")
@@ -652,7 +674,10 @@ if f_packet_encode != None:
             if sym == bsw["fstr"]:
                 file_encode.write(", " + str(field["array_len"]))
 
-            file_encode.write(");\n")
+            file_encode.write(");")
+            if field["struct"] != None:
+                file_encode.write(" */")
+            file_encode.write("\n")
 
         for name, field in fields.items():
             indent = "    "
@@ -692,10 +717,16 @@ if f_packet_encode != None:
                 bitfield_bit -= field["size_bits"]
             else:
                 if write_sym != bsw["fstr"] and (type(field["array_len"]) == int and field["array_len"] > 1):
-                    file_encode.write(indent + "for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
+                    file_encode.write(indent)
+                    if field["struct"] != None:
+                        file_encode.write("/* ")
+                    file_encode.write("for (int i = 0; i < " + str(field["array_len"]) + "; i++)\n")
                     indent = indent + "    "
                 if write_sym != bsw["fstr"] and (type(field["array_len"]) == str and field["bytestream"] > 1):
-                    file_encode.write(indent + "for (int i = 0; i < p." + field["array_len"] + "; i++)\n")
+                    file_encode.write(indent)
+                    if field["struct"] != None:
+                        file_encode.write("/* ")
+                    file_encode.write("for (int i = 0; i < p." + field["array_len"] + "; i++)\n")
                     indent = indent + "    "
                 wsym(indent, write_sym, name, field)
 
@@ -734,17 +765,8 @@ if f_packet_decode != None:
                 has_payload = True
                 break
 
-        if substruct:
-            file_decode.write("\nstatic inline void " + fn_prefix + "decode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, " + struct + " *p")
-        else:
-            file_decode.write("\nstatic inline int64_t " + fn_prefix + "decode_" + orig_desc_names[struct] + "(" + data_prefix + "Buffer *buf, " + struct + " *p")
-            if has_payload:
-                file_decode.write(", " + data_prefix + "Buffer *pl")
-        file_decode.write(")\n{\n")
-        if substruct == False:
-            file_decode.write("    size_t len;\n")
-            file_decode.write("    uint8_t *data = avt_buffer_get_data(buf, &len);\n")
-            file_decode.write("    AVTBytestream bss = avt_bs_init(data, len), *bs = &bss;\n\n")
+        file_decode.write("\nstatic inline void " + fn_prefix + "decode_" + orig_desc_names[struct] + "(" + data_prefix + "Bytestream *bs, " + struct + " *p)\n")
+        file_decode.write("{\n")
         def rsym(indent, sym, name, field):
             # Start
             if (sym == bsr["int"] or sym == bsr["rat"]) and field["struct"] == None:
@@ -795,11 +817,15 @@ if f_packet_decode != None:
             if name.endswith("descriptor") and field["size_bits"] < 16:
                 file_decode.write(" << 8");
 
-            file_decode.write(";\n")
-            if field["fixed"] != None:
-                file_decode.write(indent + "if ((p->" + name + ")")
-                file_decode.write(" ^ " + "0x" + format(field["fixed"], "04X") + ")\n")
-                file_decode.write(indent + indent + "return AVT_ERROR(EINVAL);\n")
+            file_decode.write(";")
+            if field["struct"] != None:
+                file_decode.write(" */")
+            file_decode.write("\n")
+
+#            if field["fixed"] != None:
+#                file_decode.write(indent + "if ((p->" + name + ")")
+#                file_decode.write(" ^ " + "0x" + format(field["fixed"], "04X") + ")\n")
+#                file_decode.write(indent + indent + "return AVT_ERROR(EINVAL);\n")
 
         for name, field in fields.items():
             indent = "    "
@@ -835,14 +861,18 @@ if f_packet_decode != None:
                 if ((type(field["array_len"]) == int and field["array_len"] > 1) or \
                     (type(field["array_len"]) == str and field["bytestream"] > 1)) and \
                    read_sym != bsr["fstr"]:
-                    file_decode.write(indent + "for (int i = 0; i < ")
+                    file_decode.write(indent)
+                    if field["struct"] != None:
+                        file_decode.write("/* ")
+                    file_decode.write("for (int i = 0; i < ")
                     if type(field["array_len"]) == str:
                         file_decode.write("p->")
                     file_decode.write(str(field["array_len"]) + "; i++)\n")
                     indent = indent + "    "
                 if field["payload"]:
-                    file_decode.write(indent + "avt_buffer_quick_ref(pl, buf, avt_bs_offs(bs), " + "p->" + str(field["array_len"]) + ");\n")
-                    file_decode.write(indent + bsr["skip"] + "(bs, p->" + str(field["array_len"]) + ");\n")
+                    file_decode.write(indent + "/* Payload follows */\n")
+#                    file_decode.write(indent + "avt_buffer_quick_ref(pl, buf, avt_bs_offs(bs), " + "p->" + str(field["array_len"]) + ");\n")
+#                    file_decode.write(indent + bsr["skip"] + "(bs, p->" + str(field["array_len"]) + ");\n")
                 else:
                     rsym(indent, read_sym, name, field)
 
@@ -852,8 +882,6 @@ if f_packet_decode != None:
                 file_decode.write("\n")
         if struct in streamid_padded_structs:
             file_decode.write("\n    p->padding = UINT16_MAX;\n")
-        if substruct == False:
-            file_decode.write("\n    return avt_bs_offs(bs);\n")
         file_decode.write("}\n")
     file_decode.write("\n#endif /* AVTRANSPORT_DECODE_H */\n")
     file_decode.close()

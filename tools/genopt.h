@@ -25,9 +25,6 @@
  * // optional, logging callback (otherwise uses standard printf)
  * #define GEN_OPT_LOG avt_log
  *
- * // optional, value given to the logging callback
- * #define GEN_OPT_LOG_CTX NULL
- *
  * // optional, second value given to the logging callback when printing
  * #define GEN_OPT_LOG_INFO AVT_LOG_INFO
  *
@@ -53,7 +50,7 @@
  *     // Adds a mandatory string option array called input, with at most 8 inputs
  *     GEN_OPT_ARR(opts_list, char *, input,   "i", 1, 8, 0, 0, "Input");
  *
- *     if (GEN_OPT_PARSE(opts_list, argc, argv) < 0)
+ *     if (GEN_OPT_PARSE(NULL, opts_list, argc, argv) < 0)
  *         return EINVAL;
  *
  *     printf("Output was: %s\n", output);
@@ -87,7 +84,6 @@ static inline void genopt_log(void *ctx, int error, const char *fmt, ...)
     va_end(args);
 }
 #define GEN_OPT_LOG genopt_log
-#define GEN_OPT_LOG_CTX NULL
 #define GEN_OPT_LOG_INFO 0
 #define GEN_OPT_LOG_ERROR 1
 #endif
@@ -262,14 +258,14 @@ typedef struct GenOpt {
     do {                                                                       \
         type lval = fn(data, &endp);                                           \
         if (!lval && endp == data) {                                           \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing \"%s\" as a " #type " for "             \
                         "argument \"%s\"\n",                                   \
                         data, l->name);                                        \
             return -EINVAL;                                                    \
         }                                                                      \
         if (lval > l->range_high_f || lval < l->range_low_f) {                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing %f for argument \"%s\": "               \
                         "not in [%f:%f] range!\n",                             \
                         lval, l->name, l->range_low_f, l->range_high_f);       \
@@ -282,14 +278,14 @@ typedef struct GenOpt {
     do {                                                                       \
         int64_t lval = fn(data, &endp, base);                                  \
         if (!lval && endp == data) {                                           \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing \"%s\" as a " #type " for "             \
                         "argument \"%s\"\n",                                   \
                         data, l->name);                                        \
             return -EINVAL;                                                    \
         }                                                                      \
         if (lval > l->range_high_i || lval < l->range_low_i) {                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing %" PRIi64 " for argument \"%s\": "      \
                         "not in [%" PRIi64 ":%" PRIi64 "] range!\n",           \
                         lval, l->name, l->range_low_i, l->range_high_i);       \
@@ -302,14 +298,14 @@ typedef struct GenOpt {
     do {                                                                       \
         uint64_t lval = fn(data, &endp, base);                                 \
         if (!lval && endp == data) {                                           \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing \"%s\" as a " #type " for "             \
                         "argument \"%s\"\n",                                   \
                         data, l->name);                                        \
             return -EINVAL;                                                    \
         }                                                                      \
         if (lval > l->range_high_u || lval < l->range_low_u) {                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                    \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                            \
                         "Error parsing %" PRIu64 " for argument \"%s\": "      \
                         "not in [%" PRIu64 ":%" PRIu64 "] range!\n",           \
                         lval, l->name, l->range_low_u, l->range_high_u);       \
@@ -353,7 +349,7 @@ typedef struct GenOpt {
             char *arg2 = strtok_r(NULL, "/", &tmp);                            \
             GEN_OPT_RATIONAL *out;                                             \
             if (!arg2) {                                                       \
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                \
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                        \
                             "Error parsing value for argument \"%s\"\n",       \
                             l->name);                                          \
                 return -EINVAL;                                                \
@@ -361,7 +357,7 @@ typedef struct GenOpt {
             arg1i = strtol(arg1, &end1, 10);                                   \
             arg2i = strtol(arg2, &end2, 10);                                   \
             if ((!arg1i && arg1 == end1) || (!arg2i && arg2 == end2)) {        \
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                \
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                        \
                             "Error parsing value for argument \"%s\"\n",       \
                             l->name);                                          \
                 return -EINVAL;                                                \
@@ -371,11 +367,11 @@ typedef struct GenOpt {
             out->den = arg2i;                                                  \
             if ((out->num/(double)out->den) > l->range_high_f ||               \
                 (out->num/(double)out->den) < l->range_low_f) {                \
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,                \
-                        "Error parsing %f for argument \"%s\": "               \
-                        "range [%f:%f]!\n",                                    \
-                        (out->num/(double)out->den), l->name,                  \
-                        l->range_low_f, l->range_high_f);                      \
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,                        \
+                            "Error parsing %f for argument \"%s\": "           \
+                            "range [%f:%f]!\n",                                \
+                            (out->num/(double)out->den), l->name,              \
+                            l->range_low_f, l->range_high_f);                  \
                 return -EINVAL;                                                \
             }                                                                  \
             break;                                                             \
@@ -394,47 +390,47 @@ typedef struct GenOpt {
             break;                                                             \
         switch (opt.type) {                                                    \
         case GEN_OPT_TYPE_FLOAT:                                               \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %f)",                                      \
                         *((float *)opt.val[idx]));                             \
             break;                                                             \
         case GEN_OPT_TYPE_DOUBLE:                                              \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %f)",                                      \
                         *((double *)opt.val[idx]));                            \
             break;                                                             \
         case GEN_OPT_TYPE_I16:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIi16 ")",                             \
                         *((int16_t *)opt.val[idx]));                           \
             break;                                                             \
         case GEN_OPT_TYPE_I32:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIi32 ")",                             \
                         *((int32_t *)opt.val[idx]));                           \
             break;                                                             \
         case GEN_OPT_TYPE_I64:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIi64 ")",                             \
                         *((int64_t *)opt.val[idx]));                           \
             break;                                                             \
         case GEN_OPT_TYPE_U16:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIu16 ")",                             \
                         *((uint16_t *)opt.val[idx]));                          \
             break;                                                             \
         case GEN_OPT_TYPE_U32:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIu32 ")",                             \
                         *((uint32_t *)opt.val[idx]));                          \
             break;                                                             \
         case GEN_OPT_TYPE_U64:                                                 \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %" PRIu64 ")",                             \
                         *((uint64_t *)opt.val[idx]));                          \
             break;                                                             \
         case GEN_OPT_TYPE_BOOL:                                                \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %s)",                                      \
                         *((bool *)opt.val[idx]) ? "true" : "false");           \
             break;                                                             \
@@ -442,7 +438,7 @@ typedef struct GenOpt {
         case GEN_OPT_TYPE_STRING:                                              \
             if (!(*(char **)opt.val[idx]))                                     \
                 break;                                                         \
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO,                     \
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO,                             \
                         " (default: %s)",                                      \
                         (*(char **)opt.val[idx]));                             \
             break;                                                             \
@@ -451,16 +447,16 @@ typedef struct GenOpt {
         }                                                                      \
     } while (0)
 
-#define GEN_OPT_PHDR GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, "    %s (%s):%*s%s"
+#define GEN_OPT_PHDR log_ctx, GEN_OPT_LOG_INFO, "    %s (%s):%*s%s"
 
-static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
-                                   int argc, char **argv)
+static inline int gen_opt_parse_fn(void *log_ctx, GenOpt *opts_list,
+                                   int opts_list_nb, int argc, char **argv)
 {
     for (int i = 1; i < argc; i++) {
         GenOpt *l = NULL;
 
         if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, GEN_OPT_HELPSTRING"\n");
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, GEN_OPT_HELPSTRING"\n");
             return -EAGAIN;
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             int pad_to = strlen("version");
@@ -472,18 +468,18 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
             }
             pad_to += 1;
 
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, GEN_OPT_HELPSTRING"\n");
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, GEN_OPT_HELPSTRING"\n");
             GEN_OPT_LOG(GEN_OPT_PHDR,
                         "--help", "-h", pad_to - (int)strlen("help") - 1, " ",
                         "Print this text");
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, "\n");
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, "\n");
             GEN_OPT_LOG(GEN_OPT_PHDR,
                         "--versions", "-v", pad_to - (int)strlen("version") - 2, " ",
                         "Print the version number");
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, "\n");
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, "\n");
             for (int j = 0; j < opts_list_nb; j++) {
                 if (opts_list[j].type == GEN_OPT_TYPE_SECTION) {
-                    GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, "\n%s:\n",
+                    GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, "\n%s:\n",
                                 opts_list[j].name);
                     continue;
                 }
@@ -493,7 +489,7 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
                             pad_to - (int)strlen(opts_list[j].flagname), " ",
                             opts_list[j].help);
                 GEN_OPT_PRINT_DEFAULT_VAL(opts_list[j], 0);
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_INFO, "\n");
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_INFO, "\n");
             }
             return -EAGAIN;
         }
@@ -507,13 +503,13 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
         }
 
         if (!l) {
-            GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,
+            GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,
                         "Unable to parse command line argument: %s\n",
                         argv[i]);
             return -EINVAL;
         } else if (l->max_vals == 0) {
             if (l->type != GEN_OPT_TYPE_BOOL) {
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,
                             "Programming error, incorrect type for: %s\n",
                             l->name);
                 return -EINVAL;
@@ -532,7 +528,7 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
             }
 
             if (l->min_vals > nb_vals) {
-                GEN_OPT_LOG(GEN_OPT_LOG_CTX, GEN_OPT_LOG_ERROR,
+                GEN_OPT_LOG(log_ctx, GEN_OPT_LOG_ERROR,
                             "Not enough values given for argument \"%s\" "
                             "(have %i, wanted %i)\n",
                             l->flagname, nb_vals, l->min_vals);
@@ -558,7 +554,7 @@ static inline int gen_opt_parse_fn(GenOpt *opts_list, int opts_list_nb,
         optlist##_nb = 0;          \
     } while (0)
 
-#define GEN_OPT_PARSE(optlist, argc, argv)              \
-    gen_opt_parse_fn(optlist, optlist##_nb, argc, argv) \
+#define GEN_OPT_PARSE(optlist, argc, argv)                   \
+    gen_opt_parse_fn(avt, optlist, optlist##_nb, argc, argv) \
 
 #endif

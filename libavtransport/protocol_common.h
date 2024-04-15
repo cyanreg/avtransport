@@ -27,7 +27,7 @@
 #ifndef AVTRANSPORT_PROTOCOL_COMMON
 #define AVTRANSPORT_PROTOCOL_COMMON
 
-#include "connection_internal.h"
+#include "bytestream.h"
 #include "utils_internal.h"
 #include "io_common.h"
 
@@ -47,15 +47,15 @@ typedef struct AVTProtocol {
     int (*rm_dst)(AVTProtocolCtx *p, AVTAddress *addr);
 
     /* Return the maximum packet length */
-    int64_t (*get_max_pkt_len)(AVTProtocolCtx *p);
+    int (*get_max_pkt_len)(AVTProtocolCtx *p, size_t *mtu);
 
     /* Send. Returns positive offset on success, otherwise negative error.
      * Returns offset to which packet was written to. */
-    int64_t (*send_packet)(AVTProtocolCtx *p, AVTPktd *pkt, int64_t timeout);
+    int (*send_packet)(AVTProtocolCtx *p, AVTPktd *pkt, int64_t timeout);
 
     /* Send a sequence of packets. Returns positive offset on success,
        otherwise negative error */
-    int64_t (*send_seq)(AVTProtocolCtx *p, AVTPacketFifo *seq, int64_t timeout);
+    int (*send_seq)(AVTProtocolCtx *p, AVTPacketFifo *seq, int64_t timeout);
 
     /* Overwrite a packet at a given offset */
     int (*update_packet)(AVTProtocolCtx *p,
@@ -63,13 +63,13 @@ typedef struct AVTProtocol {
                          void **series, int64_t pos);
 
     /* Receive a packet. Returns offset after reading. */
-    int64_t (*receive_packet)(AVTProtocolCtx *p,
-                              union AVTPacketData *pkt, AVTBuffer **pl,
-                              int64_t timeout);
+    int (*receive_packet)(AVTProtocolCtx *p,
+                          union AVTPacketData *pkt, AVTBuffer **pl,
+                          int64_t timeout);
 
     /* Seek to a place in the stream */
-    int64_t (*seek)(AVTProtocolCtx *p, int64_t off, uint32_t seq,
-                    int64_t ts, bool ts_is_dts);
+    int (*seek)(AVTProtocolCtx *p, int64_t off, uint32_t seq,
+                int64_t ts, bool ts_is_dts);
 
     /* Flush buffered data */
     int (*flush)(AVTProtocolCtx *p, int64_t timeout);
@@ -81,5 +81,17 @@ typedef struct AVTProtocol {
 COLD int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
                            AVTProtocolCtx **p_ctx, AVTAddress *addr,
                            const AVTIO *io, AVTIOCtx *io_ctx);
+
+typedef struct AVTIndexContext {
+    AVTIndexEntry *index;
+    int nb_index;
+    int nb_alloc_index;
+    uint64_t nb_index_total;
+    uint64_t nb_index_max;
+} AVTIndexContext;
+
+int avt_index_list_config(AVTIndexContext *ic, uint64_t nb_index_max);
+int avt_index_list_parse(AVTIndexContext *ic, AVTBytestream *bs,
+                         AVTStreamIndex *pkt);
 
 #endif /* AVTRANSPORT_PROTOCOL_COMMON */

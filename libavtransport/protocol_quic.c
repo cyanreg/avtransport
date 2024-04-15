@@ -269,21 +269,21 @@ static int quic_proto_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
     return p->io->del_dst(p->io_ctx, addr);
 }
 
-static int64_t quic_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
-                                      int64_t timeout)
+static int quic_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
+                                  int64_t timeout)
 {
     return p->io->write_pkt(p->io_ctx, pkt, timeout);
 }
 
-static int64_t quic_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
-                                   int64_t timeout)
+static int quic_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
+                               int64_t timeout)
 {
     return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
 }
 
-static int64_t quic_proto_receive_packet(AVTProtocolCtx *p,
-                                         union AVTPacketData *pkt, AVTBuffer **pl,
-                                         int64_t timeout)
+static int quic_proto_receive_packet(AVTProtocolCtx *p,
+                                     union AVTPacketData *pkt, AVTBuffer **pl,
+                                     int64_t timeout)
 {
     AVTBuffer *buf;
     int64_t err = p->io->read_input(p->io_ctx, &buf, 0, timeout);
@@ -297,18 +297,19 @@ static int64_t quic_proto_receive_packet(AVTProtocolCtx *p,
     return err;
 }
 
-static int64_t quic_proto_max_pkt_len(AVTProtocolCtx *p)
+static int64_t quic_proto_max_pkt_len(AVTProtocolCtx *p, size_t *mtu)
 {
-    return p->io->get_max_pkt_len(p->io_ctx);
-}
+    size_t tmp;
+    const size_t udp_hdr_size = 8;
+    const size_t quic_hdr_size = 256; // TODO: use BIO_dgram_get_mtu_overhead();
 
-static int64_t quic_proto_seek(AVTProtocolCtx *p,
-                               int64_t off, uint32_t seq,
-                               int64_t ts, bool ts_is_dts)
-{
-    if (p->io->seek)
-        return p->io->seek(p->io_ctx, off);
-    return AVT_ERROR(ENOTSUP);
+    int ret = p->io->get_max_pkt_len(p->io_ctx, &tmp);
+    if (ret < 0 || (tmp < (AVT_MIN_HEADER_LEN - udp_hdr_size -  quic_hdr_size)))
+        return ret;
+
+    *mtu = tmp - udp_hdr_size - quic_hdr_size;
+
+    return 0;
 }
 
 static int quic_proto_flush(AVTProtocolCtx *p, int64_t timeout)
@@ -329,7 +330,7 @@ const AVTProtocol avt_protocol_quic = {
     .send_seq = quic_proto_send_seq,
     .update_packet = NULL,
     .receive_packet = quic_proto_receive_packet,
-    .seek = quic_proto_seek,
+    .seek = NULL,
     .flush = quic_proto_flush,
     .close = quic_proto_close,
 };

@@ -60,7 +60,7 @@ typedef struct AVTSchedulerStream {
 
 typedef struct AVTScheduler {
     /* Settings */
-    uint32_t max_pkt_size;
+    size_t max_pkt_size;
     int64_t bandwidth;
     int64_t protocol_header;
 
@@ -93,7 +93,7 @@ typedef struct AVTScheduler {
 /* Initialization function. If max_pkt_size changes, everything must
  * be torn down and recreated. */
 int avt_scheduler_init(AVTScheduler *s,
-                       uint32_t max_pkt_size, int64_t bandwidth);
+                       size_t max_pkt_size, int64_t bandwidth);
 
 int avt_scheduler_push(AVTScheduler *s,
                        union AVTPacketData pkt, AVTBuffer *pl);

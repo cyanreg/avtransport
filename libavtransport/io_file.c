@@ -36,8 +36,8 @@
 
 struct AVTIOCtx {
     FILE *f;
-    off_t rpos;
-    off_t wpos;
+    avt_pos rpos;
+    avt_pos wpos;
     bool is_write;
 };
 
@@ -81,24 +81,24 @@ static COLD int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static inline int file_seek_to(AVTIOCtx *io, int64_t pos)
+static inline avt_pos file_seek_to(AVTIOCtx *io, avt_pos pos)
 {
     return fseeko(io->f, pos, SEEK_SET);
 }
 
-static inline size_t file_read(AVTIOCtx *io, uint8_t *dst, size_t len,
-                               int64_t timeout)
+static inline avt_pos file_read(AVTIOCtx *io, uint8_t *dst, size_t len,
+                                int64_t timeout)
 {
     return fread(dst, 1, len, io->f);
 }
 
-static inline size_t file_write(AVTIOCtx *io, uint8_t *src, size_t len,
-                                int64_t timeout)
+static inline avt_pos file_write(AVTIOCtx *io, uint8_t *src, size_t len,
+                                 int64_t timeout)
 {
     return fwrite(src, 1, len, io->f);
 }
 
-static inline int64_t file_offset(AVTIOCtx *io)
+static inline avt_pos file_offset(AVTIOCtx *io)
 {
     return ftello(io->f);
 }

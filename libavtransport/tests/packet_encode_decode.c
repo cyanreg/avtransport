@@ -33,8 +33,6 @@
 
 int main(void)
 {
-#if 0
-    int ret;
     AVTPktd in = { };
     AVTPktd out = { };
     size_t buf_size;
@@ -46,11 +44,9 @@ int main(void)
         in.pkt = AVT_SESSION_START_HDR();
         avt_packet_encode_header(&in);
         memcpy(buf_data, in.hdr, in.hdr_len);
-        ret = avt_decode_session_start(buf, &out.pkt.session_start);
-        if (ret < 0) {
-            printf("Error decoding\n");
-            return AVT_ERROR(ret);
-        }
+
+        AVTBytestream bs = avt_bs_init(buf_data, buf_size);
+        avt_decode_session_start(&bs, &out.pkt.session_start);
 
         if (memcmp(&in.pkt, &out.pkt, in.hdr_len))
             return EINVAL;
@@ -61,11 +57,9 @@ int main(void)
         in.pkt = AVT_STREAM_REGISTRATION_HDR();
         avt_packet_encode_header(&in);
         memcpy(buf_data, in.hdr, in.hdr_len);
-        ret = avt_decode_stream_registration(buf, &out.pkt.stream_registration);
-        if (ret < 0) {
-            printf("Error decoding\n");
-            return AVT_ERROR(ret);
-        }
+
+        AVTBytestream bs = avt_bs_init(buf_data, buf_size);
+        avt_decode_stream_registration(&bs, &out.pkt.stream_registration);
 
         if (memcmp(&in.pkt, &out.pkt, in.hdr_len))
             return EINVAL;
@@ -76,17 +70,15 @@ int main(void)
         in.pkt = AVT_VIDEO_INFO_HDR();
         avt_packet_encode_header(&in);
         memcpy(buf_data, in.hdr, in.hdr_len);
-        ret = avt_decode_video_info(buf, &out.pkt.video_info);
-        if (ret < 0) {
-            printf("Error decoding\n");
-            return AVT_ERROR(ret);
-        }
+
+        AVTBytestream bs = avt_bs_init(buf_data, buf_size);
+        avt_decode_video_info(&bs, &out.pkt.video_info);
 
         if (memcmp(&in.pkt, &out.pkt, in.hdr_len))
             return EINVAL;
     }
 
     avt_buffer_unref(&buf);
-#endif
+
     return 0;
 }

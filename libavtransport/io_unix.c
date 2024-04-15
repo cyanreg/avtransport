@@ -42,6 +42,7 @@
 #include "io_common.h"
 #include "io_utils.h"
 #include "io_socket_common.h"
+#include "utils_internal.h"
 
 #ifndef IOV_MAX
 #warning "IOV_MAX not defined!"
@@ -55,8 +56,8 @@ struct AVTIOCtx {
     bool listen;
     int fd;
 
-    off_t rpos;
-    off_t wpos;
+    avt_pos rpos;
+    avt_pos wpos;
     bool is_write;
 };
 
@@ -117,7 +118,7 @@ static int unix_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
 static int unix_seek_to(AVTIOCtx *ctx, int64_t pos) { return 0; } /* unused */
 
-static inline int64_t unix_offset(AVTIOCtx *io)
+static inline avt_pos unix_offset(AVTIOCtx *io)
 {
     if (io->is_write)
         return io->wpos;
@@ -125,7 +126,7 @@ static inline int64_t unix_offset(AVTIOCtx *io)
         return io->rpos;
 }
 
-static inline ssize_t server_state_check(AVTIOCtx *io, bool *emulate)
+static inline avt_pos server_state_check(AVTIOCtx *io, bool *emulate)
 {
     if (!io->listen)
         return 0;
@@ -154,10 +155,10 @@ static inline ssize_t server_state_check(AVTIOCtx *io, bool *emulate)
     return 0;
 }
 
-static inline ssize_t unix_read(AVTIOCtx *io, uint8_t *dst, size_t len,
+static inline avt_pos unix_read(AVTIOCtx *io, uint8_t *dst, size_t len,
                                 int64_t timeout)
 {
-    ssize_t ret = server_state_check(io, NULL);
+    avt_pos ret = server_state_check(io, NULL);
     if (ret < 0)
         return ret;
 
@@ -168,11 +169,11 @@ static inline ssize_t unix_read(AVTIOCtx *io, uint8_t *dst, size_t len,
     return ret;
 }
 
-static inline ssize_t unix_write(AVTIOCtx *io, uint8_t *src, size_t len,
+static inline avt_pos unix_write(AVTIOCtx *io, uint8_t *src, size_t len,
                                  int64_t timeout)
 {
     bool emulate = false;
-    ssize_t ret = server_state_check(io, &emulate);
+    avt_pos ret = server_state_check(io, &emulate);
     if (ret < 0)
         return ret;
 
@@ -187,10 +188,11 @@ static inline ssize_t unix_write(AVTIOCtx *io, uint8_t *src, size_t len,
 }
 
 #if IOV_MAX > 4
-static int64_t unix_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+static avt_pos unix_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
                                      int64_t timeout)
 {
-    int64_t ret;
+    avt_pos ret;
+    avt_pos off = io->wpos;
     int nb_iov = 0;
 
     bool emulate = false;
@@ -199,11 +201,11 @@ static int64_t unix_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt
         return ret;
 
     if (emulate) {
-        for (int i = 0; i < nb_pkt; i++) {
-            io->wpos += pkt[i].hdr_len;
-            io->wpos += avt_buffer_get_data_len(&pkt[i].pl);
-        }
-        return io->wpos;
+        for (auto i = 0; i < nb_pkt; i++)
+            off += pkt[i].hdr_len + avt_buffer_get_data_len(&pkt[i].pl);
+
+        AVT_SWAP(io->wpos, off);
+        return off;
     }
 
     while (nb_pkt) {
@@ -223,10 +225,11 @@ static int64_t unix_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt
         if (ret < 0)
             return avt_handle_errno(io, "Error flushing: %i %s\n");
 
-        io->wpos += ret;
+        off += ret;
     }
 
-    return io->wpos;
+    AVT_SWAP(io->wpos, off);
+    return off;
 }
 #endif
 

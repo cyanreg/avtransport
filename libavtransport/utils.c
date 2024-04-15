@@ -87,10 +87,9 @@ AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
     }
 
     AVTPktd *data = &fifo->data[fifo->nb];
-    if (pl) {
-        if (avt_buffer_quick_ref(&data->pl, pl, offset, len) < 0)
-            return NULL;
-    }
+    if (pl)
+        avt_buffer_quick_ref(&data->pl, pl, offset, len);
+
     fifo->nb++;
 
     return data;
@@ -153,11 +152,7 @@ int avt_pkt_fifo_copy(AVTPacketFifo *dst, const AVTPacketFifo *src)
         AVTPktd *pdst = &dst->data[dst->nb + i];
         AVTPktd *psrc = &src->data[i];
         *psrc = *pdst;
-        int err = avt_buffer_quick_ref(&pdst->pl, &psrc->pl, 0, 0);
-        if (err < 0) {
-            dst->nb += 1;
-            return err;
-        }
+        avt_buffer_quick_ref(&pdst->pl, &psrc->pl, 0, 0);
     }
 
     dst->nb += src->nb;
@@ -189,9 +184,9 @@ int avt_pkt_fifo_peek(const AVTPacketFifo *fifo,
 
     *pkt = data->pkt;
     if (pl)
-        return avt_buffer_quick_ref(pl, &data->pl, 0, 0);
-    else
-        return 0;
+        avt_buffer_quick_ref(pl, &data->pl, 0, 0);
+
+    return 0;
 }
 
 int avt_pkt_fifo_pop(AVTPacketFifo *fifo,

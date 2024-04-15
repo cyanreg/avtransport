@@ -105,11 +105,10 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
         goto fail;
 
     /* Get max packet size */
-    int64_t max_pkt_size = conn->p->get_max_pkt_len(conn->p_ctx);
-    if (max_pkt_size < 0) {
-        ret = max_pkt_size;
+    size_t max_pkt_size;
+    ret = conn->p->get_max_pkt_len(conn->p_ctx, &max_pkt_size);
+    if (ret < 0)
         goto fail;
-    }
 
     /* Output scheduler */
     ret = avt_scheduler_init(&conn->out_scheduler, max_pkt_size,
@@ -130,18 +129,9 @@ int avt_connection_send(AVTConnection *conn,
 {
     int err;
 
-//    err = avt_pkt_fifo_push(&conn->out_fifo_pre, pkt, pl);
-//    if (err < 0)
-//        return err;
-
     err = avt_scheduler_push(&conn->out_scheduler, pkt, pl);
     if (err < 0)
         return err;
-
-//    AVTPacketFifo *seq;
-//    err = avt_scheduler_pop(&conn->out_scheduler, &seq);
-//    if (err < 0)
-//        return err;
 
     return 0;
 }
@@ -152,6 +142,11 @@ int avt_connection_process(AVTConnection *conn, int64_t timeout)
 
     AVTPacketFifo *seq;
     err = avt_scheduler_pop(&conn->out_scheduler, &seq);
+    if (err < 0)
+        return err;
+
+    /* Ref segmented output packets for retransmission purposes */
+    err = avt_pkt_fifo_copy(&conn->out_fifo_pre, seq);
     if (err < 0)
         return err;
 

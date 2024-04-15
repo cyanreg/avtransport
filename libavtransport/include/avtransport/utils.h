@@ -68,6 +68,9 @@ typedef struct AVTBuffer AVTBuffer;
 #define avt_printf_format(fmtpos, attrpos)
 #endif
 
+/* Shortcut to reference the entire length of data in the buffer. */
+#define AVT_BUFFER_REF_ALL (0)
+
 /* Probe if the sequence of 36 bytes represents a valid AVT packet, or
  * the start of one. Returns 'true' if so. Result is trustworthy. */
 AVT_API bool avt_data_probe(uint8_t data[36]);
@@ -85,12 +88,12 @@ AVT_API AVTBuffer *avt_buffer_alloc(size_t len);
 
 /* References the buffer. Returns a new reference at the offset and length requested.
  * If offset AND length are 0, references the whole buffer. */
-AVT_API AVTBuffer *avt_buffer_reference(AVTBuffer *buffer, ptrdiff_t offset, int64_t len);
+AVT_API AVTBuffer *avt_buffer_ref(AVTBuffer *buffer, ptrdiff_t offset, size_t len);
 
 /* Returns the current numer of references */
 AVT_API int avt_buffer_get_refcount(AVTBuffer *buffer);
 
-/* Access the data in a buffer. Does not reference it. */
+/* Access the data in a buffer. */
 AVT_API void *avt_buffer_get_data(AVTBuffer *buffer, size_t *len);
 
 /* Get the data length */

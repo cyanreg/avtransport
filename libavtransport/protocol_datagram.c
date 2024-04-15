@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <avtransport/avtransport.h>
 #include "protocol_common.h"
 #include "io_common.h"
 
@@ -72,44 +73,123 @@ static int datagram_proto_rm_dst(AVTProtocolCtx *p, AVTAddress *addr)
     return p->io->del_dst(p->io_ctx, addr);
 }
 
-static int64_t datagram_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
-                                          int64_t timeout)
+static int datagram_proto_send_packet(AVTProtocolCtx *p, AVTPktd *pkt,
+                                      int64_t timeout)
 {
-    return p->io->write_pkt(p->io_ctx, pkt, timeout);
+    int64_t ret = p->io->write_pkt(p->io_ctx, pkt, timeout);
+    if (ret < 0)
+        return ret;
+    return 0;
 }
 
-static int64_t datagram_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
-                                       int64_t timeout)
+static int datagram_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
+                                   int64_t timeout)
 {
-    return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
+    int64_t ret = p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
+    if (ret < 0)
+        return ret;
+    return 0;
 }
 
-static int64_t datagram_proto_receive_packet(AVTProtocolCtx *p,
-                                             union AVTPacketData *pkt, AVTBuffer **pl,
-                                             int64_t timeout)
+static int datagram_proto_receive_packet(AVTProtocolCtx *p,
+                                         union AVTPacketData *pkt, AVTBuffer **pl,
+                                         int64_t timeout)
 {
+#if 0
     AVTBuffer *buf;
     int64_t err = p->io->read_input(p->io_ctx, &buf, 0, timeout);
     if (err < 0)
         return err;
 
-    // TODO - deserialize packet here
+    size_t size;
+    uint8_t *data = avt_buffer_get_data(buf, &size);
+
+
+
+    size_t pl_bytes = 0;
+    AVTBytestream bs = avt_bs_init(data, size);
+
+    switch (desc) {
+    case AVT_PKT_SESSION_START:
+        avt_decode_session_start(&bs, &pkt->session_start);
+        return 0;
+    case AVT_PKT_TIME_SYNC & ~(AVT_PKT_FLAG_LSB_BITMASK):
+        avt_decode_time_sync(&bs, &pkt->time_sync);
+        return 0;
+    case AVT_PKT_VIDEO_INFO:
+        avt_decode_video_info(&bs, &pkt->video_info);
+        return 0;
+    case AVT_PKT_VIDEO_ORIENTATION:
+        avt_decode_video_orientation(&bs, &pkt->video_orientation);
+        return 0;
+    case AVT_PKT_STREAM_REGISTRATION:
+        avt_decode_stream_registration(&bs, &pkt->stream_registration);
+        return 0;
+    case AVT_PKT_STREAM_END:
+        avt_decode_stream_end(&bs, &pkt->stream_end);
+        return 0;
+    case AVT_PKT_STREAM_INDEX:
+        avt_decode_stream_index(&bs, &pkt->stream_index);
+
+        err = avt_index_list_parse(&p->ic, &bs, &pkt->stream_index);
+        if (err < 0)
+            return err;
+
+        return AVT_ERROR(EAGAIN);
+    case AVT_PKT_STREAM_DATA & ~(AVT_PKT_FLAG_LSB_BITMASK):
+        avt_decode_stream_data(&bs, &pkt->stream_data);
+        pl_bytes = pkt->stream_data.data_length;
+        break;
+    case AVT_PKT_LUT_ICC:       [[fallthrough]];
+    case AVT_PKT_FONT_DATA:     [[fallthrough]];
+    case AVT_PKT_METADATA:      [[fallthrough]];
+    case AVT_PKT_USER_DATA:     [[fallthrough]];
+    case AVT_PKT_STREAM_CONFIG:
+        avt_decode_generic_data(&bs, &pkt->generic_data);
+        pl_bytes = pkt->generic_data.payload_length;
+        break;
+    case AVT_PKT_LUT_ICC_SEGMENT:       [[fallthrough]];
+    case AVT_PKT_FONT_DATA_SEGMENT:     [[fallthrough]];
+    case AVT_PKT_METADATA_SEGMENT:      [[fallthrough]];
+    case AVT_PKT_USER_DATA_SEGMENT:     [[fallthrough]];
+    case AVT_PKT_STREAM_DATA_SEGMENT:   [[fallthrough]];
+    case AVT_PKT_STREAM_CONFIG_SEGMENT:
+        avt_decode_generic_segment(&bs, &pkt->generic_segment);
+        pl_bytes = pkt->generic_segment.seg_length;
+        break;
+    case AVT_PKT_LUT_ICC_PARITY:       [[fallthrough]];
+    case AVT_PKT_FONT_DATA_PARITY:     [[fallthrough]];
+    case AVT_PKT_METADATA_PARITY:      [[fallthrough]];
+    case AVT_PKT_USER_DATA_PARITY:     [[fallthrough]];
+    case AVT_PKT_STREAM_DATA_PARITY:   [[fallthrough]];
+    case AVT_PKT_STREAM_CONFIG_PARITY:
+        avt_decode_generic_parity(&bs, &pkt->generic_parity);
+        pl_bytes = pkt->generic_parity.parity_data_length;
+        break;
+    default:
+        avt_log(p, AVT_LOG_ERROR, "Unknown descriptor 0x%x received\n", desc);
+        return AVT_ERROR(ENOTSUP);
+    };
+
+
 
     return err;
+#endif
+    return 0;
 }
 
-static int64_t datagram_proto_max_pkt_len(AVTProtocolCtx *p)
+static int datagram_proto_max_pkt_len(AVTProtocolCtx *p, size_t *mtu)
 {
-    return p->io->get_max_pkt_len(p->io_ctx);
-}
+    size_t tmp;
+    const size_t udp_hdr_size = 8;
 
-static int64_t datagram_proto_seek(AVTProtocolCtx *p,
-                                   int64_t off, uint32_t seq,
-                                   int64_t ts, bool ts_is_dts)
-{
-    if (p->io->seek)
-        return p->io->seek(p->io_ctx, off);
-    return AVT_ERROR(ENOTSUP);
+    int ret = p->io->get_max_pkt_len(p->io_ctx, &tmp);
+    if (ret < 0 || (tmp < (AVT_MIN_HEADER_LEN - udp_hdr_size)))
+        return ret;
+
+    *mtu = tmp - udp_hdr_size;
+
+    return 0;
 }
 
 static int datagram_proto_flush(AVTProtocolCtx *p, int64_t timeout)
@@ -130,7 +210,7 @@ const AVTProtocol avt_protocol_datagram = {
     .send_seq = datagram_proto_send_seq,
     .update_packet = NULL,
     .receive_packet = datagram_proto_receive_packet,
-    .seek = datagram_proto_seek,
+    .seek = NULL,
     .flush = datagram_proto_flush,
     .close = datagram_proto_close,
 };

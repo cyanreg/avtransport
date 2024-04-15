@@ -85,6 +85,6 @@ int avt_socket_get_opt(void *log_ctx, int socket,
                        const char *errmsg);
 
 /* Get MTU */
-int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc);
+int avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc, size_t *mtu);
 
 #endif /* AVTRANSPORT_IO_SOCKET_COMMON_H */

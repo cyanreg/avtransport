@@ -28,8 +28,11 @@
 #define LIBAVTRANSPORT_BUFFER
 
 #include <stdatomic.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include <avtransport/utils.h>
+#include "attributes.h"
 
 struct AVTBuffer {
     uint8_t *data;      /* Current ref's view of the buffer */
@@ -46,11 +49,44 @@ struct AVTBuffer {
 void avt_buffer_update(AVTBuffer *buf, void *data, size_t len);
 int avt_buffer_resize(AVTBuffer *buf, size_t len);
 
-#define AVT_BUFFER_REF_ALL (0)
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buffer,
-                         ptrdiff_t offset, size_t len);
+static inline void avt_buffer_quick_unref(AVTBuffer *buf)
+{
+    if (!buf || !buf->refcnt)
+        return;
 
-void avt_buffer_quick_unref(AVTBuffer *buf);
+    if (atomic_fetch_sub_explicit(buf->refcnt, 1, memory_order_acq_rel) <= 1) {
+        buf->free(buf->opaque, buf->data, buf->end_data - buf->base_data);
+        free(buf->refcnt);
+    }
+
+    /* Zero out to avoid leaks */
+    memset(buf, 0, sizeof(*buf));
+}
+
+static inline void avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
+                                        ptrdiff_t offset, size_t len)
+{
+    avt_buffer_quick_unref(dst);
+
+    if (!buf || !buf->refcnt)
+        return;
+
+    avt_assert0(buf->base_data + offset < buf->end_data);
+
+    atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
+    memcpy(dst, buf, sizeof(*dst));
+
+    dst->data += offset;
+    dst->len = (len == AVT_BUFFER_REF_ALL) ? (dst->end_data - dst->data) : len;
+}
+
+static inline void avt_buffer_move(AVTBuffer *dst, AVTBuffer **src)
+{
+    /* Move a reference to an already existing ref */
+    avt_buffer_quick_unref(dst);
+    memcpy(dst, *src, sizeof(*dst));
+    free(src);
+}
 
 int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);
 

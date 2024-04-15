@@ -295,6 +295,10 @@ interval <code>[-1.0, 1.0]</code>.
 Padding may be present in some packets (<dfn>padding</dfn>). Unless otherwise indicated,
 the data in padding must be ''0x0''.
 
+Note: this document is machine-parseable. Each symbol of a packet or enum has an assigned ID of
+the form <code><descriptor in hex>+<index></code>, where index is a number starting from 0,
+incremented for each element in a structure.
+
 
 ## LDPC ## {#ldpc}
 
@@ -1253,19 +1257,19 @@ with the following descriptors:
             <th>Structure</th>
             <th>Description</th>
         </tr>
-        <tr>
+        <tr id="0x0003+0">
             <td>''0x0003''</td>
             <td><dfn>stream_config_descriptor</dfn></td>
             <td>[[#generic-data-packets]]</td>
             <td>Codec initialization data.</td>
         </tr>
-        <tr>
+        <tr id="0x0004+0">
             <td>''0x0004''</td>
             <td><dfn>stream_config_segment_descriptor</dfn></td>
             <td>[[#generic-data-segment-packets]]</td>
             <td>Non-final segment for segmented codec configuration.</td>
         </tr>
-        <tr>
+        <tr id="0x0005+0">
             <td>''0x0005''</td>
             <td><dfn>stream_config_parity_descriptor</dfn></td>
             <td>[[#generic-data-parity-packets]]</td>
@@ -1418,8 +1422,8 @@ the [[#codec-encapsulation]] addenda.
       :: Packet data is compressed with Zstandard, defined in IETF [[RFC8878]].
 
           Note: Zstandard is a general purpose format, suitable for images,
-                audio, and binary data such as ICC or CUBE packets. Therefore,
-                it should be the preferred format for such payloads.
+                audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
+                Therefore, it should be the preferred format for such payloads.
 
     : <dfn>DATA_COMPRESSION_BROTLI</dfn> = <i>0x2</i>
       :: Packet data is compressed with Zstandard, defined in IETF [[RFC7932]].
@@ -2053,33 +2057,33 @@ The following structure MUST be followed:
         </tr>
         <tr id="0x0010+9">
             <td><code>b(8)</code></td>
-            <td><dfn>lut_name_length</dfn></td>
-            <td></td>
-            <td>The length of the LUT/ICC profile name.</td>
-        </tr>
-        <tr id="0x0010+10">
-            <td><code>b(8)</code></td>
             <td><dfn>lut_data_length</dfn></td>
             <td></td>
             <td>The length of the LUT/ICC profile.</td>
         </tr>
-        <tr id="0x0010+11">
-            <td><code>b(40)</code></td>
+        <tr id="0x0010+10">
+            <td><code>b(48)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="0x0010+12">
+        <tr id="0x0010+11">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0010+13">
-            <td><code>[=lut_name_length=]*b(8)</code></td>
+        <tr id="0x0010+12">
+            <td><code>252*b(8)</code></td>
             <td><dfn>lut_name</dfn></td>
-            <td>zero-terminated string</td>
-            <td>The full name of the LUT/ICC profile.</td>
+            <td>fixed-length string</td>
+            <td>252-byte [[RFC3629|UTF-8]] string, containing the original file name of the LUT/ICC profile.</td>
+        </tr>
+        <tr id="0x0010+13">
+            <td><code>b(768)</code></td>
+            <td>[=ldpc_2784_2016=]</td>
+            <td>[=LDPC(2784, 2016)=]</td>
+            <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>
         </tr>
         <tr id="0x0010+14">
             <td><code>[=lut_data_length=]*b(8)</code></td>
@@ -2211,34 +2215,34 @@ The following structure MUST be followed:
             <td>Font data compression.</td>
         </tr>
         <tr id="0x0020+7">
-            <td><code>u(8)</code></td>
-            <td><dfn>font_name_length</dfn></td>
-            <td></td>
-            <td>The length of the font file name.</td>
-        </tr>
-        <tr id="0x0020+8">
             <td><code>u(32)</code></td>
             <td><dfn>font_data_length</dfn></td>
             <td></td>
             <td>The length in bytes of the font file data.</td>
         </tr>
-        <tr id="0x0020+9">
-            <td><code>b(88)</code></td>
+        <tr id="0x0020+8">
+            <td><code>b(96)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="0x0020+10">
+        <tr id="0x0020+9">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0020+11">
-            <td><code>[=font_name_length=]*b(8)</code></td>
+        <tr id="0x0020+10">
+            <td><code>252*b(8)</code></td>
             <td><dfn>font_name</dfn></td>
-            <td>zero-terminated string</td>
-            <td>The name of the font file.</td>
+            <td>fixed-length string</td>
+            <td>252-byte [[RFC3629|UTF-8]] string, containing the original file name of the font.</td>
+        </tr>
+        <tr id="0x0020+11">
+            <td><code>b(768)</code></td>
+            <td>[=ldpc_2784_2016=]</td>
+            <td>[=LDPC(2784, 2016)=]</td>
+            <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>
         </tr>
         <tr id="0x0020+12">
             <td><code>[=font_data_length=]*b(8)</code></td>

@@ -185,7 +185,9 @@ static int64_t fd_write_vec_native(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
         }
     }
 
-    return (io->wpos = fd_offset(io));
+    off_t offset = fd_offset(io);
+    AVT_SWAP(io->wpos, offset);
+    return offset;
 }
 #endif
 
@@ -196,22 +198,20 @@ static int64_t fd_rewrite_native(AVTIOCtx *io, AVTPktd *p, int64_t off,
     ret = pwrite(io->fd, p->hdr, p->hdr_len, off);
     if (ret < 0) {
         ret = avt_handle_errno(io, "Error writing: %i %s\n");
-        io->wpos = fd_offset(io);
         return ret;
     }
 
     size_t pl_len;
     uint8_t *data = avt_buffer_get_data(&p->pl, &pl_len);
     if (data) {
-        ret = pwrite(io->fd, data, pl_len, off);
+        ret = pwrite(io->fd, data, pl_len, off + p->hdr_len);
         if (ret < 0) {
             ret = avt_handle_errno(io, "Error writing: %i %s\n");
-            io->wpos = fd_offset(io);
             return ret;
         }
     }
 
-    return off + p->hdr_len + pl_len;
+    return off;
 }
 
 #define RENAME(x) fd_ ## x

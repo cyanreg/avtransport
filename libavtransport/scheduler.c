@@ -37,14 +37,14 @@ FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
 int avt_scheduler_init(AVTScheduler *s,
-                       uint32_t max_pkt_size, int64_t bandwidth)
+                       size_t max_pkt_size, int64_t bandwidth)
 {
     s->seq = 0;
-    s->max_pkt_size = max_pkt_size;
     s->bandwidth = bandwidth;
     s->avail = bandwidth;
 
-//    s->min_pkt_size = UINT32_MAX;
+    /* AVTransport packets simply don't support bigger sizes */
+    s->max_pkt_size = AVT_MIN(max_pkt_size, UINT32_MAX);
 
     return 0;
 }
@@ -75,23 +75,22 @@ static inline void update_sw(AVTScheduler *s, size_t size)
 static inline int64_t scheduler_push_internal(AVTScheduler *s,
                                               AVTSchedulerPacketContext *state,
                                               AVTPacketFifo *dst,
-                                              uint32_t seg_size_lim,
-                                              int64_t out_limit)
+                                              size_t seg_size_lim,
+                                              size_t out_limit)
 {
-    int ret;
     uint32_t hdr_size;
     size_t acc;
     size_t out_acc = 0;
     uint32_t pl_size = avt_buffer_get_data_len(&state->pl);
     uint32_t seg_pl_size;
-    const int64_t lim = AVT_MIN(seg_size_lim, out_limit);
+    const size_t lim = AVT_MIN(seg_size_lim, out_limit);
     AVTPktd *p;
 
     if (state->seg_offset)
         goto resume;
 
     /* Header size of the encoded packet */
-    hdr_size = avt_pkt_hdr_size(state->start.pkt);
+    hdr_size = avt_pkt_hdr_size(state->start.pkt.desc);
 
     /* Signal we need more bytes to output something coherent.
      * If there's payload, make sure we can send off at least a byte of it. */
@@ -127,7 +126,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     avt_packet_encode_header(&state->start);
 
     /* Update accumulated output */
-    acc = avt_pkt_hdr_size(state->start.pkt) + seg_pl_size;
+    acc = avt_pkt_hdr_size(state->start.pkt.desc) + seg_pl_size;
     out_acc += acc;
     update_sw(s, acc);
 
@@ -139,7 +138,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     /* Setup segmentation context */
     state->seg_offset = seg_pl_size;
     state->pl_left = pl_size - state->seg_offset;
-    state->seg_hdr_size = avt_pkt_hdr_size(avt_packet_create_segment(&state->start, 0, 0, 0, 0));
+    state->seg_hdr_size = avt_pkt_hdr_size(avt_packet_create_segment(&state->start, 0, 0, 0, 0).desc);
 
     /* Return now with what we wrote if there are not enough bytes */
     if (out_acc >= out_limit)
@@ -167,7 +166,7 @@ resume:
         avt_packet_encode_header(p);
 
         /* Enqueue packet */
-        acc = avt_pkt_hdr_size(p->pkt) + seg_pl_size;
+        acc = avt_pkt_hdr_size(p->pkt.desc) + seg_pl_size;
         out_acc += acc;
         update_sw(s, acc);
 
@@ -202,7 +201,7 @@ static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
     static const AVTRational target_tb = (AVTRational){ 1, 1000000000 };
 
     /* TODO: take into account index packets having larger length */
-    const size_t size = (avt_pkt_hdr_size(pctx->cur.start.pkt) +
+    const size_t size = (avt_pkt_hdr_size(pctx->cur.start.pkt.desc) +
                          avt_buffer_get_data_len(&pctx->cur.pl)) * 8;
 
     int64_t duration = avt_packet_get_duration(&pctx->cur.start.pkt);
@@ -350,7 +349,7 @@ static int scheduler_process(AVTScheduler *s)
             overlap_size, s->avail);
 
     /* Per-stream limit */
-    int64_t local_limit = (s->avail / overlap_size) * s->max_pkt_size;
+    size_t local_limit = (s->avail / overlap_size) * s->max_pkt_size;
     unsigned int idx = 0;
     do {
         const int i = (idx++) % s->tmp.nb_overlap;

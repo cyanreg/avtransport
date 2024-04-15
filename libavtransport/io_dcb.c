@@ -55,9 +55,10 @@ static COLD int dcb_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static int64_t dcb_max_pkt_len(AVTIOCtx *io)
+static int dcb_max_pkt_len(AVTIOCtx *io, size_t *mtu)
 {
-    return UINT32_MAX;
+    *mtu = SIZE_MAX;
+    return 0;
 }
 
 static int64_t dcb_seek(AVTIOCtx *io, int64_t off)
@@ -65,12 +66,26 @@ static int64_t dcb_seek(AVTIOCtx *io, int64_t off)
     return (io->rpos = off);
 }
 
-static int64_t dcb_input(AVTIOCtx *io, AVTBuffer **buf, size_t len,
-                         int64_t timeout)
+static int64_t dcb_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
+                         int64_t timeout, enum AVTIOReadFlags flags)
 {
-    int64_t ret = io->cb.read(io->cb.opaque, buf, len, io->rpos);
+    AVTBuffer *tmp;
+    int64_t ret = io->cb.read(io->cb.opaque, &tmp, len, io->rpos);
     if (ret < 0)
         return ret;
+
+    if (flags & AVT_IO_READ_MUTABLE) {
+        uint8_t *dst_data = avt_buffer_get_data(buf, NULL);
+
+        size_t src_len;
+        uint8_t *src_data = avt_buffer_get_data(tmp, &src_len);
+
+        memcpy(dst_data, src_data, AVT_MIN(len, src_len));
+        avt_buffer_unref(&tmp);
+    } else {
+        avt_buffer_move(buf, &tmp);
+    }
+
     return (io->rpos = ret);
 }
 

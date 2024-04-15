@@ -21,7 +21,7 @@ The output flow graph is as follows:
 In certain IO cases where io_uring or mmapping can be used, the packet data path is done
 entirely with zero copies.
 
-The input flow graph for (datagram) streams is as follows:
+The input flow graph is as follows:
 ```
  - (user calls avt_connection_process)
  - connection (calls protocol to get a packet)
@@ -32,18 +32,7 @@ The input flow graph for (datagram) streams is as follows:
        packet reorder + assembler
        (regular payload FEC)
  - connection (buffering)
- - input (dispatch of callbacks)
-```
-
-The input flow graph for files is as follows:
-```
- - (user calls avt_connection_process)
- - connection (calls protocol to get a packet)
- - protocol
-       io (get 36 bytes)
- - protocol (check if a packet)
-       io (get full packet data)
-       assemble packets
- - connection (buffering)
- - input (dispatch of callbacks)
+ - input
+       gets assembled packets, handles stream management
+       (dispatch user callbacks)
 ```

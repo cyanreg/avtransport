@@ -74,9 +74,9 @@ int avt_socket_get_opt(void *log_ctx, int socket,
     return 0;
 }
 
-int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
+int avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc, size_t *mtu)
 {
-    int64_t ret = 1280;
+    size_t ret = 1280;
 
     if (sc->addr_size != sizeof(sc->ip.local_addr))
         return AVT_ERROR(EINVAL);
@@ -88,11 +88,14 @@ int64_t avt_socket_get_mtu(void *log_ctx, AVTSocketCommon *sc)
     ret = avt_socket_get_opt(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_PATHMTU,
                              &mtu6, sizeof(mtu6),
                              "Unable to get MTU: %i %s\n");
-    if (ret >= 0)
+    if (ret < 0)
+        return ret;
+    else
         ret = mtu6.ip6m_mtu;
 #endif
+    *mtu = ret;
 
-    return ret;
+    return 0;
 }
 
 static int setup_unix_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)

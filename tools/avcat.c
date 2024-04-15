@@ -40,7 +40,6 @@
 
 #define GEN_OPT_MAX_ARR 16
 #define GEN_OPT_LOG avt_log
-#define GEN_OPT_LOG_CTX NULL
 #define GEN_OPT_LOG_INFO AVT_LOG_INFO
 #define GEN_OPT_LOG_ERROR AVT_LOG_ERROR
 #define GEN_OPT_RATIONAL AVTRational
@@ -57,7 +56,18 @@ static void on_quit_signal(const int signo)
 
 int main(int argc, char **argv)
 {
-    int err;
+    int ret;
+    AVTContext *avt;
+    AVTContextOptions ctx_opts = {
+        .producer_name = "avcat",
+        .producer_ver = { PROJECT_VERSION_MAJOR,
+                          PROJECT_VERSION_MICRO,
+                          PROJECT_VERSION_MINOR },
+    };
+
+    ret = avt_init(&avt, &ctx_opts);
+    if (ret < 0)
+        return AVT_ERROR(ret);
 
     GEN_OPT_INIT(opts_list, 16);
     GEN_OPT_SEC(opts_list, "Input/Output");
@@ -67,8 +77,8 @@ int main(int argc, char **argv)
     GEN_OPT_ONE(opts_list, bool  , unround, "u", 0, 0, false, 0, 0, "Unround timestamps (for remuxing from Matroska)");
     GEN_OPT_ONE(opts_list, char *, mirror,  "m", 1, 1, NULL, 0, 0, "Mirror input and output to a file for monitoring and caching");
 
-    if ((err = GEN_OPT_PARSE(opts_list, argc, argv)) < 0)
-        return err;
+    if ((ret = GEN_OPT_PARSE(opts_list, argc, argv)) < 0)
+        goto end;
 
     if (!input[0]) {
         avt_log(NULL, AVT_LOG_ERROR, "At least one input required!\n");
@@ -91,15 +101,15 @@ int main(int argc, char **argv)
     /* Create inputs */
     IOContext in[MAX_INPUTS] = { 0 };
     for (int i = 0; input[i]; i++) {
-        err = io_open(&in[i], input[i], 0);
-        if (err < 0)
+        ret = io_open(&in[i], avt, input[i], 0);
+        if (ret < 0)
             goto end;
     }
 
     IOContext out = { 0 };
     if (output) {
-        err = io_open(&out, output, 1);
-        if (err < 0)
+        ret = io_open(&out, avt, output, 1);
+        if (ret < 0)
             goto end;
     }
 
@@ -153,5 +163,6 @@ int main(int argc, char **argv)
     io_close(&out, 1);
 
 end:
+    avt_close(&avt);
     return 0;
 }

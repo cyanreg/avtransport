@@ -42,13 +42,11 @@
 #include "config.h"
 #include "attributes.h"
 
-#define AVT_SWAP(a, b)         \
-    do {                       \
-        typeof(a) _a = (a);    \
-        typeof(b) _b = (b);    \
-        typeof(*_a) tmp = *_a; \
-        *_a = *_b;             \
-        *_b = tmp;             \
+#define AVT_SWAP(a, b)           \
+    do {                         \
+        typeof(a) swaptmp = (a); \
+        a = b;                   \
+        b = swaptmp;             \
     } while (0)
 
 int64_t avt_get_time_ns(void);

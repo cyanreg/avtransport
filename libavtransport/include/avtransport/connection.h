@@ -204,12 +204,15 @@ typedef struct AVTConnectionInfo {
 
     /* Input options */
     struct {
-        /* Probe data instead of only initializing the connection.
-         * avt_connection_create() will block until the first packet is received. */
+        /* Probe data when opening.
+         * avt_connection_create() will block until the first packet is read. */
         bool probe;
 
         /* Buffer size limit. Zero means automatic. Approximate/best effort. */
         size_t buffer;
+
+        /* Always enable decoding and correction with LDPC codes. */
+        bool force_ldpc;
     } input_opts;
 
     struct {

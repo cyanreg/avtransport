@@ -30,6 +30,9 @@
 #include "address.h"
 #include "packet_common.h"
 
+/* Main type for offsets */
+typedef int64_t avt_pos;
+
 enum AVTIOType {
     AVT_IO_NULL,       /* Takes nothing */
     AVT_IO_FILE,       /* Takes a path */
@@ -56,6 +59,12 @@ typedef struct AVTConnectionState {
     uint64_t nb_dropped_in;
 } AVTConnectionState;
 
+enum AVTIOReadFlags {
+    /* Indicates that the read must be mutable. The IO must not modify
+     * the buffer it receives, and must use it. */
+    AVT_IO_READ_MUTABLE = 1 << 0,
+};
+
 /* Low level interface */
 typedef struct AVTIOCtx AVTIOCtx;
 typedef struct AVTIO {
@@ -66,7 +75,7 @@ typedef struct AVTIO {
     int (*init)(AVTContext *ctx, AVTIOCtx **io, AVTAddress *addr);
 
     /* Get maximum packet size, excluding any headers */
-    int64_t (*get_max_pkt_len)(AVTIOCtx *io);
+    int (*get_max_pkt_len)(AVTIOCtx *io, size_t *mtu);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTIOCtx *io, AVTAddress *addr);
@@ -77,28 +86,30 @@ typedef struct AVTIO {
     /* Write multiple packets.
      * Returns positive offset after writing on success, otherwise negative error.
      * May be NULL if unsupported. */
-    int64_t (*write_vec)(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+    avt_pos (*write_vec)(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
                          int64_t timeout);
 
     /* Write a single packet to the output.
      * Returns positive offset after writing on success, otherwise negative error. */
-    int64_t (*write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout);
+    avt_pos (*write_pkt)(AVTIOCtx *io, AVTPktd *p, int64_t timeout);
 
     /* Rewrite a packet at a specific location.
      * The old packet's size must exactly match the new packet. */
-    int64_t (*rewrite)(AVTIOCtx *io, AVTPktd *p, int64_t off, int64_t timeout);
+    avt_pos (*rewrite)(AVTIOCtx *io, AVTPktd *p, avt_pos off, int64_t timeout);
 
-    /* Read input from IO. May be called with a non-zero buffer, in which
-     * case the data in the buffer will be reallocated to 'len', with the
-     * start contents preserved.
+    /* Read input from IO. Must be called with a valid AVTBuffer, which
+     * has enough capacity to hold len number of bytes.
+     * IOs are allowed to replace the buffer unless AVT_IO_READ_MUTABLE is set.
+     *
+     * The amount of bytes read may not match len.
      *
      * Returns positive current offset after reading on success,
      * otherwise negative error. */
-    int64_t (*read_input)(AVTIOCtx *io, AVTBuffer **buf, size_t len,
-                          int64_t timeout);
+    avt_pos (*read_input)(AVTIOCtx *io, AVTBuffer *buf, size_t len,
+                          int64_t timeout, enum AVTIOReadFlags flags);
 
     /* Set the read position */
-    int64_t (*seek)(AVTIOCtx *io, int64_t off);
+    avt_pos (*seek)(AVTIOCtx *io, avt_pos off);
 
     /* Flush data written */
     int (*flush)(AVTIOCtx *io, int64_t timeout);

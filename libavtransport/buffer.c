@@ -70,16 +70,16 @@ void avt_buffer_update(AVTBuffer *buf, void *data, size_t len)
 
 int avt_buffer_resize(AVTBuffer *buf, size_t len)
 {
-    /* Sanity checking */
-    avt_assert0(avt_buffer_get_refcount(buf) == 1);
-    avt_assert0(buf->free == avt_buffer_default_free);
-
     /* Simple downsize, or there's enough allocated already */
     if ((buf->len >= len) ||
         (len < (buf->end_data - buf->data))) {
         buf->len = len;
         return 0;
     }
+
+    /* Sanity checking */
+    avt_assert0(avt_buffer_get_refcount(buf) == 1);
+    avt_assert0(buf->free == avt_buffer_default_free);
 
     /* Account for data before the current ref's slice */
     size_t tmp;
@@ -119,7 +119,7 @@ AVTBuffer *avt_buffer_alloc(size_t len)
     return buf;
 }
 
-AVTBuffer *avt_buffer_reference(AVTBuffer *buf, ptrdiff_t offset, int64_t len)
+AVTBuffer *avt_buffer_ref(AVTBuffer *buf, ptrdiff_t offset, size_t len)
 {
     if (!buf || !buf->refcnt)
         return NULL;
@@ -153,39 +153,6 @@ int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset)
     buf->data += offset;
 
     return 0;
-}
-
-int avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
-                         ptrdiff_t offset, size_t len)
-{
-    if (!buf || !buf->refcnt)
-        return 0;
-    else if (buf->base_data + offset > buf->end_data)
-        return AVT_ERROR(EINVAL);
-
-    avt_buffer_quick_unref(dst);
-    atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
-
-    memcpy(dst, buf, sizeof(*dst));
-
-    dst->data += offset;
-    dst->len = (len == AVT_BUFFER_REF_ALL) ? (dst->end_data - dst->data) : len;
-
-    return 0;
-}
-
-void avt_buffer_quick_unref(AVTBuffer *buf)
-{
-    if (!buf || !buf->refcnt)
-        return;
-
-    if (atomic_fetch_sub_explicit(buf->refcnt, 1, memory_order_acq_rel) <= 1) {
-        buf->free(buf->opaque, buf->data, buf->end_data - buf->base_data);
-        free(buf->refcnt);
-    }
-
-    /* Zero out to avoid leaks */
-    memset(buf, 0, sizeof(*buf));
 }
 
 int avt_buffer_get_refcount(AVTBuffer *buf)

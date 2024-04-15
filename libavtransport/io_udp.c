@@ -43,6 +43,7 @@
 #include "io_utils.h"
 #include "io_socket_common.h"
 #include "attributes.h"
+#include "utils_internal.h"
 
 #if __has_include(<linux/errqueue.h>)
 #include <linux/errqueue.h>
@@ -57,8 +58,8 @@ struct AVTIOCtx {
     AVTSocketCommon sc;
     struct iovec *iov;
 
-    int64_t wpos;
-    int64_t rpos;
+    avt_pos wpos;
+    avt_pos rpos;
 };
 
 static COLD int udp_close(AVTIOCtx **_io)
@@ -96,12 +97,12 @@ static COLD int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     return 0;
 }
 
-static int64_t udp_max_pkt_len(AVTIOCtx *io)
+static int udp_max_pkt_len(AVTIOCtx *io, size_t *mtu)
 {
-    return avt_socket_get_mtu(io, &io->sc);
+    return avt_socket_get_mtu(io, &io->sc, mtu);
 }
 
-static int64_t udp_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
+static avt_pos udp_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     int64_t ret;
 
@@ -126,13 +127,16 @@ static int64_t udp_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
     if (ret < 0)
         return avt_handle_errno(io, "Unable to send message: %i %s");
 
-    return (io->wpos += ret);
+    ret = io->wpos + ret;
+    AVT_SWAP(io->wpos, ret);
+    return ret;
 }
 
-static int64_t udp_write_vec(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
+static avt_pos udp_write_vec(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
                              int64_t timeout)
 {
     int64_t ret;
+    avt_pos off = 0;
     int nb_iov = 0;
 
     while (nb_pkt) {
@@ -161,46 +165,28 @@ static int64_t udp_write_vec(AVTIOCtx *io, AVTPktd *pkt, uint32_t nb_pkt,
         if (ret < 0)
             return avt_handle_errno(io, "Unable to send message: %i %s");
 
-        io->wpos += ret;
+        off += ret;
     }
 
-    return io->wpos;
+    off = io->wpos + off;
+    AVT_SWAP(io->wpos, off);
+    return off;
 }
 
-static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
-                              size_t len, int64_t timeout)
+static avt_pos udp_read_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
+                              int64_t timeout, enum AVTIOReadFlags flags)
 {
-    int ret;
+    avt_pos ret;
     [[maybe_unused]] int err;
 
-    uint8_t *data;
-    size_t buf_len, off = 0;
-    AVTBuffer *buf = *_buf;
-
-    if (!buf) {
-        buf = avt_buffer_alloc(len);
-        if (!buf)
-            return AVT_ERROR(ENOMEM);
-    } else {
-        off = avt_buffer_get_data_len(buf);
-
-        if (ckd_add(&buf_len, off, len))
-            return AVT_ERROR(EINVAL);
-
-        ret = avt_buffer_resize(buf, buf_len);
-        if (ret < 0)
-            return ret;
-    }
-
-    /* Read data */
-    data = avt_buffer_get_data(buf, &buf_len);
+    size_t buf_len;
+    uint8_t *data = avt_buffer_get_data(buf, &buf_len);
+    struct iovec iov = {
+        .iov_base = data,
+        .iov_len = buf_len,
+    };
 
     struct sockaddr_in6 remote_addr = { };
-
-    struct iovec iov = {
-        .iov_base = data + off,
-        .iov_len = len,
-    };
 
     struct msghdr msg = {
         .msg_name = &remote_addr,
@@ -233,11 +219,10 @@ static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
 
     ret = recvmsg(io->sc.socket, &msg, 0x0);
     if (ret < 0) {
-        if (*_buf != buf)
-            avt_buffer_unref(&buf);
         return avt_handle_errno(io, "Unable to receive message: %s");
     } else if (ret == 0) { /* Ancillary message only */
         struct cmsghdr *cmsg;
+
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 #ifdef SO_RXQ_OVFL
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_RXQ_OVFL) {
@@ -253,9 +238,6 @@ static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
             }
 #endif
         }
-
-        if (*_buf != buf)
-            avt_buffer_unref(&buf);
 
         return 0;
     } else if (ret > 0) { /* Ancillary message with the data */
@@ -276,12 +258,12 @@ static int64_t udp_read_input(AVTIOCtx *io, AVTBuffer **_buf,
     }
 
     /* Adjust new size in case of underreads */
-    err = avt_buffer_resize(buf, off + ret);
+    err = avt_buffer_resize(buf, ret);
     avt_assert2(err >= 0);
 
-    *_buf = buf;
-
-    return (io->rpos += ret);
+    ret = io->rpos + ret;
+    AVT_SWAP(io->rpos, ret);
+    return ret;
 }
 
 const AVTIO avt_io_udp = {
