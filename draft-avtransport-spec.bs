@@ -296,7 +296,7 @@ Padding may be present in some packets (<dfn noexport>padding</dfn>). Unless oth
 the data in padding must be ''0x0''.
 
 Note: this document is machine-parseable. Each symbol of a packet or enum has an assigned ID of
-the form <code><descriptor in hex>+<index></code>, where index is a number starting from 0,
+the form ''descriptor in hex''+''index'', where index is a number starting from 0,
 incremented for each element in a structure.
 
 
