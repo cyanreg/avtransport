@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="514f70794711dd0b612786caf24516df20f0aad7" name="document-revision">
+  <meta content="d0841b7ae465e57c93575eb5974938092a845489" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -3450,8 +3450,8 @@ the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addenda.</p>
      <dd data-md>
       <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc8878" title="Zstandard Compression and the &apos;application/zstd&apos; Media Type">[RFC8878]</a>.</p>
       <p class="note" role="note"><span class="marker">Note:</span> Zstandard is a general purpose format, suitable for images,
-        audio, and binary data such as ICC or CUBE packets. Therefore,
-        it should be the preferred format for such payloads.</p>
+        audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
+        Therefore, it should be the preferred format for such payloads.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_brotli"><code>DATA_COMPRESSION_BROTLI</code><a class="self-link" href="#dom-enum-datacompression-data_compression_brotli"></a></dfn> = <i>0x2</i>
      <dd data-md>
       <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc7932" title="Brotli Compressed Data Format">[RFC7932]</a>.</p>
