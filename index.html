@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="d0841b7ae465e57c93575eb5974938092a845489" name="document-revision">
+  <meta content="4409b93b5d3b1c464f17eca1fb57824cdb5284b1" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2519,6 +2519,9 @@ are always <b>two’s complement</b>.</p>
 interval <code>[-1.0, 1.0]</code>.</p>
    <p>Padding may be present in some packets (<dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="padding">padding</dfn>). Unless otherwise indicated,
 the data in padding must be <span class="css">0x0</span>.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> this document is machine-parseable. Each symbol of a packet or enum has an assigned ID of
+the form <span class="css">descriptor in hex</span>+<span class="css">index</span>, where index is a number starting from 0,
+incremented for each element in a structure.</p>
    <h3 class="heading settled" data-level="1.4" id="ldpc"><span class="secno">1.4. </span><span class="content">LDPC</span><a class="self-link" href="#ldpc"></a></h3>
    <p>To improve reliability, and make the protocol general-purpose, a small amount of
 parity data is added to each header, in the form of <a data-link-type="biblio" href="#biblio-ldpc" title="Near Shannon Limit Performance of Low Density Parity Check Codes">[LDPC]</a> codes. These codes highly
@@ -3659,7 +3662,7 @@ previous grouping.</p>
        <td>The FEC data that can be used to check or correct the previous data packet’s payload.
     </table>
    </figure>
-   <p>The <a data-link-type="dfn">fec_source</a> data is defined as follows:</p>
+   <p>The <dfn data-dfn-type="dfn" data-noexport id="fec_source">fec_source<a class="self-link" href="#fec_source"></a></dfn> data is defined as follows:</p>
    <h4 class="heading settled" data-level="2.8.1" id="struct-FECSource"><span class="secno">2.8.1. </span><span class="content">FEC Group Source</span><a class="self-link" href="#struct-FECSource"></a></h4>
    <figure class="table" id="table-FECSource">
     <table class="complex data longlastcol">
@@ -6326,6 +6329,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#fec-grouping-packets-fec_nb_packets">fec_nb_packets</a><span>, in § 2.8</span>
    <li><a href="#fec-grouping-packets-fec_scheme_oti">fec_scheme_oti</a><span>, in § 2.8</span>
    <li><a href="#fec-grouping-packets-fec_seq_number">fec_seq_number</a><span>, in § 2.8</span>
+   <li><a href="#fec_source">fec_source</a><span>, in § 2.8</span>
    <li><a href="#fec-grouping-packets-fec_source_1">fec_source_1</a><span>, in § 2.8</span>
    <li><a href="#fec-grouping-packets-fec_source_234">fec_source_234</a><span>, in § 2.8</span>
    <li><a href="#struct-fecsource-fec_source_blk">fec_source_blk</a><span>, in § 2.8.1</span>
