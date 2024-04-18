@@ -46,6 +46,8 @@ enum AVTLogLevel {
 typedef struct AVTContextOptions {
     /* Logging context */
     void *log_opaque;
+
+    /* Logging callback */
     void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
                    const char *format, va_list args, int error);
 

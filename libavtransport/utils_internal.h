@@ -84,17 +84,17 @@ int avt_pkt_fifo_push_refd_d(AVTPacketFifo *fifo, AVTPktd *p);
 int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
                              union AVTPacketData pkt, AVTBuffer *pl);
 
-/* Returns a blank AVTPktd or NULL on error.
- * pl is an optional parameter which is quick_ref'd
- * within the provided parameters */
-AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
-                               ptrdiff_t offset, size_t len);
-
 #define avt_pkt_fifo_push_refd(f, x, ...)                   \
     _Generic((x),                                           \
              AVTPktd *: avt_pkt_fifo_push_refd_d,           \
              union AVTPacketData: avt_pkt_fifo_push_refd_p  \
     ) (f, x __VA_OPT__(,) __VA_ARGS__)
+
+/* Returns a blank AVTPktd or NULL on error.
+ * pl is an optional parameter which is quick_ref'd
+ * within the provided parameters */
+AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
+                               ptrdiff_t offset, size_t len);
 
 /* Pop a packet from the FIFO. quick_ref'd into pl */
 int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
@@ -129,11 +129,11 @@ void avt_pkt_fifo_free(AVTPacketFifo *fifo);
 
 typedef struct AVTSlidingWinCtx {
     int num_entries;
-    struct AVTSlidingWinEntry {
+    PACKED(struct AVTSlidingWinEntry {
         int64_t val;
         int64_t ts;
         AVTRational tb;
-    } entries[AVT_SLIDING_WINDOW_MAX_ENTRIES];
+    }) entries[AVT_SLIDING_WINDOW_MAX_ENTRIES];
 } AVTSlidingWinCtx;
 
 /*

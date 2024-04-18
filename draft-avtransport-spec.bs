@@ -77,6 +77,13 @@ Markup Shorthands: http no, markup no
         "date": "October 2019",
         "href": "https://www.iso.org/standard/76621.html"
     },
+    "XXHASH": {
+        "title": "xxHash fast digest algorithm",
+        "authors": [
+            "Yann Collet"
+        ],
+        "href": "https://github.com/Cyan4973/xxHash/blob/dev/doc/xxhash_spec.md"
+    },
     "LDPC-encoding": {
         "title": "Efficient encoding of low-density parity-check codes",
         "authors": [
@@ -191,6 +198,10 @@ Below is a table of how they're allocated:
         <tr>
             <td>''0x0008''</td>
             <td>[[#video-information-packets]]</td>
+        </tr>
+        <tr>
+            <td>''0x0009''</td>
+            <td>[[#hash-packets]]</td>
         </tr>
         <tr>
             <td>[''0x00A'':''0x000C'']</td>
@@ -1759,6 +1770,75 @@ The same lifetime and duplication rules apply for parity packets as they do for
 regular data segments.
 
 
+## Hash packets ## {#hash-packets}
+
+For some <i>niche</i> cases, AVTransport provides the ability to signal a hash for the packet.
+This is purely optional for both senders and receivers to signal and interpret.
+
+Note: most filesystems, interfaces and protocols provide a CRC.
+      While this hash is much more resistant to bitflips and secure,
+      it is recommended to use this in cases like long-term archival,
+      or raw RF links (to avoid retransmissions for corrupt packets).
+
+The hash cover exactly <b>one</b> payload-carrying packet's payload.
+
+<figure id="table-HashData" class="table">
+    <table class="complex data longlastcol" dfn-for="#hash-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr id="0x0009+0">
+            <td><code>b(16)</code></td>
+            <td><dfn noexport>hash_data_descriptor</dfn></td>
+            <td>''0x0009''</td>
+            <td>Indicates this is a hash packet.</td>
+        </tr>
+        <tr id="0x0009+1">
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID of the target packet. May be ''0xFFFF'', in which case, it applies to all streams.</td>
+        </tr>
+        <tr id="0x0009+2">
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr id="0x0009+3">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>hash_target</dfn></td>
+            <td></td>
+            <td>Indicates the sequence number of the packet for which this hash applies for.</td>
+        </tr>
+        <tr id="0x0009+4">
+            <td><code>16*b(8)</code></td>
+            <td><dfn noexport>hash_data</dfn></td>
+            <td></td>
+            <td>XXH128 of the target packet's payload.</td>
+        </tr>
+        <tr id="0x0009+5">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+The hashing algorithm used is [[XXHASH]], with a length of <b>128-bits</b>
+(referred to as [[XXHASH#xxh3-algorithm-overview|XXH128]] by the authors).
+
+If present in an AVTransport stream, this packet should be sent before the
+[=hash_target=] packet is transmitted.
+
+Demuxers are not required to process this packet or verify that the target
+packet's data is received correctly, but they should.
+
+
 ## Index ## {#index-packets}
 
 The index packet contains available byte offsets of nearby keyframes, reconfiguration packets
@@ -3285,6 +3365,12 @@ definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
             <td>''RAVV''</td>
             <td><dfn noexport>CODEC_ID_RAW_VIDEO</dfn></td>
             <td>[[#raw-video-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+30">
+            <td>''0x41535334''</td>
+            <td>''ASS''</td>
+            <td><dfn noexport>CODEC_ID_ASS</dfn></td>
+            <td>[[#ass-encapsulation]]</td>
         </tr>
     </table>
 </figure>

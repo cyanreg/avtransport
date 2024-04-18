@@ -157,7 +157,7 @@ def parse_codec_tags(target_id):
 
         fields = field_tab.find_all('td')
 
-        codec_tags[data_prefix + fields[2].string.strip("'")] = int(fields[0].string.strip("'"), 16)
+        codec_tags[data_prefix + "_" + fields[2].string.strip("'")] = int(fields[0].string.strip("'"), 16)
     print("Parsed codec_id_map table", target_id)
 
 # Iterate over each field of a data structure

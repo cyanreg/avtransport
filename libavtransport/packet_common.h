@@ -37,8 +37,10 @@ typedef struct AVTPktd {
     uint8_t hdr[AVT_MAX_HEADER_BUF];
     union AVTPacketData pkt;
     AVTBuffer pl;
+    uint8_t pl_hash[16];
     uint16_t hdr_len;
     uint16_t hdr_off;
+    bool pl_has_hash;
 } AVTPktd;
 
 #endif /* AVTRANSPORT_PACKET_COMMON_H */

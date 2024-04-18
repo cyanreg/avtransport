@@ -35,14 +35,14 @@ typedef struct AVTOutput AVTOutput;
 
 /* Compression mode flags */
 enum AVTOutputCompressionFlags {
-    /* Compress everything not already compressed, except uncompressed video */
+    /* Compress everything not already compressed, except uncompressed video and audio */
     AVT_SENDER_COMPRESS_AUTO  =  0,
 
-    AVT_SENDER_COMPRESS_SUBS  =  1 << 0,       /* Compress subtitles */
+    AVT_SENDER_COMPRESS_META  =  1 << 0,       /* Compress metadata */
     AVT_SENDER_COMPRESS_AUX   =  1 << 1,       /* Compress auxillary payloads (ICC profiles/fonts) */
-    AVT_SENDER_COMPRESS_META  =  1 << 2,       /* Compress metadata */
-    AVT_SENDER_COMPRESS_VIDEO =  1 << 3,       /* Compress video */
-    AVT_SENDER_COMPRESS_AUDIO =  1 << 4,       /* Compress audio */
+    AVT_SENDER_COMPRESS_VIDEO =  1 << 2,       /* Compress video */
+    AVT_SENDER_COMPRESS_AUDIO =  1 << 3,       /* Compress audio */
+    AVT_SENDER_COMPRESS_SUBS  =  1 << 4,       /* Compress subtitles */
 
     AVT_SENDER_COMPRESS_FORCE =  1 << 30,      /* Force compression even if data is already compressed */
     AVT_SENDER_COMPRESS_NONE  =  INT32_MAX,    /* Do not compress anything */
@@ -62,6 +62,9 @@ typedef struct AVTOutputOptions {
 
     /* Compression level. Zero means automatic (the default for each compressor). */
     int compress_level;
+
+    /* Set to true to enable sending hash packets. */
+    bool hash;
 } AVTOutputOptions;
 
 /* All functions listed here are thread-safe. */
@@ -87,9 +90,11 @@ AVT_API AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id);
  * The id MUST match the one from avt_output_add_stream(). */
 AVT_API int avt_output_stream_update(AVTOutput *out, AVTStream *st);
 
-/* Attach a font to a stream */
+/* Attach a font to a stream. The font data must be fully in the AVTBuffer.
+ * The filename is sent alongside as metadata. */
 AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
-                                       const char *filename, enum AVTFontType type);
+                                       const char filename[252],
+                                       enum AVTFontType type);
 
 /* Write a complete stream data packet to the output. */
 AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);

@@ -34,12 +34,16 @@
 
 #include "config.h"
 
+#define XXH_INLINE_ALL
+#include "extern/xxhash.h"
+
 #ifdef CONFIG_HAVE_LIBZSTD
 #include <zstd.h>
 #endif
 
 typedef struct AVTOutput {
     AVTContext *ctx;
+    AVTOutputOptions opts;
 
     AVTConnection **conn;
     uint32_t nb_conn;
@@ -48,9 +52,9 @@ typedef struct AVTOutput {
     uint16_t active_stream_idx[UINT16_MAX];
     int nb_streams;
 
-    atomic_uint_least64_t seq;
-    atomic_uint_least64_t epoch;
+    uint64_t epoch;
 
+    XXH3_state_t *xxh_state;
 #ifdef CONFIG_HAVE_LIBZSTD
     ZSTD_CCtx *zstd_ctx;
 #endif

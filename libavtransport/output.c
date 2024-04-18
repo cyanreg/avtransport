@@ -34,30 +34,68 @@
 
 #include "config.h"
 
+int avt_output_close(AVTOutput **_out)
+{
+    AVTOutput *out = *_out;
+
+#ifdef CONFIG_HAVE_LIBZSTD
+    ZSTD_freeCCtx(out->zstd_ctx);
+#endif
+
+    XXH3_freeState(out->xxh_state);
+
+    free(out);
+
+    *_out = NULL;
+
+    return 0;
+}
+
+static inline int alloc_output_context(AVTOutput **_out, AVTOutputOptions *opts)
+{
+    AVTOutput *out = calloc(1, sizeof(*out));
+    if (!out)
+        return AVT_ERROR(ENOMEM);
+
+    out->epoch = avt_get_time_ns();
+    out->opts = *opts;
+
+    out->conn = calloc(1, sizeof(*out->conn));
+    if (!out->xxh_state) {
+        avt_output_close(&out);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    /* Init xxHash state */
+    out->xxh_state = XXH3_createState();
+    if (!out->xxh_state) {
+        avt_output_close(&out);
+        return AVT_ERROR(ENOMEM);
+    }
+
+#ifdef CONFIG_HAVE_LIBZSTD
+    /* Init Zstd context */
+    out->zstd_ctx = ZSTD_createCCtx();
+    if (!out->zstd_ctx) {
+        avt_output_close(&out);
+        return AVT_ERROR(ENOMEM);
+    }
+#endif
+
+    return 0;
+}
+
 int avt_output_open(AVTContext *ctx, AVTOutput **_out,
                     AVTConnection *conn, AVTOutputOptions *opts)
 {
+    int err;
     AVTOutput *out;
 
     /* Allocate state, if not already existing */
     if (!(*_out)) {
-        out = calloc(1, sizeof(*out));
-
-        atomic_store(&out->seq, 0);
-        atomic_store(&out->epoch, avt_get_time_ns());
-
-        out->conn = calloc(1, sizeof(*out->conn));
-        if (!out->conn) {
-            free(out);
-            return AVT_ERROR(ENOMEM);
-        }
-
-#ifdef CONFIG_HAVE_LIBZSTD
-        out->zstd_ctx = ZSTD_createCCtx();
-        if (!out->zstd_ctx)
-            return AVT_ERROR(ENOMEM);
-#endif
-
+        err = alloc_output_context(&out, opts);
+        if (err < 0)
+            return err;
         *_out = out;
     } else {
         out = *_out;
@@ -67,7 +105,7 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
     out->conn[out->nb_conn++] = conn;
 
     /* Immediately emit a session start packet */
-    int err = avt_send_session_start(out);
+    err = avt_send_session_start(out);
 
     /* If unsuccessful, revert all changes */
     if (err < 0)
@@ -130,18 +168,4 @@ int avt_output_stream_update(AVTOutput *out, AVTStream *st)
 int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)
 {
     return avt_send_stream_data(st->priv->out, st, pkt);
-}
-
-int avt_output_close(AVTOutput **_out)
-{
-    AVTOutput *out = *_out;
-
-#ifdef CONFIG_HAVE_LIBZSTD
-    ZSTD_freeCCtx(out->zstd_ctx);
-#endif
-    free(out);
-
-    *_out = NULL;
-
-    return 0;
 }
