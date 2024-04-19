@@ -124,7 +124,7 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         break;
     case AVT_PKT_METADATA:
         if (!out->opts.compress || out->opts.compress & AVT_SENDER_COMPRESS_META)
-            method = AVT_DATA_COMPRESSION_ZSTD;
+            method = AVT_DATA_COMPRESSION_BROTLI;
         break;
     default:
         break;
