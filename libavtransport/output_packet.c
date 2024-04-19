@@ -69,6 +69,7 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
                 (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO))
                 method = AVT_DATA_COMPRESSION_ZSTD;
             break;
+        case AVT_CODEC_ID_SRT: [[fallthrough]];
         case AVT_CODEC_ID_ASS:
             if (!out->opts.compress ||
                 (out->opts.compress & AVT_SENDER_COMPRESS_SUBS))

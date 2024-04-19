@@ -3368,9 +3368,15 @@ definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
         </tr>
         <tr id="codec_id_map+30">
             <td>''0x41535334''</td>
-            <td>''ASS''</td>
+            <td>''ASS4''</td>
             <td><dfn noexport>CODEC_ID_ASS</dfn></td>
             <td>[[#ass-encapsulation]]</td>
+        </tr>
+        <tr id="codec_id_map+31">
+            <td>''0x53554252''</td>
+            <td>''SUBR''</td>
+            <td><dfn noexport>CODEC_ID_SRT</dfn></td>
+            <td>[[#srt-encapsulation]]</td>
         </tr>
     </table>
 </figure>
@@ -3847,7 +3853,7 @@ The [=packet_data=] must contain raw ProRes packets.
 
 For ASS encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
-MUST be 0x41535334 (''ASS4'').
+MUST be ''0x41535334'' (''ASS4'').
 
 ASS is a popular subtitle format with great presentation capabilities.
 Although it was not designed to be streamed or packetized, doing so is possible
@@ -3874,6 +3880,44 @@ The <code>ReadOrder</code> field is a monotonically incrementing field to identi
 order in which to reconstruct the original ASS file.
 
 Multiple packets with the same [=pts=] are permitted.
+
+
+### SubRip encapsulation ### {#srt-encapsulation}
+
+For SubRip encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x53554252'' (''SUBR'').
+
+SubRip are a simple method of subtitle packaging that
+are de-facto standardized by the following syntax:
+
+<pre>
+1
+00:02:17,440 --> 00:02:20,375
+Senator, we're making
+our final approach into Coruscant.
+
+2
+00:02:20,476 --> 00:02:22,501
+Very good, Lieutenant.
+</pre>
+
+Each line starts with the sequence number (1), a start timestamp (2),
+an ending timestamp (3), the line(s) themselves, separated by newlines (4),
+and finally a blank like to indicate the end of the current line (5).
+
+To encapsulate SubRip subtitles into AVTransport, simply
+use the subtitle body (3) as the [=packet_data=].
+The start time is the packet's [=pts=] field, while the [=duration=]
+field is the difference between the ending timestamp (3) and the
+starting timestamp (2).
+
+SubRip streams require no [[#stream-configuration-packets]] packets.
+
+Note: extensions to SubRip files exist, with adding HTML-like tags
+      to serve as markup. Dealing with them, however, is the users's
+      responsibility. It is recommended to convert such subtitles
+      to [[#ass-encapsulation]].
 
 
 ### DNG/TIFF encapsulation ### {#dng-tiff-encapsulation}
