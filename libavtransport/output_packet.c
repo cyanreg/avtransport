@@ -70,6 +70,7 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
                 method = AVT_DATA_COMPRESSION_ZSTD;
             break;
         case AVT_CODEC_ID_SRT: [[fallthrough]];
+        case AVT_CODEC_ID_WEBVTT: [[fallthrough]];
         case AVT_CODEC_ID_ASS:
             if (!out->opts.compress ||
                 (out->opts.compress & AVT_SENDER_COMPRESS_SUBS))
@@ -83,8 +84,9 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         case AVT_CODEC_ID_TAK: [[fallthrough]];
         case AVT_CODEC_ID_FLAC: [[fallthrough]];
         case AVT_CODEC_ID_RAW_AUDIO:
-            if ((out->opts.compress & AVT_SENDER_COMPRESS_AUDIO) &&
-                (out->opts.compress & AVT_SENDER_COMPRESS_FORCE))
+            if ((out->opts.compress & AVT_SENDER_COMPRESS_FORCE) &&
+                ((!out->opts.compress) ||
+                 (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO)))
                 method = AVT_DATA_COMPRESSION_ZSTD;
             break;
         case AVT_CODEC_ID_THEORA: [[fallthrough]];
@@ -107,8 +109,9 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         case AVT_CODEC_ID_JPEG2000_HT: [[fallthrough]];
         case AVT_CODEC_ID_PNG: [[fallthrough]];
         case AVT_CODEC_ID_RAW_VIDEO:
-            if ((out->opts.compress & AVT_SENDER_COMPRESS_VIDEO) &&
-                (out->opts.compress & AVT_SENDER_COMPRESS_FORCE))
+            if ((out->opts.compress & AVT_SENDER_COMPRESS_FORCE) &&
+                ((!out->opts.compress) ||
+                 (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO)))
                 method = AVT_DATA_COMPRESSION_ZSTD;
             break;
         }

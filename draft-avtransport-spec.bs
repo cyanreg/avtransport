@@ -3378,6 +3378,12 @@ definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
             <td><dfn noexport>CODEC_ID_SRT</dfn></td>
             <td>[[#srt-encapsulation]]</td>
         </tr>
+        <tr id="codec_id_map+32">
+            <td>''0x57565454''</td>
+            <td>''WVTT''</td>
+            <td><dfn noexport>CODEC_ID_WEBVTT</dfn></td>
+            <td>[[#webvtt-encapsulation]]</td>
+        </tr>
     </table>
 </figure>
 
@@ -3914,10 +3920,74 @@ starting timestamp (2).
 
 SubRip streams require no [[#stream-configuration-packets]] packets.
 
-Note: extensions to SubRip files exist, with adding HTML-like tags
+Note: Extensions to SubRip files exist, with adding HTML-like tags
       to serve as markup. Dealing with them, however, is the users's
       responsibility. It is recommended to convert such subtitles
       to [[#ass-encapsulation]].
+
+Note: All kinds of encodings and line endings are used in SubRip files.
+      They must be converted to UTF-8, with ''\n'' line endings.
+
+
+### WebVTT encapsulation ### {#webvtt-encapsulation}
+
+For SubRip encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+MUST be ''0x57565454'' (''WVTT'').
+
+[[WEBVTT]] is a patent-free subtitle codec developed by the
+World Wide Web Consortium (W3C). It is essentially a standardized
+extension of [[#srt-encapsulation|SRT]] subtitles.
+
+Unlike SRT, WebVTT supports styling. This is done via WebVTT
+styling blocks, inserted just before the first subtitle line.
+
+The syling data, starting from and including the ''WEBVTT'' identifier,
+and ending at just before the first subtitle cue, must be put into
+[[#stream-configuration-packets]] packets.
+Any NOTE comments present before the first cue must be included
+alongside, in the way they appear, into the
+[[#stream-configuration-packets]] data.
+
+The [=packet_data=] must contain the following structure:
+
+<figure id="table-WebVTTData" class="table">
+    <table class="complex data longlastcol" dfn-for="#webvtt-encapsulation">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+        <tr id="WebVTT+0">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>cue_components_len</dfn></td>
+            <td></td>
+            <td>Length of the cue components.</td>
+        </tr>
+        <tr id="WebVTT+1">
+            <td><code>[=cue_components_len=]*b(8)</code></td>
+            <td><dfn noexport>cue_comenents</dfn></td>
+            <td></td>
+            <td>A string with all cue components</td>
+        </tr>
+        <tr id="WebVTT+2">
+            <td><code>([=data_length=] - [=cue_components_len=] - 1)*u(8)</code></td>
+            <td><dfn noexport>cue_data</dfn></td>
+            <td></td>
+            <td>The actual line of text to present.</td>
+        </tr>
+    </table>
+</figure>
+
+After the timestamp for each cue (line), WebVTT allows a number
+of cue components to style the line, terminated by a newline.
+As they are not part of the line, they are separated, and provided
+upfront as [=cue_comenents=]. The line ending may be retained for
+the [=cue_components=], allowing for direct copy of the cue data.
+
+The timestamps for each cue are translated into a [=pts=] and
+[=duration=], as with SubRip.
 
 
 ### DNG/TIFF encapsulation ### {#dng-tiff-encapsulation}
