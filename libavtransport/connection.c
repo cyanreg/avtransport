@@ -136,6 +136,23 @@ int avt_connection_send(AVTConnection *conn,
     return 0;
 }
 
+static int send_session_start_pkt(AVTConnection *conn)
+{
+    union AVTPacketData pkt = AVT_SESSION_START_HDR(
+        .session_uuid = { },
+        .session_flags = 0x0,
+        .producer_major = PROJECT_VERSION_MAJOR,
+        .producer_minor = PROJECT_VERSION_MINOR,
+        .producer_micro = PROJECT_VERSION_MICRO,
+    );
+
+    memccpy(pkt.session_start.producer_name, PROJECT_NAME,
+            '\0', sizeof(pkt.session_start.producer_name));
+
+    //    return avt_connection_send(conn, p, NULL);
+    return 0;
+}
+
 int avt_connection_process(AVTConnection *conn, int64_t timeout)
 {
     int err;

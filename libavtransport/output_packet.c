@@ -35,46 +35,25 @@
 #include <brotli/encode.h>
 #endif
 
-static inline int send_pkt(AVTOutput *out,
-                           union AVTPacketData pkt, AVTBuffer *pl)
+static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors desc,
+                                                      AVTStream *st,
+                                                      AVTOutputOptions *opts)
 {
-    int ret = 0;
-
-    for (int i = 0; i < out->nb_conn; i++) {
-        int err = avt_connection_send(out->conn[i], pkt, pl);
-        if (err < 0)
-            ret = err;
-    }
-
-    return ret;
-}
-
-static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
-                                  AVTBuffer *in, enum AVTPktDescriptors desc,
-                                  enum AVTDataCompression *data_compression)
-{
-    int err = 0;
-    AVTBuffer *target;
-
-    /* TODO: clip to supported levels */
-    [[maybe_unused]] int lvl = out->opts.compress_level;
-
-    enum AVTDataCompression method = AVT_DATA_COMPRESSION_NONE;
     switch (desc) {
     case AVT_PKT_STREAM_DATA:
         switch (st->codec_id) {
         case AVT_CODEC_ID_SVG: [[fallthrough]];
         case AVT_CODEC_ID_TIFF:
-            if (!out->opts.compress ||
-                (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO))
-                method = AVT_DATA_COMPRESSION_ZSTD;
+            if (!opts->compress ||
+                (opts->compress & AVT_SENDER_COMPRESS_VIDEO))
+                return AVT_DATA_COMPRESSION_ZSTD;
             break;
         case AVT_CODEC_ID_SRT: [[fallthrough]];
         case AVT_CODEC_ID_WEBVTT: [[fallthrough]];
         case AVT_CODEC_ID_ASS:
-            if (!out->opts.compress ||
-                (out->opts.compress & AVT_SENDER_COMPRESS_SUBS))
-                method = AVT_DATA_COMPRESSION_BROTLI;
+            if (!opts->compress ||
+                (opts->compress & AVT_SENDER_COMPRESS_SUBS))
+                return AVT_DATA_COMPRESSION_BROTLI;
             break;
         case AVT_CODEC_ID_OPUS: [[fallthrough]];
         case AVT_CODEC_ID_AAC: [[fallthrough]];
@@ -84,10 +63,10 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         case AVT_CODEC_ID_TAK: [[fallthrough]];
         case AVT_CODEC_ID_FLAC: [[fallthrough]];
         case AVT_CODEC_ID_RAW_AUDIO:
-            if ((out->opts.compress & AVT_SENDER_COMPRESS_FORCE) &&
-                ((!out->opts.compress) ||
-                 (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO)))
-                method = AVT_DATA_COMPRESSION_ZSTD;
+            if ((opts->compress & AVT_SENDER_COMPRESS_FORCE) &&
+                ((!opts->compress) ||
+                 (opts->compress & AVT_SENDER_COMPRESS_AUDIO)))
+                return AVT_DATA_COMPRESSION_ZSTD;
             break;
         case AVT_CODEC_ID_THEORA: [[fallthrough]];
         case AVT_CODEC_ID_VP9: [[fallthrough]];
@@ -109,36 +88,50 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         case AVT_CODEC_ID_JPEG2000_HT: [[fallthrough]];
         case AVT_CODEC_ID_PNG: [[fallthrough]];
         case AVT_CODEC_ID_RAW_VIDEO:
-            if ((out->opts.compress & AVT_SENDER_COMPRESS_FORCE) &&
-                ((!out->opts.compress) ||
-                 (out->opts.compress & AVT_SENDER_COMPRESS_VIDEO)))
-                method = AVT_DATA_COMPRESSION_ZSTD;
+            if ((opts->compress & AVT_SENDER_COMPRESS_FORCE) &&
+                ((!opts->compress) ||
+                 (opts->compress & AVT_SENDER_COMPRESS_VIDEO)))
+                return AVT_DATA_COMPRESSION_ZSTD;
             break;
         }
         break;
     case AVT_PKT_FONT_DATA:
         /* TODO: check if Woff2 and disable it, unless COMPRESS_FORCE */
-        if (!out->opts.compress || out->opts.compress & AVT_SENDER_COMPRESS_AUX)
-            method = AVT_DATA_COMPRESSION_ZSTD;
+        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_AUX)
+            return AVT_DATA_COMPRESSION_ZSTD;
         break;
     case AVT_PKT_LUT_ICC:
-        if (!out->opts.compress || out->opts.compress & AVT_SENDER_COMPRESS_AUX)
-            method = AVT_DATA_COMPRESSION_ZSTD;
+        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_AUX)
+            return AVT_DATA_COMPRESSION_ZSTD;
         break;
     case AVT_PKT_METADATA:
-        if (!out->opts.compress || out->opts.compress & AVT_SENDER_COMPRESS_META)
-            method = AVT_DATA_COMPRESSION_BROTLI;
+        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_META)
+            return AVT_DATA_COMPRESSION_BROTLI;
         break;
     default:
         break;
     };
+    return AVT_DATA_COMPRESSION_NONE;
+}
 
-    [[maybe_unused]] uint8_t *src;
-    [[maybe_unused]] size_t src_len;
+static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
+                           AVTBuffer *in, enum AVTPktDescriptors desc,
+                           enum AVTDataCompression *data_compression)
+{
+    int err = 0;
+    AVTBuffer *target;
+
+    /* TODO: clip to supported levels */
+    [[maybe_unused]] int lvl = out->opts.compress_level;
+    enum AVTDataCompression method = compress_method(desc, st, &out->opts);
+
+    uint8_t *src;
+    size_t src_len;
     [[maybe_unused]] uint8_t *dst;
     [[maybe_unused]] size_t dst_len;
     [[maybe_unused]] size_t dst_size;
 
+    /* Reset here just in case it OOMs */
     if (out->opts.hash) {
         XXH_errorcode ret = XXH3_128bits_reset(out->xxh_state);
         if (ret != XXH_OK)
@@ -148,11 +141,7 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     /* If a compression method is missing, fall back or just disable it */
 #ifndef CONFIG_HAVE_LIBBROTLIENC
     if (method == AVT_DATA_COMPRESSION_BROTLI)
-#ifdef CONFIG_HAVE_LIBZSTD
         method = AVT_DATA_COMPRESSION_ZSTD;
-#else
-        method = AVT_DATA_COMPRESSION_NONE;
-#endif
 #endif
 
 #ifndef CONFIG_HAVE_LIBZSTD
@@ -253,23 +242,18 @@ static inline int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     return err;
 }
 
-int avt_send_session_start(AVTOutput *out)
+static inline int send_pkt(AVTOutput *out,
+                           union AVTPacketData pkt, AVTBuffer *pl)
 {
-    union AVTPacketData pkt = AVT_SESSION_START_HDR(
-        .session_uuid = { 0 },
-        .session_seq = 0x0,
+    int ret = 0;
 
-        .session_flags = 0x0,
-        .producer_major = PROJECT_VERSION_MAJOR,
-        .producer_minor = PROJECT_VERSION_MINOR,
-        .producer_micro = PROJECT_VERSION_MICRO,
-        .producer_name = { 0 },
-    );
+    for (int i = 0; i < out->nb_conn; i++) {
+        int err = avt_connection_send(out->conn[i], pkt, pl);
+        if (err < 0)
+            ret = err;
+    }
 
-    memccpy(pkt.session_start.producer_name, PROJECT_NAME,
-            '\0', sizeof(pkt.session_start.producer_name));
-
-    return send_pkt(out, pkt, nullptr);
+    return ret;
 }
 
 int avt_send_time_sync(AVTOutput *out)
@@ -277,7 +261,7 @@ int avt_send_time_sync(AVTOutput *out)
     union AVTPacketData pkt = AVT_TIME_SYNC_HDR(
         .ts_clock_id = 0,
         .ts_clock_hz2 = 0,
-        .epoch = atomic_load(&out->epoch),
+        .epoch = out->epoch,
         .ts_clock_seq = 0,
         .ts_clock_hz = 0,
     );

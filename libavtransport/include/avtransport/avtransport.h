@@ -51,7 +51,7 @@ typedef struct AVTContextOptions {
     void (*log_cb)(void *log_opaque, enum AVTLogLevel level,
                    const char *format, va_list args, int error);
 
-    char producer_name[13];   /* Name of the project linking to libavtransport */
+    char producer_name[16];   /* Name of the project linking to libavtransport */
     uint16_t producer_ver[3]; /* Major, minor, micro version */
 } AVTContextOptions;
 

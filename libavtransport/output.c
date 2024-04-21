@@ -104,14 +104,9 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
     /* Register connection for output */
     out->conn[out->nb_conn++] = conn;
 
-    /* Immediately emit a session start packet */
-    err = avt_send_session_start(out);
+    // TODO: query connection status
 
-    /* If unsuccessful, revert all changes */
-    if (err < 0)
-        out->nb_conn--;
-
-    return err;
+    return 0;
 }
 
 AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)

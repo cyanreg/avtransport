@@ -34,8 +34,12 @@
 
 #include "config.h"
 
+#ifdef CONFIG_HAVE_LIBXXH
+#include <xxhash.h>
+#else
 #define XXH_INLINE_ALL
 #include "extern/xxhash.h"
+#endif
 
 #ifdef CONFIG_HAVE_LIBZSTD
 #include <zstd.h>

@@ -118,10 +118,11 @@ endif
 #============================================================================
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
+xxh_dep = dependency('libxxhash', required: false)
 cbor_dep = dependency('libcbor', required: false)
 openssl_dep = dependency('openssl', required: false, version : '3.3.0')
-brotlienc_dep = dependency('', required:false)
-brotlidec_dep = dependency('', required:false)
+brotlienc_dep = dependency('', required: false)
+brotlidec_dep = dependency('', required: false)
 
 if get_option('output').auto()
     brotlienc_dep = dependency('libbrotlienc', required: false)
@@ -179,6 +180,7 @@ conf.set('CONFIG_HAVE_LIBBROTLIDEC', brotlidec_dep.found())
 conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
 conf.set('CONFIG_HAVE_LIBZSTD', zstd_dep.found())
 conf.set('CONFIG_HAVE_OPENSSL', openssl_dep.found())
+conf.set('CONFIG_HAVE_LIBXXH', xxh_dep.found())
 
 if get_option('assert') > -1
     conf.set('CONFIG_ASSERT_LEVEL', get_option('assert'))

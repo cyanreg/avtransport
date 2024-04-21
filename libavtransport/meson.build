@@ -117,6 +117,7 @@ configure_file(
 
 # Deps
 avtransport_deps_list = [
+    xxh_dep,
     cbor_dep,
     openssl_dep,
     uring_dep,
@@ -161,6 +162,7 @@ pkg.generate(
 summary({
     'output': get_option('output').auto(),
     'input': get_option('input').auto(),
+    'xxhash': xxh_dep.found(),
     'cbor': cbor_dep.found(),
     'openssl': openssl_dep.found(),
     'uring': uring_dep.found(),

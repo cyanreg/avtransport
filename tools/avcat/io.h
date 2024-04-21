@@ -24,51 +24,41 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <linux/io_uring.h>
+#ifndef AVCAT_UTILS_H
+#define AVCAT_UTILS_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
+#include "config.h"
 
-#include "output.h"
+#include <avtransport/avtransport.h>
 
-struct PQOutputContext {
-    int fd;
+#ifdef HAVE_FFMPEG
+#include <libavformat/avformat.h>
+#endif
+
+enum IOMode {
+    IO_RAW,
+    IO_AVT,
+    IO_LAVF,
 };
 
-static int sock_init(AVTContext *ctx, PQOutputContext **pc,
-                     AVTConnection *dst, AVTOutputOptions *opts)
-{
-    PQOutputContext *priv = malloc(sizeof(*priv));
-    if (!priv)
-        return AVT_ERROR(ENOMEM);
+typedef struct IOContext {
+    enum IOMode mode;
+    int64_t val;
 
+    enum AVTConnectionType type;
+    AVTConnection *conn;
+    AVTStream *st;
+    AVTOutput *out;
 
-    *pc = priv;
+#ifdef HAVE_FFMPEG
+    AVFormatContext *avf;
+#endif
 
-    return 0;
-}
+    // TODO: replace with AVTIO
+    FILE *raw;
+} IOContext;
 
-static int sock_output(AVTContext *ctx, PQOutputContext *pc,
-                       uint8_t *hdr, size_t hdr_len, AVTBuffer *buf)
-{
-    size_t len;
-    void *data = avt_buffer_get_data(buf, &len);
+int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out);
+int io_close(IOContext *io, int is_out);
 
-    return 0;
-}
-
-static int sock_close(AVTContext *ctx, PQOutputContext **pc)
-{
-
-    return 0;
-}
-
-const PQOutput pq_output_socket = {
-    .name = "file",
-    .type = AVT_CONNECTION_SOCKET,
-    .init = sock_init,
-    .output = sock_output,
-    .close = sock_close,
-};
+#endif /* AVCAT_UTILS_H */
