@@ -82,6 +82,8 @@ static inline int alloc_output_context(AVTOutput **_out, AVTOutputOptions *opts)
     }
 #endif
 
+    *_out = out;
+
     return 0;
 }
 
@@ -89,7 +91,7 @@ int avt_output_open(AVTContext *ctx, AVTOutput **_out,
                     AVTConnection *conn, AVTOutputOptions *opts)
 {
     int err;
-    AVTOutput *out;
+    AVTOutput *out = NULL;
 
     /* Allocate state, if not already existing */
     if (!(*_out)) {
@@ -155,9 +157,9 @@ int avt_output_stream_close(AVTStream **_st)
     return 0;
 }
 
-int avt_output_stream_update(AVTOutput *out, AVTStream *st)
+int avt_output_stream_update(AVTStream *st)
 {
-    return avt_send_stream_register(out, st);
+    return avt_send_stream_register(st->priv->out, st);
 }
 
 int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)

@@ -157,6 +157,9 @@ typedef struct AVTConnectionInfo {
             enum AVTProtocolType protocol;
             /* Behaviour of the protocol */
             enum AVTProtocolMode mode;
+            /* Certificate/key file path for QUIC */
+            const char *cert;
+            const char *key;
         } socket;
 
         /* AVT_CONNECTION_DATA: the following structure */
@@ -241,6 +244,14 @@ typedef struct AVTConnectionInfo {
          * may improve latency, at the risk of stream bitrate starvation.
          */
         int64_t bandwidth;
+
+        /* Frequency for session start packets, required to identify a stream
+         * as AVTransport. Minimum value. libavtransport may add additional.
+         *  - 0: Default. For the stream with the longest keyframe period,
+         *       send one on each keyframe.
+         *  - N: In addition, send one every N packets (segmentation is ignored).
+         */
+        unsigned int session_start_freq;
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.

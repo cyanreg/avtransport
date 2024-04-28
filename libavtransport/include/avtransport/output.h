@@ -67,8 +67,6 @@ typedef struct AVTOutputOptions {
     bool hash;
 } AVTOutputOptions;
 
-/* All functions listed here are thread-safe. */
-
 /* Open an output and immediately send/write a stream session packet.
  *
  * NOTE: Multiple connections may be bound for output to enable
@@ -88,7 +86,7 @@ AVT_API AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id);
 
 /* Update a stream, (re-)emmitting a stream registration packet.
  * The id MUST match the one from avt_output_add_stream(). */
-AVT_API int avt_output_stream_update(AVTOutput *out, AVTStream *st);
+AVT_API int avt_output_stream_update(AVTStream *st);
 
 /* Attach a font to a stream. The font data must be fully in the AVTBuffer.
  * The filename is sent alongside as metadata. */
@@ -117,10 +115,11 @@ AVT_API int avt_output_stream_data_streaming(AVTStream *st,
                                              AVTPacket *pkt,
                                              AVTBuffer *buf, size_t offset);
 
-/* Write user data packets. The immediate flag can be used to skip
- * any potential queueing. */
+/* Write user data packets.
+ * The immediate flag can be used to skip any potential queueing. */
 AVT_API int avt_output_user_data(AVTOutput *out, AVTBuffer *data,
-                                 uint64_t opaque, int immediate);
+                                 uint16_t user, uint64_t opaque,
+                                 bool immediate);
 
 /* Immediately refresh all stream configuration data */
 AVT_API int avt_output_refresh(AVTOutput *out);
