@@ -31,8 +31,7 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
-    AVTPktd   start;
-    AVTBuffer pl;
+    AVTPktd  *p;
 
     uint32_t  seg_offset;
     uint32_t  pl_left;
@@ -95,8 +94,7 @@ typedef struct AVTScheduler {
 int avt_scheduler_init(AVTScheduler *s,
                        size_t max_pkt_size, int64_t bandwidth);
 
-int avt_scheduler_push(AVTScheduler *s,
-                       union AVTPacketData pkt, AVTBuffer *pl);
+int avt_scheduler_push(AVTScheduler *s, AVTPktd *p);
 
 int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq);
 

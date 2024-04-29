@@ -76,14 +76,19 @@ typedef struct AVTPacketFifo {
 } AVTPacketFifo;
 
 /* Push a packet to the FIFO */
-int avt_pkt_fifo_push(AVTPacketFifo *fifo,
-                      union AVTPacketData pkt, AVTBuffer *pl);
+int avt_pkt_fifo_push_d(AVTPacketFifo *fifo, AVTPktd *p);
+int avt_pkt_fifo_push_p(AVTPacketFifo *fifo,
+                        union AVTPacketData pkt, AVTBuffer *pl);
+#define avt_pkt_fifo_push(f, x, ...)                   \
+    _Generic((x),                                      \
+             AVTPktd *: avt_pkt_fifo_push_d,           \
+             union AVTPacketData: avt_pkt_fifo_push_p  \
+    ) (f, x __VA_OPT__(,) __VA_ARGS__)
 
 /* Push a referenced packet to the FIFO (skips a quick ref, takes ownership) */
 int avt_pkt_fifo_push_refd_d(AVTPacketFifo *fifo, AVTPktd *p);
 int avt_pkt_fifo_push_refd_p(AVTPacketFifo *fifo,
                              union AVTPacketData pkt, AVTBuffer *pl);
-
 #define avt_pkt_fifo_push_refd(f, x, ...)                   \
     _Generic((x),                                           \
              AVTPktd *: avt_pkt_fifo_push_refd_d,           \

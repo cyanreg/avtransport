@@ -155,7 +155,7 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
 
     switch (method) {
     case AVT_DATA_COMPRESSION_NONE:
-        target = in;
+        avt_buffer_quick_ref(&p->pl, in, 0, AVT_BUFFER_REF_ALL);
         break;
     case AVT_DATA_COMPRESSION_ZSTD:
 #ifdef CONFIG_HAVE_LIBZSTD
@@ -242,13 +242,12 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     return err;
 }
 
-static inline int send_pkt(AVTOutput *out,
-                           union AVTPacketData pkt, AVTBuffer *pl)
+static inline int send_pkt(AVTOutput *out, AVTPktd *p)
 {
     int ret = 0;
 
     for (int i = 0; i < out->nb_conn; i++) {
-        int err = avt_connection_send(out->conn[i], pkt, pl);
+        int err = avt_connection_send(out->conn[i], p);
         if (err < 0)
             ret = err;
     }
@@ -258,34 +257,38 @@ static inline int send_pkt(AVTOutput *out,
 
 int avt_send_time_sync(AVTOutput *out)
 {
-    union AVTPacketData pkt = AVT_TIME_SYNC_HDR(
-        .ts_clock_id = 0,
-        .ts_clock_hz2 = 0,
-        .epoch = out->epoch,
-        .ts_clock_seq = 0,
-        .ts_clock_hz = 0,
-    );
+    AVTPktd p = {
+        .pkt = AVT_TIME_SYNC_HDR(
+            .ts_clock_id = 0,
+            .ts_clock_hz2 = 0,
+            .epoch = out->epoch,
+            .ts_clock_seq = 0,
+            .ts_clock_hz = 0,
+        ),
+    };
 
-    return send_pkt(out, pkt, nullptr);
+    return send_pkt(out, &p);
 }
 
 int avt_send_stream_register(AVTOutput *out, AVTStream *st)
 {
-    union AVTPacketData pkt = AVT_STREAM_REGISTRATION_HDR(
-        .stream_id = st->id,
-        .related_stream_id = st->related_to ? st->related_to->id : UINT16_MAX,
-        .derived_stream_id = st->derived_from ? st->derived_from->id : UINT16_MAX,
-        .bandwidth = st->bitrate,
-        .stream_flags = st->flags,
+    AVTPktd p = {
+        .pkt = AVT_STREAM_REGISTRATION_HDR(
+            .stream_id = st->id,
+            .related_stream_id = st->related_to ? st->related_to->id : UINT16_MAX,
+            .derived_stream_id = st->derived_from ? st->derived_from->id : UINT16_MAX,
+            .bandwidth = st->bitrate,
+            .stream_flags = st->flags,
 
-        .codec_id = st->codec_id,
-        .timebase = st->timebase,
-        .ts_clock_id = 0,
-        .skip_preroll = 0,
-        .init_packets = 0,
-    );
+            .codec_id = st->codec_id,
+            .timebase = st->timebase,
+            .ts_clock_id = 0,
+            .skip_preroll = 0,
+            .init_packets = 0,
+        ),
+    };
 
-    return send_pkt(out, pkt, nullptr);
+    return send_pkt(out, &p);
 }
 
 int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
@@ -300,17 +303,19 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
     if (err < 0)
         return err;
 
-    union AVTPacketData hdr = AVT_STREAM_DATA_HDR(
-        .frame_type = pkt->type,
-        .pkt_in_fec_group = 0,
-        .field_id = 0,
-        .pkt_compression = data_compression,
-        .stream_id = st->id,
-        .pts = pkt->pts,
-        .duration = pkt->duration,
-    );
+    AVTPktd p = {
+        .pkt = AVT_STREAM_DATA_HDR(
+            .frame_type = pkt->type,
+            .pkt_in_fec_group = 0,
+            .field_id = 0,
+            .pkt_compression = data_compression,
+            .stream_id = st->id,
+            .pts = pkt->pts,
+            .duration = pkt->duration,
+        ),
+    };
 
-    return send_pkt(out, hdr, pl);
+    return send_pkt(out, &p);
 }
 
 #if 0

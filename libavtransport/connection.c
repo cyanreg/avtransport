@@ -124,12 +124,11 @@ fail:
     return ret;
 }
 
-int avt_connection_send(AVTConnection *conn,
-                        union AVTPacketData pkt, AVTBuffer *pl)
+int avt_connection_send(AVTConnection *conn, AVTPktd *p)
 {
     int err;
 
-    err = avt_scheduler_push(&conn->out_scheduler, pkt, pl);
+    err = avt_scheduler_push(&conn->out_scheduler, p);
     if (err < 0)
         return err;
 

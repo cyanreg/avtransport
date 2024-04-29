@@ -143,7 +143,7 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
             io->st = avt_output_stream_add(io->out, 0);
             io->st->timebase = (AVTRational) { 1, 1000 * 1000 * 1000 };
 
-            avt_output_stream_update(io->out, io->st);
+            avt_output_stream_update(io->st);
         } else {
 
         }

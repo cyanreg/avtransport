@@ -27,15 +27,12 @@
 #ifndef AVTRANSPORT_CONNECTION_INTERNAL_H
 #define AVTRANSPORT_CONNECTION_INTERNAL_H
 
-#include "common.h"
-#include "reorder.h"
-#include "address.h"
-
-#include <avtransport/packet_enums.h>
+#include <avtransport/connection.h>
+#include <avtransport/output.h>
+#include "packet_common.h"
 
 int avt_connection_register_out(AVTConnection *conn, AVTOutput *out);
 
-int avt_connection_send(AVTConnection *conn,
-                        union AVTPacketData pkt, AVTBuffer *pl);
+int avt_connection_send(AVTConnection *conn, AVTPktd *p);
 
 #endif /* AVTRANSPORT_CONNECTION_INTERNAL_H */

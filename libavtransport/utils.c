@@ -95,8 +95,19 @@ AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
     return data;
 }
 
-int avt_pkt_fifo_push(AVTPacketFifo *fifo,
-                      union AVTPacketData pkt, AVTBuffer *pl)
+int avt_pkt_fifo_push_d(AVTPacketFifo *fifo, AVTPktd *p)
+{
+    AVTPktd *pdst = avt_pkt_fifo_push_new(fifo, &p->pl, 0, AVT_BUFFER_REF_ALL);
+    if (!pdst)
+        return AVT_ERROR(ENOMEM);
+    AVTBuffer tmp = pdst->pl;
+    memcpy(pdst, p, sizeof(*p));
+    pdst->pl = tmp;
+    return 0;
+}
+
+int avt_pkt_fifo_push_p(AVTPacketFifo *fifo,
+                        union AVTPacketData pkt, AVTBuffer *pl)
 {
     AVTPktd *p = avt_pkt_fifo_push_new(fifo, pl, 0, AVT_BUFFER_REF_ALL);
     if (!p)
