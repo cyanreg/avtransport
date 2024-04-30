@@ -30,29 +30,24 @@
 
 #include "config.h"
 #include "packet_common.h"
+#include "utils_packet.h"
 
 #ifdef CONFIG_HAVE_LIBBROTLIENC
 #include <brotli/encode.h>
 #endif
 
-static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors desc,
+static inline enum AVTDataCompression compress_method(AVTPktd *p,
                                                       AVTStream *st,
                                                       AVTSenderOptions *opts)
 {
-    switch (desc) {
+    switch (p->pkt.desc) {
     case AVT_PKT_STREAM_DATA:
         switch (st->codec_id) {
-        case AVT_CODEC_ID_SVG: [[fallthrough]];
-        case AVT_CODEC_ID_TIFF:
-            if (!opts->compress ||
-                (opts->compress & AVT_SENDER_COMPRESS_VIDEO))
-                return AVT_DATA_COMPRESSION_ZSTD;
-            break;
         case AVT_CODEC_ID_SRT: [[fallthrough]];
         case AVT_CODEC_ID_WEBVTT: [[fallthrough]];
         case AVT_CODEC_ID_ASS:
-            if (!opts->compress ||
-                (opts->compress & AVT_SENDER_COMPRESS_SUBS))
+            if (opts->compress & (AVT_SENDER_COMPRESS_FORCE |
+                                  AVT_SENDER_COMPRESS_SUBS))
                 return AVT_DATA_COMPRESSION_BROTLI;
             break;
         case AVT_CODEC_ID_OPUS: [[fallthrough]];
@@ -63,9 +58,18 @@ static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors des
         case AVT_CODEC_ID_TAK: [[fallthrough]];
         case AVT_CODEC_ID_FLAC: [[fallthrough]];
         case AVT_CODEC_ID_RAW_AUDIO:
-            if ((opts->compress & AVT_SENDER_COMPRESS_FORCE) &&
-                ((!opts->compress) ||
-                 (opts->compress & AVT_SENDER_COMPRESS_AUDIO)))
+            if (opts->compress & (AVT_SENDER_COMPRESS_FORCE |
+                                  AVT_SENDER_COMPRESS_AUDIO))
+                return AVT_DATA_COMPRESSION_ZSTD;
+            break;
+        case AVT_CODEC_ID_SVG:
+            /* Special exception for SVG, which is usually just text */
+            if (opts->compress & AVT_SENDER_COMPRESS_VIDEO)
+                return AVT_DATA_COMPRESSION_BROTLI;
+            break;
+        case AVT_CODEC_ID_TIFF:
+            /* TODO: perhaps parse the TIFF header for JPEG */
+            if (opts->compress & AVT_SENDER_COMPRESS_VIDEO)
                 return AVT_DATA_COMPRESSION_ZSTD;
             break;
         case AVT_CODEC_ID_THEORA: [[fallthrough]];
@@ -88,24 +92,31 @@ static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors des
         case AVT_CODEC_ID_JPEG2000_HT: [[fallthrough]];
         case AVT_CODEC_ID_PNG: [[fallthrough]];
         case AVT_CODEC_ID_RAW_VIDEO:
-            if ((opts->compress & AVT_SENDER_COMPRESS_FORCE) &&
-                ((!opts->compress) ||
-                 (opts->compress & AVT_SENDER_COMPRESS_VIDEO)))
+            if (opts->compress & (AVT_SENDER_COMPRESS_FORCE |
+                                  AVT_SENDER_COMPRESS_VIDEO))
                 return AVT_DATA_COMPRESSION_ZSTD;
+            break;
+        default:
             break;
         }
         break;
     case AVT_PKT_FONT_DATA:
-        /* TODO: check if Woff2 and disable it, unless COMPRESS_FORCE */
-        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_AUX)
+        /* If WOFF2, compress only if forced to */
+        if ((p->pkt.font_data.font_type == AVT_FONT_TYPE_WOFF2) &&
+            (opts->compress & (AVT_SENDER_COMPRESS_FORCE |
+                               AVT_SENDER_COMPRESS_AUX)))
+            return AVT_DATA_COMPRESSION_ZSTD;
+        else if (opts->compress & AVT_SENDER_COMPRESS_AUX)
             return AVT_DATA_COMPRESSION_ZSTD;
         break;
+    /* Permit user data to be compressed as well */
+    case AVT_PKT_USER_DATA: [[fallthrough]];
     case AVT_PKT_LUT_ICC:
-        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_AUX)
+        if (opts->compress & AVT_SENDER_COMPRESS_AUX)
             return AVT_DATA_COMPRESSION_ZSTD;
         break;
     case AVT_PKT_METADATA:
-        if (!opts->compress || opts->compress & AVT_SENDER_COMPRESS_META)
+        if (opts->compress & AVT_SENDER_COMPRESS_META)
             return AVT_DATA_COMPRESSION_BROTLI;
         break;
     default:
@@ -114,19 +125,21 @@ static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors des
     return AVT_DATA_COMPRESSION_NONE;
 }
 
-static int payload_process(AVTSender *s, AVTPktd *p, AVTStream *st,
-                           AVTBuffer *in, enum AVTPktDescriptors desc,
-                           enum AVTDataCompression *data_compression)
+static int payload_process(AVTSender *s, AVTStream *st,
+                           AVTPktd *p, AVTBuffer *pl)
 {
     int err = 0;
-    AVTBuffer *target;
+    AVTBuffer *zbuf = NULL;
+
+    size_t src_len;
+    uint8_t *src = avt_buffer_get_data(pl, &src_len);
+    if (!src_len)
+        return 0;
 
     /* TODO: clip to supported levels */
     [[maybe_unused]] int lvl = s->opts.compress_level;
-    enum AVTDataCompression method = compress_method(desc, st, &s->opts);
+    enum AVTDataCompression method = compress_method(p, st, &s->opts);
 
-    uint8_t *src;
-    size_t src_len;
     [[maybe_unused]] uint8_t *dst;
     [[maybe_unused]] size_t dst_len;
     [[maybe_unused]] size_t dst_size;
@@ -155,12 +168,10 @@ static int payload_process(AVTSender *s, AVTPktd *p, AVTStream *st,
 
     switch (method) {
     case AVT_DATA_COMPRESSION_NONE:
-        avt_buffer_quick_ref(&p->pl, in, 0, AVT_BUFFER_REF_ALL);
+        avt_buffer_quick_ref(&p->pl, pl, 0, AVT_BUFFER_REF_ALL);
         break;
-    case AVT_DATA_COMPRESSION_ZSTD:
 #ifdef CONFIG_HAVE_LIBZSTD
-        src = avt_buffer_get_data(in, &src_len);
-
+    case AVT_DATA_COMPRESSION_ZSTD:
         dst_size = ZSTD_compressBound(src_len);
 
         /* TODO: use a buffer pool */
@@ -176,21 +187,21 @@ static int payload_process(AVTSender *s, AVTPktd *p, AVTStream *st,
             break;
         }
 
-        target = avt_buffer_create(dst, dst_len, NULL, avt_buffer_default_free);
-        if (!target) {
+        zbuf = avt_buffer_create(dst, dst_len, NULL, avt_buffer_default_free);
+        if (!zbuf) {
             free(dst);
             err = AVT_ERROR(ENOMEM);
             break;
         }
-#else
-        avt_log(s, AVT_LOG_ERROR, "ZSTD compression not enabled during build!\n");
-        err = AVT_ERROR(EINVAL);
-#endif
-        break;
-    case AVT_DATA_COMPRESSION_BROTLI:
-#ifdef CONFIG_HAVE_LIBBROTLIENC
-        src = avt_buffer_get_data(in, &src_len);
 
+        avt_buffer_quick_ref(&p->pl, zbuf, 0, AVT_BUFFER_REF_ALL);
+
+        // TODO: removeme when there's pooling
+        avt_buffer_unref(&zbuf);
+        break;
+#endif
+#ifdef CONFIG_HAVE_LIBBROTLIENC
+    case AVT_DATA_COMPRESSION_BROTLI:
         dst_size = BrotliEncoderMaxCompressedSize(src_len);
 
         /* TODO: use a buffer pool */
@@ -209,35 +220,35 @@ static int payload_process(AVTSender *s, AVTPktd *p, AVTStream *st,
             break;
         }
 
-        target = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
-        if (!target) {
+        zbuf = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
+        if (!zbuf) {
             free(dst);
             err = AVT_ERROR(ENOMEM);
             break;
         }
-#else
-        avt_log(s, AVT_LOG_ERROR, "Brotli compression not enabled during build!\n");
-        err = AVT_ERROR(EINVAL);
-#endif
+
+        avt_buffer_quick_ref(&p->pl, zbuf, 0, AVT_BUFFER_REF_ALL);
+
+        // TODO: removeme when there's pooling
+        avt_buffer_unref(&zbuf);
         break;
+#endif
     default:
         avt_log(s, AVT_LOG_ERROR, "Unknown compression method: %i\n", method);
         return AVT_ERROR(EINVAL);
     };
 
-    if (err >= 0)
-        *data_compression = method;
+    /* Set compression method */
+    avt_packet_set_compression(p, method);
 
     /* Generate has for the payload if enabled */
     if (s->opts.hash) {
-        src = avt_buffer_get_data(target, &src_len);
+        src = avt_buffer_get_data(&p->pl, &src_len);
         XXH3_128bits_update(s->xxh_state, src, src_len);
         XXH128_hash_t hash = XXH3_128bits_digest(s->xxh_state);
         XXH128_canonicalFromHash((XXH128_canonical_t *)&p->pl_hash, hash);
         p->pl_has_hash = true;
     }
-
-    // TODO: get target refd into pktd
 
     return err;
 }
@@ -251,6 +262,8 @@ static inline int send_pkt(AVTSender *s, AVTPktd *p)
         if (err < 0)
             ret = err;
     }
+
+    avt_buffer_quick_unref(&p->pl);
 
     return ret;
 }
@@ -293,27 +306,46 @@ int avt_send_pkt_stream_register(AVTSender *s, AVTStream *st)
 
 int avt_send_pkt_stream_data(AVTSender *s, AVTStream *st, AVTPacket *pkt)
 {
-    /* Compress payload if necessary */
-    AVTBuffer *pl = pkt->data;
-    AVTPktd tmp;
-
-    enum AVTDataCompression data_compression;
-    int err = payload_process(s, &tmp, st, pl, AVT_PKT_STREAM_DATA,
-                              &data_compression);
-    if (err < 0)
-        return err;
-
     AVTPktd p = {
         .pkt = AVT_STREAM_DATA_HDR(
             .frame_type = pkt->type,
             .pkt_in_fec_group = 0,
             .field_id = 0,
-            .pkt_compression = data_compression,
+            .pkt_compression = AVT_DATA_COMPRESSION_NONE,
             .stream_id = st->id,
             .pts = pkt->pts,
             .duration = pkt->duration,
         ),
+        .pl = *pkt->data,
     };
+
+    int err = payload_process(s, st, &p, pkt->data);
+    if (err < 0)
+        return err;
+
+    return send_pkt(s, &p);
+}
+
+int avt_send_pkt_video_info(AVTSender *s, AVTStream *st)
+{
+    AVTPktd p = {
+        .pkt.video_info = st->video_info,
+    };
+
+    p.pkt.video_info.video_info_descriptor = AVT_PKT_VIDEO_INFO;
+    p.pkt.video_info.stream_id = st->id;
+
+    return send_pkt(s, &p);
+}
+
+int avt_send_pkt_video_orientation(AVTSender *s, AVTStream *st)
+{
+    AVTPktd p = {
+        .pkt.video_orientation = st->video_orientation,
+    };
+
+    p.pkt.video_orientation.video_orientation_descriptor = AVT_PKT_VIDEO_ORIENTATION;
+    p.pkt.video_orientation.stream_id = st->id;
 
     return send_pkt(s, &p);
 }
@@ -366,37 +398,5 @@ int avt_send_pkt_icc_data(AVTSender *s,
     avt_encode_lut_icc(&bs, &pkt);
 
     SEGMENT(st->icc_data, AVT_PKT_STREAM_DATA_SEGMENT)
-}
-
-int avt_send_pkt_video_info(AVTSender *s,
-                        AVTStream *st, int64_t pts)
-{
-    uint8_t hdr[AVT_MAX_HEADER_LEN];
-    AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
-
-    AVTVideoInfo pkt = st->video_info;
-    pkt.global_seq = atomic_fetch_add(&s->seq, 1ULL) & UINT32_MAX;
-    pkt.stream_id = st->id;
-    pkt.pts = pts;
-
-    avt_encode_video_info(&bs, &pkt);
-
-    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
-}
-
-int avt_send_pkt_video_orientation(AVTSender *s,
-                               AVTStream *st, int64_t pts)
-{
-    uint8_t hdr[AVT_MAX_HEADER_LEN];
-    AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
-
-    AVTVideoOrientation pkt = st->video_orientation;
-    pkt.global_seq = atomic_fetch_add(&s->seq, 1ULL) & UINT32_MAX;
-    pkt.stream_id = st->id;
-    pkt.pts = pts;
-
-    avt_encode_video_orientation(&bs, &pkt);
-
-    return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 #endif

@@ -2106,67 +2106,61 @@ The following structure MUST be followed:
             <td>Timestamp (in stream [=timebase=] units) at which this orientation packet has to be applied at.</td>
         </tr>
         <tr id="0x0010+4">
-            <td><code>b(8)</code></td>
-            <td><dfn noexport>lut_flags</dfn></td>
-            <td>enum {{LutFlags}}</td>
-            <td>Flags for the LUT/ICC profile packet.</td>
-        </tr>
-        <tr id="0x0010+5">
             <td><code>u(8)</code></td>
             <td><dfn noexport>lut_type</dfn></td>
             <td>enum {{LutType}}</td>
             <td>The data type contained in the [=lut_data=].</td>
         </tr>
-        <tr id="0x0010+6">
+        <tr id="0x0010+5">
             <td><code>b(8)</code></td>
             <td><dfn noexport>lut_major_ver</dfn></td>
             <td></td>
             <td>Major version of the file. Currently only applies to ICC profiles.</td>
         </tr>
-        <tr id="0x0010+7">
+        <tr id="0x0010+6">
             <td><code>b(8)</code></td>
             <td><dfn noexport>lut_minor_ver</dfn></td>
             <td></td>
             <td>Minor version of the file. Currently only applies to ICC profiles.</td>
         </tr>
-        <tr id="0x0010+8">
+        <tr id="0x0010+7">
             <td><code>u(8)</code></td>
             <td><dfn noexport>lut_compression</dfn></td>
             <td>enum {{DataCompression}}</td>
             <td>LUT/ICC data compression.</td>
         </tr>
-        <tr id="0x0010+9">
-            <td><code>b(8)</code></td>
+        <tr id="0x0010+8">
+            <td><code>b(32)</code></td>
             <td><dfn noexport>lut_data_length</dfn></td>
             <td></td>
             <td>The length of the LUT/ICC profile.</td>
         </tr>
-        <tr id="0x0010+10">
-            <td><code>b(48)</code></td>
-            <td>[=padding=]</td>
+        <tr id="0x0010+9">
+            <td><code>b(32)</code></td>
+            <td><dfn noexport>lut_pl_length</dfn></td>
             <td></td>
-            <td>Padding, reserved for future use. MUST be 0x0.</td>
+            <td>The length of the LUT/ICC profile in this packet.</td>
         </tr>
-        <tr id="0x0010+11">
+        <tr id="0x0010+10">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0010+12">
+        <tr id="0x0010+11">
             <td><code>252*b(8)</code></td>
             <td><dfn noexport>lut_name</dfn></td>
             <td>fixed-length string</td>
             <td>252-byte [[RFC3629|UTF-8]] string, containing the original file name of the LUT/ICC profile.</td>
         </tr>
-        <tr id="0x0010+13">
+        <tr id="0x0010+12">
             <td><code>b(768)</code></td>
             <td>[=ldpc_2784_2016=]</td>
             <td>[=LDPC(2784, 2016)=]</td>
             <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>
         </tr>
-        <tr id="0x0010+14">
-            <td><code>[=lut_data_length=]*b(8)</code></td>
+        <tr id="0x0010+13">
+            <td><code>[=lut_pl_length=]*b(8)</code></td>
             <td><dfn noexport>lut_data</dfn></td>
             <td>payload</td>
             <td>The LUT/ICC profile data</td>
@@ -2272,60 +2266,54 @@ The following structure MUST be followed:
         </tr>
         <tr id="0x0020+3">
             <td><code>u(8)</code></td>
-            <td><dfn noexport>font_segmented</dfn></td>
-            <td></td>
-            <td>If non-zero, indicates the font payload is segmented.</td>
-        </tr>
-        <tr id="0x0020+4">
-            <td><code>u(8)</code></td>
-            <td><dfn noexport>font_flags</dfn></td>
-            <td>enum {{FontFlags}}</td>
-            <td>Flags for the font packet.</td>
-        </tr>
-        <tr id="0x0020+5">
-            <td><code>u(8)</code></td>
             <td><dfn noexport>font_type</dfn></td>
             <td>enum {{FontType}}</td>
             <td>The data type contained in the [=font_data=].</td>
         </tr>
-        <tr id="0x0020+6">
+        <tr id="0x0020+4">
             <td><code>u(8)</code></td>
             <td><dfn noexport>font_compression</dfn></td>
             <td>enum {{DataCompression}}</td>
             <td>Font data compression.</td>
         </tr>
-        <tr id="0x0020+7">
+        <tr id="0x0020+5">
             <td><code>u(32)</code></td>
             <td><dfn noexport>font_data_length</dfn></td>
             <td></td>
             <td>The length in bytes of the font file data.</td>
         </tr>
-        <tr id="0x0020+8">
-            <td><code>b(96)</code></td>
+        <tr id="0x0020+6">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>font_pl_length</dfn></td>
+            <td></td>
+            <td>The length in bytes of the current packet's font data.</td>
+        </tr>
+        <tr id="0x0020+7">
+            <td><code>b(80)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="0x0020+9">
+        <tr id="0x0020+8">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0020+10">
+        <tr id="0x0020+9">
             <td><code>252*b(8)</code></td>
             <td><dfn noexport>font_name</dfn></td>
             <td>fixed-length string</td>
             <td>252-byte [[RFC3629|UTF-8]] string, containing the original file name of the font.</td>
         </tr>
-        <tr id="0x0020+11">
+        <tr id="0x0020+10">
             <td><code>b(768)</code></td>
             <td>[=ldpc_2784_2016=]</td>
             <td>[=LDPC(2784, 2016)=]</td>
             <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.</td>
         </tr>
-        <tr id="0x0020+12">
-            <td><code>[=font_data_length=]*b(8)</code></td>
+        <tr id="0x0020+11">
+            <td><code>[=font_pl_length=]*b(8)</code></td>
             <td><dfn noexport>font_data</dfn></td>
             <td>payload</td>
             <td>The font data.</td>
@@ -2979,14 +2967,14 @@ The user-specific data packet is laid out as follows:
             <td>Monotonically incrementing per-packet global sequence number.</td>
         </tr>
         <tr id="0x0600+3">
-            <td><code>b(8)</code></td>
-            <td><dfn noexport>userdata_segmented</dfn></td>
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>userdata_length</dfn></td>
             <td></td>
-            <td>If set to ''1'', indicates that userdata is segmented, and additional packets will follow.</td>
+            <td>The total length of the user data.</td>
         </tr>
         <tr id="0x0600+4">
             <td><code>u(32)</code></td>
-            <td><dfn noexport>userdata_length</dfn></td>
+            <td><dfn noexport>userdata_pl_length</dfn></td>
             <td></td>
             <td>The length of the user data in this packet.</td>
         </tr>
@@ -2997,19 +2985,25 @@ The user-specific data packet is laid out as follows:
             <td>Opaque data, available to users to set.</td>
         </tr>
         <tr id="0x0600+6">
-            <td><code>b(56)</code></td>
+            <td><code>u(8)</code></td>
+            <td><dfn noexport>userdata_compression</dfn></td>
+            <td>enum {{DataCompression}}</td>
+            <td>User data compression.</td>
+        </tr>
+        <tr id="0x0600+7">
+            <td><code>b(24)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be 0x0.</td>
         </tr>
-        <tr id="0x0600+7">
+        <tr id="0x0600+8">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0600+8">
-            <td><code>[=userdata_length=]*b(8)</code></td>
+        <tr id="0x0600+9">
+            <td><code>[=userdata_pl_length=]*b(8)</code></td>
             <td><dfn noexport>userdata</dfn></td>
             <td>payload</td>
             <td>The user data itself.</td>

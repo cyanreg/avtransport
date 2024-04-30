@@ -155,6 +155,14 @@ static inline void avt_packet_encode_header(AVTPktd *p)
              union AVTPacketData *: avt_packet_get_tb_pp    \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
+#define avt_packet_set_compression(x, ...)                        \
+    _Generic((x),                                                 \
+             AVTPktd *: avt_packet_set_compression_d,             \
+             const AVTPktd *: avt_packet_set_compression_d,       \
+             union AVTPacketData: avt_packet_set_compression_p,   \
+             union AVTPacketData *: avt_packet_set_compression_pp \
+    ) (x __VA_OPT__(,) __VA_ARGS__)
+
 #define avt_packet_change_size(x, ...)                        \
     _Generic((x),                                             \
              AVTPktd *: avt_packet_change_size_d,             \

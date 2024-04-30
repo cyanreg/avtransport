@@ -68,6 +68,31 @@ static inline int RENAME(avt_packet_get_tb)(const TYPE p, AVTRational *tb)
     }
 }
 
+static inline void RENAME(avt_packet_set_compression)(TYPE p,
+                                                      enum AVTDataCompression compression)
+{
+    switch (GET(desc)) {
+    case AVT_PKT_STREAM_DATA:
+        GET(stream_data).pkt_compression = compression;
+        return;
+    case AVT_PKT_METADATA:
+        GET(generic_data).generic_data_compression = compression;
+        return;
+    case AVT_PKT_USER_DATA:
+        GET(user_data).userdata_compression = compression;
+        return;
+    case AVT_PKT_LUT_ICC:
+        GET(lut_icc).lut_compression = compression;
+        return;
+    case AVT_PKT_FONT_DATA:
+        GET(font_data).font_compression = compression;
+        return;
+    default:
+        avt_assert1(0);
+        unreachable();
+    }
+}
+
 static inline void RENAME(avt_packet_change_size)(TYPE p,
                                                   uint32_t seg_offset,
                                                   uint32_t seg_length,
@@ -78,12 +103,21 @@ static inline void RENAME(avt_packet_change_size)(TYPE p,
         GET(stream_data).data_length = seg_length;
         GET(stream_data).pkt_segmented = seg_length < tot_pl_size;
         return;
-    case AVT_PKT_METADATA:   [[fallthrough]];
-    case AVT_PKT_USER_DATA:  [[fallthrough]];
-    case AVT_PKT_LUT_ICC:    [[fallthrough]];
-    case AVT_PKT_FONT_DATA:
+    case AVT_PKT_METADATA:
         GET(generic_data).payload_length = seg_length;
         GET(generic_data).total_payload_length = tot_pl_size;
+        return;
+    case AVT_PKT_USER_DATA:
+        GET(user_data).userdata_pl_length = seg_length;
+        GET(user_data).userdata_length = tot_pl_size;
+        return;
+    case AVT_PKT_LUT_ICC:
+        GET(lut_icc).lut_pl_length = seg_length;
+        GET(lut_icc).lut_data_length = tot_pl_size;
+        return;
+    case AVT_PKT_FONT_DATA:
+        GET(font_data).font_pl_length = seg_length;
+        GET(font_data).font_data_length = tot_pl_size;
         return;
     case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
     case AVT_PKT_USER_DATA_SEGMENT:   [[fallthrough]];

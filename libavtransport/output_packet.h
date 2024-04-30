@@ -44,9 +44,9 @@ int avt_send_pkt_generic_data(AVTSender *s,
                               uint32_t init_desc, uint32_t seg_desc);
 
 /* LUT/ICC */
-int avt_send_pkt_lut_data(AVTSender *s, AVTStream *st, int64_t pts);
-int avt_send_pkt_icc_data(AVTSender *s, AVTStream *st, int64_t pts);
+int avt_send_pkt_lut_data(AVTSender *s, AVTStream *st);
+int avt_send_pkt_icc_data(AVTSender *s, AVTStream *st);
 
 /* Video info/orientation */
-int avt_send_pkt_video_info(AVTSender *s, AVTStream *st, int64_t pts);
-int avt_send_pkt_video_orientation(AVTSender *s, AVTStream *st, int64_t pts);
+int avt_send_pkt_video_info(AVTSender *s, AVTStream *st);
+int avt_send_pkt_video_orientation(AVTSender *s, AVTStream *st);
