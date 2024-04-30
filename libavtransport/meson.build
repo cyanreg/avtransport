@@ -60,6 +60,14 @@ sources = [
     'io_udp.c',
     'io_socket_common.c',
 
+    'output.c',
+    'output_packet.c',
+    'scheduler.c',
+    'ldpc_encode.c',
+
+    'reorder.c',
+    'ldpc_decode.c',
+
     avtransport_spec_pkt_headers,
 
     # Version
@@ -75,20 +83,6 @@ endif
 if host_machine.system() != 'windows'
     sources += 'io_fd.c'
     sources += 'io_mmap.c'
-endif
-
-if get_option('output').auto()
-    sources += 'output.c'
-    sources += 'output_packet.c'
-    sources += 'scheduler.c'
-    sources += 'ldpc_encode.c'
-endif
-
-if get_option('input').auto()
-    sources += 'input.c'
-    sources += 'decode.c'
-    sources += 'reorder.c'
-    sources += 'ldpc_decode.c'
 endif
 
 if get_option('enable_asm').enabled()
@@ -160,8 +154,6 @@ pkg.generate(
 )
 
 summary({
-    'output': get_option('output').auto(),
-    'input': get_option('input').auto(),
     'xxhash': xxh_dep.found(),
     'cbor': cbor_dep.found(),
     'openssl': openssl_dep.found(),

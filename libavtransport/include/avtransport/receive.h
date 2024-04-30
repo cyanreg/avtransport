@@ -24,19 +24,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_INPUT_H
-#define AVTRANSPORT_INPUT_H
+#ifndef AVTRANSPORT_RECEIVE_H
+#define AVTRANSPORT_RECEIVE_H
 
 #include "connection.h"
 #include "stream.h"
 #include "utils.h"
 
-typedef struct AVTInputOptions {
+typedef struct AVTReceiveOptions {
     ;
-} AVTInputOptions;
+} AVTReceiveOptions;
 
 /* List of callbacks. All are optional. */
-typedef struct AVTInputCallbacks {
+typedef struct AVTReceiveCallbacks {
     int  (*stream_register_cb)(void *opaque, AVTStream *st);
     void (*stream_update_cb)(void *opaque, AVTStream *st);
     void (*font_register_cb)(void *opaque, AVTBuffer *data, const char *name);
@@ -90,20 +90,17 @@ typedef struct AVTInputCallbacks {
                        uint64_t epoch_offset, uint64_t bandwidth,
                        uint32_t fec_corrections, uint32_t corrupt_packets,
                        uint32_t missing_packets);
-} AVTInputCallbacks;
+} AVTReceiveCallbacks;
 
 /* Open an AVTransport stream or a file for reading. */
-AVT_API int avt_input_open(AVTContext *ctx, AVTConnection *conn,
-                           AVTInputCallbacks *cb, void *cb_opaque,
-                           AVTInputOptions *opts);
+AVT_API int avt_receive_open(AVTContext *ctx, AVTConnection *conn,
+                             AVTReceiveCallbacks *cb, void *cb_opaque,
+                             AVTReceiveOptions *opts);
 
 /* Adjusts input options on the fly. */
-AVT_API int avt_input_set_options(AVTContext *ctx, AVTInputOptions *opts);
-
-/* Seek into the stream. */
-AVT_API int avt_input_seek(AVTContext *ctx, AVTStream *st, int64_t offset, int absolute);
+AVT_API int avt_receive_set_options(AVTContext *ctx, AVTReceiveOptions *opts);
 
 /* Close input and free all associated data with it. */
-AVT_API int avt_input_close(AVTContext *ctx);
+AVT_API int avt_receive_close(AVTContext *ctx);
 
-#endif /* AVTRANSPORT_INPUT_H */
+#endif /* AVTRANSPORT_RECEIVE_H */

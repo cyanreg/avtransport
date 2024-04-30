@@ -27,7 +27,7 @@
 #ifndef AVTRANSPORT_OUTPUT_INTERNAL_H
 #define AVTRANSPORT_OUTPUT_INTERNAL_H
 
-#include <avtransport/output.h>
+#include <avtransport/send.h>
 
 #include "common.h"
 #include "connection_internal.h"
@@ -45,9 +45,9 @@
 #include <zstd.h>
 #endif
 
-typedef struct AVTOutput {
+typedef struct AVTSender {
     AVTContext *ctx;
-    AVTOutputOptions opts;
+    AVTSenderOptions opts;
 
     AVTConnection **conn;
     uint32_t nb_conn;
@@ -62,8 +62,6 @@ typedef struct AVTOutput {
 #ifdef CONFIG_HAVE_LIBZSTD
     ZSTD_CCtx *zstd_ctx;
 #endif
-} AVTOutput;
-
-size_t avt_packet_get_max_size(AVTOutput *out);
+} AVTSender;
 
 #endif /* AVTRANSPORT_OUTPUT_INTERNAL_H */

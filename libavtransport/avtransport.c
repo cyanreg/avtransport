@@ -41,9 +41,6 @@ int avt_init(AVTContext **ctx, AVTContextOptions *opts)
     if (opts)
         tmp->opts = *opts;
 
-    atomic_init(&tmp->output.seq, 0);
-    atomic_init(&tmp->input.seq, 0);
-
     *ctx = tmp;
     return 0;
 }

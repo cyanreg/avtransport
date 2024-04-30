@@ -36,32 +36,10 @@ typedef struct AVTStreamPriv {
 
     enum AVTCodecID codec_id;
 
-    struct AVTOutput *out;
+    struct AVTSender *out;
 } AVTStreamPriv;
 
 struct AVTContext {
-    struct AVTOutput *out;
-
-    struct {
-        AVTConnection **conn;
-        int nb_conn;
-        struct AVTOutputContext *ctx;
-        atomic_uint seq;
-        uint64_t epoch;
-    } output;
-
-    struct {
-        AVTConnection *conn;
-        struct AVTInputContext *ctx;
-        AVTInputCallbacks proc;
-        void *cb_opaque;
-        atomic_uint seq;
-        uint64_t epoch;
-    } input;
-
-    AVTStream **stream;
-    int nb_stream;
-
     AVTContextOptions opts;
 };
 

@@ -28,8 +28,8 @@
 #define AVTRANSPORT_H
 
 #include "connection.h"
-#include "output.h"
-#include "input.h"
+#include "send.h"
+#include "receive.h"
 
 enum AVTLogLevel {
     AVT_LOG_QUIET    = -(1 << 0),

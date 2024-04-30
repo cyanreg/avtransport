@@ -41,7 +41,7 @@ option('io',
 option('ffmpeg',
     type: 'feature',
     value: 'auto',
-    description: 'Enable demuxing and muxing of non-avt files via FFmpeg (in CLI tools only)'
+    description: 'Enable demuxing and muxing of non-AVT files via FFmpeg (in CLI tools only)'
 )
 
 option('fuzzing_engine',

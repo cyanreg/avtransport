@@ -29,24 +29,24 @@
 #include "output_internal.h"
 
 /* Session start */
-int avt_send_session_start(AVTOutput *out);
+int avt_send_pkt_session_start(AVTSender *s);
 
 /* Time sync */
-int avt_send_time_sync(AVTOutput *out);
+int avt_send_pkt_time_sync(AVTSender *s);
 
 /* Stream registration and data */
-int avt_send_stream_register(AVTOutput *out, AVTStream *st);
-int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt);
+int avt_send_pkt_stream_register(AVTSender *s, AVTStream *st);
+int avt_send_pkt_stream_data(AVTSender *s, AVTStream *st, AVTPacket *pkt);
 
 /* Generic data */
-int avt_send_generic_data(AVTOutput *out,
-                          AVTStream *st, AVTBuffer *data, int64_t pts,
-                          uint32_t init_desc, uint32_t seg_desc);
+int avt_send_pkt_generic_data(AVTSender *s,
+                              AVTStream *st, AVTBuffer *data, int64_t pts,
+                              uint32_t init_desc, uint32_t seg_desc);
 
 /* LUT/ICC */
-int avt_send_lut_data(AVTOutput *out, AVTStream *st, int64_t pts);
-int avt_send_icc_data(AVTOutput *out, AVTStream *st, int64_t pts);
+int avt_send_pkt_lut_data(AVTSender *s, AVTStream *st, int64_t pts);
+int avt_send_pkt_icc_data(AVTSender *s, AVTStream *st, int64_t pts);
 
 /* Video info/orientation */
-int avt_send_video_info(AVTOutput *out, AVTStream *st, int64_t pts);
-int avt_send_video_orientation(AVTOutput *out, AVTStream *st, int64_t pts);
+int avt_send_pkt_video_info(AVTSender *s, AVTStream *st, int64_t pts);
+int avt_send_pkt_video_orientation(AVTSender *s, AVTStream *st, int64_t pts);

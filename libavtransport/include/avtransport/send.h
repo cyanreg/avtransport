@@ -24,17 +24,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_OUTPUT_H
-#define AVTRANSPORT_OUTPUT_H
+#ifndef AVTRANSPORT_SEND_H
+#define AVTRANSPORT_SEND_H
 
 #include "connection.h"
 #include "stream.h"
 #include "utils.h"
 
-typedef struct AVTOutput AVTOutput;
+/* Sender context */
+typedef struct AVTSender AVTSender;
 
 /* Compression mode flags */
-enum AVTOutputCompressionFlags {
+enum AVTSenderCompressionFlags {
     /* Compress everything not already compressed, except uncompressed video and audio */
     AVT_SENDER_COMPRESS_AUTO  =  0,
 
@@ -48,9 +49,9 @@ enum AVTOutputCompressionFlags {
     AVT_SENDER_COMPRESS_NONE  =  INT32_MAX,    /* Do not compress anything */
 };
 
-typedef struct AVTOutputOptions {
+typedef struct AVTSenderOptions {
     /* Compression mode */
-    enum AVTOutputCompressionFlags compress;
+    enum AVTSenderCompressionFlags compress;
 
     /* Compression algorithm.
      * If left as 0 (AVT_DATA_COMPRESSION_AUTO), will automatically
@@ -65,37 +66,37 @@ typedef struct AVTOutputOptions {
 
     /* Set to true to enable sending hash packets. */
     bool hash;
-} AVTOutputOptions;
+} AVTSenderOptions;
 
-/* Open an output and immediately send/write a stream session packet.
+/* Open a send context and immediately send/write a stream session packet.
  *
- * NOTE: Multiple connections may be bound for output to enable
- * one-to-many streaming or writing */
-AVT_API int avt_output_open(AVTContext *ctx, AVTOutput **out,
-                            AVTConnection *conn, AVTOutputOptions *opts);
+ * NOTE: Multiple connections may be bound for a single sender to enable
+ * one-to-many streaming or writing, but not vice-versa. */
+AVT_API int avt_send_open(AVTContext *ctx, AVTSender **s,
+                          AVTConnection *conn, AVTSenderOptions *opts);
 
 /* Set the epoch to use, as nanoseconds after 00:00:00 UTC on 1 January 1970.
  * Should be called once, at the start of streaming.
  * If zero, or not called, the current time will be used. */
-AVT_API int avt_output_set_epoch(AVTOutput *out, uint64_t epoch);
+AVT_API int avt_send_set_epoch(AVTSender *s, uint64_t epoch);
 
 /* Register a stream and allocate internal state for it.
  * To automatically assign a stream ID, set id to UINT16_MAX.
  * If there's an existing stream with the same ID, will return NULL. */
-AVT_API AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id);
+AVT_API AVTStream *avt_send_stream_add(AVTSender *s, uint16_t id);
 
 /* Update a stream, (re-)emmitting a stream registration packet.
- * The id MUST match the one from avt_output_add_stream(). */
-AVT_API int avt_output_stream_update(AVTStream *st);
+ * The id MUST match the one from avt_send_add_stream(). */
+AVT_API int avt_send_stream_update(AVTStream *st);
 
 /* Attach a font to a stream. The font data must be fully in the AVTBuffer.
  * The filename is sent alongside as metadata. */
-AVT_API int avt_output_font_attachment(AVTStream *st, AVTBuffer *file,
-                                       const char filename[252],
-                                       enum AVTFontType type);
+AVT_API int avt_send_font_attachment(AVTStream *st, AVTBuffer *file,
+                                     const char filename[252],
+                                     enum AVTFontType type);
 
 /* Write a complete stream data packet to the output. */
-AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
+AVT_API int avt_send_stream_data(AVTStream *st, AVTPacket *pkt);
 
 /**
  * This function allows for writing of a stream data packet
@@ -110,24 +111,24 @@ AVT_API int avt_output_stream_data(AVTStream *st, AVTPacket *pkt);
  *  - for each call after the offset must be equal to the previous offset, plus
  *    the size of the previous buffer
  */
-AVT_API int avt_output_stream_data_streaming(AVTStream *st,
-                                             uint8_t state[1024],
-                                             AVTPacket *pkt,
-                                             AVTBuffer *buf, size_t offset);
+AVT_API int avt_send_stream_data_streaming(AVTStream *st,
+                                           uint8_t state[AVT_MAX_HEADER_LEN],
+                                           AVTPacket *pkt,
+                                           AVTBuffer *buf, size_t offset);
 
 /* Write user data packets.
  * The immediate flag can be used to skip any potential queueing. */
-AVT_API int avt_output_user_data(AVTOutput *out, AVTBuffer *data,
-                                 uint16_t user, uint64_t opaque,
-                                 bool immediate);
+AVT_API int avt_send_user_data(AVTSender *s, AVTBuffer *data,
+                               uint16_t user, uint64_t opaque,
+                               bool immediate);
 
 /* Immediately refresh all stream configuration data */
-AVT_API int avt_output_refresh(AVTOutput *out);
+AVT_API int avt_send_refresh(AVTSender *s);
 
 /* Close a single stream */
-AVT_API int avt_output_stream_close(AVTStream **st);
+AVT_API int avt_send_stream_close(AVTStream **st);
 
 /* Close all streams and free resources */
-AVT_API int avt_output_close(AVTOutput **out);
+AVT_API int avt_send_close(AVTSender **s);
 
-#endif /* AVTRANSPORT_OUTPUT_H */
+#endif /* AVTRANSPORT_SEND_H */

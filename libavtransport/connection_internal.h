@@ -28,10 +28,10 @@
 #define AVTRANSPORT_CONNECTION_INTERNAL_H
 
 #include <avtransport/connection.h>
-#include <avtransport/output.h>
+#include <avtransport/send.h>
 #include "packet_common.h"
 
-int avt_connection_register_out(AVTConnection *conn, AVTOutput *out);
+int avt_connection_register_sender(AVTConnection *conn, AVTSender *s);
 
 int avt_connection_send(AVTConnection *conn, AVTPktd *p);
 

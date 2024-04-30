@@ -135,7 +135,7 @@ int main(int argc, char **argv)
             .pts = 0,
         };
 
-        avt_output_stream_data(out.st, &pkt);
+        avt_send_stream_data(out.st, &pkt);
 
         break;
     }
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
             .data = buf,
         };
 
-        avt_output_stream_data(out.st, &pkt);
+        avt_send_stream_data(out.st, &pkt);
 #endif
         break;
     }

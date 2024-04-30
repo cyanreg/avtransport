@@ -367,10 +367,24 @@ typedef struct AVTConnectionStatus {
 
 /**
  * Subscribe to receive status notifications.
+ * Special error codes like AVTERROR_EOS will be returned from status_cb on
+ * error and where appropriate, otherwise 0.
  */
 AVT_API int avt_connection_status_cb(AVTConnection *conn, void *opaque,
                                      void (*status_cb)(void *opaque,
                                                        AVTConnectionStatus *s));
+
+/**
+ * Seek into the stream. Affects only reading. Output is always continuous.
+ * If pts is not INT64_MIN, pts will be used to find the seek point. tb must
+ * be the timebase of pts.
+ * If pts is INT64_MIN, then offset, a byte value, will be used.
+ * If offset_is_absolute, the offset will be treated as an absolute position,
+ * otherwise, a relative seek will be performed.
+ * May return an error if no starting PTS was found, or a seek was impossible. */
+AVT_API int avt_connection_seek(AVTContext *ctx, AVTConnection *st,
+                                int64_t pts, AVTRational tb,
+                                int64_t offset, bool offset_is_absolute);
 
 /**
  * Immediately flush all buffered data for a connection.

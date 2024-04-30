@@ -37,7 +37,7 @@
 
 static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors desc,
                                                       AVTStream *st,
-                                                      AVTOutputOptions *opts)
+                                                      AVTSenderOptions *opts)
 {
     switch (desc) {
     case AVT_PKT_STREAM_DATA:
@@ -114,7 +114,7 @@ static inline enum AVTDataCompression compress_method(enum AVTPktDescriptors des
     return AVT_DATA_COMPRESSION_NONE;
 }
 
-static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
+static int payload_process(AVTSender *s, AVTPktd *p, AVTStream *st,
                            AVTBuffer *in, enum AVTPktDescriptors desc,
                            enum AVTDataCompression *data_compression)
 {
@@ -122,8 +122,8 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     AVTBuffer *target;
 
     /* TODO: clip to supported levels */
-    [[maybe_unused]] int lvl = out->opts.compress_level;
-    enum AVTDataCompression method = compress_method(desc, st, &out->opts);
+    [[maybe_unused]] int lvl = s->opts.compress_level;
+    enum AVTDataCompression method = compress_method(desc, st, &s->opts);
 
     uint8_t *src;
     size_t src_len;
@@ -132,8 +132,8 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     [[maybe_unused]] size_t dst_size;
 
     /* Reset here just in case it OOMs */
-    if (out->opts.hash) {
-        XXH_errorcode ret = XXH3_128bits_reset(out->xxh_state);
+    if (s->opts.hash) {
+        XXH_errorcode ret = XXH3_128bits_reset(s->xxh_state);
         if (ret != XXH_OK)
             return AVT_ERROR(ENOMEM);
     }
@@ -168,9 +168,9 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
-        dst_len = ZSTD_compressCCtx(out->zstd_ctx, dst, dst_size, src, src_len, lvl);
+        dst_len = ZSTD_compressCCtx(s->zstd_ctx, dst, dst_size, src, src_len, lvl);
         if (!dst_len) {
-            avt_log(out, AVT_LOG_ERROR, "Error while compressing with ZSTD!\n");
+            avt_log(s, AVT_LOG_ERROR, "Error while compressing with ZSTD!\n");
             err = AVT_ERROR(EINVAL);
             free(dst);
             break;
@@ -183,7 +183,7 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
             break;
         }
 #else
-        avt_log(out, AVT_LOG_ERROR, "ZSTD compression not enabled during build!\n");
+        avt_log(s, AVT_LOG_ERROR, "ZSTD compression not enabled during build!\n");
         err = AVT_ERROR(EINVAL);
 #endif
         break;
@@ -203,7 +203,7 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
          * used by text, meh, good enough for now. */
         if (!BrotliEncoderCompress(lvl, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
                                    src_len, src, &dst_size, dst)) {
-            avt_log(out, AVT_LOG_ERROR, "Error while compressing with Brotli!\n");
+            avt_log(s, AVT_LOG_ERROR, "Error while compressing with Brotli!\n");
             err = AVT_ERROR(EINVAL);
             free(dst);
             break;
@@ -216,12 +216,12 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
             break;
         }
 #else
-        avt_log(out, AVT_LOG_ERROR, "Brotli compression not enabled during build!\n");
+        avt_log(s, AVT_LOG_ERROR, "Brotli compression not enabled during build!\n");
         err = AVT_ERROR(EINVAL);
 #endif
         break;
     default:
-        avt_log(out, AVT_LOG_ERROR, "Unknown compression method: %i\n", method);
+        avt_log(s, AVT_LOG_ERROR, "Unknown compression method: %i\n", method);
         return AVT_ERROR(EINVAL);
     };
 
@@ -229,10 +229,10 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
         *data_compression = method;
 
     /* Generate has for the payload if enabled */
-    if (out->opts.hash) {
+    if (s->opts.hash) {
         src = avt_buffer_get_data(target, &src_len);
-        XXH3_128bits_update(out->xxh_state, src, src_len);
-        XXH128_hash_t hash = XXH3_128bits_digest(out->xxh_state);
+        XXH3_128bits_update(s->xxh_state, src, src_len);
+        XXH128_hash_t hash = XXH3_128bits_digest(s->xxh_state);
         XXH128_canonicalFromHash((XXH128_canonical_t *)&p->pl_hash, hash);
         p->pl_has_hash = true;
     }
@@ -242,12 +242,12 @@ static int payload_process(AVTOutput *out, AVTPktd *p, AVTStream *st,
     return err;
 }
 
-static inline int send_pkt(AVTOutput *out, AVTPktd *p)
+static inline int send_pkt(AVTSender *s, AVTPktd *p)
 {
     int ret = 0;
 
-    for (int i = 0; i < out->nb_conn; i++) {
-        int err = avt_connection_send(out->conn[i], p);
+    for (int i = 0; i < s->nb_conn; i++) {
+        int err = avt_connection_send(s->conn[i], p);
         if (err < 0)
             ret = err;
     }
@@ -255,22 +255,22 @@ static inline int send_pkt(AVTOutput *out, AVTPktd *p)
     return ret;
 }
 
-int avt_send_time_sync(AVTOutput *out)
+int avt_send_pkt_time_sync(AVTSender *s)
 {
     AVTPktd p = {
         .pkt = AVT_TIME_SYNC_HDR(
             .ts_clock_id = 0,
             .ts_clock_hz2 = 0,
-            .epoch = out->epoch,
+            .epoch = s->epoch,
             .ts_clock_seq = 0,
             .ts_clock_hz = 0,
         ),
     };
 
-    return send_pkt(out, &p);
+    return send_pkt(s, &p);
 }
 
-int avt_send_stream_register(AVTOutput *out, AVTStream *st)
+int avt_send_pkt_stream_register(AVTSender *s, AVTStream *st)
 {
     AVTPktd p = {
         .pkt = AVT_STREAM_REGISTRATION_HDR(
@@ -288,17 +288,17 @@ int avt_send_stream_register(AVTOutput *out, AVTStream *st)
         ),
     };
 
-    return send_pkt(out, &p);
+    return send_pkt(s, &p);
 }
 
-int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
+int avt_send_pkt_stream_data(AVTSender *s, AVTStream *st, AVTPacket *pkt)
 {
     /* Compress payload if necessary */
     AVTBuffer *pl = pkt->data;
     AVTPktd tmp;
 
     enum AVTDataCompression data_compression;
-    int err = payload_process(out, &tmp, st, pl, AVT_PKT_STREAM_DATA,
+    int err = payload_process(s, &tmp, st, pl, AVT_PKT_STREAM_DATA,
                               &data_compression);
     if (err < 0)
         return err;
@@ -315,11 +315,11 @@ int avt_send_stream_data(AVTOutput *out, AVTStream *st, AVTPacket *pkt)
         ),
     };
 
-    return send_pkt(out, &p);
+    return send_pkt(s, &p);
 }
 
 #if 0
-int avt_send_generic_data(AVTOutput *out,
+int avt_send_pkt_generic_data(AVTSender *s,
                           AVTStream *st, AVTBuffer *data, int64_t pts,
                           uint32_t init_desc, uint32_t seg_desc)
 {
@@ -337,7 +337,7 @@ int avt_send_generic_data(AVTOutput *out,
     SEGMENT(data, seg_desc)
 }
 
-int avt_send_lut_data(AVTOutput *out,
+int avt_send_pkt_lut_data(AVTSender *s,
                       AVTStream *st, int64_t pts)
 {
     INIT_SEGMENTED(st->lut_data, AVT_PKT_LUT_ICC)
@@ -352,13 +352,13 @@ int avt_send_lut_data(AVTOutput *out,
     SEGMENT(st->lut_data, AVT_PKT_STREAM_DATA_SEGMENT)
 }
 
-int avt_send_icc_data(AVTOutput *out,
+int avt_send_pkt_icc_data(AVTSender *s,
                       AVTStream *st, int64_t pts)
 {
     INIT_SEGMENTED(st->icc_data, AVT_PKT_LUT_ICC)
 
     AVTLutIcc pkt = st->icc_info;
-    pkt.global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
+    pkt.global_seq = atomic_fetch_add(&s->seq, 1ULL) & UINT32_MAX;
     pkt.stream_id = st->id;
     pkt.pts = pts;
     pkt.lut_compression = data_compression;
@@ -368,14 +368,14 @@ int avt_send_icc_data(AVTOutput *out,
     SEGMENT(st->icc_data, AVT_PKT_STREAM_DATA_SEGMENT)
 }
 
-int avt_send_video_info(AVTOutput *out,
+int avt_send_pkt_video_info(AVTSender *s,
                         AVTStream *st, int64_t pts)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
 
     AVTVideoInfo pkt = st->video_info;
-    pkt.global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
+    pkt.global_seq = atomic_fetch_add(&s->seq, 1ULL) & UINT32_MAX;
     pkt.stream_id = st->id;
     pkt.pts = pts;
 
@@ -384,14 +384,14 @@ int avt_send_video_info(AVTOutput *out,
     return avt_packet_send(out, hdr, avt_bs_offs(&bs), NULL);
 }
 
-int avt_send_video_orientation(AVTOutput *out,
+int avt_send_pkt_video_orientation(AVTSender *s,
                                AVTStream *st, int64_t pts)
 {
     uint8_t hdr[AVT_MAX_HEADER_LEN];
     AVTBytestream bs = avt_bs_init(hdr, sizeof(hdr));
 
     AVTVideoOrientation pkt = st->video_orientation;
-    pkt.global_seq = atomic_fetch_add(&out->seq, 1ULL) & UINT32_MAX;
+    pkt.global_seq = atomic_fetch_add(&s->seq, 1ULL) & UINT32_MAX;
     pkt.stream_id = st->id;
     pkt.pts = pts;
 

@@ -79,7 +79,7 @@ int io_close(IOContext *io, int is_out)
 {
     switch (io->mode) {
     case IO_AVT: {
-        avt_output_close(&io->out);
+        avt_send_close(&io->out);
         avt_connection_flush(io->conn, INT64_MAX);
         avt_connection_destroy(&io->conn);
         break;
@@ -130,20 +130,20 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
         }
 
         if (is_out) {
-            AVTOutputOptions opts = {
+            AVTSenderOptions opts = {
             };
 
-            err = avt_output_open(avt, &io->out, io->conn, &opts);
+            err = avt_send_open(avt, &io->out, io->conn, &opts);
             if (err < 0) {
                 avt_log(NULL, AVT_LOG_ERROR, "Could not open %s as an output: %i\n", path,
                         err);
                 return err;
             }
 
-            io->st = avt_output_stream_add(io->out, 0);
+            io->st = avt_send_stream_add(io->out, 0);
             io->st->timebase = (AVTRational) { 1, 1000 * 1000 * 1000 };
 
-            avt_output_stream_update(io->st);
+            avt_send_stream_update(io->st);
         } else {
 
         }

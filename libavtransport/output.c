@@ -34,84 +34,84 @@
 
 #include "config.h"
 
-int avt_output_close(AVTOutput **_out)
+int avt_send_close(AVTSender **_s)
 {
-    AVTOutput *out = *_out;
+    AVTSender *s = *_s;
 
 #ifdef CONFIG_HAVE_LIBZSTD
-    ZSTD_freeCCtx(out->zstd_ctx);
+    ZSTD_freeCCtx(s->zstd_ctx);
 #endif
 
-    XXH3_freeState(out->xxh_state);
+    XXH3_freeState(s->xxh_state);
 
-    free(out);
+    free(s);
 
-    *_out = NULL;
+    *_s = NULL;
 
     return 0;
 }
 
-static inline int alloc_output_context(AVTOutput **_out, AVTOutputOptions *opts)
+static inline int alloc_output_context(AVTSender **_s, AVTSenderOptions *opts)
 {
-    AVTOutput *out = calloc(1, sizeof(*out));
-    if (!out)
+    AVTSender *s = calloc(1, sizeof(*s));
+    if (!s)
         return AVT_ERROR(ENOMEM);
 
-    out->epoch = avt_get_time_ns();
-    out->opts = *opts;
+    s->epoch = avt_get_time_ns();
+    s->opts = *opts;
 
-    out->conn = calloc(1, sizeof(*out->conn));
-    if (!out->xxh_state) {
-        avt_output_close(&out);
+    s->conn = calloc(1, sizeof(*s->conn));
+    if (!s->xxh_state) {
+        avt_send_close(&s);
         return AVT_ERROR(ENOMEM);
     }
 
     /* Init xxHash state */
-    out->xxh_state = XXH3_createState();
-    if (!out->xxh_state) {
-        avt_output_close(&out);
+    s->xxh_state = XXH3_createState();
+    if (!s->xxh_state) {
+        avt_send_close(&s);
         return AVT_ERROR(ENOMEM);
     }
 
 #ifdef CONFIG_HAVE_LIBZSTD
     /* Init Zstd context */
-    out->zstd_ctx = ZSTD_createCCtx();
-    if (!out->zstd_ctx) {
-        avt_output_close(&out);
+    s->zstd_ctx = ZSTD_createCCtx();
+    if (!s->zstd_ctx) {
+        avt_send_close(&s);
         return AVT_ERROR(ENOMEM);
     }
 #endif
 
-    *_out = out;
+    *_s = s;
 
     return 0;
 }
 
-int avt_output_open(AVTContext *ctx, AVTOutput **_out,
-                    AVTConnection *conn, AVTOutputOptions *opts)
+int avt_send_open(AVTContext *ctx, AVTSender **_s,
+                  AVTConnection *conn, AVTSenderOptions *opts)
 {
     int err;
-    AVTOutput *out = NULL;
+    AVTSender *s = NULL;
 
     /* Allocate state, if not already existing */
-    if (!(*_out)) {
-        err = alloc_output_context(&out, opts);
+    if (!(*_s)) {
+        err = alloc_output_context(&s, opts);
         if (err < 0)
             return err;
-        *_out = out;
+        *_s = s;
     } else {
-        out = *_out;
+        s = *_s;
     }
 
     /* Register connection for output */
-    out->conn[out->nb_conn++] = conn;
+    s->conn[s->nb_conn++] = conn;
 
     // TODO: query connection status
 
     return 0;
 }
 
-AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
+AVTStream *avt_send_stream_add(AVTSender *out, uint16_t id)
 {
     if (id == UINT16_MAX) {
         avt_log(out, AVT_LOG_ERROR, "Invalid stream ID: 0x%X is reserved!\n", id);
@@ -138,7 +138,7 @@ AVTStream *avt_output_stream_add(AVTOutput *out, uint16_t id)
     return st;
 }
 
-int avt_output_stream_close(AVTStream **_st)
+int avt_send_stream_close(AVTStream **_st)
 {
     if (!_st)
         return 0;
@@ -157,12 +157,12 @@ int avt_output_stream_close(AVTStream **_st)
     return 0;
 }
 
-int avt_output_stream_update(AVTStream *st)
+int avt_send_stream_update(AVTStream *st)
 {
-    return avt_send_stream_register(st->priv->out, st);
+    return avt_send_pkt_stream_register(st->priv->out, st);
 }
 
-int avt_output_stream_data(AVTStream *st, AVTPacket *pkt)
+int avt_send_stream_data(AVTStream *st, AVTPacket *pkt)
 {
-    return avt_send_stream_data(st->priv->out, st, pkt);
+    return avt_send_pkt_stream_data(st->priv->out, st, pkt);
 }

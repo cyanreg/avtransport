@@ -116,21 +116,13 @@ endif
 
 # Dependencies
 #============================================================================
-uring_dep = dependency('liburing', required: false)
-zstd_dep = dependency('libzstd', required: false)
 xxh_dep = dependency('libxxhash', required: false)
 cbor_dep = dependency('libcbor', required: false)
+uring_dep = dependency('liburing', required: false)
+zstd_dep = dependency('libzstd', required: false)
 openssl_dep = dependency('openssl', required: false, version : '3.3.0')
-brotlienc_dep = dependency('', required: false)
-brotlidec_dep = dependency('', required: false)
-
-if get_option('output').auto()
-    brotlienc_dep = dependency('libbrotlienc', required: false)
-endif
-
-if get_option('input').auto()
-    brotlidec_dep = dependency('libbrotlienc', required: false)
-endif
+brotlienc_dep = dependency('libbrotlienc', required: false)
+brotlidec_dep = dependency('libbrotlienc', required: false)
 
 # External dep fallback
 #======================

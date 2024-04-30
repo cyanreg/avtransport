@@ -48,7 +48,8 @@ typedef struct IOContext {
     enum AVTConnectionType type;
     AVTConnection *conn;
     AVTStream *st;
-    AVTOutput *out;
+
+    AVTSender *out;
 
 #ifdef HAVE_FFMPEG
     AVFormatContext *avf;
