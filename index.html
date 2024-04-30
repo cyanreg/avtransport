@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="7a0dadda0aa5aa415db4a4e648baeacb6e2cd5fc" name="document-revision">
+  <meta content="2c2975017a3be5ccebbf6f02c1ad36c9d76fe0e5" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -4007,57 +4007,52 @@ metadata after starting and outputting a packet.</p>
        <td>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase②">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0010+4">
-       <td><code>b(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_flags">lut_flags</dfn>
-       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-lutflags" id="ref-for-enumdef-lutflags">LutFlags</a></code>
-       <td>Flags for the LUT/ICC profile packet.
-      <tr id="0x0010+5">
        <td><code>u(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_type">lut_type</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-luttype" id="ref-for-enumdef-luttype">LutType</a></code>
        <td>The data type contained in the <a data-link-type="dfn" href="#time-synchronization-packets-lut_data" id="ref-for-time-synchronization-packets-lut_data">lut_data</a>.
-      <tr id="0x0010+6">
+      <tr id="0x0010+5">
        <td><code>b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_major_ver">lut_major_ver</dfn>
        <td>
        <td>Major version of the file. Currently only applies to ICC profiles.
-      <tr id="0x0010+7">
+      <tr id="0x0010+6">
        <td><code>b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_minor_ver">lut_minor_ver</dfn>
        <td>
        <td>Minor version of the file. Currently only applies to ICC profiles.
-      <tr id="0x0010+8">
+      <tr id="0x0010+7">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_compression">lut_compression<a class="self-link" href="#time-synchronization-packets-lut_compression"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-datacompression" id="ref-for-enumdef-datacompression②">DataCompression</a></code>
        <td>LUT/ICC data compression.
-      <tr id="0x0010+9">
-       <td><code>b(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_data_length">lut_data_length</dfn>
+      <tr id="0x0010+8">
+       <td><code>b(32)</code>
+       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_data_length">lut_data_length<a class="self-link" href="#time-synchronization-packets-lut_data_length"></a></dfn>
        <td>
        <td>The length of the LUT/ICC profile.
-      <tr id="0x0010+10">
-       <td><code>b(48)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑦">padding</a>
+      <tr id="0x0010+9">
+       <td><code>b(32)</code>
+       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_pl_length">lut_pl_length</dfn>
        <td>
-       <td>Padding, reserved for future use. MUST be 0x0.
-      <tr id="0x0010+11">
+       <td>The length of the LUT/ICC profile in this packet.
+      <tr id="0x0010+10">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①④">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑤">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
-      <tr id="0x0010+12">
+      <tr id="0x0010+11">
        <td><code>252*b(8)</code>
        <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_name">lut_name<a class="self-link" href="#time-synchronization-packets-lut_name"></a></dfn>
        <td>fixed-length string
        <td>252-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> string, containing the original file name of the LUT/ICC profile.
-      <tr id="0x0010+13">
+      <tr id="0x0010+12">
        <td><code>b(768)</code>
        <td><a data-link-type="dfn" href="#ldpc_2784_2016" id="ref-for-ldpc_2784_2016①">ldpc_2784_2016</a>
        <td><a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016②">LDPC(2784, 2016)</a>
        <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.
-      <tr id="0x0010+14">
-       <td><code><a data-link-type="dfn" href="#time-synchronization-packets-lut_data_length" id="ref-for-time-synchronization-packets-lut_data_length">lut_data_length</a>*b(8)</code>
+      <tr id="0x0010+13">
+       <td><code><a data-link-type="dfn" href="#time-synchronization-packets-lut_pl_length" id="ref-for-time-synchronization-packets-lut_pl_length">lut_pl_length</a>*b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_data">lut_data</dfn>
        <td>payload
        <td>The LUT/ICC profile data
@@ -4086,8 +4081,8 @@ segmentation and parity packets is via the following <a href="#generic-data-pack
        <td>Final segment of a segmented LUT/ICC profile.
     </table>
    </figure>
-   <h3 class="heading settled" data-level="2.14" id="enum-LutFlags"><span class="secno">2.14. </span><span class="content">LUT/ICC Profile Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-lutflags"><code>LutFlags</code></dfn>)</span><a class="self-link" href="#enum-LutFlags"></a></h3>
-   <p>The <a data-link-type="dfn" href="#time-synchronization-packets-lut_flags" id="ref-for-time-synchronization-packets-lut_flags">lut_flags</a> field must be interpreted in the following way:</p>
+   <h3 class="heading settled" data-level="2.14" id="enum-LutFlags"><span class="secno">2.14. </span><span class="content">LUT/ICC Profile Flags Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-lutflags"><code>LutFlags</code><a class="self-link" href="#enumdef-lutflags"></a></dfn>)</span><a class="self-link" href="#enum-LutFlags"></a></h3>
+   <p>The <a data-link-type="dfn">lut_flags</a> field must be interpreted in the following way:</p>
    <div id="LutFlags">
     <dl>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-LutFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-lutflags-clut_segmented"><code>CLUT_SEGMENTED</code><a class="self-link" href="#dom-enum-lutflags-clut_segmented"></a></dfn> = <i>0x1</i>
@@ -4144,51 +4139,46 @@ these fonts must be made available for the ASS stream.</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0020+3">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_segmented">font_segmented<a class="self-link" href="#font-data-packets-font_segmented"></a></dfn>
-       <td>
-       <td>If non-zero, indicates the font payload is segmented.
-      <tr id="0x0020+4">
-       <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_flags">font_flags</dfn>
-       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-fontflags" id="ref-for-enumdef-fontflags">FontFlags</a></code>
-       <td>Flags for the font packet.
-      <tr id="0x0020+5">
-       <td><code>u(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_type">font_type</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-fonttype" id="ref-for-enumdef-fonttype">FontType</a></code>
        <td>The data type contained in the <a data-link-type="dfn" href="#font-data-packets-font_data" id="ref-for-font-data-packets-font_data">font_data</a>.
-      <tr id="0x0020+6">
+      <tr id="0x0020+4">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_compression">font_compression<a class="self-link" href="#font-data-packets-font_compression"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-datacompression" id="ref-for-enumdef-datacompression③">DataCompression</a></code>
        <td>Font data compression.
-      <tr id="0x0020+7">
+      <tr id="0x0020+5">
        <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_data_length">font_data_length</dfn>
+       <td><dfn data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_data_length">font_data_length<a class="self-link" href="#font-data-packets-font_data_length"></a></dfn>
        <td>
        <td>The length in bytes of the font file data.
-      <tr id="0x0020+8">
-       <td><code>b(96)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑧">padding</a>
+      <tr id="0x0020+6">
+       <td><code>u(32)</code>
+       <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_pl_length">font_pl_length</dfn>
+       <td>
+       <td>The length in bytes of the current packet’s font data.
+      <tr id="0x0020+7">
+       <td><code>b(80)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑦">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
-      <tr id="0x0020+9">
+      <tr id="0x0020+8">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑤">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑥">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
-      <tr id="0x0020+10">
+      <tr id="0x0020+9">
        <td><code>252*b(8)</code>
        <td><dfn data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_name">font_name<a class="self-link" href="#font-data-packets-font_name"></a></dfn>
        <td>fixed-length string
        <td>252-byte <a data-link-type="biblio" href="#biblio-rfc3629" title="UTF-8, a transformation format of ISO 10646">UTF-8</a> string, containing the original file name of the font.
-      <tr id="0x0020+11">
+      <tr id="0x0020+10">
        <td><code>b(768)</code>
        <td><a data-link-type="dfn" href="#ldpc_2784_2016" id="ref-for-ldpc_2784_2016②">ldpc_2784_2016</a>
        <td><a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016③">LDPC(2784, 2016)</a>
        <td>768-bit LDPC parity data to correct the previous 2016 bits of the packet.
-      <tr id="0x0020+12">
-       <td><code><a data-link-type="dfn" href="#font-data-packets-font_data_length" id="ref-for-font-data-packets-font_data_length">font_data_length</a>*b(8)</code>
+      <tr id="0x0020+11">
+       <td><code><a data-link-type="dfn" href="#font-data-packets-font_pl_length" id="ref-for-font-data-packets-font_pl_length">font_pl_length</a>*b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_data">font_data</dfn>
        <td>payload
        <td>The font data.
@@ -4216,8 +4206,8 @@ The syntax for segmentation and parity packets is via the following <a href="#ge
        <td>Parity data for a font file.
     </table>
    </figure>
-   <h3 class="heading settled" data-level="2.17" id="enum-FontFlags"><span class="secno">2.17. </span><span class="content">Font Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-fontflags"><code>FontFlags</code></dfn>)</span><a class="self-link" href="#enum-FontFlags"></a></h3>
-   <p>The <a data-link-type="dfn" href="#font-data-packets-font_flags" id="ref-for-font-data-packets-font_flags">font_flags</a> field must be interpreted in the following way:</p>
+   <h3 class="heading settled" data-level="2.17" id="enum-FontFlags"><span class="secno">2.17. </span><span class="content">Font Flags Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-fontflags"><code>FontFlags</code><a class="self-link" href="#enumdef-fontflags"></a></dfn>)</span><a class="self-link" href="#enum-FontFlags"></a></h3>
+   <p>The <a data-link-type="dfn">font_flags</a> field must be interpreted in the following way:</p>
    <div id="FontFlags">
     <dl>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FontFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-fontflags-font_segmented"><code>FONT_SEGMENTED</code><a class="self-link" href="#dom-enum-fontflags-font_segmented"></a></dfn> = <i>0x1</i>
@@ -4404,7 +4394,7 @@ stream after decoding.</p>
        <td>Y offset for the location of the final presentation box.
       <tr id="0x0008+30">
        <td><code>b(8)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑨">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑧">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be <span class="css">0x0</span>.
       <tr id="0x0008+31">
@@ -4762,7 +4752,7 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
        <td>A fixed-point rational number to indicate rotation in radians once multiplied by <span class="css">π</span>.
       <tr id="0x0040+6">
        <td><code>b(24)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding⑨">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0040+7">
@@ -4818,13 +4808,13 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0600+3">
-       <td><code>b(8)</code>
-       <td><dfn data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata_segmented">userdata_segmented<a class="self-link" href="#user-data-packets-userdata_segmented"></a></dfn>
+       <td><code>u(32)</code>
+       <td><dfn data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata_length">userdata_length<a class="self-link" href="#user-data-packets-userdata_length"></a></dfn>
        <td>
-       <td>If set to <span class="css">1</span>, indicates that userdata is segmented, and additional packets will follow.
+       <td>The total length of the user data.
       <tr id="0x0600+4">
        <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata_length">userdata_length</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata_pl_length">userdata_pl_length</dfn>
        <td>
        <td>The length of the user data in this packet.
       <tr id="0x0600+5">
@@ -4833,17 +4823,22 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>
        <td>Opaque data, available to users to set.
       <tr id="0x0600+6">
-       <td><code>b(56)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
+       <td><code>u(8)</code>
+       <td><dfn data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata_compression">userdata_compression<a class="self-link" href="#user-data-packets-userdata_compression"></a></dfn>
+       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-datacompression" id="ref-for-enumdef-datacompression④">DataCompression</a></code>
+       <td>User data compression.
+      <tr id="0x0600+7">
+       <td><code>b(24)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
-      <tr id="0x0600+7">
+      <tr id="0x0600+8">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑧">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑨">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
-      <tr id="0x0600+8">
-       <td><code><a data-link-type="dfn" href="#user-data-packets-userdata_length" id="ref-for-user-data-packets-userdata_length">userdata_length</a>*b(8)</code>
+      <tr id="0x0600+9">
+       <td><code><a data-link-type="dfn" href="#user-data-packets-userdata_pl_length" id="ref-for-user-data-packets-userdata_pl_length">userdata_pl_length</a>*b(8)</code>
        <td><dfn data-dfn-for="#user-data-packets" data-dfn-type="dfn" data-noexport id="user-data-packets-userdata">userdata<a class="self-link" href="#user-data-packets-userdata"></a></dfn>
        <td>payload
        <td>The user data itself.
@@ -4903,7 +4898,7 @@ at the start of files to notify implementations of stream lengths.</p>
        <td>The total duration of the stream(s).
       <tr id="0x0050+4">
        <td><code>b(96)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0050+5">
@@ -4947,7 +4942,7 @@ streams, and amend them later.</p>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0FFF+3">
        <td><code>b(160)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①③">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0FFF+4">
@@ -6068,7 +6063,7 @@ that was likely dropped.</p>
        <td>Indicates this is a stream data resend packet.
       <tr id="0x8003+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①④">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①③">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x8003+2">
@@ -6503,11 +6498,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#font-data-packets-font_data_length">font_data_length</a><span>, in § 2.16</span>
    <li><a href="#font-data-packets-font_data_parity_descriptor">font_data_parity_descriptor</a><span>, in § 2.16</span>
    <li><a href="#font-data-packets-font_data_segment_descriptor">font_data_segment_descriptor</a><span>, in § 2.16</span>
-   <li><a href="#font-data-packets-font_flags">font_flags</a><span>, in § 2.16</span>
    <li><a href="#enumdef-fontflags">FontFlags</a><span>, in § 2.17</span>
    <li><a href="#font-data-packets-font_name">font_name</a><span>, in § 2.16</span>
+   <li><a href="#font-data-packets-font_pl_length">font_pl_length</a><span>, in § 2.16</span>
    <li><a href="#dom-enum-fontflags-font_segmented">FONT_SEGMENTED</a><span>, in § 2.17</span>
-   <li><a href="#font-data-packets-font_segmented">font_segmented</a><span>, in § 2.16</span>
    <li><a href="#font-data-packets-font_type">font_type</a><span>, in § 2.16</span>
    <li><a href="#enumdef-fonttype">FontType</a><span>, in § 2.18</span>
    <li><a href="#dom-enum-fonttype-font_type_otf">FONT_TYPE_OTF</a><span>, in § 2.18</span>
@@ -6561,7 +6555,6 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-lut_compression">lut_compression</a><span>, in § 2.13</span>
    <li><a href="#time-synchronization-packets-lut_data">lut_data</a><span>, in § 2.13</span>
    <li><a href="#time-synchronization-packets-lut_data_length">lut_data_length</a><span>, in § 2.13</span>
-   <li><a href="#time-synchronization-packets-lut_flags">lut_flags</a><span>, in § 2.13</span>
    <li><a href="#enumdef-lutflags">LutFlags</a><span>, in § 2.14</span>
    <li><a href="#time-synchronization-packets-lut_icc_descriptor">lut_icc_descriptor</a><span>, in § 2.13</span>
    <li><a href="#lut-icc-profile-packets-lut_icc_parity_descriptor">lut_icc_parity_descriptor</a><span>, in § 2.13</span>
@@ -6569,6 +6562,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-lut_major_ver">lut_major_ver</a><span>, in § 2.13</span>
    <li><a href="#time-synchronization-packets-lut_minor_ver">lut_minor_ver</a><span>, in § 2.13</span>
    <li><a href="#time-synchronization-packets-lut_name">lut_name</a><span>, in § 2.13</span>
+   <li><a href="#time-synchronization-packets-lut_pl_length">lut_pl_length</a><span>, in § 2.13</span>
    <li><a href="#time-synchronization-packets-lut_type">lut_type</a><span>, in § 2.13</span>
    <li><a href="#enumdef-luttype">LutType</a><span>, in § 2.15</span>
    <li><a href="#time-synchronization-packets-mastering_primaries">mastering_primaries</a><span>, in § 2.19</span>
@@ -6762,11 +6756,12 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-control-data-packets-uplink_ip">uplink_ip</a><span>, in § 3.4.1</span>
    <li><a href="#session-control-data-packets-uplink_port">uplink_port</a><span>, in § 3.4.1</span>
    <li><a href="#user-data-packets-userdata">userdata</a><span>, in § 2.30</span>
+   <li><a href="#user-data-packets-userdata_compression">userdata_compression</a><span>, in § 2.30</span>
    <li><a href="#user-data-packets-user_data_descriptor">user_data_descriptor</a><span>, in § 2.30</span>
    <li><a href="#user-data-packets-userdata_length">userdata_length</a><span>, in § 2.30</span>
    <li><a href="#user-data-packets-user_data_parity_descriptor">user_data_parity_descriptor</a><span>, in § 2.30</span>
+   <li><a href="#user-data-packets-userdata_pl_length">userdata_pl_length</a><span>, in § 2.30</span>
    <li><a href="#user-data-packets-user_data_segment_descriptor">user_data_segment_descriptor</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-userdata_segmented">userdata_segmented</a><span>, in § 2.30</span>
    <li><a href="#user-data-packets-user_field">user_field</a><span>, in § 2.30</span>
    <li><a href="#time-synchronization-packets-video_info_descriptor">video_info_descriptor</a><span>, in § 2.19</span>
    <li><a href="#video-orientation-packets-video_orientation_descriptor">video_orientation_descriptor</a><span>, in § 2.28</span>
@@ -7207,7 +7202,7 @@ window.dfnpanelData['b06bf874'] = {"dfnID": "b06bf874", "url": "https://drafts.c
 window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-red", "dfnText": "red", "refSections": [{"refs": [{"id": "ref-for-valdef-color-red"}, {"id": "ref-for-valdef-color-red\u2460"}, {"id": "ref-for-valdef-color-red\u2461"}, {"id": "ref-for-valdef-color-red\u2462"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['c862e26c'] = {"dfnID": "c862e26c", "url": "https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active", "dfnText": "active", "refSections": [{"refs": [{"id": "ref-for-valdef-media-forced-colors-active"}, {"id": "ref-for-valdef-media-forced-colors-active\u2460"}], "title": "1.9. URI scheme"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
-window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "3.5.2. Resend"}], "external": false};
+window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "3.5.2. Resend"}], "external": false};
 window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}, {"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2462"}, {"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}, {"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2468"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u24ea"}], "title": "2.32. End of stream"}], "external": false};
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2461"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2462"}], "title": "2.19. Video information"}], "external": false};
 window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2462"}], "title": "3.5.3. Stream control"}], "external": false};
@@ -7257,7 +7252,7 @@ window.dfnpanelData['stream-data-packet-pkt_compression'] = {"dfnID": "stream-da
 window.dfnpanelData['stream-data-packet-data_length'] = {"dfnID": "stream-data-packet-data_length", "url": "#stream-data-packet-data_length", "dfnText": "data_length", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-data_length"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream-data-packet-data_length\u2460"}], "title": "2.7.3. Stream data segmentation"}, {"refs": [{"id": "ref-for-stream-data-packet-data_length\u2461"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['stream-data-packet-packet_data'] = {"dfnID": "stream-data-packet-packet_data", "url": "#stream-data-packet-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-packet_data"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461"}], "title": "3.1.5. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2462"}], "title": "3.1.6. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2463"}], "title": "3.1.8. Theora encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2464"}], "title": "3.1.9. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2465"}], "title": "3.1.10. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2466"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2467"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2468"}], "title": "3.1.13. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u24ea"}], "title": "3.1.14. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2460"}], "title": "3.1.15. ProRes encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2461"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2462"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2463"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2464"}], "title": "3.1.19. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2465"}], "title": "3.1.20. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2466"}, {"id": "ref-for-stream-data-packet-packet_data\u2460\u2467"}], "title": "3.1.21. JPEG-2000 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2468"}], "title": "3.1.22. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u24ea"}], "title": "3.1.23. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2460"}], "title": "3.1.24. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2461"}], "title": "3.1.25. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2462"}], "title": "3.2.1. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2463"}], "title": "3.3.1. UDP"}], "external": false};
 window.dfnpanelData['enumdef-frametype'] = {"dfnID": "enumdef-frametype", "url": "#enumdef-frametype", "dfnText": "FrameType", "refSections": [{"refs": [{"id": "ref-for-enumdef-frametype"}], "title": "2.7. Stream Data"}], "external": false};
-window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.16. Font data"}], "external": false};
+window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2463"}], "title": "2.30. User data"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-group_id'] = {"dfnID": "fec-grouping-packets-group_id", "url": "#fec-grouping-packets-group_id", "dfnText": "group_id", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-group_id"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_scheme_oti'] = {"dfnID": "fec-grouping-packets-fec_scheme_oti", "url": "#fec-grouping-packets-fec_scheme_oti", "dfnText": "fec_scheme_oti", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_scheme_oti"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_data_length'] = {"dfnID": "fec-grouping-packets-fec_data_length", "url": "#fec-grouping-packets-fec_data_length", "dfnText": "fec_data_length", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_data_length"}], "title": "2.8. FEC grouping"}], "external": false};
@@ -7269,19 +7264,15 @@ window.dfnpanelData['index-entry-struct-pkt_offset'] = {"dfnID": "index-entry-st
 window.dfnpanelData['dom-enum-commonmetadatakeys-language'] = {"dfnID": "dom-enum-commonmetadatakeys-language", "url": "#dom-enum-commonmetadatakeys-language", "dfnText": "language", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language"}, {"id": "ref-for-dom-enum-commonmetadatakeys-language\u2460"}], "title": "2.12.1. Common Metadata Keys"}], "external": false};
 window.dfnpanelData['dom-enum-commonmetadatakeys-language_tag'] = {"dfnID": "dom-enum-commonmetadatakeys-language_tag", "url": "#dom-enum-commonmetadatakeys-language_tag", "dfnText": "language_tag", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language_tag"}], "title": "2.12.1. Common Metadata Keys"}], "external": false};
 window.dfnpanelData['dom-enum-commonmetadatakeys-date'] = {"dfnID": "dom-enum-commonmetadatakeys-date", "url": "#dom-enum-commonmetadatakeys-date", "dfnText": "date", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date\u2460"}], "title": "2.12.1. Common Metadata Keys"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_flags'] = {"dfnID": "time-synchronization-packets-lut_flags", "url": "#time-synchronization-packets-lut_flags", "dfnText": "lut_flags", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_flags"}], "title": "2.14. LUT/ICC Profile Flags Enumeration (enum LutFlags)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_type'] = {"dfnID": "time-synchronization-packets-lut_type", "url": "#time-synchronization-packets-lut_type", "dfnText": "lut_type", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_type"}], "title": "2.15. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_major_ver'] = {"dfnID": "time-synchronization-packets-lut_major_ver", "url": "#time-synchronization-packets-lut_major_ver", "dfnText": "lut_major_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_major_ver"}], "title": "2.15. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_minor_ver'] = {"dfnID": "time-synchronization-packets-lut_minor_ver", "url": "#time-synchronization-packets-lut_minor_ver", "dfnText": "lut_minor_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_minor_ver"}], "title": "2.15. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_data_length'] = {"dfnID": "time-synchronization-packets-lut_data_length", "url": "#time-synchronization-packets-lut_data_length", "dfnText": "lut_data_length", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_data_length"}], "title": "2.13. LUT/ICC profile"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_pl_length'] = {"dfnID": "time-synchronization-packets-lut_pl_length", "url": "#time-synchronization-packets-lut_pl_length", "dfnText": "lut_pl_length", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_pl_length"}], "title": "2.13. LUT/ICC profile"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_data'] = {"dfnID": "time-synchronization-packets-lut_data", "url": "#time-synchronization-packets-lut_data", "dfnText": "lut_data", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_data"}], "title": "2.13. LUT/ICC profile"}], "external": false};
-window.dfnpanelData['enumdef-lutflags'] = {"dfnID": "enumdef-lutflags", "url": "#enumdef-lutflags", "dfnText": "LutFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-lutflags"}], "title": "2.13. LUT/ICC profile"}], "external": false};
 window.dfnpanelData['enumdef-luttype'] = {"dfnID": "enumdef-luttype", "url": "#enumdef-luttype", "dfnText": "LutType", "refSections": [{"refs": [{"id": "ref-for-enumdef-luttype"}], "title": "2.13. LUT/ICC profile"}], "external": false};
-window.dfnpanelData['font-data-packets-font_flags'] = {"dfnID": "font-data-packets-font_flags", "url": "#font-data-packets-font_flags", "dfnText": "font_flags", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_flags"}], "title": "2.17. Font Flags Enumeration (enum FontFlags)"}], "external": false};
 window.dfnpanelData['font-data-packets-font_type'] = {"dfnID": "font-data-packets-font_type", "url": "#font-data-packets-font_type", "dfnText": "font_type", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_type"}], "title": "2.18. Font Type Enumeration (enum FontType)"}], "external": false};
-window.dfnpanelData['font-data-packets-font_data_length'] = {"dfnID": "font-data-packets-font_data_length", "url": "#font-data-packets-font_data_length", "dfnText": "font_data_length", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_data_length"}], "title": "2.16. Font data"}], "external": false};
+window.dfnpanelData['font-data-packets-font_pl_length'] = {"dfnID": "font-data-packets-font_pl_length", "url": "#font-data-packets-font_pl_length", "dfnText": "font_pl_length", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_pl_length"}], "title": "2.16. Font data"}], "external": false};
 window.dfnpanelData['font-data-packets-font_data'] = {"dfnID": "font-data-packets-font_data", "url": "#font-data-packets-font_data", "dfnText": "font_data", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_data"}], "title": "2.16. Font data"}], "external": false};
-window.dfnpanelData['enumdef-fontflags'] = {"dfnID": "enumdef-fontflags", "url": "#enumdef-fontflags", "dfnText": "FontFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-fontflags"}], "title": "2.16. Font data"}], "external": false};
 window.dfnpanelData['enumdef-fonttype'] = {"dfnID": "enumdef-fonttype", "url": "#enumdef-fonttype", "dfnText": "FontType", "refSections": [{"refs": [{"id": "ref-for-enumdef-fonttype"}], "title": "2.16. Font data"}], "external": false};
 window.dfnpanelData['dom-enum-fonttype-font_type_woff2'] = {"dfnID": "dom-enum-fonttype-font_type_woff2", "url": "#dom-enum-fonttype-font_type_woff2", "dfnText": "FONT_TYPE_WOFF2", "refSections": [{"refs": [{"id": "ref-for-dom-enum-fonttype-font_type_woff2"}], "title": "2.18. Font Type Enumeration (enum FontType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-colorspace'] = {"dfnID": "time-synchronization-packets-colorspace", "url": "#time-synchronization-packets-colorspace", "dfnText": "colorspace", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-colorspace"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": false};
@@ -7318,7 +7309,7 @@ window.dfnpanelData['enumdef-matrix'] = {"dfnID": "enumdef-matrix", "url": "#enu
 window.dfnpanelData['video-orientation-packets-reflection'] = {"dfnID": "video-orientation-packets-reflection", "url": "#video-orientation-packets-reflection", "dfnText": "reflection", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-reflection"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['video-orientation-packets-rotation'] = {"dfnID": "video-orientation-packets-rotation", "url": "#video-orientation-packets-rotation", "dfnText": "rotation", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-rotation"}, {"id": "ref-for-video-orientation-packets-rotation\u2460"}, {"id": "ref-for-video-orientation-packets-rotation\u2461"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['enumdef-videoreflection'] = {"dfnID": "enumdef-videoreflection", "url": "#enumdef-videoreflection", "dfnText": "VideoReflection", "refSections": [{"refs": [{"id": "ref-for-enumdef-videoreflection"}], "title": "2.28. Video orientation"}], "external": false};
-window.dfnpanelData['user-data-packets-userdata_length'] = {"dfnID": "user-data-packets-userdata_length", "url": "#user-data-packets-userdata_length", "dfnText": "userdata_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_length"}], "title": "2.30. User data"}], "external": false};
+window.dfnpanelData['user-data-packets-userdata_pl_length'] = {"dfnID": "user-data-packets-userdata_pl_length", "url": "#user-data-packets-userdata_pl_length", "dfnText": "userdata_pl_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_pl_length"}], "title": "2.30. User data"}], "external": false};
 window.dfnpanelData['stream-duration-packets-total_duration'] = {"dfnID": "stream-duration-packets-total_duration", "url": "#stream-duration-packets-total_duration", "dfnText": "total_duration", "refSections": [{"refs": [{"id": "ref-for-stream-duration-packets-total_duration"}, {"id": "ref-for-stream-duration-packets-total_duration\u2460"}], "title": "2.31. Stream duration"}], "external": false};
 window.dfnpanelData['opus-encapsulation-opus_channels'] = {"dfnID": "opus-encapsulation-opus_channels", "url": "#opus-encapsulation-opus_channels", "dfnText": "opus_channels", "refSections": [{"refs": [{"id": "ref-for-opus-encapsulation-opus_channels"}], "title": "3.1.1. Opus encapsulation"}], "external": false};
 window.dfnpanelData['opus-encapsulation-opus_prepad'] = {"dfnID": "opus-encapsulation-opus_prepad", "url": "#opus-encapsulation-opus_prepad", "dfnText": "opus_prepad", "refSections": [{"refs": [{"id": "ref-for-opus-encapsulation-opus_prepad"}], "title": "3.1.1. Opus encapsulation"}], "external": false};
