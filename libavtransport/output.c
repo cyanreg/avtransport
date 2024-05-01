@@ -60,6 +60,14 @@ static inline int alloc_output_context(AVTSender **_s, AVTSenderOptions *opts)
     s->epoch = avt_get_time_ns();
     s->opts = *opts;
 
+    if (!(s->opts.compress & (~AVT_SENDER_COMPRESS_FORCE))) {
+        s->opts.compress |= AVT_SENDER_COMPRESS_META  |
+                            AVT_SENDER_COMPRESS_AUX   |
+                            AVT_SENDER_COMPRESS_SUBS  |
+                            AVT_SENDER_COMPRESS_AUDIO |
+                            AVT_SENDER_COMPRESS_VIDEO;
+    }
+
     s->conn = calloc(1, sizeof(*s->conn));
     if (!s->xxh_state) {
         avt_send_close(&s);

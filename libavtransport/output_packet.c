@@ -46,8 +46,7 @@ static inline enum AVTDataCompression compress_method(AVTPktd *p,
         case AVT_CODEC_ID_SRT: [[fallthrough]];
         case AVT_CODEC_ID_WEBVTT: [[fallthrough]];
         case AVT_CODEC_ID_ASS:
-            if (opts->compress & (AVT_SENDER_COMPRESS_FORCE |
-                                  AVT_SENDER_COMPRESS_SUBS))
+            if (opts->compress & AVT_SENDER_COMPRESS_SUBS)
                 return AVT_DATA_COMPRESSION_BROTLI;
             break;
         case AVT_CODEC_ID_OPUS: [[fallthrough]];
@@ -316,7 +315,6 @@ int avt_send_pkt_stream_data(AVTSender *s, AVTStream *st, AVTPacket *pkt)
             .pts = pkt->pts,
             .duration = pkt->duration,
         ),
-        .pl = *pkt->data,
     };
 
     int err = payload_process(s, st, &p, pkt->data);
