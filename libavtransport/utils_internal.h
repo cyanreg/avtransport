@@ -102,8 +102,14 @@ AVTPktd *avt_pkt_fifo_push_new(AVTPacketFifo *fifo, AVTBuffer *pl,
                                ptrdiff_t offset, size_t len);
 
 /* Pop a packet from the FIFO. quick_ref'd into pl */
-int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
-                     union AVTPacketData *pkt, AVTBuffer *pl);
+int avt_pkt_fifo_pop_d(AVTPacketFifo *fifo, AVTPktd *p);
+int avt_pkt_fifo_pop_p(AVTPacketFifo *fifo,
+                       union AVTPacketData *pkt, AVTBuffer *pl);
+#define avt_pkt_fifo_pop(f, x, ...)                    \
+    _Generic((x),                                      \
+             AVTPktd *: avt_pkt_fifo_pop_d,            \
+             union AVTPacketData *: avt_pkt_fifo_pop_p \
+    ) (f, x __VA_OPT__(,) __VA_ARGS__)
 
 /* Peek a packet from the FIFO. quick_ref'd into pl */
 int avt_pkt_fifo_peek(const AVTPacketFifo *fifo,

@@ -200,8 +200,25 @@ int avt_pkt_fifo_peek(const AVTPacketFifo *fifo,
     return 0;
 }
 
-int avt_pkt_fifo_pop(AVTPacketFifo *fifo,
-                     union AVTPacketData *pkt, AVTBuffer *pl)
+int avt_pkt_fifo_pop_d(AVTPacketFifo *fifo, AVTPktd *p)
+{
+    if (!fifo->nb)
+        return AVT_ERROR(ENOENT);
+
+    AVTPktd *data = &fifo->data[0];
+    if (p)
+        *p = *data;
+    else
+        avt_buffer_quick_unref(&data->pl);
+
+    fifo->nb--;
+    memmove(fifo->data, fifo->data + 1, fifo->nb*sizeof(*fifo->data));
+
+    return 0;
+}
+
+int avt_pkt_fifo_pop_p(AVTPacketFifo *fifo,
+                       union AVTPacketData *pkt, AVTBuffer *pl)
 {
     if (!fifo->nb)
         return AVT_ERROR(ENOENT);

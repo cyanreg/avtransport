@@ -31,8 +31,9 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
-    AVTPktd   start;
-    AVTBuffer pl;
+    /* Unlike with a normal packet, this is state,
+     * and the payload may not match the packet's contents */
+    AVTPktd   p;
 
     uint32_t  seg_offset;
     uint32_t  pl_left;
