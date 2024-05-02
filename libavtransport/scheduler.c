@@ -146,6 +146,34 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
 
     /* Process segments */
 resume:
+
+    /* Send a hash data packet if needed */
+    if (state->p.pl_has_hash && !state->hash_sent) {
+        acc = avt_pkt_hdr_size(AVT_PKT_HASH_DATA);
+
+        if (out_limit < acc)
+            return AVT_ERROR(EAGAIN);
+
+        p = avt_pkt_fifo_push_new(dst, NULL, 0, 0);
+        if (!p)
+            return AVT_ERROR(ENOMEM);
+
+        p->pkt = AVT_HASH_DATA_HDR(
+            .stream_id = state->p.pkt.stream_id,
+            .global_seq = get_seq(s),
+            .hash_target = state->p.pkt.seq,
+        );
+        memcpy(p->pkt.hash_data.hash_data, state->p.pl_hash, 16);
+
+        avt_packet_encode_header(p);
+
+        /* Enqueue packet */
+        out_acc += acc;
+        update_sw(s, acc);
+
+        state->hash_sent = true;
+    }
+
     hdr_size = state->seg_hdr_size;
 
     /* Return if there are no packets we can output in the limit */
@@ -180,7 +208,8 @@ resume:
 
     if (!out_acc) {
         state->seg_offset = 0;
-        state->present = 0;
+        state->present = false;
+        state->hash_sent = false;
     }
 
     return out_acc;
