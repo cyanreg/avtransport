@@ -31,7 +31,8 @@
 #include "utils_internal.h"
 
 typedef struct AVTSchedulerPacketContext {
-    AVTPktd  *p;
+    AVTPktd   start;
+    AVTBuffer pl;
 
     uint32_t  seg_offset;
     uint32_t  pl_left;

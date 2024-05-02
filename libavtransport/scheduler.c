@@ -81,7 +81,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     uint32_t hdr_size;
     size_t acc;
     size_t out_acc = 0;
-    uint32_t pl_size = avt_buffer_get_data_len(&state->p->pl);
+    uint32_t pl_size = avt_buffer_get_data_len(&state->pl);
     uint32_t seg_pl_size;
     const size_t lim = AVT_MIN(seg_size_lim, out_limit);
     AVTPktd *p;
@@ -90,7 +90,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
         goto resume;
 
     /* Header size of the encoded packet */
-    hdr_size = avt_pkt_hdr_size(state->p->pkt.desc);
+    hdr_size = avt_pkt_hdr_size(state->start.pkt.desc);
 
     /* Signal we need more bytes to output something coherent.
      * If there's payload, make sure we can send off at least a byte of it. */
@@ -102,7 +102,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
         if (!p)
             return AVT_ERROR(ENOMEM);
 
-        p->pkt = state->p->pkt;
+        p->pkt = state->start.pkt;
         avt_packet_encode_header(p);
         out_acc += hdr_size;
         update_sw(s, hdr_size);
@@ -114,31 +114,31 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
 
     /* Reserve new packet in the output bucket FIFO */
     seg_pl_size = AVT_MIN(lim - hdr_size, pl_size);
-    p = avt_pkt_fifo_push_new(dst, &state->p->pl, 0, seg_pl_size);
+    p = avt_pkt_fifo_push_new(dst, &state->pl, 0, seg_pl_size);
     if (!p)
         return AVT_ERROR(ENOMEM);
 
     /* Modify packet */
-    avt_packet_change_size(state->p, 0, seg_pl_size, pl_size);
-    state->p->pkt.seq = get_seq(s);
+    avt_packet_change_size(state->start.pkt, 0, seg_pl_size, pl_size);
+    state->start.pkt.seq = get_seq(s);
 
     /* Encode packet */
-    avt_packet_encode_header(state->p);
+    avt_packet_encode_header(&state->start);
 
     /* Update accumulated output */
-    acc = avt_pkt_hdr_size(state->p->pkt.desc) + seg_pl_size;
+    acc = avt_pkt_hdr_size(state->start.pkt.desc) + seg_pl_size;
     out_acc += acc;
     update_sw(s, acc);
 
     /* Update packet in FIFO */
-    p->pkt = state->p->pkt;
-    p->hdr_len = state->p->hdr_len;
-    memcpy(p->hdr, state->p->hdr, p->hdr_len);
+    p->pkt = state->start.pkt;
+    p->hdr_len = state->start.hdr_len;
+    memcpy(p->hdr, state->start.hdr, state->start.hdr_len);
 
     /* Setup segmentation context */
     state->seg_offset = seg_pl_size;
     state->pl_left = pl_size - state->seg_offset;
-    state->seg_hdr_size = avt_pkt_hdr_size(avt_packet_create_segment(state->p, 0, 0, 0, 0).desc);
+    state->seg_hdr_size = avt_pkt_hdr_size(avt_packet_create_segment(&state->start, 0, 0, 0, 0).desc);
 
     /* Return now with what we wrote if there are not enough bytes */
     if (out_acc >= out_limit)
@@ -155,11 +155,11 @@ resume:
     while (state->pl_left) {
         seg_pl_size = AVT_MIN(lim - hdr_size, state->pl_left);
 
-        p = avt_pkt_fifo_push_new(dst, &state->p->pl, state->seg_offset, seg_pl_size);
+        p = avt_pkt_fifo_push_new(dst, &state->pl, state->seg_offset, seg_pl_size);
         if (!p)
             return AVT_ERROR(ENOMEM);
 
-        p->pkt = avt_packet_create_segment(state->p, get_seq(s),
+        p->pkt = avt_packet_create_segment(&state->start, get_seq(s),
                                            state->seg_offset, seg_pl_size, pl_size);
 
         /* Encode packet */
@@ -181,32 +181,23 @@ resume:
     if (!out_acc) {
         state->seg_offset = 0;
         state->present = 0;
-        state->p = NULL;
     }
 
     return out_acc;
 }
 
-static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
+static inline void update_stream_ctx(AVTScheduler *s, AVTSchedulerStream *pctx)
 {
-    if (pctx->cur.present)
-        return 0;
-
-    if (!pctx->fifo.nb)
-        return AVT_ERROR(ENOENT);
-
-    pctx->cur.p = &pctx->fifo.data[0];
-
     AVTRational s_tb;
     avt_packet_get_tb(pctx->reg, &s_tb);
 
     static const AVTRational target_tb = (AVTRational){ 1, 1000000000 };
 
     /* TODO: take into account index packets having larger length */
-    const size_t size = (avt_pkt_hdr_size(pctx->cur.p->pkt.desc) +
-                         avt_buffer_get_data_len(&pctx->cur.p->pl)) * 8;
+    const size_t size = (avt_pkt_hdr_size(pctx->cur.start.pkt.desc) +
+                         avt_buffer_get_data_len(&pctx->cur.pl)) * 8;
 
-    int64_t duration = avt_packet_get_duration(&pctx->cur.p->pkt);
+    int64_t duration = avt_packet_get_duration(&pctx->cur.start.pkt);
     if (duration == INT64_MIN) {
         /* How many nanoseconds would take to transmit this number of bits */
         duration = avt_rescale(size, s->bandwidth, target_tb.den);
@@ -214,7 +205,7 @@ static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
         duration = avt_rescale_rational(duration, s_tb, target_tb);
     }
 
-    int64_t pts = avt_packet_get_pts(&pctx->cur.p->pkt);
+    int64_t pts = avt_packet_get_pts(&pctx->cur.start.pkt);
     if (pts != INT64_MIN)
         pts = avt_rescale_rational(pts, s_tb, target_tb);
 
@@ -222,8 +213,20 @@ static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
     pctx->cur.duration = duration;
     pctx->cur.present = true;
     pctx->cur.size = size;
+}
 
-    return 0;
+static inline int preload_pkt(AVTScheduler *s, AVTSchedulerStream *pctx)
+{
+    if (pctx->cur.present)
+        return 0;
+
+    int ret = avt_pkt_fifo_pop(&pctx->fifo, &pctx->cur.start.pkt, &pctx->cur.pl);
+    if (ret < 0)
+        return ret;
+
+    update_stream_ctx(s, pctx);
+
+    return ret;
 }
 
 static void remove_stream(AVTScheduler *s, int active_id, int overlap_id)
@@ -250,15 +253,17 @@ static int direct_push(AVTScheduler *s, uint16_t id)
     AVTSchedulerStream *pctx = &s->streams[id];
     avt_log(s, AVT_LOG_TRACE, "Pushing stream 0x%X: 0x%X pkt, "
                               "%" PRIi64 " avail bits\n",
-            id, pctx->cur.p->pkt.desc, s->avail);
+            id, pctx->cur.start.pkt.desc, s->avail);
     do {
         ret = scheduler_push_internal(s, &pctx->cur, s->staging,
                                       s->max_pkt_size, s->avail >> 3);
     } while (ret > 0);
 
     if (ret < 0) {
+        avt_buffer_quick_unref(&pctx->cur.pl);
         return ret;
     } else if (!ret) {
+        avt_buffer_quick_unref(&pctx->cur.pl);
         ret = preload_pkt(s, &s->streams[id]);
         if (ret == AVT_ERROR(ENOENT)) {
             remove_stream(s, 0, -1);
@@ -359,7 +364,7 @@ static int scheduler_process(AVTScheduler *s)
         avt_log(s, AVT_LOG_TRACE, "Pushing stream 0x%X: 0x%X pkt, "
                                   "%" PRIi64 " limit, "
                                   "%" PRIi64 "/%" PRIi64 " left/avail bits\n",
-                id, pctx->cur.p->pkt.desc, local_limit, overlap_size, s->avail);
+                id, pctx->cur.start.pkt.desc, local_limit, overlap_size, s->avail);
 
         ret = scheduler_push_internal(s, &pctx->cur, s->staging,
                                       s->max_pkt_size, local_limit);
@@ -367,13 +372,13 @@ static int scheduler_process(AVTScheduler *s)
             /* No bits left at all. Just return. */
             return 0;
         } else if (ret < 0) {
-            avt_buffer_quick_unref(&pctx->cur.p->pl);
+            avt_buffer_quick_unref(&pctx->cur.pl);
             return ret;
         } else if (ret > 0) {
             s->avail -= ret;
             overlap_size -= ret;
         } else if (ret == 0) {
-            avt_buffer_quick_unref(&pctx->cur.p->pl);
+            avt_buffer_quick_unref(&pctx->cur.pl);
             /* Preload next */
             ret = preload_pkt(s, pctx);
             if (ret == 0) {
@@ -411,7 +416,8 @@ int avt_scheduler_push(AVTScheduler *s, AVTPktd *p)
     /* Bypass everything if interleaving is turned off */
     if (s->bandwidth == INT64_MAX) {
         AVTSchedulerPacketContext state = {
-            .p =  p,
+            .start = *p,
+            .pl = p->pl,
         };
         return scheduler_push_internal(s, &state, s->staging,
                                        s->max_pkt_size, INT64_MAX);
@@ -432,10 +438,16 @@ int avt_scheduler_push(AVTScheduler *s, AVTPktd *p)
         s->active_stream_indices[s->nb_active_stream_indices++] = sid;
     }
 
-    /* Add packet to stream FIFO */
-    ret = avt_pkt_fifo_push(&s->streams[sid].fifo, p);
-    if (ret < 0)
-        return ret;
+    if (!s->streams[sid].cur.present && !s->streams[sid].fifo.nb) {
+        s->streams[sid].cur.start.pkt = p->pkt;
+        avt_buffer_quick_ref(&s->streams[sid].cur.pl, &p->pl, 0, AVT_BUFFER_REF_ALL);
+        update_stream_ctx(s, &s->streams[sid]);
+    } else {
+        /* Add packet to stream FIFO */
+        ret = avt_pkt_fifo_push(&s->streams[sid].fifo, p);
+        if (ret < 0)
+            return ret;
+    }
 
     return scheduler_process(s);
 }
@@ -502,6 +514,7 @@ void avt_scheduler_free(AVTScheduler *s)
 
     for (auto i = 0; i < s->nb_active_stream_indices; i++) {
         AVTSchedulerStream *st = &s->streams[s->active_stream_indices[i]];
+        avt_buffer_quick_unref(&st->cur.pl);
         avt_pkt_fifo_free(&st->fifo);
     }
     s->nb_active_stream_indices = 0;

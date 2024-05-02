@@ -34,6 +34,7 @@
 
 struct AVTConnection {
     AVTAddress addr;
+    uint32_t session_seq;
 
     /* I/O */
     const AVTIO *io;
@@ -80,6 +81,29 @@ int avt_connection_destroy(AVTConnection **_conn)
     return err;
 }
 
+static int send_session_start_pkt(AVTConnection *conn)
+{
+    AVTPktd p = {
+        .pkt = AVT_SESSION_START_HDR(
+            .session_seq = conn->session_seq,
+            .session_flags = 0x0,
+            .producer_major = PROJECT_VERSION_MAJOR,
+            .producer_minor = PROJECT_VERSION_MINOR,
+            .producer_micro = PROJECT_VERSION_MICRO,
+        ),
+    };
+
+    memcpy(p.pkt.session_start.session_uuid, conn->addr.uuid, 16);
+    memccpy(p.pkt.session_start.producer_name, PROJECT_NAME,
+            '\0', sizeof(p.pkt.session_start.producer_name));
+
+    int err = avt_scheduler_push(&conn->out_scheduler, &p);
+    if (err < 0)
+        return err;
+
+    return 0;
+}
+
 int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
                           AVTConnectionInfo *info)
 {
@@ -116,6 +140,12 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
     if (ret < 0)
         goto fail;
 
+    /* Write a session start packet */
+    conn->session_seq = avt_get_time_ns() & 0xFFFFFFFF;
+    ret = send_session_start_pkt(conn);
+    if (ret < 0)
+        goto fail;
+
     *_conn = conn;
 
     return 0;
@@ -132,23 +162,6 @@ int avt_connection_send(AVTConnection *conn, AVTPktd *p)
     if (err < 0)
         return err;
 
-    return 0;
-}
-
-static int send_session_start_pkt(AVTConnection *conn)
-{
-    union AVTPacketData pkt = AVT_SESSION_START_HDR(
-        .session_uuid = { },
-        .session_flags = 0x0,
-        .producer_major = PROJECT_VERSION_MAJOR,
-        .producer_minor = PROJECT_VERSION_MINOR,
-        .producer_micro = PROJECT_VERSION_MICRO,
-    );
-
-    memccpy(pkt.session_start.producer_name, PROJECT_NAME,
-            '\0', sizeof(pkt.session_start.producer_name));
-
-    //    return avt_connection_send(conn, p, NULL);
     return 0;
 }
 

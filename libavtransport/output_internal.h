@@ -51,6 +51,7 @@ typedef struct AVTSender {
 
     AVTConnection **conn;
     uint32_t nb_conn;
+    uint32_t nb_conn_alloc;
 
     AVTStream streams[UINT16_MAX];
     uint16_t active_stream_idx[UINT16_MAX];

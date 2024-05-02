@@ -31,6 +31,7 @@
 #include "utils_internal.h"
 #include "output_internal.h"
 #include "output_packet.h"
+#include "mem.h"
 
 #include "config.h"
 
@@ -68,11 +69,14 @@ static inline int alloc_output_context(AVTSender **_s, AVTSenderOptions *opts)
                             AVT_SENDER_COMPRESS_VIDEO;
     }
 
+    /* Allocate one here just so we don't have to tear this down later in
+     * case malloc fails */
     s->conn = calloc(1, sizeof(*s->conn));
-    if (!s->xxh_state) {
+    if (!s->conn) {
         avt_send_close(&s);
         return AVT_ERROR(ENOMEM);
     }
+    s->nb_conn_alloc = 1;
 
     /* Init xxHash state */
     s->xxh_state = XXH3_createState();
@@ -101,6 +105,8 @@ int avt_send_open(AVTContext *ctx, AVTSender **_s,
     int err;
     AVTSender *s = NULL;
 
+    // TODO: query connection status here
+
     /* Allocate state, if not already existing */
     if (!(*_s)) {
         err = alloc_output_context(&s, opts);
@@ -112,9 +118,18 @@ int avt_send_open(AVTContext *ctx, AVTSender **_s,
     }
 
     /* Register connection for output */
-    s->conn[s->nb_conn++] = conn;
+    if (s->nb_conn_alloc < (s->nb_conn + 1)) {
+        AVTConnection **tmp = avt_reallocarray(s->conn,
+                                               s->nb_conn_alloc + 1,
+                                               sizeof(*tmp));
+        if (!tmp)
+            return AVT_ERROR(ENOMEM);
 
-    // TODO: query connection status
+        s->conn = tmp;
+        s->nb_conn_alloc++;
+    }
+
+    s->conn[s->nb_conn++] = conn;
 
     return 0;
 }
