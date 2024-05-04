@@ -175,11 +175,7 @@ typedef struct AVTConnectionInfo {
              * data with a particular offset. Returns the offset after
              * reading, or a negative error.
              * The buffer `data` is set to a buffer with the data requested.
-             *
-             * Note, `data` MAY be non-NULL. In which case, it will contain
-             * data from the previous read. The buffer must be expanded to
-             * include `len` more bytes. Only the data matters, the buffer
-             * may be recreated. */
+             * Ownership of the buffer is not transferred. */
             int64_t (*read)(void *opaque, AVTBuffer **data,
                             size_t len, int64_t offset);
 
@@ -207,15 +203,13 @@ typedef struct AVTConnectionInfo {
 
     /* Input options */
     struct {
-        /* Probe data when opening.
-         * avt_connection_create() will block until the first packet is read. */
-        bool probe;
-
         /* Buffer size limit. Zero means automatic. Approximate/best effort. */
         size_t buffer;
 
-        /* Always enable decoding and correction with LDPC codes. */
-        bool force_ldpc;
+        /* Controls the number of iterations for LDPC decoding. Zero means
+         * automatic (very rarely), higher values increase overhead
+         * and decrease potential errors, negative values disables decoding. */
+        int ldpc_iterations;
     } input_opts;
 
     struct {

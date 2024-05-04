@@ -47,16 +47,6 @@ static inline int64_t RENAME(avt_packet_get_pts)(const TYPE p)
     }
 }
 
-static inline int64_t RENAME(avt_packet_get_size)(const TYPE p)
-{
-    switch (GET(desc)) {
-    case AVT_PKT_STREAM_DATA:
-        return GET(stream_data.data_length);
-    default:
-        return INT64_MIN;
-    }
-}
-
 static inline int RENAME(avt_packet_get_tb)(const TYPE p, AVTRational *tb)
 {
     switch (GET(desc)) {
@@ -75,6 +65,7 @@ static inline void RENAME(avt_packet_set_compression)(TYPE p,
     case AVT_PKT_STREAM_DATA:
         GET(stream_data).pkt_compression = compression;
         return;
+    case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
     case AVT_PKT_METADATA:
         GET(generic_data).generic_data_compression = compression;
         return;
@@ -93,6 +84,52 @@ static inline void RENAME(avt_packet_set_compression)(TYPE p,
     }
 }
 
+static inline int RENAME(avt_packet_series)(const TYPE p,
+                                            uint32_t *off,
+                                            uint32_t *cur,
+                                            uint32_t *tot)
+{
+    switch (GET(desc)) {
+    case AVT_PKT_STREAM_DATA:
+        *cur = GET(stream_data).data_length;
+        *tot = !GET(stream_data).pkt_segmented ? GET(stream_data).data_length : 0;
+        *off = 0;
+        return GET(stream_data).pkt_segmented;
+    case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
+    case AVT_PKT_METADATA:
+        *cur = GET(generic_data).payload_length;
+        *tot = GET(generic_data).total_payload_length;
+        *off = 0;
+        return GET(generic_data).payload_length != GET(generic_data).total_payload_length;
+    case AVT_PKT_USER_DATA:
+        *cur = GET(user_data).userdata_pl_length;
+        *tot = GET(user_data).userdata_length;
+        *off = 0;
+        return GET(user_data).userdata_pl_length != GET(user_data).userdata_length;
+    case AVT_PKT_LUT_ICC:
+        *cur = GET(lut_icc).lut_pl_length;
+        *tot = GET(lut_icc).lut_data_length;
+        *off = 0;
+        return GET(lut_icc).lut_pl_length != GET(lut_icc).lut_data_length;
+    case AVT_PKT_FONT_DATA:
+        *cur = GET(font_data).font_pl_length;
+        *tot = GET(font_data).font_data_length;
+        *off = 0;
+        return GET(font_data).font_pl_length != GET(font_data).font_data_length;
+    case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
+    case AVT_PKT_USER_DATA_SEGMENT:   [[fallthrough]];
+    case AVT_PKT_LUT_ICC_SEGMENT:     [[fallthrough]];
+    case AVT_PKT_FONT_DATA_SEGMENT:   [[fallthrough]];
+    case AVT_PKT_STREAM_DATA_SEGMENT:
+        *cur = GET(generic_segment).seg_length;
+        *tot = GET(generic_segment).pkt_total_data;
+        *off = GET(generic_segment).seg_offset;
+        return -1;
+    default:
+        return 0;
+    }
+}
+
 static inline void RENAME(avt_packet_change_size)(TYPE p,
                                                   uint32_t seg_offset,
                                                   uint32_t seg_length,
@@ -103,6 +140,7 @@ static inline void RENAME(avt_packet_change_size)(TYPE p,
         GET(stream_data).data_length = seg_length;
         GET(stream_data).pkt_segmented = seg_length < tot_pl_size;
         return;
+    case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
     case AVT_PKT_METADATA:
         GET(generic_data).payload_length = seg_length;
         GET(generic_data).total_payload_length = tot_pl_size;

@@ -24,15 +24,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_LDPC_DECODE
-#define AVTRANSPORT_LDPC_DECODE
+#ifndef AVTRANSPORT_MERGER_H
+#define AVTRANSPORT_MERGER_H
 
-#include <stdint.h>
+#include "packet_common.h"
 
-/* Decodes systematic LDPC codes. dst must point to the start of the message. */
+typedef struct AVTMergerRange {
+    uint32_t offset;
+    uint32_t size;
+} AVTMergerRange;
 
-void avt_ldpc_decode_288_224(uint8_t *dst, int iterations);
+/* One merger per seq ID */
+typedef struct AVTMerger {
+    bool active;
+    uint32_t target;
+    uint32_t target_tot_len;
 
-void avt_ldpc_decode_2784_2016(uint8_t *dst, int iterations);
+    AVTPktd p;
+    bool p_avail;
+    uint32_t pkt_len_track;
 
-#endif /* AVTRANSPORT_LDPC_DECODE */
+    AVTMergerRange *ranges;
+    uint32_t nb_ranges;
+    uint32_t ranges_allocated;
+
+    uint8_t hdr_mask; // 1 bit per 32-bits
+} AVTMerger;
+
+int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p);
+
+#endif /* AVTRANSPORT_MERGER_H */

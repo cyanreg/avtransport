@@ -83,6 +83,9 @@ AVT_API void avt_buffer_default_free(void *opaque, void *base_data, size_t len);
 AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
                                      void *opaque, avt_free_cb free);
 
+/* Check if buffer is writable */
+AVT_API bool avt_buffer_read_only(AVTBuffer *buffer);
+
 /* Create and allocate a reference counted buffer. */
 AVT_API AVTBuffer *avt_buffer_alloc(size_t len);
 

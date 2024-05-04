@@ -109,6 +109,7 @@ static inline enum AVTDataCompression compress_method(AVTPktd *p,
             return AVT_DATA_COMPRESSION_ZSTD;
         break;
     /* Permit user data to be compressed as well */
+    case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
     case AVT_PKT_USER_DATA: [[fallthrough]];
     case AVT_PKT_LUT_ICC:
         if (opts->compress & AVT_SENDER_COMPRESS_AUX)

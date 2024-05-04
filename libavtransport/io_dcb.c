@@ -81,9 +81,8 @@ static int64_t dcb_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
         uint8_t *src_data = avt_buffer_get_data(tmp, &src_len);
 
         memcpy(dst_data, src_data, AVT_MIN(len, src_len));
-        avt_buffer_unref(&tmp);
     } else {
-        avt_buffer_move(buf, &tmp);
+        avt_buffer_quick_ref(buf, tmp, 0, AVT_BUFFER_REF_ALL);
     }
 
     return (io->rpos = ret);

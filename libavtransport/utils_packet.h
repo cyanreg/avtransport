@@ -123,42 +123,45 @@ static inline void avt_packet_encode_header(AVTPktd *p)
 #undef GET
 #undef TYPE
 
-#define avt_packet_get_duration(x, ...)                          \
-    _Generic((x),                                                \
-             AVTPktd *: avt_packet_get_duration_d,               \
-             const AVTPktd *: avt_packet_get_duration_d,         \
-             union AVTPacketData: avt_packet_get_duration_p,     \
-             union AVTPacketData *: avt_packet_get_duration_pp   \
+#define avt_packet_get_duration(x, ...)                                \
+    _Generic((x),                                                      \
+             AVTPktd *: avt_packet_get_duration_d,                     \
+             const AVTPktd *: avt_packet_get_duration_d,               \
+             union AVTPacketData: avt_packet_get_duration_p,           \
+             union AVTPacketData *: avt_packet_get_duration_pp,        \
+             const union AVTPacketData *: avt_packet_get_duration_pp   \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
-#define avt_packet_get_pts(x, ...)                          \
-    _Generic((x),                                           \
-             AVTPktd *: avt_packet_get_pts_d,               \
-             const AVTPktd *: avt_packet_get_pts_d,         \
-             union AVTPacketData: avt_packet_get_pts_p,     \
-             union AVTPacketData *: avt_packet_get_pts_pp   \
+#define avt_packet_get_pts(x, ...)                                \
+    _Generic((x),                                                 \
+             AVTPktd *: avt_packet_get_pts_d,                     \
+             const AVTPktd *: avt_packet_get_pts_d,               \
+             union AVTPacketData: avt_packet_get_pts_p,           \
+             union AVTPacketData *: avt_packet_get_pts_pp,        \
+             const union AVTPacketData *: avt_packet_get_pts_pp   \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
-#define avt_packet_get_size(x, ...)                         \
-    _Generic((x),                                           \
-             AVTPktd *: avt_packet_get_size_d,              \
-             const AVTPktd *: avt_packet_get_size_d,        \
-             union AVTPacketData: avt_packet_get_size_p,    \
-             union AVTPacketData *: avt_packet_get_size_pp, \
+#define avt_packet_series(x, ...)                                 \
+    _Generic((x),                                                 \
+             AVTPktd *: avt_packet_series_d,                      \
+             const AVTPktd *: avt_packet_series_d,                \
+             union AVTPacketData: avt_packet_series_p,            \
+             union AVTPacketData *: avt_packet_series_pp,         \
+             const union AVTPacketData *: avt_packet_series_pp    \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
-#define avt_packet_get_tb(x, ...)                           \
-    _Generic((x),                                           \
-             AVTPktd *: avt_packet_get_tb_d,                \
-             const AVTPktd *: avt_packet_get_tb_d,          \
-             union AVTPacketData: avt_packet_get_tb_p,      \
-             union AVTPacketData *: avt_packet_get_tb_pp    \
+#define avt_packet_get_tb(x, ...)                                 \
+    _Generic((x),                                                 \
+             AVTPktd *: avt_packet_get_tb_d,                      \
+             const AVTPktd *: avt_packet_get_tb_d,                \
+             union AVTPacketData: avt_packet_get_tb_p,            \
+             union AVTPacketData *: avt_packet_get_tb_pp,         \
+             const union AVTPacketData *: avt_packet_get_tb_pp    \
     ) (x __VA_OPT__(,) __VA_ARGS__)
 
 #define avt_packet_set_compression(x, ...)                        \
     _Generic((x),                                                 \
              AVTPktd *: avt_packet_set_compression_d,             \
-             const AVTPktd *: avt_packet_set_compression_d,       \
              union AVTPacketData: avt_packet_set_compression_p,   \
              union AVTPacketData *: avt_packet_set_compression_pp \
     ) (x __VA_OPT__(,) __VA_ARGS__)

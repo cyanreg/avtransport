@@ -123,8 +123,11 @@ int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
         goto fail;
 
     /* Protocol init */
+    AVTProtocolOpts opts = {
+        .ldpc_iterations = info->input_opts.ldpc_iterations,
+    };
     ret = avt_protocol_init(ctx, &conn->p, &conn->p_ctx, &conn->addr,
-                            conn->io, conn->io_ctx);
+                            conn->io, conn->io_ctx, &opts);
     if (ret < 0)
         goto fail;
 

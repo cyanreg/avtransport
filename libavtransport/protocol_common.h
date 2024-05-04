@@ -31,6 +31,10 @@
 #include "utils_internal.h"
 #include "io_common.h"
 
+typedef struct AVTProtocolOpts {
+    int ldpc_iterations;
+} AVTProtocolOpts;
+
 /* High level interface */
 typedef struct AVTProtocolCtx AVTProtocolCtx;
 typedef struct AVTProtocol {
@@ -39,7 +43,7 @@ typedef struct AVTProtocol {
 
     /* Initialize a context */
     int (*init)(AVTContext *ctx, AVTProtocolCtx **p, AVTAddress *addr,
-                const AVTIO *io, AVTIOCtx *io_ctx);
+                const AVTIO *io, AVTIOCtx *io_ctx, AVTProtocolOpts *opts);
 
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTProtocolCtx *p, AVTAddress *addr);
@@ -63,8 +67,7 @@ typedef struct AVTProtocol {
                          void **series, int64_t pos);
 
     /* Receive a packet. Returns offset after reading. */
-    int (*receive_packet)(AVTProtocolCtx *p,
-                          union AVTPacketData *pkt, AVTBuffer **pl,
+    int (*receive_packet)(AVTProtocolCtx *s, AVTPktd *p,
                           int64_t timeout);
 
     /* Seek to a place in the stream */
@@ -80,7 +83,8 @@ typedef struct AVTProtocol {
 
 COLD int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
                            AVTProtocolCtx **p_ctx, AVTAddress *addr,
-                           const AVTIO *io, AVTIOCtx *io_ctx);
+                           const AVTIO *io, AVTIOCtx *io_ctx,
+                           AVTProtocolOpts *opts);
 
 typedef struct AVTIndexContext {
     AVTIndexEntry *index;

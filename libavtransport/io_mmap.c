@@ -46,7 +46,7 @@
 
 struct AVTIOCtx {
     int fd;
-    AVTBuffer *map;
+    AVTBuffer map;
 
     avt_pos rpos;
     avt_pos wpos;
@@ -63,7 +63,7 @@ static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
 static COLD int mmap_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
-    avt_buffer_unref(&io->map);
+    avt_buffer_quick_unref(&io->map);
     if (io->file_grew)
         ftruncate(io->fd, io->wpos);
     close(io->fd);
@@ -102,13 +102,14 @@ static COLD int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
         return ret;
     }
 
-    io->map = avt_buffer_create(data, len,
-                                (void *)((intptr_t)fd_dup),
-                                mmap_buffer_free);
-    if (!io->map) {
+    ret = avt_buffer_quick_create(&io->map, data, len,
+                                  (void *)((intptr_t)fd_dup),
+                                  mmap_buffer_free,
+                                  AVT_BUFFER_FLAG_READ_ONLY);
+    if (ret < 0) {
         munmap(data, len);
         close(fd_dup);
-        return AVT_ERROR(ENOMEM);
+        return ret;
     }
 
     return 0;
@@ -170,7 +171,7 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
 {
     int ret;
     size_t old_map_size;
-    uint8_t *old_map = avt_buffer_get_data(io->map, &old_map_size);
+    uint8_t *old_map = avt_buffer_get_data(&io->map, &old_map_size);
     void *new_map = MAP_FAILED;
 
     amount = AVT_MAX(amount, MIN_ALLOC);
@@ -190,13 +191,13 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
      * If there's only a single reference to the map (ours), allow it to be
      * moved. */
     new_map = mremap(old_map, old_map_size, new_map_size,
-                     avt_buffer_get_refcount(io->map) == 1 ? MREMAP_MAYMOVE :
-                                                             0);
+                     avt_buffer_get_refcount(&io->map) == 1 ? MREMAP_MAYMOVE :
+                                                              0);
 
     /* Success */
     if (new_map != MAP_FAILED) {
         /* Update the existing buffer */
-        avt_buffer_update(io->map, new_map, new_map_size);
+        avt_buffer_update(&io->map, new_map, new_map_size);
         return 0;
     } else if (new_map == MAP_FAILED && errno != ENOMEM) {
         ret = avt_handle_errno(io, "Error in mremap(): %i %s\n");
@@ -225,16 +226,18 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
         return ret;
     }
 
-    AVTBuffer *new_buf = avt_buffer_create(data, new_map_size,
-                                           (void *)((intptr_t)fd_dup),
-                                           mmap_buffer_free);
-    if (!io->map) {
+    AVTBuffer new_buf;
+    ret = avt_buffer_quick_create(&new_buf, data, new_map_size,
+                                  (void *)((intptr_t)fd_dup),
+                                  mmap_buffer_free,
+                                  AVT_BUFFER_FLAG_READ_ONLY);
+    if (ret < 0) {
         munmap(data, new_map_size);
         close(fd_dup);
-        return AVT_ERROR(ENOMEM);
+        return ret;
     }
 
-    avt_buffer_unref(&io->map);
+    avt_buffer_quick_unref(&io->map);
     io->map = new_buf;
 
     return 0;
@@ -248,7 +251,7 @@ static int mmap_max_pkt_len(AVTIOCtx *io, size_t *mtu)
 
 static inline avt_pos mmap_seek(AVTIOCtx *io, avt_pos pos)
 {
-    if (pos > avt_buffer_get_data_len(io->map))
+    if (pos > avt_buffer_get_data_len(&io->map))
         return AVT_ERROR(ERANGE);
     return (io->rpos = pos);
 }
@@ -259,7 +262,7 @@ static avt_pos mmap_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
     uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
 
     size_t map_size;
-    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+    uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     if ((io->wpos + p->hdr_len + pl_len) > map_size) {
         int ret = mmap_grow(io, p->hdr_len + pl_len);
@@ -267,7 +270,7 @@ static avt_pos mmap_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
             return ret;
     }
 
-    map_data = avt_buffer_get_data(io->map, &map_size);
+    map_data = avt_buffer_get_data(&io->map, &map_size);
     memcpy(&map_data[io->wpos], p->hdr, p->hdr_len);
     memcpy(&map_data[io->wpos + p->hdr_len], pl_data, pl_len);
 
@@ -285,7 +288,7 @@ static avt_pos mmap_write_vec(AVTIOCtx *io, AVTPktd *iov, uint32_t nb_iov,
         sum += iov[i].hdr_len + avt_buffer_get_data_len(&iov[i].pl);
 
     size_t map_size;
-    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+    uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     if ((io->wpos + sum) > map_size) {
         int ret = mmap_grow(io, sum);
@@ -294,7 +297,7 @@ static avt_pos mmap_write_vec(AVTIOCtx *io, AVTPktd *iov, uint32_t nb_iov,
     }
 
     avt_pos offset = io->wpos;
-    map_data = avt_buffer_get_data(io->map, &map_size);
+    map_data = avt_buffer_get_data(&io->map, &map_size);
     for (int i = 0; i < nb_iov; i++) {
         pl_data = avt_buffer_get_data(&iov[i].pl, &pl_len);
         memcpy(&map_data[offset], iov[i].hdr, iov[i].hdr_len);
@@ -313,7 +316,7 @@ static avt_pos mmap_rewrite(AVTIOCtx *io, AVTPktd *p, avt_pos off,
     uint8_t *pl_data = avt_buffer_get_data(&p->pl, &pl_len);
 
     size_t map_size;
-    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+    uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     if ((off + p->hdr_len + pl_len) > map_size)
         return AVT_ERROR(ERANGE);
@@ -329,7 +332,7 @@ static inline int64_t mmap_read(AVTIOCtx *io, AVTBuffer *dst,
                                 enum AVTIOReadFlags flags)
 {
     size_t map_size;
-    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+    uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     /* TODO: cap map_size at wpos? */
     len = AVT_MIN(map_size - io->rpos, len);
@@ -339,7 +342,7 @@ static inline int64_t mmap_read(AVTIOCtx *io, AVTBuffer *dst,
         memcpy(dst, &map_data[io->rpos], len);
     } else {
         avt_buffer_quick_unref(dst);
-        avt_buffer_quick_ref(dst, io->map, io->rpos, len);
+        avt_buffer_quick_ref(dst, &io->map, io->rpos, len);
     }
 
     len = io->rpos + len;
@@ -350,7 +353,7 @@ static inline int64_t mmap_read(AVTIOCtx *io, AVTBuffer *dst,
 static int mmap_flush(AVTIOCtx *io, int64_t timeout)
 {
     size_t map_size;
-    uint8_t *map_data = avt_buffer_get_data(io->map, &map_size);
+    uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     int ret = msync(map_data, map_size, timeout == 0 ? MS_ASYNC : MS_SYNC);
     if (ret < 0)

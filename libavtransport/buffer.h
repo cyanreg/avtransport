@@ -34,6 +34,10 @@
 #include <avtransport/utils.h>
 #include "attributes.h"
 
+enum AVTBufferFlags {
+    AVT_BUFFER_FLAG_READ_ONLY = 1 << 0,
+};
+
 struct AVTBuffer {
     uint8_t *data;      /* Current ref's view of the buffer */
     size_t len;         /* Current ref's size of the view of the buffer */
@@ -43,11 +47,52 @@ struct AVTBuffer {
 
     avt_free_cb free;
     void *opaque;
+    enum AVTBufferFlags flags;
     atomic_int *refcnt;
 };
 
 void avt_buffer_update(AVTBuffer *buf, void *data, size_t len);
 int avt_buffer_resize(AVTBuffer *buf, size_t len);
+
+static inline int avt_buffer_quick_create(AVTBuffer *buf, uint8_t *data,
+                                          size_t len, void *opaque,
+                                          avt_free_cb free_cb,
+                                          enum AVTBufferFlags flags)
+{
+    buf->refcnt = malloc(sizeof(*buf->refcnt));
+    if (!buf->refcnt)
+        return AVT_ERROR(ENOMEM);
+
+    atomic_init(buf->refcnt, 1);
+
+    buf->base_data = data;
+    buf->end_data = data + len;
+    buf->data = data;
+    buf->len = len;
+    buf->opaque = opaque;
+    if (!free_cb)
+        buf->free = avt_buffer_default_free;
+    else
+        buf->free = free_cb;
+
+    return 0;
+}
+
+static inline uint8_t *avt_buffer_quick_alloc(AVTBuffer *buf, size_t len)
+{
+    void *alloc = malloc(len);
+    if (!alloc)
+        return NULL;
+
+    int err = avt_buffer_quick_create(buf, alloc, len, NULL,
+                                      avt_buffer_default_free , 0);
+    if (err < 0) {
+        free(alloc);
+        return NULL;
+    }
+
+    return alloc;
+}
 
 static inline void avt_buffer_quick_unref(AVTBuffer *buf)
 {
@@ -78,14 +123,6 @@ static inline void avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
 
     dst->data += offset;
     dst->len = (len == AVT_BUFFER_REF_ALL) ? (dst->end_data - dst->data) : len;
-}
-
-static inline void avt_buffer_move(AVTBuffer *dst, AVTBuffer **src)
-{
-    /* Move a reference to an already existing ref */
-    avt_buffer_quick_unref(dst);
-    memcpy(dst, *src, sizeof(*dst));
-    free(src);
 }
 
 int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);

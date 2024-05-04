@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_LDPC_ENCODE
-#define LIBAVTRANSPORT_LDPC_ENCODE
+#ifndef AVTRANSPORT_LDPC_ENCODE
+#define AVTRANSPORT_LDPC_ENCODE
 
 #include <stdint.h>
 
@@ -36,4 +36,4 @@ void avt_ldpc_encode_288_224(uint8_t *dst);
 
 void avt_ldpc_encode_2784_2016(uint8_t *dst);
 
-#endif
+#endif /* AVTRANSPORT_LDPC_ENCODE */

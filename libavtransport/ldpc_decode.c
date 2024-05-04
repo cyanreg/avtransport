@@ -25,3 +25,11 @@
  */
 
 #include "ldpc_decode.h"
+
+void avt_ldpc_decode_288_224(uint8_t *dst, int iterations)
+{
+}
+
+void avt_ldpc_decode_2784_2016(uint8_t *dst, int iterations)
+{
+}

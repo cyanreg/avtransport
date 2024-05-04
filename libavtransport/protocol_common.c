@@ -52,7 +52,7 @@ static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
 /* For connections to call */
 int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
                       AVTProtocolCtx **p_ctx, AVTAddress *addr,
-                      const AVTIO *io, AVTIOCtx *io_ctx)
+                      const AVTIO *io, AVTIOCtx *io_ctx, AVTProtocolOpts *opts)
 {
     const AVTProtocol *p = avt_protocol_list[addr->proto];
     if (!p) {
@@ -61,7 +61,7 @@ int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
         return AVT_ERROR(ENOTSUP);
     }
 
-    int err = p->init(ctx, p_ctx, addr, io, io_ctx);
+    int err = p->init(ctx, p_ctx, addr, io, io_ctx, opts);
     if (err >= 0)
         *_p = p;
 

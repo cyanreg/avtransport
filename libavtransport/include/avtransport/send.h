@@ -64,7 +64,7 @@ typedef struct AVTSenderOptions {
     /* Compression level. Zero means automatic (the default for each compressor). */
     int compress_level;
 
-    /* Set to true to enable sending hash packets. */
+    /* Set to true to enable sending hash packets for all packets with a payload. */
     bool hash;
 } AVTSenderOptions;
 

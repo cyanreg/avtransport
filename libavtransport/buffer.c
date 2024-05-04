@@ -38,23 +38,11 @@ AVT_API AVTBuffer *avt_buffer_create(uint8_t *data, size_t len,
     if (!buf)
         return NULL;
 
-    buf->refcnt = malloc(sizeof(*buf->refcnt));
-    if (!buf->refcnt) {
+    int err = avt_buffer_quick_create(buf, data, len, opaque, free_cb, 0);
+    if (err < 0) {
         free(buf);
         return NULL;
     }
-
-    atomic_init(buf->refcnt, 1);
-
-    buf->base_data = data;
-    buf->end_data = data + len;
-    buf->data = data;
-    buf->len = len;
-    buf->opaque = opaque;
-    if (!free_cb)
-        buf->free = avt_buffer_default_free;
-    else
-        buf->free = free_cb;
 
     return buf;
 }
@@ -182,6 +170,11 @@ size_t avt_buffer_get_data_len(const AVTBuffer *buf)
         return 0;
 
     return buf->len;
+}
+
+bool avt_buffer_read_only(AVTBuffer *buffer)
+{
+    return !!(buffer->flags & AVT_BUFFER_FLAG_READ_ONLY);
 }
 
 void avt_buffer_unref(AVTBuffer **_buf)
