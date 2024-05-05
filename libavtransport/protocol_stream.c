@@ -208,6 +208,13 @@ static int stream_receive_packet(AVTProtocolCtx *s, AVTPktd *p,
         avt_decode_stream_data(&bs, &p->pkt.stream_data);
         pl_bytes = p->pkt.stream_data.data_length;
         break;
+    case AVT_PKT_FEC_GROUPING:
+        avt_decode_fec_grouping(&bs, &p->pkt.fec_grouping);
+        break;
+    case AVT_PKT_FEC_GROUP_DATA:
+        avt_decode_fec_group_data(&bs, &p->pkt.fec_group_data);
+        pl_bytes = p->pkt.fec_group_data.fec_data_length;
+        break;
     case AVT_PKT_LUT_ICC:
         avt_decode_lut_icc(&bs, &p->pkt.lut_icc);
     case AVT_PKT_FONT_DATA:
@@ -243,12 +250,8 @@ static int stream_receive_packet(AVTProtocolCtx *s, AVTPktd *p,
     };
 
     // TODO: pool buffer
-    AVTBuffer *tmp = avt_buffer_alloc(pl_bytes);
-    if (!tmp)
+    if (!avt_buffer_quick_alloc(&p->pl, pl_bytes))
         return AVT_ERROR(ENOMEM);
-
-    avt_buffer_quick_ref(&p->pl, tmp, 0, AVT_BUFFER_REF_ALL);
-    avt_buffer_unref(&tmp);
 
     err = s->io->read_input(s->io_ctx, &p->pl, pl_bytes, timeout, 0x0);
     if (err < 0)

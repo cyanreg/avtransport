@@ -1579,7 +1579,7 @@ FEC grouped streams must be registered first via a special packet:
             <td><code>16*u(32)</code></td>
             <td><dfn noexport>fec_seq_number</dfn></td>
             <td></td>
-            <td>The sequence number of the first packet for the stream to be included in the group./td>
+            <td>The sequence number of the first packet for the stream to be included in the group.</td>
         </tr>
         <tr id="0x0030+11">
             <td><code>b(992)</code></td>
@@ -1731,7 +1731,7 @@ The <dfn noexport>fec_source</dfn> data is defined as follows:
 Each [[#struct-FECSource]] structure MUST reference a valid packet, in transmission order.
 If there are no more valid packets to reference, the sender must start repeating from the very first FEC source.
 
-To perform FEC, first, concatenate the payload of each packet referenced into each source block,
+To perform FEC, first, concatenate each packet (header and payload) referenced into each source block,
 in order of the source symbol ID.
 Then, perform the procedure to apply FEC as described by [[RFC6330#section-4.4.1]].
 
@@ -3990,7 +3990,7 @@ For DNG/TIFF encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x54494646'' (''TIFF'').
 
-DNG/TIFF streams require no [[#stream-configuration-packets]] packets.
+DNG/TIFF streams require no [[#stream-configuration-packets]] packets
 
 The [=packet_data=] must contain a raw TIFF file,
 with one packet being a single picture.

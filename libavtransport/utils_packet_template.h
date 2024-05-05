@@ -84,7 +84,7 @@ static inline void RENAME(avt_packet_set_compression)(TYPE p,
     }
 }
 
-static inline int RENAME(avt_packet_series)(const TYPE p,
+static inline int RENAME(avt_packet_series)(const TYPE p, bool *is_parity,
                                             uint32_t *off,
                                             uint32_t *cur,
                                             uint32_t *tot)
@@ -94,28 +94,38 @@ static inline int RENAME(avt_packet_series)(const TYPE p,
         *cur = GET(stream_data).data_length;
         *tot = !GET(stream_data).pkt_segmented ? GET(stream_data).data_length : 0;
         *off = 0;
+        *is_parity = false;
         return GET(stream_data).pkt_segmented;
     case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
     case AVT_PKT_METADATA:
         *cur = GET(generic_data).payload_length;
         *tot = GET(generic_data).total_payload_length;
         *off = 0;
+        *is_parity = false;
         return GET(generic_data).payload_length != GET(generic_data).total_payload_length;
     case AVT_PKT_USER_DATA:
         *cur = GET(user_data).userdata_pl_length;
         *tot = GET(user_data).userdata_length;
         *off = 0;
+        *is_parity = false;
         return GET(user_data).userdata_pl_length != GET(user_data).userdata_length;
     case AVT_PKT_LUT_ICC:
         *cur = GET(lut_icc).lut_pl_length;
         *tot = GET(lut_icc).lut_data_length;
         *off = 0;
+        *is_parity = false;
         return GET(lut_icc).lut_pl_length != GET(lut_icc).lut_data_length;
     case AVT_PKT_FONT_DATA:
         *cur = GET(font_data).font_pl_length;
         *tot = GET(font_data).font_data_length;
         *off = 0;
+        *is_parity = false;
         return GET(font_data).font_pl_length != GET(font_data).font_data_length;
+    case AVT_PKT_FEC_GROUP_DATA:
+        *cur = GET(fec_group_data).fec_data_length;
+        *tot = GET(fec_group_data).fec_total_data_length;
+        *off = GET(fec_group_data).fec_data_offset;
+        return GET(fec_group_data).fec_data_length != GET(fec_group_data).fec_total_data_length;
     case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
     case AVT_PKT_USER_DATA_SEGMENT:   [[fallthrough]];
     case AVT_PKT_LUT_ICC_SEGMENT:     [[fallthrough]];
@@ -124,6 +134,17 @@ static inline int RENAME(avt_packet_series)(const TYPE p,
         *cur = GET(generic_segment).seg_length;
         *tot = GET(generic_segment).pkt_total_data;
         *off = GET(generic_segment).seg_offset;
+        *is_parity = false;
+        return -1;
+    case AVT_PKT_METADATA_PARITY:    [[fallthrough]];
+    case AVT_PKT_USER_DATA_PARITY:   [[fallthrough]];
+    case AVT_PKT_LUT_ICC_PARITY:     [[fallthrough]];
+    case AVT_PKT_FONT_DATA_PARITY:   [[fallthrough]];
+    case AVT_PKT_STREAM_DATA_PARITY:
+        *cur = GET(generic_parity).parity_data_length;
+        *tot = GET(generic_parity).parity_total;
+        *off = GET(generic_parity).parity_data_offset;
+        *is_parity = true;
         return -1;
     default:
         return 0;
@@ -157,6 +178,11 @@ static inline void RENAME(avt_packet_change_size)(TYPE p,
         GET(font_data).font_pl_length = seg_length;
         GET(font_data).font_data_length = tot_pl_size;
         return;
+    case AVT_PKT_FEC_GROUP_DATA:
+        GET(fec_group_data).fec_data_length = seg_length;
+        GET(fec_group_data).fec_total_data_length = tot_pl_size;
+        GET(fec_group_data).fec_data_offset = seg_offset;
+        return;
     case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
     case AVT_PKT_USER_DATA_SEGMENT:   [[fallthrough]];
     case AVT_PKT_LUT_ICC_SEGMENT:     [[fallthrough]];
@@ -165,6 +191,15 @@ static inline void RENAME(avt_packet_change_size)(TYPE p,
         GET(generic_segment).seg_length = seg_length;
         GET(generic_segment).seg_offset = seg_offset;
         GET(generic_segment).pkt_total_data = tot_pl_size;
+        return;
+    case AVT_PKT_METADATA_PARITY:    [[fallthrough]];
+    case AVT_PKT_USER_DATA_PARITY:   [[fallthrough]];
+    case AVT_PKT_LUT_ICC_PARITY:     [[fallthrough]];
+    case AVT_PKT_FONT_DATA_PARITY:   [[fallthrough]];
+    case AVT_PKT_STREAM_DATA_PARITY:
+        GET(generic_parity).parity_data_length = seg_length;
+        GET(generic_parity).parity_data_offset = seg_offset;
+        GET(generic_parity).parity_total = tot_pl_size;
         return;
     default:
         avt_assert1(0);

@@ -186,6 +186,18 @@ else
     endif
 endif
 
+if cc.has_function('fallocate', prefix: '#include <fcntl.h>', args: '-D_GNU_SOURCE')
+    conf.set('CONFIG_HAVE_FALLOCATE', 1)
+endif
+
+if cc.has_function('posix_fallocate', prefix: '#include <fcntl.h>', args: '-D_POSIX_C_SOURCE=200112L')
+    conf.set('CONFIG_HAVE_POSIX_FALLOCATE', 1)
+endif
+
+if cc.has_function('mremap', prefix: '#include <sys/mman.h>', args: '-D_GNU_SOURCE')
+    conf.set('CONFIG_HAVE_MREMAP', 1)
+endif
+
 # Opt-in into 64-bit time if not already defined on 32-bit platforms
 if (cc.sizeof('void *') == 4
     and cc.has_header_symbol('time.h', '__GLIBC__')

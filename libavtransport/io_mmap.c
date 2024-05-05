@@ -24,9 +24,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _GNU_SOURCE
+#include "config.h"
 
-#include "os_compat.h"
+#if defined(CONFIG_HAVE_MREMAP) || defined(CONFIG_HAVE_FALLOCATE)
+#define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +37,10 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <limits.h>
+
+#ifdef CONFIG_HAVE_MREMAP
 #include <sys/mman.h>
+#endif
 
 #include "io_common.h"
 #include "io_utils.h"
@@ -72,6 +77,34 @@ static COLD int mmap_close(AVTIOCtx **_io)
     return 0;
 }
 
+static int fd_fallocate(AVTIOCtx *io, size_t len)
+{
+    int ret;
+#ifdef CONFIG_HAVE_FALLOCATE
+    if (fallocate(io->fd, 0, 0, len)) {
+        ret = avt_handle_errno(io, "Error in fallocate(): %i %s\n");
+        return ret;
+    }
+#elif defined(CONFIG_HAVE_POSIX_FALLOCATE)
+    if ((errno = posix_fallocate(io->fd, 0, len))) {
+        ret = avt_handle_errno(io, "Error in posix_fallocate(): %i %s\n");
+        return ret;
+    }
+#else /* OSX-code */
+    fstore_t store = { F_ALLOCATECONTIG, F_PEOFPOSMODE, 0, len};
+    ret = fcntl(io->fd, F_PREALLOCATE, &store);
+    if (ret == -1) {
+        store.fst_flags = F_ALLOCATEALL;
+        ret = fcntl(fd, F_PREALLOCATE, &store);
+        if (ret == -1) {
+            ret = avt_handle_errno(io, "Error in fnctl(): %i %s\n");
+            return ret;
+        }
+    }
+#endif
+    return 0;
+}
+
 static COLD int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 {
     int ret;
@@ -79,10 +112,9 @@ static COLD int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
     size_t len = lseek(io->fd, SEEK_END, 0);
     if (!len) {
         len = MIN_ALLOC;
-        if (fallocate(io->fd, 0, 0, len)) {
-            ret = avt_handle_errno(io, "Error in fallocate(): %i %s\n");
+        ret = fd_fallocate(io, len);
+        if (ret < 0)
             return ret;
-        }
         io->file_grew = 1;
     }
 
@@ -178,15 +210,14 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     size_t new_map_size = old_map_size + amount;
 
     /* Grow file */
-    if (fallocate(io->fd, 0, 0, new_map_size)) {
-        ret = avt_handle_errno(io, "Error in fallocate(): %i %s\n");
+    ret = fd_fallocate(io, new_map_size);
+    if (ret < 0)
         return ret;
-    }
 
     /* Trim the file at the end, stripping it of padding, if it was grown */
     io->file_grew = true;
 
-#if 1 /* TODO: detect */
+#if CONFIG_HAVE_MREMAP
     /* First, attempt to remap the old mapping, and retaining its address.
      * If there's only a single reference to the map (ours), allow it to be
      * moved. */

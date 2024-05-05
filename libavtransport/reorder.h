@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_REORDER
-#define LIBAVTRANSPORT_REORDER
+#ifndef AVTRANSPORT_REORDER_H
+#define AVTRANSPORT_REORDER_H
 
 #include "common.h"
 #include "buffer.h"
@@ -168,4 +168,4 @@ int avt_reorder_done(AVTContext *ctx, AVTReorderChain *chain);
 /* Free everything in all chains */
 void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb);
 
-#endif
+#endif /* AVTRANSPORT_REORDER_H */

@@ -36,19 +36,31 @@ typedef struct AVTMergerRange {
 
 /* One merger per seq ID */
 typedef struct AVTMerger {
-    bool active;
     uint32_t target;
+    bool active;
+    bool p_avail; /* If header is available */
+    uint8_t hdr_mask; /* 1 bit per 32-bits, 7th bit first, 0th bit last */
+    uint8_t _padding_;
+
+    /* Data */
+    AVTPktd p;
+    uint32_t pkt_len_track;
     uint32_t target_tot_len;
 
-    AVTPktd p;
-    bool p_avail;
-    uint32_t pkt_len_track;
+    /* Parity */
+    AVTBuffer parity;
+    uint32_t pkt_parity_len_track;
+    uint32_t parity_tot_len;
 
+    /* Data ranges */
     AVTMergerRange *ranges;
     uint32_t nb_ranges;
     uint32_t ranges_allocated;
 
-    uint8_t hdr_mask; // 1 bit per 32-bits
+    /* Parity ranges */
+    AVTMergerRange *parity_ranges;
+    uint32_t nb_parity_ranges;
+    uint32_t parity_ranges_allocated;
 } AVTMerger;
 
 int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p);
