@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="2ab8f3754b7581265b831a588da859860403da85" name="document-revision">
+  <meta content="a09b686d2ed9224052b4aedee158175e524bfbaa" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-05-05">5 May 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-05-19">19 May 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 5 May 2024,
+In addition, as of 19 May 2024,
 the editors have made this specification available under the <a href="http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at http://www.openwebfoundation.org/legal/the-owf-1-0-agreements/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2726,7 +2726,7 @@ simply assume all device are already synchronized.</p>
     <li data-md>
      <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. If not specified, port <b>8212</b> shall be the default port.</p>
     <li data-md>
-     <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc4122" title="A Universally Unique IDentifier (UUID) URN Namespace">[RFC4122]</a>) value.</p>
+     <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc4122" title="Universally Unique IDentifiers (UUIDs)">[RFC4122]</a>) value.</p>
     <li data-md>
      <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by an <code>&amp;</code> sign:</p>
      <ul>
@@ -2774,7 +2774,7 @@ as an AVTransport session. The syntax is as follows:</p>
       <tr id="0x4156+4">
        <td><code>16*b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_uuid">session_uuid</dfn>
-       <td><a data-link-type="biblio" href="#biblio-rfc4122" title="A Universally Unique IDentifier (UUID) URN Namespace">UUID</a>
+       <td><a data-link-type="biblio" href="#biblio-rfc4122" title="Universally Unique IDentifiers (UUIDs)">UUID</a>
        <td>Lasting session UUID.
       <tr id="0x4156+3">
        <td><code>u(32)</code>
@@ -6858,7 +6858,7 @@ This is the format that the reference function above expects.</p>
    <dt id="biblio-rfc3828">[RFC3828]
    <dd>L-A. Larzon; et al. <a href="https://www.rfc-editor.org/rfc/rfc3828"><cite>The Lightweight User Datagram Protocol (UDP-Lite)</cite></a>. July 2004. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc3828">https://www.rfc-editor.org/rfc/rfc3828</a>
    <dt id="biblio-rfc4122">[RFC4122]
-   <dd>P. Leach; M. Mealling; R. Salz. <a href="https://www.rfc-editor.org/rfc/rfc4122"><cite>A Universally Unique IDentifier (UUID) URN Namespace</cite></a>. July 2005. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc4122">https://www.rfc-editor.org/rfc/rfc4122</a>
+   <dd>K. Davis; B. Peabody; P. Leach. <a href="https://www.rfc-editor.org/rfc/rfc9562"><cite>Universally Unique IDentifiers (UUIDs)</cite></a>. May 2024. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9562">https://www.rfc-editor.org/rfc/rfc9562</a>
    <dt id="biblio-rfc5905">[RFC5905]
    <dd>D. Mills; et al. <a href="https://www.rfc-editor.org/rfc/rfc5905"><cite>Network Time Protocol Version 4: Protocol and Algorithms Specification</cite></a>. June 2010. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc5905">https://www.rfc-editor.org/rfc/rfc5905</a>
    <dt id="biblio-rfc6716">[RFC6716]
