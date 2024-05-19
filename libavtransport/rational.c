@@ -105,10 +105,10 @@ int avt_compare_ts(int64_t ts_a, AVTRational tb_a,
     return 0;
 }
 
-static inline int64_t gcd_ab(int64_t a, int64_t b)
+static inline uint64_t gcd_ab(uint64_t a, uint64_t b)
 {
     int za, zb, k;
-    int64_t u, v;
+    uint64_t u, v;
     if (a == 0)
         return b;
     else if (b == 0)
@@ -121,8 +121,8 @@ static inline int64_t gcd_ab(int64_t a, int64_t b)
     zb = __builtin_ctz(b);
 #endif
     k  = AVT_MIN(za, zb);
-    u = llabs(a >> za);
-    v = llabs(b >> zb);
+    u = a >> za;
+    v = b >> zb;
     while (u != v) {
         if (u > v) {
             int64_t tmp = v;
@@ -149,11 +149,12 @@ static AVTRational reduce_rational(AVTRational in, int64_t max)
     int64_t den = in.den;
 
     /* Fast path - common divisor */
-    int64_t gcd = gcd_ab(llabs(num), llabs(den));
+    int64_t gcd = gcd_ab((uint64_t)llabs(num), (uint64_t)llabs(den));
     if (gcd) {
         num = llabs(num) / gcd;
         den = llabs(den) / gcd;
     }
+
     if (num <= max && den <= max) {
         a1 = (AVTRational){ num, den };
         den = 0;

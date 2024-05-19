@@ -67,8 +67,7 @@ typedef struct AVTProtocol {
                          void **series, int64_t pos);
 
     /* Receive a packet. Returns offset after reading. */
-    int (*receive_packet)(AVTProtocolCtx *s, AVTPktd *p,
-                          int64_t timeout);
+    int (*receive)(AVTProtocolCtx *s, AVTPacketFifo *fifo, int64_t timeout);
 
     /* Seek to a place in the stream */
     int (*seek)(AVTProtocolCtx *p, int64_t off, uint32_t seq,

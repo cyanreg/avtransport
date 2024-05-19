@@ -99,10 +99,13 @@ static int stream_send_seq(AVTProtocolCtx *p,
     return 0;
 }
 
-static int stream_receive_packet(AVTProtocolCtx *s, AVTPktd *p,
-                                 int64_t timeout)
+static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
+                          int64_t timeout)
 {
     int64_t err = 0;
+    AVTPktd *p = avt_pkt_fifo_push_new(fifo, NULL, 0, AVT_BUFFER_REF_ALL);
+    if (!p)
+        return AVT_ERROR(ENOMEM);
 
     AVTBuffer buf = {
         .base_data = p->hdr,
@@ -299,7 +302,7 @@ const AVTProtocol avt_protocol_stream = {
     .send_packet = stream_proto_send_packet,
     .send_seq = stream_send_seq,
     .update_packet = NULL,
-    .receive_packet = stream_receive_packet,
+    .receive = stream_receive,
     .seek = stream_proto_seek,
     .flush = stream_proto_flush,
     .close = stream_proto_close,

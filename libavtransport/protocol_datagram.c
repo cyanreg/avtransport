@@ -94,8 +94,8 @@ static int datagram_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
     return 0;
 }
 
-static int datagram_proto_receive_packet(AVTProtocolCtx *s, AVTPktd *p,
-                                         int64_t timeout)
+static int datagram_proto_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
+                                  int64_t timeout)
 {
 
     return 0;
@@ -132,7 +132,7 @@ const AVTProtocol avt_protocol_datagram = {
     .send_packet = datagram_proto_send_packet,
     .send_seq = datagram_proto_send_seq,
     .update_packet = NULL,
-    .receive_packet = datagram_proto_receive_packet,
+    .receive = datagram_proto_receive,
     .seek = NULL,
     .flush = datagram_proto_flush,
     .close = datagram_proto_close,
