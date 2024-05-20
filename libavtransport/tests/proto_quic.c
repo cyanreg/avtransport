@@ -137,7 +137,7 @@ int main(void)
         ret = io->init(avt, &io_server_ctx, &addr_server);
         if (ret < 0)
             goto end;
-        ret = p->init(avt, &p_server_ctx, &addr_server, io, io_server_ctx);
+        ret = p->init(avt, &p_server_ctx, &addr_server, io, io_server_ctx, NULL);
         if (ret < 0)
             goto end;
     }
@@ -149,7 +149,7 @@ int main(void)
         ret = io->init(avt, &io_client_ctx, &addr_client);
         if (ret < 0)
             goto end;
-        ret = p->init(avt, &p_client_ctx, &addr_client, io, io_client_ctx);
+        ret = p->init(avt, &p_client_ctx, &addr_client, io, io_client_ctx, NULL);
         if (ret < 0)
             goto end;
     }

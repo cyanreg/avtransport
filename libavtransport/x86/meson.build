@@ -12,11 +12,9 @@ nasm_config = configure_file(
     output_format: 'nasm',
 )
 
-if get_option('output').auto()
-#    sources = sources.without([
-#        'ldpc_encode.c'
-#    ])
-    sources += [
-        'x86/ldpc_encode.asm',
-    ]
-endif
+#sources = sources.without([
+#    'ldpc_encode.c'
+#])
+sources += [
+    'x86/ldpc_encode.asm',
+]

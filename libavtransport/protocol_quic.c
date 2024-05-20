@@ -31,6 +31,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
+#include <avtransport/avtransport.h>
 #include "protocol_common.h"
 #include "io_common.h"
 

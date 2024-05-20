@@ -120,7 +120,7 @@ xxh_dep = dependency('libxxhash', required: false)
 cbor_dep = dependency('libcbor', required: false)
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
-openssl_dep = dependency('openssl', required: false, version : '3.3.0')
+openssl_dep = dependency('openssl', required: false, version : '>3.3.0')
 brotlienc_dep = dependency('libbrotlienc', required: false)
 brotlidec_dep = dependency('libbrotlienc', required: false)
 
@@ -165,8 +165,6 @@ conf.set('CONFIG_DEFAULT_TYPE', 'AVT_PROTOCOL_UDP')
 # Configuration settings
 #============================================================================
 conf.set('CONFIG_BIG_ENDIAN', host_machine.endian() == 'big')
-conf.set('CONFIG_INPUT', get_option('input').auto())
-conf.set('CONFIG_OUTPUT', get_option('output').auto()) 
 conf.set('CONFIG_HAVE_LIBBROTLIENC', brotlienc_dep.found())
 conf.set('CONFIG_HAVE_LIBBROTLIDEC', brotlidec_dep.found())
 conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
