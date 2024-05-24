@@ -1166,6 +1166,10 @@ be different for segments that finalize the data.
 The [=header_7=] field can be used to reconstruct the header of the very first
 packet in order to determine the timestamps and data type.
 
+Note: Segments are <b>forbidden</b> from partially overlapping. Each segment's offset
+and size must either completely overlap with another segment (such as when retransmitting
+lost packets), or must fit in between two segments perfectly.
+
 
 ### Generic data parity ### {#generic-data-parity-packets}
 

@@ -42,27 +42,45 @@ typedef struct AVTMerger {
     uint8_t hdr_mask; /* 1 bit per 32-bits, 7th bit first, 0th bit last */
     uint8_t _padding_;
 
-    /* Data */
+    /* Total number of packet with known final size accepted */
+    uint32_t nb_tgt_packets;
+
+    /* Packet data */
     AVTPktd p;
     uint32_t pkt_len_track;
     uint32_t target_tot_len;
-
-    /* Parity */
-    AVTBuffer parity;
-    uint32_t pkt_parity_len_track;
-    uint32_t parity_tot_len;
-
-    /* Data ranges */
+    /* Packet data ranges */
     AVTMergerRange *ranges;
     uint32_t nb_ranges;
     uint32_t ranges_allocated;
 
-    /* Parity ranges */
+    /* Parity data for the packet */
+    AVTBuffer parity; // Preserved
+    uint32_t pkt_parity_len_track;
+    uint32_t parity_tot_len;
+    /* Parity date ranges */
     AVTMergerRange *parity_ranges;
     uint32_t nb_parity_ranges;
     uint32_t parity_ranges_allocated;
 } AVTMerger;
 
+/* Basic merger function. Input and output is 'p'.
+ * Returns the payload size once an output is possible.
+ * Returns AVT_ERROR(EAGAIN) if more segments are needed.
+ * Returns AVT_ERROR(EBUSY) if a packet belonging to a different target is
+ * given.
+ * Returns an error code in all other circumstances. */
 int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p);
+
+/* Force whatever output is possible out. p will be overwritten. */
+int avt_pkt_merge_force(void *log_ctx, AVTMerger *m, AVTPktd *p);
+
+/* avt_pkt_merge_seg() will reject any packet part of another group.
+ * If there's a packet which cannot be output, call this to reset the context. */
+void avt_pkt_merge_done(AVTMerger *m);
+
+/* Free up and reset the context upon uninitialization entirely.
+ * Frees up the parity data buffer as well. */
+void avt_pkt_merge_free(AVTMerger *m);
 
 #endif /* AVTRANSPORT_MERGER_H */

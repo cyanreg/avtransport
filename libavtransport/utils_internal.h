@@ -31,6 +31,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbit.h>
 
 #include <sys/socket.h>
 
@@ -67,6 +68,9 @@ static inline int avt_ascii_to_int(int c)
         return c - '0';
     return -1;
 }
+
+#define avt_hamming_dist(a, b) \
+    stdc_count_ones((a) ^ (b))
 
 /* Zero (usually) alloc FIFO. Payload is ref'd, and leaves with a ref. */
 typedef struct AVTPacketFifo {
@@ -132,7 +136,7 @@ size_t avt_pkt_fifo_size(AVTPacketFifo *fifo);
 /* Clear all packets in the fifo */
 void avt_pkt_fifo_clear(AVTPacketFifo *fifo);
 
-/* Free all resources */
+/* Free all resources in/for a fifo */
 void avt_pkt_fifo_free(AVTPacketFifo *fifo);
 
 /* Sliding window */

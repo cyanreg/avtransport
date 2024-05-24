@@ -52,7 +52,7 @@ static inline rational_int rescale_rnd(rational_int a,
         return INT64_MIN;
 
     if (a < 0)
-        return -(uint64_t)rescale_rnd(-AVT_MAX(a, -INT64_MAX), b, c, rnd ^ ((rnd >> 1) & 1));
+        return -(rational_int)rescale_rnd(-AVT_MAX(a, -INT64_MAX), b, c, rnd ^ ((rnd >> 1) & 1));
 
     if (rnd == AVT_ROUND_NEAR_INF)
         r = c / 2;

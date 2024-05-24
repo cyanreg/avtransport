@@ -58,29 +58,37 @@ static inline int fill_ranges(AVTMerger *m, bool is_parity,
 
     int dst_idx = 0;
     int consolidate_idx = -1;
+
+    /* Attempt to work the range into the existing ranges */
     for (auto i = 0; i < nb_ranges; i++) {
         AVTMergerRange *r = &ranges[i];
+        /* Overlaps dealt with in validate_packet */
         if ((seg_off + seg_size) == r->offset) {
+            /* Potential new segment's end reaches another segment exactly */
+
             /* Prepend to existing range */
             r->offset = seg_off;
             r->size += seg_size;
 
             /* If the previous range is not completed with this one, exit */
             if (!i || ((ranges[i - 1].offset + ranges[i - 1].size) < r->offset))
-                return AVT_ERROR(EAGAIN);
+                return 0;
 
             consolidate_idx = i - 1;
             break;
         } else if ((r->offset + r->size) == seg_off) {
+            /* Potential new segment's start reaches another segment's start exactly */
+
             /* Extend exisint range */
             r->size += seg_size;
 
             if ((i == (nb_ranges - 1)) || ((r->offset + r->size) < ranges[i + 1].offset))
-                return AVT_ERROR(EAGAIN);
+                return 0;
 
             consolidate_idx = i;
             break;
         } else if (seg_off > (r->offset + r->size)) {
+            /* New segment. Pick its index here for ordering. */
             dst_idx = i + 1;
         }
     }
@@ -108,7 +116,7 @@ static inline int fill_ranges(AVTMerger *m, bool is_parity,
         memmove(&ranges[dst_idx + 1], &ranges[dst_idx], nb_ranges - dst_idx - 1);
         nb_ranges++;
         *nb_ranges_dst = nb_ranges;
-        return AVT_ERROR(EAGAIN);
+        return 0;
     }
 
     ranges[consolidate_idx].size = ranges[consolidate_idx + 1].size;
@@ -117,7 +125,7 @@ static inline int fill_ranges(AVTMerger *m, bool is_parity,
     nb_ranges--;
     *nb_ranges_dst = nb_ranges;
 
-    return AVT_ERROR(EAGAIN);
+    return 0;
 }
 
 static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
@@ -178,33 +186,103 @@ static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
     return 0;
 }
 
+static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int srs,
+                           uint32_t seg_off, uint32_t seg_size,
+                           uint32_t tot_size, bool is_parity)
+{
+    /* Check for length mismatch */
+    if (m->target_tot_len && (tot_size != m->target_tot_len))
+        return AVT_ERROR(EINVAL);
+
+    /* Check for segmentation issues */
+    if (srs == 0 && m->target == p->pkt.seq) {
+        avt_log(log_ctx, AVT_LOG_DEBUG, "Header packet for %" PRIu64 " indicates "
+                                        "no segmentation, but segments received",
+                p->pkt.seq);
+        return AVT_ERROR(EINVAL);
+    }
+
+    /* Check for phantom header mismatch */;
+    const uint32_t hdr_part = p->pkt.seq % 7;
+    if (m->hdr_mask & (1 << (6 - hdr_part))) {
+        const uint8_t *hdr_part_data = &m->p.hdr[4*hdr_part];
+        for (auto i = 0; i < 4; i++)
+            if (hdr_part_data[i] != p->pkt.generic_segment.header_7[i])
+                return AVT_ERROR(EINVAL);
+    }
+
+    /* Check for overlaps */
+    AVTMergerRange *ranges;
+    uint32_t nb_ranges;
+    if (!is_parity) {
+        ranges = m->ranges;
+        nb_ranges = m->nb_ranges;
+    } else {
+        ranges = m->parity_ranges;
+        nb_ranges = m->nb_parity_ranges;
+    }
+
+    for (auto i = 0; i < nb_ranges; i++) {
+        AVTMergerRange *r = &ranges[i];
+        /* Check for overlaps first */
+        if (r->offset == seg_off && r->size == seg_size) {
+            return AVT_ERROR(EAGAIN);
+        } else if ((r->offset + r->size) < seg_off &&
+            r->offset >= seg_off) {
+            /* Segment's start overlaps with another segment */
+            return AVT_ERROR(EINVAL);
+        } else if ((seg_off + seg_size) > r->offset &&
+            (seg_off + seg_size) <= (r->offset + r->size)) {
+            /* Segment's end overlaps with another segment */
+            return AVT_ERROR(EINVAL);
+        }
+    }
+
+    return 0;
+}
+
 int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
 {
+    int ret;
+
     bool is_parity;
     uint32_t seg_off, seg_size, tot_size;
-    int ret = avt_packet_series(p, &is_parity, &seg_off, &seg_size, &tot_size);
+    int srs = avt_packet_series(p, &is_parity, &seg_off, &seg_size, &tot_size);
 
     /* Packet needs nothing else */
-    if (!ret)
+    if (!srs)
         return 0;
 
     size_t src_size;
     uint8_t *src = avt_buffer_get_data(&p->pl, &src_size);
     if (src_size != seg_size) {
         avt_log(log_ctx, AVT_LOG_ERROR, "Mismatch between signalled payload size "
-                                        "%u and payload %zu in %" PRIu64,
+                                        "%u and actual payload %zu in pkt %" PRIu64 "\n",
                 seg_size, src_size, p->pkt.seq);
+        return AVT_ERROR(EINVAL);
     }
 
-    if (!m->active) {
+    if (m->active) {
+        uint32_t target;
+        if (srs > 0)
+            target = p->pkt.generic_segment.target_seq;
+        else if (!is_parity)
+            target = p->pkt.generic_segment.target_seq;
+        else
+            target = p->pkt.generic_parity.target_seq;
+
+        if (target != m->target)
+            return AVT_ERROR(EBUSY);
+    } else {
         m->hdr_mask = 0x0;
         m->nb_ranges = 0;
         m->nb_parity_ranges = 0;
         m->pkt_len_track = 0;
         m->target_tot_len = tot_size;
+        m->nb_tgt_packets = !!tot_size;
         m->p_avail = false;
 
-        if (ret > 0) {
+        if (srs > 0) {
             /* Starting with a segment, not the actual start */
             m->p = *p;
             m->p_avail = true;
@@ -263,25 +341,26 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
             if (!dst)
                 return AVT_ERROR(ENOMEM);
 
-            memcpy(dst + seg_off, src, src_size);
+            memcpy(dst + seg_off, src, seg_size);
             avt_buffer_quick_unref(&p->pl);
             *target = tmp_buf;
         } else {
             /* Resize the buffer if possible */
-            int err = avt_buffer_resize(&p->pl, tot_size);
-            if (err < 0)
-                return err;
+            ret = avt_buffer_resize(&p->pl, tot_size);
+            if (ret < 0)
+                return ret;
 
             *target = p->pl;
+            p->pl = (AVTBuffer){ };
         }
 
         /* Mark what we have available */
         if (!is_parity) {
-            m->ranges[m->nb_ranges++] = (AVTMergerRange) { seg_off, src_size };
-            m->pkt_len_track += seg_size;
+            m->ranges[m->nb_ranges++] = (AVTMergerRange) { seg_off, seg_size };
+            m->pkt_len_track = seg_size;
         } else {
-            m->parity_ranges[m->nb_parity_ranges++] = (AVTMergerRange) { seg_off, src_size };
-            m->pkt_parity_len_track += seg_size;
+            m->parity_ranges[m->nb_parity_ranges++] = (AVTMergerRange) { seg_off, seg_size };
+            m->pkt_parity_len_track = seg_size;
         }
 
         m->active = true;
@@ -289,46 +368,56 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         return AVT_ERROR(EAGAIN);
     }
 
-    /* Sanity checking */
-    if (ret == 0 && m->target == p->pkt.seq) {
-        avt_log(log_ctx, AVT_LOG_WARN, "Header packet for %" PRIu64 " indicates "
-                                       "no segmentation, but segments received",
-                p->pkt.seq);
-    }
+    /* More sanity checking */
+    ret = validate_packet(log_ctx, m, p, srs,
+                          seg_off, seg_size, tot_size, is_parity);
+    if (ret < 0)
+        return ret;
 
     /* Packet header state */
-    if (!m->p_avail && (ret < -1)) {
+    if (!m->p_avail && (srs < -1)) {
         ret = fill_phantom_header(log_ctx, m, p, is_parity);
         if (ret < 0)
             return ret;
-    } else if (ret == 0) {
-        /* We got a real header packet */
+    } else if (srs == 1) {
+        /* We got a real header packet which we didn't have */
         m->p.pkt = p->pkt;
         memcpy(m->p.hdr, p->hdr, sizeof(p->hdr));
         m->p_avail = true;
     }
 
-    /* Copy new data */
-    if (!is_parity) {
-        uint8_t *dst = avt_buffer_get_data(&m->p.pl, NULL);
-        memcpy(dst + seg_off, src, src_size);
-        avt_buffer_quick_unref(&p->pl);
-        m->pkt_len_track += seg_size;
-    } else {
-        uint8_t *dst = avt_buffer_get_data(&m->parity, NULL);
-        memcpy(dst + seg_off, src, src_size);
-        avt_buffer_quick_unref(&p->pl);
-        m->pkt_parity_len_track += seg_size;
+    /* If total packet size was unknown, populate it and reallocate.
+     * Parity packets always have a total length */
+    if (!is_parity && !m->target_tot_len) {
+        avt_assert1(tot_size);
+
+        ret = avt_buffer_resize(&m->p.pl, tot_size);
+        if (ret < 0)
+            return ret;
+
+        m->target_tot_len = tot_size;
     }
 
     /* Track ranges */
-    ret = fill_ranges(m, is_parity, seg_off, src_size /* Using the real payload size*/);
+    ret = fill_ranges(m, is_parity, seg_off, seg_size);
     if (ret < 0)
         return ret;
 
+    /* Copy new data */
+    if (!is_parity) {
+        uint8_t *dst = avt_buffer_get_data(&m->p.pl, NULL);
+        memcpy(dst + seg_off, src, seg_size);
+        m->pkt_len_track += seg_size;
+    } else {
+        uint8_t *dst = avt_buffer_get_data(&m->parity, NULL);
+        memcpy(dst + seg_off, src, seg_size);
+        m->pkt_parity_len_track += seg_size;
+    }
+
+    avt_buffer_quick_unref(&p->pl);
+
     if (m->pkt_parity_len_track == m->parity_tot_len) {
         // TODO: do something with the parity data here
-        ;
     }
 
     /* We can output something */
@@ -338,9 +427,42 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
          * contain any payload. */
         avt_assert1(m->p_avail);
         *p = m->p;
+        m->p = (AVTPktd){ };
         m->active = false;
-        return 0;
+        return m->pkt_len_track;
     }
 
     return AVT_ERROR(EAGAIN);
+}
+
+int avt_pkt_merge_force(void *log_ctx, AVTMerger *m, AVTPktd *p)
+{
+    /* If inactive, we don't have anything */
+    if (!m->active)
+        return AVT_ERROR(ENOENT);
+
+    /* If we couldn't collect enough header parts, we can't really output
+     * something worth propagating either. */
+    if (!(m->hdr_mask == 0x7F))
+        return AVT_ERROR(EAGAIN);
+
+    *p = m->p;
+    m->p = (AVTPktd){ };
+
+    return m->pkt_len_track;
+}
+
+void avt_pkt_merge_done(AVTMerger *m)
+{
+    avt_buffer_quick_unref(&m->p.pl);
+    m->active = false;
+}
+
+void avt_pkt_merge_free(AVTMerger *m)
+{
+    avt_pkt_merge_done(m);
+    free(m->ranges);
+    free(m->parity_ranges);
+    avt_buffer_quick_unref(&m->parity);
+    memset(m, 0, sizeof(*m));
 }
