@@ -89,7 +89,7 @@ static inline int fill_ranges(AVTMerger *m, bool is_parity,
             break;
         } else if (seg_off > (r->offset + r->size)) {
             /* New segment. Pick its index here for ordering. */
-            dst_idx = i + 1;
+            dst_idx = i;
         }
     }
 
@@ -113,7 +113,8 @@ static inline int fill_ranges(AVTMerger *m, bool is_parity,
             }
         }
 
-        memmove(&ranges[dst_idx + 1], &ranges[dst_idx], nb_ranges - dst_idx - 1);
+        memmove(&ranges[dst_idx + 1], &ranges[dst_idx],
+                (nb_ranges - dst_idx - 1)*sizeof(AVTMerger));
         nb_ranges++;
         *nb_ranges_dst = nb_ranges;
         return 0;
@@ -191,7 +192,7 @@ static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int srs,
                            uint32_t tot_size, bool is_parity)
 {
     /* Check for length mismatch */
-    if (m->target_tot_len && (tot_size != m->target_tot_len))
+    if (m->target_tot_len && tot_size && (tot_size != m->target_tot_len))
         return AVT_ERROR(EINVAL);
 
     /* Check for segmentation issues */
@@ -264,12 +265,12 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
 
     if (m->active) {
         uint32_t target;
-        if (srs > 0)
-            target = p->pkt.generic_segment.target_seq;
-        else if (!is_parity)
-            target = p->pkt.generic_segment.target_seq;
-        else
+        if (srs == 1)
+            target = p->pkt.seq;
+        else if (is_parity)
             target = p->pkt.generic_parity.target_seq;
+        else
+            target = p->pkt.generic_segment.target_seq;
 
         if (target != m->target)
             return AVT_ERROR(EBUSY);
