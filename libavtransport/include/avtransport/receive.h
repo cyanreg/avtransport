@@ -37,10 +37,20 @@ typedef struct AVTReceiveOptions {
 
 /* List of callbacks. All are optional. */
 typedef struct AVTReceiveCallbacks {
+    /**
+     * Stream registration/updating callbacks.
+     */
     int  (*stream_register_cb)(void *opaque, AVTStream *st);
     void (*stream_update_cb)(void *opaque, AVTStream *st);
-    void (*font_register_cb)(void *opaque, AVTBuffer *data, const char *name);
-    void (*epoch_cb)(void *opaque, uint64_t epoch);
+
+    /**
+     * Font data
+     * st can be NULL, in which case the font applies to all streams.
+     */
+    void (*font_register_cb)(void *opaque, AVTStream *st,
+                             AVTBuffer *data, const char name[252]);
+
+    void (*time_sync_cb)(void *opaque, uint64_t epoch);
 
     void (*metadata_cb)(void *opaque, AVTStream *st, AVTMetadata *meta);
     int  (*user_pkt_cb)(void *opaque, AVTBuffer *data, uint16_t descriptor,
@@ -49,13 +59,14 @@ typedef struct AVTReceiveCallbacks {
     void (*duration_cb)(void *opaque, int64_t duration_nsec);
     void (*stream_close_cb)(void *opaque, AVTStream *st);
 
-    /*
+    /**
      * ============== Callbacks for complete packets ==============
      * This provides a full packet, continuous, error corrected and
      * called in incremental order.
      */
     int  (*stream_pkt_cb)(void *opaque, AVTStream *st, AVTPacket pkt);
 
+#if 0
     /*
      * ============== Callbacks for incomplete packets ==============
      * This API provides users the ability to receive and present packets
@@ -70,26 +81,14 @@ typedef struct AVTReceiveCallbacks {
      * stream_pkt_cb will still be called with final, assembled, corrected
      * and incrementing packets.
      */
-    int (*stream_pkt_start_cb)(void *opaque, AVTStream *st, AVTPacket pkt, int present);
+    int (*stream_pkt_start_cb)(void *opaque, AVTStream *st, AVTPacket pkt,
+                               int present);
     int (*stream_pkt_seg_cb)(void *opaque, AVTStream *st, AVTPacket pkt,
                              AVTBuffer *seg, size_t offset);
+#endif
 
     /* Reports a timeout, with the number of nanoseconds since the last packet */
     void (*timeout)(void *opaque, uint64_t last_received);
-
-    /**
-     * Reverse signalling callbacks. May be hooked up directly to
-     * the output context.
-     */
-    int (*control_cb)(AVTContext *ctx, void *opaque, int cease,
-                      int resend_init, int error, uint8_t redirect[16],
-                      uint16_t redirect_port, int seek_requested,
-                      int64_t seek_offset, uint32_t seek_seq);
-
-    int (*feedback_cb)(AVTContext *ctx, void *opaque, AVTStream *st,
-                       uint64_t epoch_offset, uint64_t bandwidth,
-                       uint32_t fec_corrections, uint32_t corrupt_packets,
-                       uint32_t missing_packets);
 } AVTReceiveCallbacks;
 
 /* Open an AVTransport stream or a file for reading. */

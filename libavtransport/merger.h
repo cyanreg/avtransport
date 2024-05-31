@@ -36,14 +36,14 @@ typedef struct AVTMergerRange {
 
 /* One merger per seq ID */
 typedef struct AVTMerger {
-    uint32_t target;
-    bool active;
-    bool p_avail; /* If header is available */
-    uint8_t hdr_mask; /* 1 bit per 32-bits, 7th bit first, 0th bit last */
-    uint8_t _padding_;
+    bool active; /* If there's an active packet that needs more segments */
+    uint32_t target; /* Main packet's sequence number */
+    uint32_t last; /* Most recent (timeline-wise, not submit-wise) packet's ID */
+    uint32_t nb_tgt_packets; /* Total number of packets consumed for merger */
 
-    /* Total number of packet with known final size accepted */
-    uint32_t nb_tgt_packets;
+    /* Phantom header recovery */
+    bool p_avail; /* If the header is available */
+    uint8_t hdr_mask; /* 1 bit per 32-bits, 7th bit first, 0th bit last */
 
     /* Packet data */
     AVTPktd p;
@@ -55,7 +55,7 @@ typedef struct AVTMerger {
     uint32_t ranges_allocated;
 
     /* Parity data for the packet */
-    AVTBuffer parity; // Preserved
+    AVTBuffer parity; // Preserved between resets
     uint32_t pkt_parity_len_track;
     uint32_t parity_tot_len;
     /* Parity date ranges */

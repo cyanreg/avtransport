@@ -251,8 +251,34 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
     int srs = avt_packet_series(p, &is_parity, &seg_off, &seg_size, &tot_size);
 
     /* Packet needs nothing else */
-    if (!srs)
-        return 0;
+    if (!srs) {
+        /* ERROR RESILIENCE:
+         * If we have received two or more segments, and we
+         * get the main data packet claiming it isn't segmented, consider
+         * a corrupt bit happened and accept it. If it overlaps, it'll get
+         * rejected during validate_packet(). */
+        if (m->nb_tgt_packets >= 2 && m->target == p->pkt.seq) {
+            int hdr_match = 0;
+            /* Intentionally iterating from 1 to 7,
+             * as 7 is guaranteed to be a mismatch */
+            for (int i = 1; i < 7; i++) {
+                if (((m->hdr_mask >> i) & 1) &&
+                    memcmp(&m->p.hdr[4*i], p->hdr, 4))
+                    hdr_match++;
+            }
+
+            if (hdr_match) {
+                srs = 1;
+            }else {
+                avt_pkt_merge_done(m);
+                return 0;
+            }
+        } else {
+            /* Clean up context, even if there was something else in it */
+            avt_pkt_merge_done(m);
+            return 0;
+        }
+    }
 
     size_t src_size;
     uint8_t *src = avt_buffer_get_data(&p->pl, &src_size);
@@ -282,6 +308,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         m->target_tot_len = tot_size;
         m->nb_tgt_packets = !!tot_size;
         m->p_avail = false;
+        m->last = p->pkt.seq;
 
         if (srs > 0) {
             /* Starting with a segment, not the actual start */
@@ -414,6 +441,10 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         memcpy(dst + seg_off, src, seg_size);
         m->pkt_parity_len_track += seg_size;
     }
+
+    /* Update last packet */
+    if (m->last < p->pkt.seq)
+        m->last = p->pkt.seq;
 
     avt_buffer_quick_unref(&p->pl);
 

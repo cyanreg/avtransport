@@ -1779,7 +1779,7 @@ regular data segments.
 For some <i>niche</i> cases, AVTransport provides the ability to signal a hash for the packet.
 This is purely optional for both senders and receivers to signal and interpret.
 
-Note: most filesystems, interfaces and protocols provide a CRC.
+Note: Most filesystems, interfaces and protocols provide a CRC.
       While this hash is much more resistant to bitflips and secure,
       it is recommended to use this in cases like long-term archival,
       or raw RF links (to avoid retransmissions for corrupt packets).
