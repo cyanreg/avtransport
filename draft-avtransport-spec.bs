@@ -228,6 +228,10 @@ Below is a table of how they're allocated:
             <td>[[#video-orientation-packets]]</td>
         </tr>
         <tr>
+            <td>''0x0041''</td>
+            <td>[[#stereo-video-packets]]</td>
+        </tr>
+        <tr>
             <td>''0x0050''</td>
             <td>[[#stream-duration-packets]]</td>
         </tr>
@@ -2938,6 +2942,159 @@ The actual rotation in radians is given by <code>π * ([=rotation=].num/[=rotati
 Rotation should be applied after all other transformations have been performed on the image,
 including cropping via the [=cropped_width=]/[=cropped_height=] fields in
 [[#video-information-packets]] packets.
+
+
+## Stereo video ## {#stereo-video-packets}
+
+A stereoscopic video file consists in multiple views embedded in a single
+frame, usually describing two views of a scene.
+
+Interlacing and stereoscopic video are explicitly unsupported. Implementations
+must ignore any stereoscopic information if the value of [=interlaced=] is anything
+except {{ILACE_PROG}}.
+
+A standardized way to transmit stereoscopic video information is as follows:
+
+<figure id="table-StereoVideoData" class="table">
+    <table class="complex data longlastcol" dfn-for="#stereo-video-packets">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr id="0x0041+0">
+            <td><code>b(16)</code></td>
+            <td><dfn noexport>stereo_video_descriptor</dfn></td>
+            <td>''0x0041''</td>
+            <td>Indicates this is a stereo video information packet.</td>
+        </tr>
+        <tr id="0x0041+1">
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>The stream ID for which to associate the stereo information with.</td>
+        </tr>
+        <tr id="0x0041+2">
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr id="0x0041+3">
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Timestamp (in stream [=timebase=] units) at which this stereo packet has to be applied at.</td>
+        </tr>
+        <tr id="0x0041+4">
+            <td><code>u(8)</code></td>
+            <td><dfn noexport>type</dfn></td>
+            <td>enum {{StereoVideoType}}</td>
+            <td>Indicates how views are packed within the video.</td>
+        </tr>
+        <tr id="0x0041+5">
+            <td><code>u(8)</code></td>
+            <td><dfn noexport>flags</dfn></td>
+            <td>enum {{StereoVideoFlags}}</td>
+            <td>Additional flags.</td>
+        </tr>
+        <tr id="0x0041+6">
+            <td><code>u(8)</code></td>
+            <td><dfn noexport>primary_eye</dfn></td>
+            <td>enum {{StereoVideoPrimaryEye}}</td>
+            <td>Determines which eye is the primary eye when rendering in 2D.</td>
+        </tr>
+        <tr id="0x0041+7">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>baseline</dfn></td>
+            <td></td>
+            <td>The distance between the centres of the lenses of the camera system, in micrometers.</td>
+        </tr>
+        <tr id="0x0041+8">
+            <td><code>b(40)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr id="0x0041+9">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr id="0x0041+10">
+            <td><code>R(64)</code></td>
+            <td><dfn noexport>horizontal_disparity_adjustment</dfn></td>
+            <td></td>
+            <td>Relative shift of the left and right images, which changes the zero parallax plane. Range is -1.0 to 1.0.</td>
+        </tr>
+        <tr id="0x0041+11">
+            <td><code>R(64)</code></td>
+            <td><dfn noexport>horizontal_field_of_view</dfn></td>
+            <td></td>
+            <td>Horizontal field of view, in degrees.</td>
+        </tr>
+        <tr id="0x0041+12">
+            <td><code>b(96)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be 0x0.</td>
+        </tr>
+        <tr id="0x0041+13">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+    </table>
+</figure>
+
+The effects of stereo video packets must persist from the [=pts=] value given,
+until a new stereo video packet is sent, or the stream is reinitialized.
+
+
+## Stereo Video Type Enumeration (enum <dfn enum>StereoVideoType</dfn>) ## {#enum-StereoVideoType}
+
+By convention, the first view is the left eye's view, and the second view is the right eye's view.
+The two are swapped if {{STEREO_VIDEO_FLAG_INVERTED}} is set.
+
+<div dfn-type="enum-value" dfn-for="#enum-StereoVideoType" id="StereoVideoType">
+    : <dfn noexport>STEREO_VIDEO_TYPE_2D</dfn> = <i>0x0</i>
+      :: Video is not stereoscopic. Only a single view exists. The metadata has to be ignored.
+    : <dfn noexport>STEREO_VIDEO_TYPE_SIDE_BY_SIDE</dfn> = <i>0x1</i>
+      :: Views are next to each other, horizontally.
+    : <dfn noexport>STEREO_VIDEO_TYPE_TOP_AND_BOTTOM</dfn> = <i>0x2</i>
+      :: Views are on top of each other.
+    : <dfn noexport>STEREO_VIDEO_TYPE_INDIVIDUAL</dfn> = <i>0x3</i>
+      :: Views are separate, one in each frame. Indicated by the [=field_id=], if set to 1, then view is the [=primary-eye=].
+    : <dfn noexport>STEREO_VIDEO_TYPE_CHECKERBOARD</dfn> = <i>0x4</i>
+      :: Pixels from each view are interleaved in a checkerboard structure.
+    : <dfn noexport>STEREO_VIDEO_TYPE_SIDE_BY_SIDE_QUINCUNX</dfn> = <i>0x5</i>
+      :: Views are next to each other, horizontally. But are spatially sampled using a Quincunx pattern.
+    : <dfn noexport>STEREO_VIDEO_TYPE_LINES</dfn> = <i>0x6</i>
+      :: Views are interleaved on a line-basis, as if interlaced.
+    : <dfn noexport>STEREO_VIDEO_TYPE_COLUMNS</dfn> = <i>0x7</i>
+      :: Views are interleaved on a column basis.
+</div>
+
+## Stereo Video Flags Enumeration (enum <dfn enum>StereoVideoFlags</dfn>) ## {#enum-StereoVideoFlags}
+
+<div dfn-type="enum-value" dfn-for="#enum-StereoVideoFlags" id="StereoVideoFlags">
+    : <dfn noexport>STEREO_VIDEO_FLAG_INVERTED</dfn> = <i>0x0</i>
+      :: Views must be swapped during presentation (left->right, right->left).
+</div>
+
+## Stereo Video Primary Eye Enumeration (enum <dfn enum>StereoVideoPrimaryEye</dfn>) ## {#enum-StereoVideoPrimaryEye}
+
+<div dfn-type="enum-value" dfn-for="#enum-StereoVideoPrimaryEye" id="StereoVideoPrimaryEye">
+    : <dfn noexport>STEREO_VIDEO_PRIMARY_EYE_NONE</dfn> = <i>0x0</i>
+      :: Neither eye is primary.
+    : <dfn noexport>STEREO_VIDEO_PRIMARY_EYE_LEFT</dfn> = <i>0x1</i>
+      :: The left eye is the primary.
+    : <dfn noexport>STEREO_VIDEO_PRIMARY_EYE_RIGHT</dfn> = <i>0x2</i>
+      :: The right eye is the primary.
+</div>
 
 
 ## User data ## {#user-data-packets}
