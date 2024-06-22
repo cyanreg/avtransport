@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="96164c461a5d8433ebceddcb3924c57b6a411840" name="document-revision">
+  <meta content="b1a8c8b5d30004e6357b3aa4829c59a11650eb17" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-05-31">31 May 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-06-22">22 June 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 31 May 2024,
+In addition, as of 22 June 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2272,9 +2272,13 @@ Parts of this work may be from another specification document.  If so, those par
       <li><a href="#enum-Matrix"><span class="secno">2.27</span> <span class="content">Matrix Enumeration (enum <span><code>Matrix</code></span>)</span></a>
       <li><a href="#video-orientation-packets"><span class="secno">2.28</span> <span class="content">Video orientation</span></a>
       <li><a href="#enum-VideoReflection"><span class="secno">2.29</span> <span class="content">Video Reflection Enumeration (enum <span><code>VideoReflection</code></span>)</span></a>
-      <li><a href="#user-data-packets"><span class="secno">2.30</span> <span class="content">User data</span></a>
-      <li><a href="#stream-duration-packets"><span class="secno">2.31</span> <span class="content">Stream duration</span></a>
-      <li><a href="#end-of-stream-packets"><span class="secno">2.32</span> <span class="content">End of stream</span></a>
+      <li><a href="#stereo-video-packets"><span class="secno">2.30</span> <span class="content">Stereo video</span></a>
+      <li><a href="#enum-StereoVideoType"><span class="secno">2.31</span> <span class="content">Stereo Video Type Enumeration (enum <span><code>StereoVideoType</code></span>)</span></a>
+      <li><a href="#enum-StereoVideoFlags"><span class="secno">2.32</span> <span class="content">Stereo Video Flags Enumeration (enum <span><code>StereoVideoFlags</code></span>)</span></a>
+      <li><a href="#enum-StereoVideoPrimaryEye"><span class="secno">2.33</span> <span class="content">Stereo Video Primary Eye Enumeration (enum <span><code>StereoVideoPrimaryEye</code></span>)</span></a>
+      <li><a href="#user-data-packets"><span class="secno">2.34</span> <span class="content">User data</span></a>
+      <li><a href="#stream-duration-packets"><span class="secno">2.35</span> <span class="content">Stream duration</span></a>
+      <li><a href="#end-of-stream-packets"><span class="secno">2.36</span> <span class="content">End of stream</span></a>
      </ol>
     <li>
      <a href="#addendum"><span class="secno">3</span> <span class="content">Addendum</span></a>
@@ -2414,10 +2418,10 @@ standardized way to transmit such data between clients.</p>
        <td><a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation</a>
        <td>Segmented stream data packets.
       <tr>
-       <td><a href="#user-data-packets">§ 2.30 User data</a>
+       <td><a href="#user-data-packets">§ 2.34 User data</a>
        <td>Optional user data packets.
       <tr>
-       <td><a href="#end-of-stream-packets">§ 2.32 End of stream</a>
+       <td><a href="#end-of-stream-packets">§ 2.36 End of stream</a>
        <td>Finalizes a stream or session.
     </table>
    </figure>
@@ -2464,8 +2468,11 @@ Below is a table of how they’re allocated:</p>
        <td><span class="css">0x0040</span>
        <td><a href="#video-orientation-packets">§ 2.28 Video orientation</a>
       <tr>
+       <td><span class="css">0x0041</span>
+       <td><a href="#stereo-video-packets">§ 2.30 Stereo video</a>
+      <tr>
        <td><span class="css">0x0050</span>
-       <td><a href="#stream-duration-packets">§ 2.31 Stream duration</a>
+       <td><a href="#stream-duration-packets">§ 2.35 Stream duration</a>
       <tr>
        <td><span class="css">0x00FE</span>
        <td><a href="#stream-data-parity-packets">§ 2.9 Stream data parity</a>
@@ -2480,10 +2487,10 @@ Below is a table of how they’re allocated:</p>
        <td><a href="#time-synchronization-packets">§ 2.3 Time synchronization</a>
       <tr>
        <td>[<span class="css">0x0600</span>:<span class="css">0x0602</span>]
-       <td><a href="#user-data-packets">§ 2.30 User data</a>
+       <td><a href="#user-data-packets">§ 2.34 User data</a>
       <tr>
        <td><span class="css">0x0FFF</span>
-       <td><a href="#end-of-stream-packets">§ 2.32 End of stream</a>
+       <td><a href="#end-of-stream-packets">§ 2.36 End of stream</a>
       <tr>
        <td><span class="css">0xF001</span>
        <td><a href="#session-control-data-packets">§ 3.4.1 Session control data</a>
@@ -2567,7 +2574,7 @@ or duration <code>v</code> and a <i>rational</i> timebase <code>b</code> is the 
    <p><code>t = v * b.num / b.den</code></p>
    <p class="note" role="note"><span class="marker">Note:</span> All mathematical operations on timestamps should be done in the integer domain,
 as floating-point operations may be inaccurate and inconsistent.</p>
-   <p>The timebase of <a href="#stream-data-packets">§ 2.7 Stream Data</a>, <a href="#stream-duration-packets">§ 2.31 Stream duration</a>,
+   <p>The timebase of <a href="#stream-data-packets">§ 2.7 Stream Data</a>, <a href="#stream-duration-packets">§ 2.35 Stream duration</a>,
 or any other packets with an explicit <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①">stream_id</a> field is given in the <a href="#stream-registration-packets">§ 2.4 Stream registration</a> packets for the appropriate stream.</p>
    <p>The time <code>t</code> of a <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="pts">pts</dfn> field corresponds to the exact time when a packet must be
 instantaneously released from a decoding buffer, and instantaneously presented.</p>
@@ -3001,7 +3008,7 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
    </figure>
    <p>This packet may be sent for an already-initialized stream. The <a data-link-type="dfn" href="#stream-registration-packets-bandwidth" id="ref-for-stream-registration-packets-bandwidth">bandwidth</a> field
 and the <a data-link-type="dfn" href="#stream-registration-packets-stream_flags" id="ref-for-stream-registration-packets-stream_flags②">stream_flags</a> fields may change, however the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id">codec_id</a>, <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase①">timebase</a> AND <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id">related_stream_id</a> fields must remain the same. If the latter are to change
-an <a href="#end-of-stream-packets">§ 2.32 End of stream</a> packet must be sent first.</p>
+an <a href="#end-of-stream-packets">§ 2.36 End of stream</a> packet must be sent first.</p>
    <p>The <a data-link-type="dfn" href="#stream-registration-packets-skip_preroll" id="ref-for-stream-registration-packets-skip_preroll①">skip_preroll</a> field is a duration <b>in timebase units</b> to signal how much to skip
 after reinitializing or seeking. The duration of negative timestamps at the start of streams
 must be at least as long as the <a data-link-type="dfn" href="#stream-registration-packets-skip_preroll" id="ref-for-stream-registration-packets-skip_preroll②">skip_preroll</a>.</p>
@@ -3015,7 +3022,7 @@ for the stream to be correctly decoded and presented. It MUST be interpreted as 
       <p>Stream requires a <a href="#metadata-packets">§ 2.12 Metadata</a> packet in order to be fully initialized.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamInitPackets" data-dfn-type="enum-value" data-noexport id="dom-enum-streaminitpackets-stream_init_pkt_stream_duration"><code>STREAM_INIT_PKT_STREAM_DURATION</code><a class="self-link" href="#dom-enum-streaminitpackets-stream_init_pkt_stream_duration"></a></dfn> = <i>0x2</i>
      <dd data-md>
-      <p>Stream requires a <a href="#stream-duration-packets">§ 2.31 Stream duration</a> packet in order to be fully initialized.</p>
+      <p>Stream requires a <a href="#stream-duration-packets">§ 2.35 Stream duration</a> packet in order to be fully initialized.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StreamInitPackets" data-dfn-type="enum-value" data-noexport id="dom-enum-streaminitpackets-stream_init_pkt_config_data"><code>STREAM_INIT_PKT_CONFIG_DATA</code><a class="self-link" href="#dom-enum-streaminitpackets-stream_init_pkt_config_data"></a></dfn> = <i>0x4</i>
      <dd data-md>
       <p>Stream requires a <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packet in order to be fully initialized.</p>
@@ -4785,7 +4792,146 @@ until a new orientation packet is sent, or the stream is reinitialized.</p>
    <p>The actual rotation in radians is given by <code>π * (<a data-link-type="dfn" href="#video-orientation-packets-rotation" id="ref-for-video-orientation-packets-rotation①">rotation</a>.num/<a data-link-type="dfn" href="#video-orientation-packets-rotation" id="ref-for-video-orientation-packets-rotation②">rotation</a>.den)</code>.</p>
    <p>Rotation should be applied after all other transformations have been performed on the image,
 including cropping via the <a data-link-type="dfn" href="#time-synchronization-packets-cropped_width" id="ref-for-time-synchronization-packets-cropped_width">cropped_width</a>/<a data-link-type="dfn" href="#time-synchronization-packets-cropped_height" id="ref-for-time-synchronization-packets-cropped_height">cropped_height</a> fields in <a href="#video-information-packets">§ 2.19 Video information</a> packets.</p>
-   <h3 class="heading settled" data-level="2.30" id="user-data-packets"><span class="secno">2.30. </span><span class="content">User data</span><a class="self-link" href="#user-data-packets"></a></h3>
+   <h3 class="heading settled" data-level="2.30" id="stereo-video-packets"><span class="secno">2.30. </span><span class="content">Stereo video</span><a class="self-link" href="#stereo-video-packets"></a></h3>
+   <p>A stereoscopic video file consists in multiple views embedded in a single
+frame, usually describing two views of a scene.</p>
+   <p>A standardized way to transmit stereoscopic video information is as follows:</p>
+   <figure class="table" id="table-StereoVideoData">
+    <table class="complex data longlastcol">
+     <tbody>
+      <tr>
+       <th>Type
+       <th>Name
+       <th>Data
+       <th>Description
+      <tr id="0x0041+0">
+       <td><code>b(16)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-stereo_video_descriptor">stereo_video_descriptor<a class="self-link" href="#stereo-video-packets-stereo_video_descriptor"></a></dfn>
+       <td><span class="css">0x0040</span>
+       <td>Indicates this is a stereo video information packet.
+      <tr id="0x0041+1">
+       <td><code>b(16)</code>
+       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②①">stream_id</a>
+       <td>
+       <td>The stream ID for which to associate the stereo information with.
+      <tr id="0x0041+2">
+       <td><code>u(32)</code>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①⑨">global_seq</a>
+       <td>
+       <td>Monotonically incrementing per-packet global sequence number.
+      <tr id="0x0041+3">
+       <td><code>i(64)</code>
+       <td><a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a>
+       <td>
+       <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase⑤">timebase</a> units) at which this stereo packet has to be applied at.
+      <tr id="0x0041+4">
+       <td><code>u(8)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-flags">flags<a class="self-link" href="#stereo-video-packets-flags"></a></dfn>
+       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-stereovideoflags" id="ref-for-enumdef-stereovideoflags">StereoVideoFlags</a></code>
+       <td>Additional flags.
+      <tr id="0x0041+5">
+       <td><code>u(8)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-video">video<a class="self-link" href="#stereo-video-packets-video"></a></dfn>
+       <td>enum <code class="idl"><a data-link-type="idl">StereoVideoView</a></code>
+       <td>Determines which views are packed.
+      <tr id="0x0041+6">
+       <td><code>u(8)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-primary_eye">primary_eye<a class="self-link" href="#stereo-video-packets-primary_eye"></a></dfn>
+       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-stereovideoprimaryeye" id="ref-for-enumdef-stereovideoprimaryeye">StereoVideoPrimaryEye</a></code>
+       <td>Determines which eye is the primary eye when rendering in 2D.
+      <tr id="0x0041+7">
+       <td><code>u(32)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-baseline">baseline<a class="self-link" href="#stereo-video-packets-baseline"></a></dfn>
+       <td>
+       <td>The distance between the centres of the lenses of the camera system, in micrometers.
+      <tr id="0x0041+8">
+       <td><code>b(40)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
+       <td>
+       <td>Padding, reserved for future use. MUST be 0x0.
+      <tr id="0x0041+9">
+       <td><code>b(64)</code>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑧">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑨">LDPC(288, 224)</a>
+       <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
+      <tr id="0x0041+10">
+       <td><code>R(64)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-horizontal_disparity_adjustment">horizontal_disparity_adjustment<a class="self-link" href="#stereo-video-packets-horizontal_disparity_adjustment"></a></dfn>
+       <td>
+       <td>Relative shift of the left and right images, which changes the zero parallax plane. Range is -1.0 to 1.0.
+      <tr id="0x0041+11">
+       <td><code>R(64)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-horizontal_field_of_view">horizontal_field_of_view<a class="self-link" href="#stereo-video-packets-horizontal_field_of_view"></a></dfn>
+       <td>
+       <td>Horizontal field of view, in degrees.
+      <tr id="0x0041+12">
+       <td><code>b(96)</code>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
+       <td>
+       <td>Padding, reserved for future use. MUST be 0x0.
+      <tr id="0x0041+13">
+       <td><code>b(64)</code>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑨">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②⓪">LDPC(288, 224)</a>
+       <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
+    </table>
+   </figure>
+   <p>The effects of stereo video packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> value given,
+until a new stereo video packet is sent, or the stream is reinitialized.</p>
+   <h3 class="heading settled" data-level="2.31" id="enum-StereoVideoType"><span class="secno">2.31. </span><span class="content">Stereo Video Type Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideotype"><code>StereoVideoType</code><a class="self-link" href="#enumdef-stereovideotype"></a></dfn>)</span><a class="self-link" href="#enum-StereoVideoType"></a></h3>
+   <p>By convention, the first view is the left eye’s view, and the second view is the right eye’s view.
+The two are swapped if <a data-link-type="dfn">STEREO_VIDEO_FLAG_INVERTED</a> is set.</p>
+   <div id="StereoVideoType">
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_2d"><code>STEREO_VIDEO_TYPE_2D</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_2d"></a></dfn> = <i>0x0</i>
+     <dd data-md>
+      <p>Video is not stereoscopic. Only a single view exists. The metadata has to be ignored.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_side_by_side"><code>STEREO_VIDEO_TYPE_SIDE_BY_SIDE</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_side_by_side"></a></dfn> = <i>0x1</i>
+     <dd data-md>
+      <p>Views are next to each other, horizontally.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_top_and_bottom"><code>STEREO_VIDEO_TYPE_TOP_AND_BOTTOM</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_top_and_bottom"></a></dfn> = <i>0x2</i>
+     <dd data-md>
+      <p>Views are on top of each other.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_individual"><code>STEREO_VIDEO_TYPE_INDIVIDUAL</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_individual"></a></dfn> = <i>0x3</i>
+     <dd data-md>
+      <p>Views are separate, one in each frame. Indicated by the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id④">field_id</a>, if set to 1, then view is the <a data-link-type="dfn">primary-eye</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_checkerboard"><code>STEREO_VIDEO_TYPE_CHECKERBOARD</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_checkerboard"></a></dfn> = <i>0x4</i>
+     <dd data-md>
+      <p>Pixels from each view are interleaved in a checkerboard structure.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_side_by_side_quincunx"><code>STEREO_VIDEO_TYPE_SIDE_BY_SIDE_QUINCUNX</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_side_by_side_quincunx"></a></dfn> = <i>0x5</i>
+     <dd data-md>
+      <p>Views are next to each other, horizontally. But are spatially sampled using a Quincunx pattern.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_lines"><code>STEREO_VIDEO_TYPE_LINES</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_lines"></a></dfn> = <i>0x6</i>
+     <dd data-md>
+      <p>Views are interleaved on a line-basis, as if interlaced.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_columns"><code>STEREO_VIDEO_TYPE_COLUMNS</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_columns"></a></dfn> = <i>0x7</i>
+     <dd data-md>
+      <p>Views are interleaved on a column basis.</p>
+    </dl>
+   </div>
+   <h3 class="heading settled" data-level="2.32" id="enum-StereoVideoFlags"><span class="secno">2.32. </span><span class="content">Stereo Video Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideoflags"><code>StereoVideoFlags</code></dfn>)</span><a class="self-link" href="#enum-StereoVideoFlags"></a></h3>
+   <div id="StereoVideoFlags">
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoflags-stereo_video_flag_inverted"><code>STEREO_VIDEO_FLAG_INVERTED</code><a class="self-link" href="#dom-enum-stereovideoflags-stereo_video_flag_inverted"></a></dfn> = <i>0x0</i>
+     <dd data-md>
+      <p>Views must be swapped during presentation (left->right, right->left).</p>
+    </dl>
+   </div>
+   <h3 class="heading settled" data-level="2.33" id="enum-StereoVideoPrimaryEye"><span class="secno">2.33. </span><span class="content">Stereo Video Primary Eye Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideoprimaryeye"><code>StereoVideoPrimaryEye</code></dfn>)</span><a class="self-link" href="#enum-StereoVideoPrimaryEye"></a></h3>
+   <div id="StereoVideoPrimaryEye">
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoPrimaryEye" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_none"><code>STEREO_VIDEO_PRIMARY_EYE_NONE</code><a class="self-link" href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_none"></a></dfn> = <i>0x0</i>
+     <dd data-md>
+      <p>Neither eye is primary.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoPrimaryEye" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_left"><code>STEREO_VIDEO_PRIMARY_EYE_LEFT</code><a class="self-link" href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_left"></a></dfn> = <i>0x1</i>
+     <dd data-md>
+      <p>The left eye is the primary.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoPrimaryEye" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_right"><code>STEREO_VIDEO_PRIMARY_EYE_RIGHT</code><a class="self-link" href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_right"></a></dfn> = <i>0x2</i>
+     <dd data-md>
+      <p>The right eye is the primary.</p>
+    </dl>
+   </div>
+   <h3 class="heading settled" data-level="2.34" id="user-data-packets"><span class="secno">2.34. </span><span class="content">User data</span><a class="self-link" href="#user-data-packets"></a></h3>
    <p>The user-specific data packet is laid out as follows:</p>
    <figure class="table" id="table-UserData">
     <table class="complex data longlastcol">
@@ -4807,7 +4953,7 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>A free to use field for user data.
       <tr id="0x0600+2">
        <td><code>u(32)</code>
-       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①⑨">global_seq</a>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②⓪">global_seq</a>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0600+3">
@@ -4832,13 +4978,13 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>User data compression.
       <tr id="0x0600+7">
        <td><code>b(24)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⓪">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be 0x0.
       <tr id="0x0600+8">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑧">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①⑨">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②⓪">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②①">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0600+9">
        <td><code><a data-link-type="dfn" href="#user-data-packets-userdata_pl_length" id="ref-for-user-data-packets-userdata_pl_length">userdata_pl_length</a>*b(8)</code>
@@ -4868,7 +5014,7 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
        <td>Parity data for user data.
     </table>
    </figure>
-   <h3 class="heading settled" data-level="2.31" id="stream-duration-packets"><span class="secno">2.31. </span><span class="content">Stream duration</span><a class="self-link" href="#stream-duration-packets"></a></h3>
+   <h3 class="heading settled" data-level="2.35" id="stream-duration-packets"><span class="secno">2.35. </span><span class="content">Stream duration</span><a class="self-link" href="#stream-duration-packets"></a></h3>
    <p>If the session length is well-known, implementations can reserve space up-front
 at the start of files to notify implementations of stream lengths.</p>
    <figure class="table" id="table-StreamDuration">
@@ -4886,12 +5032,12 @@ at the start of files to notify implementations of stream lengths.</p>
        <td>Indicates this is a stream duration packet.
       <tr id="0x0050+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②①">stream_id</a>
+       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②②">stream_id</a>
        <td>
        <td>Indicates the stream ID for the index. May be <span class="css">0xFFFF</span>, in which case, it applies to all streams.
       <tr id="0x0050+2">
        <td><code>u(32)</code>
-       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②⓪">global_seq</a>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②①">global_seq</a>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0050+3">
@@ -4901,24 +5047,24 @@ at the start of files to notify implementations of stream lengths.</p>
        <td>The total duration of the stream(s).
       <tr id="0x0050+4">
        <td><code>b(96)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①①">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①③">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0050+5">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⑨">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②⓪">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②①">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②②">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
-   <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②②">stream_id</a> is <span class="css">0xFFFF</span>, the timebase used for <a data-link-type="dfn" href="#stream-duration-packets-total_duration" id="ref-for-stream-duration-packets-total_duration">total_duration</a> must be assumed to be <b>1 nanosecond</b>, numerator of <span class="css">1</span>, denominator of <span class="css">1000000000</span>.</p>
+   <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②③">stream_id</a> is <span class="css">0xFFFF</span>, the timebase used for <a data-link-type="dfn" href="#stream-duration-packets-total_duration" id="ref-for-stream-duration-packets-total_duration">total_duration</a> must be assumed to be <b>1 nanosecond</b>, numerator of <span class="css">1</span>, denominator of <span class="css">1000000000</span>.</p>
    <p>If the value of <a data-link-type="dfn" href="#stream-duration-packets-total_duration" id="ref-for-stream-duration-packets-total_duration①">total_duration</a> is 0, the entire packet must be ignored.
 In such cases, implementations are free to attempt to measure stream duration
 via other methods.<br> This makes it possible to write stream duration packets at the start of
 streams, and amend them later.</p>
    <p>The duration must be the total amount of time the stream will be presented.<br> Any negative duration MUST be excluded.</p>
    <p>The duration must be treated as metadata rather than a hard limit.</p>
-   <h3 class="heading settled" data-level="2.32" id="end-of-stream-packets"><span class="secno">2.32. </span><span class="content">End of stream</span><a class="self-link" href="#end-of-stream-packets"></a></h3>
+   <h3 class="heading settled" data-level="2.36" id="end-of-stream-packets"><span class="secno">2.36. </span><span class="content">End of stream</span><a class="self-link" href="#end-of-stream-packets"></a></h3>
    <p>The EOS packet is laid out as follows:</p>
    <figure class="table" id="table-EOS">
     <table class="complex data longlastcol">
@@ -4935,30 +5081,30 @@ streams, and amend them later.</p>
        <td>Indicates this is a stream duration packet.
       <tr id="0x0FFF+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②③">stream_id</a>
+       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②④">stream_id</a>
        <td>
        <td>Indicates the stream ID for the index. May be <span class="css">0xFFFF</span>, in which case, it applies to all streams.
       <tr id="0x0FFF+2">
        <td><code>u(32)</code>
-       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②①">global_seq</a>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②②">global_seq</a>
        <td>
        <td>Monotonically incrementing per-packet global sequence number.
       <tr id="0x0FFF+3">
        <td><code>b(160)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①②">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①④">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x0FFF+4">
        <td><code>b(64)</code>
-       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②⓪">ldpc_288_224</a>
-       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②①">LDPC(288, 224)</a>
+       <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224②②">ldpc_288_224</a>
+       <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②③">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
-   <p>The <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②④">stream_id</a> field may be used to indicate that a specific stream will no longer
+   <p>The <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑤">stream_id</a> field may be used to indicate that a specific stream will no longer
 receive any packets, and implementations are free to unload decoding and free up
 any used resources.</p>
-   <p>The <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑤">stream_id</a> may be reused afterwards, but this is not recommended.</p>
+   <p>The <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑥">stream_id</a> may be reused afterwards, but this is not recommended.</p>
    <p>If not encountered in a stream, and the connection was cut, then the receiver is
 allowed to gracefully wait for a reconnection.</p>
    <p>If encountered in a file, the implementation may regard any data present afterwards
@@ -5209,7 +5355,7 @@ laid out in the following way:</p>
    </figure>
    <p>The meaning of each field is defined by <a data-link-type="biblio" href="#biblio-rfc7845" title="Ogg Encapsulation for the Opus Audio Codec">[RFC7845]</a>.</p>
    <p>Implementations must not use the <a data-link-type="dfn" href="#opus-encapsulation-opus_prepad" id="ref-for-opus-encapsulation-opus_prepad">opus_prepad</a> field, but must set the
-first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑧">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.8.2 Negative times</a> to remove the required number of prepended samples.</p>
+first stream packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts②⓪">pts</a> value to a negative value as defined in <a href="#negative-times">§ 1.8.2 Negative times</a> to remove the required number of prepended samples.</p>
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data">packet_data</a> MUST contain regular Opus packets with their front uncompressed
 header intact.</p>
    <p>In case of multiple channels, the packets MUST contain the concatenated contents
@@ -5486,7 +5632,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    <p>Events listed in ASS files MUST be modified in the following way:</p>
    <ul>
     <li data-md>
-     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①⓪">duration</a> fields, and must be ommitted from the data.</p>
+     <p>Start and end timestamps, stored in the <code>Marked</code> field, must be mapped to the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts②①">pts</a>, <a data-link-type="dfn" href="#dts" id="ref-for-dts⑤">dts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①⓪">duration</a> fields, and must be ommitted from the data.</p>
     <li data-md>
      <p>All other fields MUST be stored in the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①②">packet_data</a> field as a string, in the followin order: <code>ReadOrder, Layer, Style, Name, MarginL, MarginR, MarginV, Effect, Text</code>.</p>
     <li data-md>
@@ -5494,7 +5640,7 @@ the <code>[Script Info]</code> and <code>[V4 Styles]</code> sections as a string
    </ul>
    <p>The <code>ReadOrder</code> field is a monotonically incrementing field to identify the correct
 order in which to reconstruct the original ASS file.</p>
-   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts②⓪">pts</a> are permitted.</p>
+   <p>Multiple packets with the same <a data-link-type="dfn" href="#pts" id="ref-for-pts②②">pts</a> are permitted.</p>
    <h4 class="heading settled" data-level="3.1.17" id="srt-encapsulation"><span class="secno">3.1.17. </span><span class="content">SubRip encapsulation</span><a class="self-link" href="#srt-encapsulation"></a></h4>
    <p>For SubRip encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑧">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> MUST be <span class="css">0x53554252</span> (<span class="css">SUBR</span>).</p>
    <p>SubRip are a simple method of subtitle packaging that
@@ -5513,7 +5659,7 @@ an ending timestamp (3), the line(s) themselves, separated by newlines (4),
 and finally a blank like to indicate the end of the current line (5).</p>
    <p>To encapsulate SubRip subtitles into AVTransport, simply
 use the subtitle body (3) as the <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data①③">packet_data</a>.
-The start time is the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts②①">pts</a> field, while the <a data-link-type="dfn" href="#duration" id="ref-for-duration①①">duration</a> field is the difference between the ending timestamp (3) and the
+The start time is the packet’s <a data-link-type="dfn" href="#pts" id="ref-for-pts②③">pts</a> field, while the <a data-link-type="dfn" href="#duration" id="ref-for-duration①①">duration</a> field is the difference between the ending timestamp (3) and the
 starting timestamp (2).</p>
    <p>SubRip streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets.</p>
    <p class="note" role="note"><span class="marker">Note:</span> Extensions to SubRip files exist, with adding HTML-like tags
@@ -5564,7 +5710,7 @@ of cue components to style the line, terminated by a newline.
 As they are not part of the line, they are separated, and provided
 upfront as <a data-link-type="dfn" href="#webvtt-encapsulation-cue_comenents" id="ref-for-webvtt-encapsulation-cue_comenents">cue_comenents</a>. The line ending may be retained for
 the <a data-link-type="dfn">cue_components</a>, allowing for direct copy of the cue data.</p>
-   <p>The timestamps for each cue are translated into a <a data-link-type="dfn" href="#pts" id="ref-for-pts②②">pts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①②">duration</a>, as with SubRip.</p>
+   <p>The timestamps for each cue are translated into a <a data-link-type="dfn" href="#pts" id="ref-for-pts②④">pts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①②">duration</a>, as with SubRip.</p>
    <h4 class="heading settled" data-level="3.1.19" id="dng-tiff-encapsulation"><span class="secno">3.1.19. </span><span class="content">DNG/TIFF encapsulation</span><a class="self-link" href="#dng-tiff-encapsulation"></a></h4>
    <p>For DNG/TIFF encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id②⓪">codec_id</a> in <a href="#stream-registration-packets">§ 2.4 Stream registration</a> must be <span class="css">0x54494646</span> (<span class="css">TIFF</span>).</p>
    <p>DNG/TIFF streams require no <a href="#stream-configuration-packets">§ 2.6 Stream configuration</a> packets</p>
@@ -5838,11 +5984,11 @@ at the given frequencies.</p>
        <td>Appropriate for the packet loss
        <td>Optional FEC data.
       <tr>
-       <td><a href="#user-data-packets">§ 2.30 User data</a>
+       <td><a href="#user-data-packets">§ 2.34 User data</a>
        <td>As often as necessary
        <td>Optional user data packets.
       <tr>
-       <td><a href="#end-of-stream-packets">§ 2.32 End of stream</a>
+       <td><a href="#end-of-stream-packets">§ 2.36 End of stream</a>
        <td>Once
        <td>Finalizes a stream or session.
     </table>
@@ -5965,7 +6111,7 @@ one-to-one transmission. The following syntax is used:</p>
        <td><code>i(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_pts">seek_pts</dfn>
        <td>
-       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts②③">pts</a> value to seek to.
+       <td>The <a data-link-type="dfn" href="#pts" id="ref-for-pts②⑤">pts</a> value to seek to.
       <tr id="0x8001+8">
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-control-data-packets" data-dfn-type="dfn" data-noexport id="session-control-data-packets-seek_seq">seek_seq</dfn>
@@ -5995,7 +6141,7 @@ for the newsest available data, that data’s payload is once again sent over an
       <p>Signals a generic error.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ErrorCode" data-dfn-type="enum-value" data-noexport id="dom-enum-errorcode-error_code_unsupported"><code>ERROR_CODE_UNSUPPORTED</code><a class="self-link" href="#dom-enum-errorcode-error_code_unsupported"></a></dfn> = <i>0x2</i>
      <dd data-md>
-      <p>Unsupported data. May be sent after the sender sends a <a href="#stream-registration-packets">§ 2.4 Stream registration</a> to indicate that the receiver does not support this codec. The sender may send another packet of this type with the same <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑥">stream_id</a> to attempt reinitialization with different parameters.</p>
+      <p>Unsupported data. May be sent after the sender sends a <a href="#stream-registration-packets">§ 2.4 Stream registration</a> to indicate that the receiver does not support this codec. The sender may send another packet of this type with the same <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑦">stream_id</a> to attempt reinitialization with different parameters.</p>
     </dl>
    </div>
    <h4 class="heading settled" data-level="3.5.1" id="feedback-packets"><span class="secno">3.5.1. </span><span class="content">Feedback</span><a class="self-link" href="#feedback-packets"></a></h4>
@@ -6015,7 +6161,7 @@ for the newsest available data, that data’s payload is once again sent over an
        <td>Indicates this is a statistics packet.
       <tr id="0x8002+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑦">stream_id</a>
+       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑧">stream_id</a>
        <td>
        <td>Indicates the stream ID for which this packet is relevant to. May be <span class="css">0xFFFF</span> to indicate all streams.
       <tr id="0x8002+2">
@@ -6066,12 +6212,12 @@ that was likely dropped.</p>
        <td>Indicates this is a stream data resend packet.
       <tr id="0x8003+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①③">padding</a>
+       <td><a data-link-type="dfn" href="#padding" id="ref-for-padding①⑤">padding</a>
        <td>
        <td>Padding, reserved for future use. Must be 0x0.
       <tr id="0x8003+2">
        <td><code>u(32)</code>
-       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②②">global_seq</a>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②③">global_seq</a>
        <td>
        <td>The sequence number of the packet that is missing.
     </table>
@@ -6093,14 +6239,14 @@ that was likely dropped.</p>
        <td>Indicates this is a stream control data packet.
       <tr id="0x8004+1">
        <td><code>b(16)</code>
-       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑧">stream_id</a>
+       <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑨">stream_id</a>
        <td>
        <td>The stream ID for which this packet applies to. MUST NOT be <span class="css">0xFFFF</span>.
       <tr id="0x8004+2">
        <td><code>u(32)</code>
-       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②③">global_seq</a>
+       <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq②④">global_seq</a>
        <td>
-       <td>If `1`, asks the sender to not send any packets relating to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id②⑨">stream_id</a> streams.
+       <td>If `1`, asks the sender to not send any packets relating to <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id③⓪">stream_id</a> streams.
     </table>
    </figure>
    <p>This can be used to save bandwidth. If previously disabled and then enabled,
@@ -6167,7 +6313,7 @@ The full block, along with the check data, shall be sent to an LDPC decoder.</p>
 <c- p>}</c->
 </pre>
    <p>This algorithm is quite inefficient, but even 10-year old embedded devices can
-do at least 2 million <a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②②">LDPC(288, 224)</a> encodings per second.</p>
+do at least 2 million <a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②④">LDPC(288, 224)</a> encodings per second.</p>
    <p>Implementations should consider using more advanced encoding algorithms, such
 as the <a data-link-type="biblio" href="#biblio-ldpc-encoding" title="Efficient encoding of low-density parity-check codes">Richardson-Urbanke method</a> to reduce the overhead further.</p>
    <h4 class="heading settled" data-level="4.1.1" id="ldpc-h-matrices"><span class="secno">4.1.1. </span><span class="content">LDPC H-matrices</span><a class="self-link" href="#ldpc-h-matrices"></a></h4>
@@ -6366,6 +6512,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#atrac9-encapsulation-atrac9_verification_bit">atrac9_verification_bit</a><span>, in § 3.1.5</span>
    <li><a href="#atrac9-encapsulation-atrac9_version">atrac9_version</a><span>, in § 3.1.5</span>
    <li><a href="#stream-registration-packets-bandwidth">bandwidth</a><span>, in § 2.4</span>
+   <li><a href="#stereo-video-packets-baseline">baseline</a><span>, in § 2.30</span>
    <li><a href="#time-synchronization-packets-bit_depth">bit_depth</a><span>, in § 2.19</span>
    <li><a href="#session-control-data-packets-cease">cease</a><span>, in § 3.4.1</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_420">CHROMA_420</a><span>, in § 2.22</span>
@@ -6495,6 +6642,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#flac-encapsulation-flac_nb_samples_2">flac_nb_samples_2</a><span>, in § 3.1.7</span>
    <li><a href="#flac-encapsulation-flac_samplerate">flac_samplerate</a><span>, in § 3.1.7</span>
    <li><a href="#flac-encapsulation-flac_streaminfo_md5">flac_streaminfo_md5</a><span>, in § 3.1.7</span>
+   <li><a href="#stereo-video-packets-flags">flags</a><span>, in § 2.30</span>
    <li><a href="#font-data-packets-font_compression">font_compression</a><span>, in § 2.16</span>
    <li><a href="#font-data-packets-font_data">font_data</a><span>, in § 2.16</span>
    <li><a href="#font-data-packets-font_data_descriptor">font_data_descriptor</a><span>, in § 2.16</span>
@@ -6537,6 +6685,8 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-has_mastering_primaries">has_mastering_primaries</a><span>, in § 2.19</span>
    <li><a href="#generic-data-segment-packets-header_7">header_7</a><span>, in § 2.5.1</span>
    <li><a href="#time-synchronization-packets-height">height</a><span>, in § 2.19</span>
+   <li><a href="#stereo-video-packets-horizontal_disparity_adjustment">horizontal_disparity_adjustment</a><span>, in § 2.30</span>
+   <li><a href="#stereo-video-packets-horizontal_field_of_view">horizontal_field_of_view</a><span>, in § 2.30</span>
    <li><a href="#dom-enum-interlacing-ilace_bff">ILACE_BFF</a><span>, in § 2.23</span>
    <li><a href="#dom-enum-interlacing-ilace_bw">ILACE_BW</a><span>, in § 2.23</span>
    <li><a href="#dom-enum-interlacing-ilace_prog">ILACE_PROG</a><span>, in § 2.23</span>
@@ -6594,7 +6744,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-min_luminance">min_luminance</a><span>, in § 2.19</span>
    <li><a href="#index-packets-nb_indices">nb_indices</a><span>, in § 2.11</span>
    <li><a href="#index-packets-next_idx">next_idx</a><span>, in § 2.11</span>
-   <li><a href="#user-data-packets-opaque">opaque</a><span>, in § 2.30</span>
+   <li><a href="#user-data-packets-opaque">opaque</a><span>, in § 2.34</span>
    <li><a href="#opus-encapsulation-opus_channel_mapping">opus_channel_mapping</a><span>, in § 3.1.1</span>
    <li><a href="#opus-encapsulation-opus_channels">opus_channels</a><span>, in § 3.1.1</span>
    <li><a href="#opus-encapsulation-opus_ch_family">opus_ch_family</a><span>, in § 3.1.1</span>
@@ -6622,6 +6772,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#index-packets-prev_idx">prev_idx</a><span>, in § 2.11</span>
    <li><a href="#enumdef-primaries">Primaries</a><span>, in § 2.25</span>
    <li><a href="#time-synchronization-packets-primaries">primaries</a><span>, in § 2.19</span>
+   <li><a href="#stereo-video-packets-primary_eye">primary_eye</a><span>, in § 2.30</span>
    <li><a href="#dom-enum-primaries-prim_bt2020">PRIM_BT2020</a><span>, in § 2.25</span>
    <li><a href="#dom-enum-primaries-prim_bt470">PRIM_BT470</a><span>, in § 2.25</span>
    <li><a href="#dom-enum-primaries-prim_bt601_525">PRIM_BT601_525</a><span>, in § 2.25</span>
@@ -6684,6 +6835,22 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-start-packets-session_version">session_version</a><span>, in § 2.1</span>
    <li><a href="#time-synchronization-packets-signal_aspect">signal_aspect</a><span>, in § 2.19</span>
    <li><a href="#stream-registration-packets-skip_preroll">skip_preroll</a><span>, in § 2.4</span>
+   <li><a href="#stereo-video-packets-stereo_video_descriptor">stereo_video_descriptor</a><span>, in § 2.30</span>
+   <li><a href="#dom-enum-stereovideoflags-stereo_video_flag_inverted">STEREO_VIDEO_FLAG_INVERTED</a><span>, in § 2.32</span>
+   <li><a href="#enumdef-stereovideoflags">StereoVideoFlags</a><span>, in § 2.32</span>
+   <li><a href="#enumdef-stereovideoprimaryeye">StereoVideoPrimaryEye</a><span>, in § 2.33</span>
+   <li><a href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_left">STEREO_VIDEO_PRIMARY_EYE_LEFT</a><span>, in § 2.33</span>
+   <li><a href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_none">STEREO_VIDEO_PRIMARY_EYE_NONE</a><span>, in § 2.33</span>
+   <li><a href="#dom-enum-stereovideoprimaryeye-stereo_video_primary_eye_right">STEREO_VIDEO_PRIMARY_EYE_RIGHT</a><span>, in § 2.33</span>
+   <li><a href="#enumdef-stereovideotype">StereoVideoType</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_2d">STEREO_VIDEO_TYPE_2D</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_checkerboard">STEREO_VIDEO_TYPE_CHECKERBOARD</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_columns">STEREO_VIDEO_TYPE_COLUMNS</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_individual">STEREO_VIDEO_TYPE_INDIVIDUAL</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_lines">STEREO_VIDEO_TYPE_LINES</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_side_by_side">STEREO_VIDEO_TYPE_SIDE_BY_SIDE</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_side_by_side_quincunx">STEREO_VIDEO_TYPE_SIDE_BY_SIDE_QUINCUNX</a><span>, in § 2.31</span>
+   <li><a href="#dom-enum-stereovideotype-stereo_video_type_top_and_bottom">STEREO_VIDEO_TYPE_TOP_AND_BOTTOM</a><span>, in § 2.31</span>
    <li><a href="#dom-enum-streamflags-stream_binaural">STREAM_BINAURAL</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-streamflags-stream_commentary">STREAM_COMMENTARY</a><span>, in § 2.4.2</span>
    <li><a href="#stream-configuration-packets-stream_config_descriptor">stream_config_descriptor</a><span>, in § 2.6</span>
@@ -6698,8 +6865,8 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-streamflags-stream_default">STREAM_DEFAULT</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-streamflags-stream_descriptions">STREAM_DESCRIPTIONS</a><span>, in § 2.4.2</span>
    <li><a href="#dom-enum-streamflags-stream_dub">STREAM_DUB</a><span>, in § 2.4.2</span>
-   <li><a href="#stream-duration-packets-stream_duration_descriptor">stream_duration_descriptor</a><span>, in § 2.31</span>
-   <li><a href="#end-of-stream-packets-stream_end_descriptor">stream_end_descriptor</a><span>, in § 2.32</span>
+   <li><a href="#stream-duration-packets-stream_duration_descriptor">stream_duration_descriptor</a><span>, in § 2.35</span>
+   <li><a href="#end-of-stream-packets-stream_end_descriptor">stream_end_descriptor</a><span>, in § 2.36</span>
    <li><a href="#feedback-packets-stream_feedback_descriptor">stream_feedback_descriptor</a><span>, in § 3.5.1</span>
    <li><a href="#stream-registration-packets-stream_flags">stream_flags</a><span>, in § 2.4</span>
    <li><a href="#enumdef-streamflags">StreamFlags</a><span>, in § 2.4.2</span>
@@ -6727,7 +6894,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#stream-registration-packets-timebase">timebase</a><span>, in § 2.4</span>
    <li><a href="#time-synchronization-packets-time_sync_descriptor">time_sync_descriptor</a><span>, in § 2.3</span>
    <li><a href="#dom-enum-commonmetadatakeys-title">title</a><span>, in § 2.12.1</span>
-   <li><a href="#stream-duration-packets-total_duration">total_duration</a><span>, in § 2.31</span>
+   <li><a href="#stream-duration-packets-total_duration">total_duration</a><span>, in § 2.35</span>
    <li><a href="#generic-data-packets-total_payload_length">total_payload_length</a><span>, in § 2.5</span>
    <li><a href="#dom-enum-commonmetadatakeys-track">track</a><span>, in § 2.12.1</span>
    <li><a href="#dom-enum-commonmetadatakeys-tracks">tracks</a><span>, in § 2.12.1</span>
@@ -6758,14 +6925,15 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-ts_clock_seq">ts_clock_seq</a><span>, in § 2.3</span>
    <li><a href="#session-control-data-packets-uplink_ip">uplink_ip</a><span>, in § 3.4.1</span>
    <li><a href="#session-control-data-packets-uplink_port">uplink_port</a><span>, in § 3.4.1</span>
-   <li><a href="#user-data-packets-userdata">userdata</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-userdata_compression">userdata_compression</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-user_data_descriptor">user_data_descriptor</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-userdata_length">userdata_length</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-user_data_parity_descriptor">user_data_parity_descriptor</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-userdata_pl_length">userdata_pl_length</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-user_data_segment_descriptor">user_data_segment_descriptor</a><span>, in § 2.30</span>
-   <li><a href="#user-data-packets-user_field">user_field</a><span>, in § 2.30</span>
+   <li><a href="#user-data-packets-userdata">userdata</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-userdata_compression">userdata_compression</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-user_data_descriptor">user_data_descriptor</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-userdata_length">userdata_length</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-user_data_parity_descriptor">user_data_parity_descriptor</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-userdata_pl_length">userdata_pl_length</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-user_data_segment_descriptor">user_data_segment_descriptor</a><span>, in § 2.34</span>
+   <li><a href="#user-data-packets-user_field">user_field</a><span>, in § 2.34</span>
+   <li><a href="#stereo-video-packets-video">video</a><span>, in § 2.30</span>
    <li><a href="#time-synchronization-packets-video_info_descriptor">video_info_descriptor</a><span>, in § 2.19</span>
    <li><a href="#video-orientation-packets-video_orientation_descriptor">video_orientation_descriptor</a><span>, in § 2.28</span>
    <li><a href="#dom-enum-videoreflection-video_reflect_flip">VIDEO_REFLECT_FLIP</a><span>, in § 2.29</span>
@@ -7205,12 +7373,12 @@ window.dfnpanelData['b06bf874'] = {"dfnID": "b06bf874", "url": "https://drafts.c
 window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-red", "dfnText": "red", "refSections": [{"refs": [{"id": "ref-for-valdef-color-red"}, {"id": "ref-for-valdef-color-red\u2460"}, {"id": "ref-for-valdef-color-red\u2461"}, {"id": "ref-for-valdef-color-red\u2462"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['c862e26c'] = {"dfnID": "c862e26c", "url": "https://drafts.csswg.org/mediaqueries-5/#valdef-media-forced-colors-active", "dfnText": "active", "refSections": [{"refs": [{"id": "ref-for-valdef-media-forced-colors-active"}, {"id": "ref-for-valdef-media-forced-colors-active\u2460"}], "title": "1.9. URI scheme"}], "external": true};
 window.dfnpanelData['descriptor'] = {"dfnID": "descriptor", "url": "#descriptor", "dfnText": "descriptor", "refSections": [{"refs": [{"id": "ref-for-descriptor"}], "title": "1.3. Specification conventions"}, {"refs": [{"id": "ref-for-descriptor\u2460"}], "title": "2.5. Generic data"}], "external": false};
-window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2460"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "3.5.2. Resend"}], "external": false};
-window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}, {"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2462"}, {"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}, {"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2468"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u24ea"}], "title": "2.32. End of stream"}], "external": false};
+window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnText": "padding", "refSections": [{"refs": [{"id": "ref-for-padding"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-padding\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-padding\u2461"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-padding\u2462"}, {"id": "ref-for-padding\u2463"}, {"id": "ref-for-padding\u2464"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-padding\u2465"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-padding\u2466"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-padding\u2467"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-padding\u2468"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-padding\u2460\u24ea"}, {"id": "ref-for-padding\u2460\u2460"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-padding\u2460\u2461"}], "title": "2.34. User data"}, {"refs": [{"id": "ref-for-padding\u2460\u2462"}], "title": "2.35. Stream duration"}, {"refs": [{"id": "ref-for-padding\u2460\u2463"}], "title": "2.36. End of stream"}, {"refs": [{"id": "ref-for-padding\u2460\u2464"}], "title": "3.5.2. Resend"}], "external": false};
+window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}, {"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2462"}, {"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}, {"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}, {"id": "ref-for-ldpc_288_224\u2460\u2468"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u24ea"}], "title": "2.34. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u2460"}], "title": "2.35. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u2461"}], "title": "2.36. End of stream"}], "external": false};
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2461"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2462"}], "title": "2.19. Video information"}], "external": false};
-window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2462"}], "title": "3.5.3. Stream control"}], "external": false};
-window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2462"}, {"id": "ref-for-stream_id\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2464"}, {"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.12.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2460"}, {"id": "ref-for-stream_id\u2461\u2461"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2462"}, {"id": "ref-for-stream_id\u2461\u2463"}, {"id": "ref-for-stream_id\u2461\u2464"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2465"}], "title": "3.5. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}], "title": "3.5.1. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2467"}, {"id": "ref-for-stream_id\u2461\u2468"}], "title": "3.5.3. Stream control"}], "external": false};
-window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}, {"id": "ref-for-pts\u2463"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}, {"id": "ref-for-pts\u2466"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2461"}, {"id": "ref-for-pts\u2460\u2462"}], "title": "2.11.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}, {"id": "ref-for-pts\u2460\u2466"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2460\u2468"}, {"id": "ref-for-pts\u2461\u24ea"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2460"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2461"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2462"}], "title": "3.4.1. Session control data"}], "external": false};
+window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.8.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.34. User data"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "2.35. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "2.36. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2462"}], "title": "3.5.2. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2463"}], "title": "3.5.3. Stream control"}], "external": false};
+window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2462"}, {"id": "ref-for-stream_id\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2464"}, {"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.12.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}], "title": "2.35. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2463"}, {"id": "ref-for-stream_id\u2461\u2464"}, {"id": "ref-for-stream_id\u2461\u2465"}], "title": "2.36. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}], "title": "3.5. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.5.1. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2468"}, {"id": "ref-for-stream_id\u2462\u24ea"}], "title": "3.5.3. Stream control"}], "external": false};
+window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}, {"id": "ref-for-pts\u2463"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}, {"id": "ref-for-pts\u2466"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2461"}, {"id": "ref-for-pts\u2460\u2462"}], "title": "2.11.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}, {"id": "ref-for-pts\u2460\u2466"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}, {"id": "ref-for-pts\u2460\u2468"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-pts\u2461\u24ea"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2460"}, {"id": "ref-for-pts\u2461\u2461"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2462"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2463"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2464"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['dts'] = {"dfnID": "dts", "url": "#dts", "dfnText": "dts", "refSections": [{"refs": [{"id": "ref-for-dts"}, {"id": "ref-for-dts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-dts\u2461"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-dts\u2462"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2463"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2464"}], "title": "3.1.16. ASS encapsulation"}], "external": false};
 window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2460"}, {"id": "ref-for-duration\u2461"}, {"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}, {"id": "ref-for-duration\u2464"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2466"}, {"id": "ref-for-duration\u2467"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2460\u24ea"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-duration\u2460\u2460"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-duration\u2460\u2461"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['epoch'] = {"dfnID": "epoch", "url": "#epoch", "dfnText": "epoch", "refSections": [{"refs": [{"id": "ref-for-epoch"}, {"id": "ref-for-epoch\u2460"}, {"id": "ref-for-epoch\u2461"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-epoch\u2462"}, {"id": "ref-for-epoch\u2463"}, {"id": "ref-for-epoch\u2464"}, {"id": "ref-for-epoch\u2465"}, {"id": "ref-for-epoch\u2466"}, {"id": "ref-for-epoch\u2467"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-epoch\u2468"}], "title": "3.5.1. Feedback"}], "external": false};
@@ -7230,7 +7398,7 @@ window.dfnpanelData['stream-registration-packets-derived_stream_id'] = {"dfnID":
 window.dfnpanelData['stream-registration-packets-bandwidth'] = {"dfnID": "stream-registration-packets-bandwidth", "url": "#stream-registration-packets-bandwidth", "dfnText": "bandwidth", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-bandwidth"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-bandwidth\u2460"}], "title": "3.5.1. Feedback"}], "external": false};
 window.dfnpanelData['stream-registration-packets-stream_flags'] = {"dfnID": "stream-registration-packets-stream_flags", "url": "#stream-registration-packets-stream_flags", "dfnText": "stream_flags", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-stream_flags"}, {"id": "ref-for-stream-registration-packets-stream_flags\u2460"}, {"id": "ref-for-stream-registration-packets-stream_flags\u2461"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-stream_flags\u2462"}], "title": "2.4.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['stream-registration-packets-codec_id'] = {"dfnID": "stream-registration-packets-codec_id", "url": "#stream-registration-packets-codec_id", "dfnText": "codec_id", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-codec_id"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460"}, {"id": "ref-for-stream-registration-packets-codec_id\u2461"}], "title": "3.1. Codec encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2462"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2463"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2464"}], "title": "3.1.3. AC-3 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2465"}], "title": "3.1.4. ATRAC-1 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2466"}], "title": "3.1.5. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2467"}], "title": "3.1.6. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2468"}], "title": "3.1.7. FLAC encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u24ea"}], "title": "3.1.8. Theora encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2460"}], "title": "3.1.9. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2461"}], "title": "3.1.10. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2462"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2463"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2464"}], "title": "3.1.13. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2465"}], "title": "3.1.14. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2466"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2467"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2460\u2468"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u24ea"}], "title": "3.1.19. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2460"}], "title": "3.1.20. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2461"}, {"id": "ref-for-stream-registration-packets-codec_id\u2461\u2462"}], "title": "3.1.21. JPEG-2000 encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2463"}], "title": "3.1.22. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2464"}], "title": "3.1.23. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2465"}], "title": "3.1.24. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2466"}], "title": "3.1.25. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-registration-packets-codec_id\u2461\u2467"}], "title": "3.2.1. Custom codec encapsulation"}], "external": false};
-window.dfnpanelData['stream-registration-packets-timebase'] = {"dfnID": "stream-registration-packets-timebase", "url": "#stream-registration-packets-timebase", "dfnText": "timebase", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-timebase"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2462"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2463"}], "title": "2.28. Video orientation"}], "external": false};
+window.dfnpanelData['stream-registration-packets-timebase'] = {"dfnID": "stream-registration-packets-timebase", "url": "#stream-registration-packets-timebase", "dfnText": "timebase", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-timebase"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2460"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2462"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2463"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-stream-registration-packets-timebase\u2464"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['stream-registration-packets-skip_preroll'] = {"dfnID": "stream-registration-packets-skip_preroll", "url": "#stream-registration-packets-skip_preroll", "dfnText": "skip_preroll", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-skip_preroll"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream-registration-packets-skip_preroll\u2460"}, {"id": "ref-for-stream-registration-packets-skip_preroll\u2461"}], "title": "2.4. Stream registration"}], "external": false};
 window.dfnpanelData['stream-registration-packets-init_packets'] = {"dfnID": "stream-registration-packets-init_packets", "url": "#stream-registration-packets-init_packets", "dfnText": "init_packets", "refSections": [{"refs": [{"id": "ref-for-stream-registration-packets-init_packets"}], "title": "2.4.1. Stream Init Packets Enumeration (enum StreamInitPackets)"}], "external": false};
 window.dfnpanelData['enumdef-streaminitpackets'] = {"dfnID": "enumdef-streaminitpackets", "url": "#enumdef-streaminitpackets", "dfnText": "StreamInitPackets", "refSections": [{"refs": [{"id": "ref-for-enumdef-streaminitpackets"}], "title": "2.4. Stream registration"}], "external": false};
@@ -7250,12 +7418,12 @@ window.dfnpanelData['generic-data-segment-packets-target_seq'] = {"dfnID": "gene
 window.dfnpanelData['generic-data-segment-packets-seg_length'] = {"dfnID": "generic-data-segment-packets-seg_length", "url": "#generic-data-segment-packets-seg_length", "dfnText": "seg_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length\u2460"}], "title": "2.7.3. Stream data segmentation"}], "external": false};
 window.dfnpanelData['generic-data-segment-packets-header_7'] = {"dfnID": "generic-data-segment-packets-header_7", "url": "#generic-data-segment-packets-header_7", "dfnText": "header_7", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-header_7"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-header_7\u2460"}, {"id": "ref-for-generic-data-segment-packets-header_7\u2461"}], "title": "2.5.2. Generic data parity"}], "external": false};
 window.dfnpanelData['generic-data-parity-packets-parity_data_length'] = {"dfnID": "generic-data-parity-packets-parity_data_length", "url": "#generic-data-parity-packets-parity_data_length", "dfnText": "parity_data_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-parity-packets-parity_data_length"}], "title": "2.5.2. Generic data parity"}], "external": false};
-window.dfnpanelData['stream-data-packet-field_id'] = {"dfnID": "stream-data-packet-field_id", "url": "#stream-data-packet-field_id", "dfnText": "field_id", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-field_id"}, {"id": "ref-for-stream-data-packet-field_id\u2460"}, {"id": "ref-for-stream-data-packet-field_id\u2461"}, {"id": "ref-for-stream-data-packet-field_id\u2462"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}], "external": false};
+window.dfnpanelData['stream-data-packet-field_id'] = {"dfnID": "stream-data-packet-field_id", "url": "#stream-data-packet-field_id", "dfnText": "field_id", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-field_id"}, {"id": "ref-for-stream-data-packet-field_id\u2460"}, {"id": "ref-for-stream-data-packet-field_id\u2461"}, {"id": "ref-for-stream-data-packet-field_id\u2462"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}, {"refs": [{"id": "ref-for-stream-data-packet-field_id\u2463"}], "title": "2.31. Stereo Video Type Enumeration (enum StereoVideoType)"}], "external": false};
 window.dfnpanelData['stream-data-packet-pkt_compression'] = {"dfnID": "stream-data-packet-pkt_compression", "url": "#stream-data-packet-pkt_compression", "dfnText": "pkt_compression", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-pkt_compression"}], "title": "3.1.23. SVG encapsulation"}], "external": false};
 window.dfnpanelData['stream-data-packet-data_length'] = {"dfnID": "stream-data-packet-data_length", "url": "#stream-data-packet-data_length", "dfnText": "data_length", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-data_length"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-stream-data-packet-data_length\u2460"}], "title": "2.7.3. Stream data segmentation"}, {"refs": [{"id": "ref-for-stream-data-packet-data_length\u2461"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['stream-data-packet-packet_data'] = {"dfnID": "stream-data-packet-packet_data", "url": "#stream-data-packet-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packet-packet_data"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461"}], "title": "3.1.5. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2462"}], "title": "3.1.6. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2463"}], "title": "3.1.8. Theora encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2464"}], "title": "3.1.9. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2465"}], "title": "3.1.10. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2466"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2467"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2468"}], "title": "3.1.13. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u24ea"}], "title": "3.1.14. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2460"}], "title": "3.1.15. ProRes encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2461"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2462"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2463"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2464"}], "title": "3.1.19. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2465"}], "title": "3.1.20. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2466"}, {"id": "ref-for-stream-data-packet-packet_data\u2460\u2467"}], "title": "3.1.21. JPEG-2000 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2460\u2468"}], "title": "3.1.22. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u24ea"}], "title": "3.1.23. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2460"}], "title": "3.1.24. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2461"}], "title": "3.1.25. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2462"}], "title": "3.2.1. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packet-packet_data\u2461\u2463"}], "title": "3.3.1. UDP"}], "external": false};
 window.dfnpanelData['enumdef-frametype'] = {"dfnID": "enumdef-frametype", "url": "#enumdef-frametype", "dfnText": "FrameType", "refSections": [{"refs": [{"id": "ref-for-enumdef-frametype"}], "title": "2.7. Stream Data"}], "external": false};
-window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2463"}], "title": "2.30. User data"}], "external": false};
+window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2463"}], "title": "2.34. User data"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-group_id'] = {"dfnID": "fec-grouping-packets-group_id", "url": "#fec-grouping-packets-group_id", "dfnText": "group_id", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-group_id"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_scheme_oti'] = {"dfnID": "fec-grouping-packets-fec_scheme_oti", "url": "#fec-grouping-packets-fec_scheme_oti", "dfnText": "fec_scheme_oti", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_scheme_oti"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_data_length'] = {"dfnID": "fec-grouping-packets-fec_data_length", "url": "#fec-grouping-packets-fec_data_length", "dfnText": "fec_data_length", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_data_length"}], "title": "2.8. FEC grouping"}], "external": false};
@@ -7312,8 +7480,10 @@ window.dfnpanelData['enumdef-matrix'] = {"dfnID": "enumdef-matrix", "url": "#enu
 window.dfnpanelData['video-orientation-packets-reflection'] = {"dfnID": "video-orientation-packets-reflection", "url": "#video-orientation-packets-reflection", "dfnText": "reflection", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-reflection"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['video-orientation-packets-rotation'] = {"dfnID": "video-orientation-packets-rotation", "url": "#video-orientation-packets-rotation", "dfnText": "rotation", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-rotation"}, {"id": "ref-for-video-orientation-packets-rotation\u2460"}, {"id": "ref-for-video-orientation-packets-rotation\u2461"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['enumdef-videoreflection'] = {"dfnID": "enumdef-videoreflection", "url": "#enumdef-videoreflection", "dfnText": "VideoReflection", "refSections": [{"refs": [{"id": "ref-for-enumdef-videoreflection"}], "title": "2.28. Video orientation"}], "external": false};
-window.dfnpanelData['user-data-packets-userdata_pl_length'] = {"dfnID": "user-data-packets-userdata_pl_length", "url": "#user-data-packets-userdata_pl_length", "dfnText": "userdata_pl_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_pl_length"}], "title": "2.30. User data"}], "external": false};
-window.dfnpanelData['stream-duration-packets-total_duration'] = {"dfnID": "stream-duration-packets-total_duration", "url": "#stream-duration-packets-total_duration", "dfnText": "total_duration", "refSections": [{"refs": [{"id": "ref-for-stream-duration-packets-total_duration"}, {"id": "ref-for-stream-duration-packets-total_duration\u2460"}], "title": "2.31. Stream duration"}], "external": false};
+window.dfnpanelData['enumdef-stereovideoflags'] = {"dfnID": "enumdef-stereovideoflags", "url": "#enumdef-stereovideoflags", "dfnText": "StereoVideoFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoflags"}], "title": "2.30. Stereo video"}], "external": false};
+window.dfnpanelData['enumdef-stereovideoprimaryeye'] = {"dfnID": "enumdef-stereovideoprimaryeye", "url": "#enumdef-stereovideoprimaryeye", "dfnText": "StereoVideoPrimaryEye", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoprimaryeye"}], "title": "2.30. Stereo video"}], "external": false};
+window.dfnpanelData['user-data-packets-userdata_pl_length'] = {"dfnID": "user-data-packets-userdata_pl_length", "url": "#user-data-packets-userdata_pl_length", "dfnText": "userdata_pl_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_pl_length"}], "title": "2.34. User data"}], "external": false};
+window.dfnpanelData['stream-duration-packets-total_duration'] = {"dfnID": "stream-duration-packets-total_duration", "url": "#stream-duration-packets-total_duration", "dfnText": "total_duration", "refSections": [{"refs": [{"id": "ref-for-stream-duration-packets-total_duration"}, {"id": "ref-for-stream-duration-packets-total_duration\u2460"}], "title": "2.35. Stream duration"}], "external": false};
 window.dfnpanelData['opus-encapsulation-opus_channels'] = {"dfnID": "opus-encapsulation-opus_channels", "url": "#opus-encapsulation-opus_channels", "dfnText": "opus_channels", "refSections": [{"refs": [{"id": "ref-for-opus-encapsulation-opus_channels"}], "title": "3.1.1. Opus encapsulation"}], "external": false};
 window.dfnpanelData['opus-encapsulation-opus_prepad'] = {"dfnID": "opus-encapsulation-opus_prepad", "url": "#opus-encapsulation-opus_prepad", "dfnText": "opus_prepad", "refSections": [{"refs": [{"id": "ref-for-opus-encapsulation-opus_prepad"}], "title": "3.1.1. Opus encapsulation"}], "external": false};
 window.dfnpanelData['opus-encapsulation-opus_ch_family'] = {"dfnID": "opus-encapsulation-opus_ch_family", "url": "#opus-encapsulation-opus_ch_family", "dfnText": "opus_ch_family", "refSections": [{"refs": [{"id": "ref-for-opus-encapsulation-opus_ch_family"}, {"id": "ref-for-opus-encapsulation-opus_ch_family\u2460"}, {"id": "ref-for-opus-encapsulation-opus_ch_family\u2461"}], "title": "3.1.1. Opus encapsulation"}], "external": false};
@@ -7343,7 +7513,7 @@ window.dfnpanelData['session-control-data-packets-seek'] = {"dfnID": "session-co
 window.dfnpanelData['session-control-data-packets-seek_pts'] = {"dfnID": "session-control-data-packets-seek_pts", "url": "#session-control-data-packets-seek_pts", "dfnText": "seek_pts", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_pts"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['session-control-data-packets-seek_seq'] = {"dfnID": "session-control-data-packets-seek_seq", "url": "#session-control-data-packets-seek_seq", "dfnText": "seek_seq", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_seq"}], "title": "3.4.1. Session control data"}], "external": false};
 window.dfnpanelData['enumdef-errorcode'] = {"dfnID": "enumdef-errorcode", "url": "#enumdef-errorcode", "dfnText": "ErrorCode", "refSections": [{"refs": [{"id": "ref-for-enumdef-errorcode"}], "title": "3.4.1. Session control data"}], "external": false};
-window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}], "title": "2.30. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.31. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2460"}], "title": "2.32. End of stream"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2461"}], "title": "4.1. Annex G: LDPC"}], "external": false};
+window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.3. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.4. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.5. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.5.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.5.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.10. Hash packets"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.11. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.28. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}, {"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.30. Stereo video"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2460"}], "title": "2.34. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2461"}], "title": "2.35. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2462"}], "title": "2.36. End of stream"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2463"}], "title": "4.1. Annex G: LDPC"}], "external": false};
 window.dfnpanelData['ldpc-2784-2016'] = {"dfnID": "ldpc-2784-2016", "url": "#ldpc-2784-2016", "dfnText": "LDPC(2784, 2016)", "refSections": [{"refs": [{"id": "ref-for-ldpc-2784-2016"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2460"}], "title": "2.8. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2461"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2462"}], "title": "2.16. Font data"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2463"}], "title": "2.19. Video information"}], "external": false};
 </script>
 <script>/* Boilerplate: script-dom-helper */
