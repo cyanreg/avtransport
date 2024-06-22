@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="b1a8c8b5d30004e6357b3aa4829c59a11650eb17" name="document-revision">
+  <meta content="21887b88224b310000211d0e13d3042bdcace8e7" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -4826,14 +4826,14 @@ frame, usually describing two views of a scene.</p>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase⑤">timebase</a> units) at which this stereo packet has to be applied at.
       <tr id="0x0041+4">
        <td><code>u(8)</code>
+       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-type">type<a class="self-link" href="#stereo-video-packets-type"></a></dfn>
+       <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-stereovideotype" id="ref-for-enumdef-stereovideotype">StereoVideoType</a></code>
+       <td>Indicates how views are packed within the video.
+      <tr id="0x0041+5">
+       <td><code>u(8)</code>
        <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-flags">flags<a class="self-link" href="#stereo-video-packets-flags"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-stereovideoflags" id="ref-for-enumdef-stereovideoflags">StereoVideoFlags</a></code>
        <td>Additional flags.
-      <tr id="0x0041+5">
-       <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-video">video<a class="self-link" href="#stereo-video-packets-video"></a></dfn>
-       <td>enum <code class="idl"><a data-link-type="idl">StereoVideoView</a></code>
-       <td>Determines which views are packed.
       <tr id="0x0041+6">
        <td><code>u(8)</code>
        <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-primary_eye">primary_eye<a class="self-link" href="#stereo-video-packets-primary_eye"></a></dfn>
@@ -4878,7 +4878,7 @@ frame, usually describing two views of a scene.</p>
    </figure>
    <p>The effects of stereo video packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> value given,
 until a new stereo video packet is sent, or the stream is reinitialized.</p>
-   <h3 class="heading settled" data-level="2.31" id="enum-StereoVideoType"><span class="secno">2.31. </span><span class="content">Stereo Video Type Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideotype"><code>StereoVideoType</code><a class="self-link" href="#enumdef-stereovideotype"></a></dfn>)</span><a class="self-link" href="#enum-StereoVideoType"></a></h3>
+   <h3 class="heading settled" data-level="2.31" id="enum-StereoVideoType"><span class="secno">2.31. </span><span class="content">Stereo Video Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideotype"><code>StereoVideoType</code></dfn>)</span><a class="self-link" href="#enum-StereoVideoType"></a></h3>
    <p>By convention, the first view is the left eye’s view, and the second view is the right eye’s view.
 The two are swapped if <a data-link-type="dfn">STEREO_VIDEO_FLAG_INVERTED</a> is set.</p>
    <div id="StereoVideoType">
@@ -6923,6 +6923,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-ts_clock_hz2">ts_clock_hz2</a><span>, in § 2.3</span>
    <li><a href="#time-synchronization-packets-ts_clock_id">ts_clock_id</a><span>, in § 2.3</span>
    <li><a href="#time-synchronization-packets-ts_clock_seq">ts_clock_seq</a><span>, in § 2.3</span>
+   <li><a href="#stereo-video-packets-type">type</a><span>, in § 2.30</span>
    <li><a href="#session-control-data-packets-uplink_ip">uplink_ip</a><span>, in § 3.4.1</span>
    <li><a href="#session-control-data-packets-uplink_port">uplink_port</a><span>, in § 3.4.1</span>
    <li><a href="#user-data-packets-userdata">userdata</a><span>, in § 2.34</span>
@@ -6933,7 +6934,6 @@ This is the format that the reference function above expects.</p>
    <li><a href="#user-data-packets-userdata_pl_length">userdata_pl_length</a><span>, in § 2.34</span>
    <li><a href="#user-data-packets-user_data_segment_descriptor">user_data_segment_descriptor</a><span>, in § 2.34</span>
    <li><a href="#user-data-packets-user_field">user_field</a><span>, in § 2.34</span>
-   <li><a href="#stereo-video-packets-video">video</a><span>, in § 2.30</span>
    <li><a href="#time-synchronization-packets-video_info_descriptor">video_info_descriptor</a><span>, in § 2.19</span>
    <li><a href="#video-orientation-packets-video_orientation_descriptor">video_orientation_descriptor</a><span>, in § 2.28</span>
    <li><a href="#dom-enum-videoreflection-video_reflect_flip">VIDEO_REFLECT_FLIP</a><span>, in § 2.29</span>
@@ -7480,6 +7480,7 @@ window.dfnpanelData['enumdef-matrix'] = {"dfnID": "enumdef-matrix", "url": "#enu
 window.dfnpanelData['video-orientation-packets-reflection'] = {"dfnID": "video-orientation-packets-reflection", "url": "#video-orientation-packets-reflection", "dfnText": "reflection", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-reflection"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['video-orientation-packets-rotation'] = {"dfnID": "video-orientation-packets-rotation", "url": "#video-orientation-packets-rotation", "dfnText": "rotation", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-rotation"}, {"id": "ref-for-video-orientation-packets-rotation\u2460"}, {"id": "ref-for-video-orientation-packets-rotation\u2461"}], "title": "2.29. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['enumdef-videoreflection'] = {"dfnID": "enumdef-videoreflection", "url": "#enumdef-videoreflection", "dfnText": "VideoReflection", "refSections": [{"refs": [{"id": "ref-for-enumdef-videoreflection"}], "title": "2.28. Video orientation"}], "external": false};
+window.dfnpanelData['enumdef-stereovideotype'] = {"dfnID": "enumdef-stereovideotype", "url": "#enumdef-stereovideotype", "dfnText": "StereoVideoType", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideotype"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['enumdef-stereovideoflags'] = {"dfnID": "enumdef-stereovideoflags", "url": "#enumdef-stereovideoflags", "dfnText": "StereoVideoFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoflags"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['enumdef-stereovideoprimaryeye'] = {"dfnID": "enumdef-stereovideoprimaryeye", "url": "#enumdef-stereovideoprimaryeye", "dfnText": "StereoVideoPrimaryEye", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoprimaryeye"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['user-data-packets-userdata_pl_length'] = {"dfnID": "user-data-packets-userdata_pl_length", "url": "#user-data-packets-userdata_pl_length", "dfnText": "userdata_pl_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_pl_length"}], "title": "2.34. User data"}], "external": false};
