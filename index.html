@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="d627debadb3723645143945ac9b5504cd68317c8" name="document-revision">
+  <meta content="4c48b6365492bcfdf5feb40ad4105bdc4b477816" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -4490,7 +4490,7 @@ stream after decoding.</p>
 to interpret the value of <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id">field_id</a> in stream data packet headers.</p>
    <div id="Interlacing">
     <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Interlacing" data-dfn-type="enum-value" data-noexport id="dom-enum-interlacing-ilace_prog"><code>ILACE_PROG</code><a class="self-link" href="#dom-enum-interlacing-ilace_prog"></a></dfn> = <i>0x0</i>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-Interlacing" data-dfn-type="enum-value" data-noexport id="dom-enum-interlacing-ilace_prog"><code>ILACE_PROG</code></dfn> = <i>0x0</i>
      <dd data-md>
       <p>Video contains progressive data, or interlacing does not apply.</p>
       <p class="note" role="note"><span class="marker">Note:</span> In this mode, the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id①">field_id</a> bit is free to use by users. Implementations must ignore it, and preserve it.</p>
@@ -4795,6 +4795,9 @@ including cropping via the <a data-link-type="dfn" href="#time-synchronization-p
    <h3 class="heading settled" data-level="2.30" id="stereo-video-packets"><span class="secno">2.30. </span><span class="content">Stereo video</span><a class="self-link" href="#stereo-video-packets"></a></h3>
    <p>A stereoscopic video file consists in multiple views embedded in a single
 frame, usually describing two views of a scene.</p>
+   <p>Interlacing and stereoscopic video are explicitly unsupported. Implementations
+must ignore any stereoscopic information if the value of <a data-link-type="dfn" href="#time-synchronization-packets-interlaced" id="ref-for-time-synchronization-packets-interlaced②">interlaced</a> is anything
+except <code class="idl"><a data-link-type="idl" href="#dom-enum-interlacing-ilace_prog" id="ref-for-dom-enum-interlacing-ilace_prog">ILACE_PROG</a></code>.</p>
    <p>A standardized way to transmit stereoscopic video information is as follows:</p>
    <figure class="table" id="table-StereoVideoData">
     <table class="complex data longlastcol">
@@ -4876,11 +4879,11 @@ frame, usually describing two views of a scene.</p>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
     </table>
    </figure>
-   <p>The effects of stereo video packets MUST persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> value given,
+   <p>The effects of stereo video packets must persist from the <a data-link-type="dfn" href="#pts" id="ref-for-pts①⑨">pts</a> value given,
 until a new stereo video packet is sent, or the stream is reinitialized.</p>
    <h3 class="heading settled" data-level="2.31" id="enum-StereoVideoType"><span class="secno">2.31. </span><span class="content">Stereo Video Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideotype"><code>StereoVideoType</code></dfn>)</span><a class="self-link" href="#enum-StereoVideoType"></a></h3>
    <p>By convention, the first view is the left eye’s view, and the second view is the right eye’s view.
-The two are swapped if <a data-link-type="dfn">STEREO_VIDEO_FLAG_INVERTED</a> is set.</p>
+The two are swapped if <code class="idl"><a data-link-type="idl" href="#dom-enum-stereovideoflags-stereo_video_flag_inverted" id="ref-for-dom-enum-stereovideoflags-stereo_video_flag_inverted">STEREO_VIDEO_FLAG_INVERTED</a></code> is set.</p>
    <div id="StereoVideoType">
     <dl>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_2d"><code>STEREO_VIDEO_TYPE_2D</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_2d"></a></dfn> = <i>0x0</i>
@@ -4912,7 +4915,7 @@ The two are swapped if <a data-link-type="dfn">STEREO_VIDEO_FLAG_INVERTED</a> is
    <h3 class="heading settled" data-level="2.32" id="enum-StereoVideoFlags"><span class="secno">2.32. </span><span class="content">Stereo Video Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-stereovideoflags"><code>StereoVideoFlags</code></dfn>)</span><a class="self-link" href="#enum-StereoVideoFlags"></a></h3>
    <div id="StereoVideoFlags">
     <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoflags-stereo_video_flag_inverted"><code>STEREO_VIDEO_FLAG_INVERTED</code><a class="self-link" href="#dom-enum-stereovideoflags-stereo_video_flag_inverted"></a></dfn> = <i>0x0</i>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StereoVideoFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideoflags-stereo_video_flag_inverted"><code>STEREO_VIDEO_FLAG_INVERTED</code></dfn> = <i>0x0</i>
      <dd data-md>
       <p>Views must be swapped during presentation (left->right, right->left).</p>
     </dl>
@@ -7448,7 +7451,7 @@ window.dfnpanelData['enumdef-fonttype'] = {"dfnID": "enumdef-fonttype", "url": "
 window.dfnpanelData['dom-enum-fonttype-font_type_woff2'] = {"dfnID": "dom-enum-fonttype-font_type_woff2", "url": "#dom-enum-fonttype-font_type_woff2", "dfnText": "FONT_TYPE_WOFF2", "refSections": [{"refs": [{"id": "ref-for-dom-enum-fonttype-font_type_woff2"}], "title": "2.18. Font Type Enumeration (enum FontType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-colorspace'] = {"dfnID": "time-synchronization-packets-colorspace", "url": "#time-synchronization-packets-colorspace", "dfnText": "colorspace", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-colorspace"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-bit_depth'] = {"dfnID": "time-synchronization-packets-bit_depth", "url": "#time-synchronization-packets-bit_depth", "dfnText": "bit_depth", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-bit_depth"}, {"id": "ref-for-time-synchronization-packets-bit_depth\u2460"}, {"id": "ref-for-time-synchronization-packets-bit_depth\u2461"}], "title": "2.21. Color Range Enumeration (enum ColorRange)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-interlaced'] = {"dfnID": "time-synchronization-packets-interlaced", "url": "#time-synchronization-packets-interlaced", "dfnText": "interlaced", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-interlaced"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-time-synchronization-packets-interlaced\u2460"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-interlaced'] = {"dfnID": "time-synchronization-packets-interlaced", "url": "#time-synchronization-packets-interlaced", "dfnText": "interlaced", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-interlaced"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-time-synchronization-packets-interlaced\u2460"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}, {"refs": [{"id": "ref-for-time-synchronization-packets-interlaced\u2461"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-matrix'] = {"dfnID": "time-synchronization-packets-matrix", "url": "#time-synchronization-packets-matrix", "dfnText": "matrix", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-matrix"}], "title": "2.19. Video information"}, {"refs": [{"id": "ref-for-time-synchronization-packets-matrix\u2460"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-custom_matrix'] = {"dfnID": "time-synchronization-packets-custom_matrix", "url": "#time-synchronization-packets-custom_matrix", "dfnText": "custom_matrix", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-custom_matrix"}], "title": "2.20. Colorspace Enumeration (enum Colorspace)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-mastering_primaries'] = {"dfnID": "time-synchronization-packets-mastering_primaries", "url": "#time-synchronization-packets-mastering_primaries", "dfnText": "mastering_primaries", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-mastering_primaries"}], "title": "2.19. Video information"}], "external": false};
@@ -7463,6 +7466,7 @@ window.dfnpanelData['enumdef-chromasubsampling'] = {"dfnID": "enumdef-chromasubs
 window.dfnpanelData['dom-enum-chromasubsampling-chroma_420'] = {"dfnID": "dom-enum-chromasubsampling-chroma_420", "url": "#dom-enum-chromasubsampling-chroma_420", "dfnText": "CHROMA_420", "refSections": [{"refs": [{"id": "ref-for-dom-enum-chromasubsampling-chroma_420"}, {"id": "ref-for-dom-enum-chromasubsampling-chroma_420\u2460"}, {"id": "ref-for-dom-enum-chromasubsampling-chroma_420\u2461"}], "title": "2.24. Chroma Position Enumeration (enum ChromaPosition)"}], "external": false};
 window.dfnpanelData['dom-enum-chromasubsampling-chroma_422'] = {"dfnID": "dom-enum-chromasubsampling-chroma_422", "url": "#dom-enum-chromasubsampling-chroma_422", "dfnText": "CHROMA_422", "refSections": [{"refs": [{"id": "ref-for-dom-enum-chromasubsampling-chroma_422"}, {"id": "ref-for-dom-enum-chromasubsampling-chroma_422\u2460"}], "title": "2.24. Chroma Position Enumeration (enum ChromaPosition)"}], "external": false};
 window.dfnpanelData['enumdef-interlacing'] = {"dfnID": "enumdef-interlacing", "url": "#enumdef-interlacing", "dfnText": "Interlacing", "refSections": [{"refs": [{"id": "ref-for-enumdef-interlacing"}], "title": "2.7. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-interlacing\u2460"}], "title": "2.19. Video information"}], "external": false};
+window.dfnpanelData['dom-enum-interlacing-ilace_prog'] = {"dfnID": "dom-enum-interlacing-ilace_prog", "url": "#dom-enum-interlacing-ilace_prog", "dfnText": "ILACE_PROG", "refSections": [{"refs": [{"id": "ref-for-dom-enum-interlacing-ilace_prog"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['dom-enum-interlacing-ilace_tff'] = {"dfnID": "dom-enum-interlacing-ilace_tff", "url": "#dom-enum-interlacing-ilace_tff", "dfnText": "ILACE_TFF", "refSections": [{"refs": [{"id": "ref-for-dom-enum-interlacing-ilace_tff"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}], "external": false};
 window.dfnpanelData['dom-enum-interlacing-ilace_bff'] = {"dfnID": "dom-enum-interlacing-ilace_bff", "url": "#dom-enum-interlacing-ilace_bff", "dfnText": "ILACE_BFF", "refSections": [{"refs": [{"id": "ref-for-dom-enum-interlacing-ilace_bff"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}], "external": false};
 window.dfnpanelData['dom-enum-interlacing-ilace_tw'] = {"dfnID": "dom-enum-interlacing-ilace_tw", "url": "#dom-enum-interlacing-ilace_tw", "dfnText": "ILACE_TW", "refSections": [{"refs": [{"id": "ref-for-dom-enum-interlacing-ilace_tw"}], "title": "2.23. Interlacing Enumeration (enum Interlacing)"}], "external": false};
@@ -7482,6 +7486,7 @@ window.dfnpanelData['video-orientation-packets-rotation'] = {"dfnID": "video-ori
 window.dfnpanelData['enumdef-videoreflection'] = {"dfnID": "enumdef-videoreflection", "url": "#enumdef-videoreflection", "dfnText": "VideoReflection", "refSections": [{"refs": [{"id": "ref-for-enumdef-videoreflection"}], "title": "2.28. Video orientation"}], "external": false};
 window.dfnpanelData['enumdef-stereovideotype'] = {"dfnID": "enumdef-stereovideotype", "url": "#enumdef-stereovideotype", "dfnText": "StereoVideoType", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideotype"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['enumdef-stereovideoflags'] = {"dfnID": "enumdef-stereovideoflags", "url": "#enumdef-stereovideoflags", "dfnText": "StereoVideoFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoflags"}], "title": "2.30. Stereo video"}], "external": false};
+window.dfnpanelData['dom-enum-stereovideoflags-stereo_video_flag_inverted'] = {"dfnID": "dom-enum-stereovideoflags-stereo_video_flag_inverted", "url": "#dom-enum-stereovideoflags-stereo_video_flag_inverted", "dfnText": "STEREO_VIDEO_FLAG_INVERTED", "refSections": [{"refs": [{"id": "ref-for-dom-enum-stereovideoflags-stereo_video_flag_inverted"}], "title": "2.31. Stereo Video Type Enumeration (enum StereoVideoType)"}], "external": false};
 window.dfnpanelData['enumdef-stereovideoprimaryeye'] = {"dfnID": "enumdef-stereovideoprimaryeye", "url": "#enumdef-stereovideoprimaryeye", "dfnText": "StereoVideoPrimaryEye", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoprimaryeye"}], "title": "2.30. Stereo video"}], "external": false};
 window.dfnpanelData['user-data-packets-userdata_pl_length'] = {"dfnID": "user-data-packets-userdata_pl_length", "url": "#user-data-packets-userdata_pl_length", "dfnText": "userdata_pl_length", "refSections": [{"refs": [{"id": "ref-for-user-data-packets-userdata_pl_length"}], "title": "2.34. User data"}], "external": false};
 window.dfnpanelData['stream-duration-packets-total_duration'] = {"dfnID": "stream-duration-packets-total_duration", "url": "#stream-duration-packets-total_duration", "dfnText": "total_duration", "refSections": [{"refs": [{"id": "ref-for-stream-duration-packets-total_duration"}, {"id": "ref-for-stream-duration-packets-total_duration\u2460"}], "title": "2.35. Stream duration"}], "external": false};
