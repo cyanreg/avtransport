@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AVTRANSPORT_UTILS_H
-#define AVTRANSPORT_UTILS_H
+#ifndef AVTRANSPORT_UTILS_INTERNAL_H
+#define AVTRANSPORT_UTILS_INTERNAL_H
 
 #include <assert.h>
 #include <time.h>
@@ -162,4 +162,4 @@ typedef struct AVTSlidingWinCtx {
 int64_t avt_sliding_win(AVTSlidingWinCtx *ctx, int64_t val, int64_t ts,
                         AVTRational tb, int64_t period, bool do_avg);
 
-#endif /* AVTRANSPORT_UTILS_H */
+#endif /* AVTRANSPORT_UTILS_INTERNAL_H */

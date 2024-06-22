@@ -65,4 +65,4 @@ AVT_API void avt_close(AVTContext **ctx);
 /* Main logging function */
 AVT_API void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...) avt_printf_format(3, 4);
 
-#endif /* LIBAVTRANSPORT_VIDEO_HEADER */
+#endif /* AVTRANSPORT_H */

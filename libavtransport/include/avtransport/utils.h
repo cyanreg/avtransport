@@ -24,8 +24,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBAVTRANSPORT_UTILS_H
-#define LIBAVTRANSPORT_UTILS_H
+#ifndef AVTRANSPORT_UTILS_H
+#define AVTRANSPORT_UTILS_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -105,4 +105,4 @@ AVT_API size_t avt_buffer_get_data_len(const AVTBuffer *buffer);
 /* Unreference a reference counted buffer. */
 AVT_API void avt_buffer_unref(AVTBuffer **buffer);
 
-#endif
+#endif /* AVTRANSPORT_UTILS_H */

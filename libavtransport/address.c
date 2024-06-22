@@ -132,7 +132,8 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
         addr->interface_idx = if_nametoindex(iface);
         if (!(addr->interface_idx) && errno) {
             char8_t err_info[256];
-            avt_log(log_ctx, AVT_LOG_WARN, "Unable to get interface \"%s\" index: %s\n",
+            avt_log(log_ctx, AVT_LOG_WARN,
+                    "Unable to get interface \"%s\" index: %s\n",
                     iface, strerror_safe(err_info, sizeof(err_info), errno));
         }
     }
@@ -142,7 +143,8 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
     ret = inet_pton(AF_INET, host, &ipv4_addr);
     if (ret < 1) {
         if (ret < 0) {
-            avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
+            avt_log(log_ctx, AVT_LOG_ERROR,
+                    "Invalid address family: %s\n", host);
             return AVT_ERROR(EINVAL);
         }
 
@@ -150,7 +152,8 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
         ret = inet_pton(AF_INET6, host, addr->ip);
         if (ret < 1) {
             if (ret < 0) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Invalid address family: %s\n", host);
+                avt_log(log_ctx, AVT_LOG_ERROR,
+                        "Invalid address family: %s\n", host);
                 return AVT_ERROR(EINVAL);
             }
 
@@ -227,7 +230,8 @@ static int parse_default_streams(void *log_ctx, AVTAddress *addr, char *next)
 
         for (auto i = 0; i < addr->opts.nb_default_sid; i++) {
             if (addr->opts.default_sid[i] == res) {
-                avt_log(log_ctx, AVT_LOG_ERROR, "Stream ID value already specified: %" PRIu64 "\n", res);
+                avt_log(log_ctx, AVT_LOG_ERROR,
+                        "Stream ID value already specified: %" PRIu64 "\n", res);
                 return AVT_ERROR(EINVAL);
             }
         }

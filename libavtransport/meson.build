@@ -139,7 +139,7 @@ avtransport_dep = declare_dependency(
 )
 
 # Do tests if enabled
-if get_option('tools').auto()
+if get_option('tests').auto()
     subdir('tests')
 endif
 

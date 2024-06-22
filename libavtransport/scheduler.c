@@ -362,7 +362,7 @@ static int scheduler_process(AVTScheduler *s)
         goto repeat;
     }
 
-    /* We should really sort overlaps by start time here */
+    /* TODO: We should really sort overlaps by start time here */
 
     /* We need to do a while loop for each time we call
      * scheduler_push_internal, as it needs a flush.
