@@ -39,16 +39,9 @@ spec_file = files('draft-avtransport-spec.bs')
 
 # library version
 avtransport_version_split = meson.project_version().split('.')
-avtransport_ver_major = avtransport_version_split[0]
-avtransport_ver_minor = avtransport_version_split[1]
-avtransport_ver_micro = avtransport_version_split[2]
-
-# api version
-avtransport_soname_version    = '0.0.4'
-avtransport_api_version_split = avtransport_soname_version.split('.')
-avtransport_api_version_major = avtransport_api_version_split[0]
-avtransport_api_version_minor = avtransport_api_version_split[1]
-avtransport_api_version_micro = avtransport_api_version_split[2]
+avtransport_version_major = avtransport_version_split[0]
+avtransport_version_minor = avtransport_version_split[1]
+avtransport_version_micro = avtransport_version_split[2]
 
 # Python
 #============================================================================
@@ -153,12 +146,7 @@ endif
 # Configure file
 #============================================================================
 conf = configuration_data()
-conf.set_quoted('PROJECT_NAME', meson.project_name())
 conf.set_quoted('PROJECT_VERSION_STRING', meson.project_version())
-
-conf.set('PROJECT_VERSION_MAJOR', avtransport_ver_major)
-conf.set('PROJECT_VERSION_MINOR', avtransport_ver_minor)
-conf.set('PROJECT_VERSION_MICRO', avtransport_ver_micro)
 
 conf.set('CONFIG_DEFAULT_PORT', '8212')
 conf.set('CONFIG_DEFAULT_PORT_STR', '"8212"')

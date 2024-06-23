@@ -30,6 +30,7 @@
 #include "connection.h"
 #include "send.h"
 #include "receive.h"
+#include "version.h"
 
 enum AVTLogLevel {
     AVT_LOG_QUIET    = -(1 << 0),

@@ -27,16 +27,27 @@
 #ifndef AVTRANSPORT_VERSION_H
 #define AVTRANSPORT_VERSION_H
 
-#define AVTRANSPORT_API_VERSION_MAJOR @AVTRANSPORT_API_VERSION_MAJOR@
-#define AVTRANSPORT_API_VERSION_MINOR @AVTRANSPORT_API_VERSION_MINOR@
-#define AVTRANSPORT_API_VERSION_MICRO @AVTRANSPORT_API_VERSION_MICRO@
+#include <stdint.h>
+#include <avtransport/utils.h>
+
+/**
+ * Version from which the headers were built.
+ */
+#define AVTRANSPORT_VERSION_MAJOR @AVTRANSPORT_VERSION_MAJOR@
+#define AVTRANSPORT_VERSION_MINOR @AVTRANSPORT_VERSION_MINOR@
+#define AVTRANSPORT_VERSION_MICRO @AVTRANSPORT_VERSION_MICRO@
 
 /**
  * Extract versions from the value returned by
  * avtransport_version_int()
  */
-#define AVTRANSPORT_API_MAJOR(v) (((v) >> 16) & 0xFF)
-#define AVTRANSPORT_API_MINOR(v) (((v) >>  8) & 0xFF)
-#define AVTRANSPORT_API_MICRO(v) (((v) >>  0) & 0xFF)
+#define AVTRANSPORT_GET_VER_MAJOR(v) (((v) >> 16) & 0xFF)
+#define AVTRANSPORT_GET_VER_MINOR(v) (((v) >>  8) & 0xFF)
+#define AVTRANSPORT_GET_VER_MICRO(v) (((v) >>  0) & 0xFF)
+
+/**
+ * Returns the version of the library.
+ */
+AVT_API uint32_t avt_version_int(void);
 
 #endif /* AVTRANSPORT_VERSION_H */

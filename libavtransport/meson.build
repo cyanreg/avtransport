@@ -99,7 +99,7 @@ endif
 if host_machine.system() == 'windows'
     avtransport_soversion = ''
 else
-    avtransport_soversion = avtransport_api_version_major
+    avtransport_soversion = meson.project_version()
 endif
 
 avtransport_inc = include_directories('./include')
@@ -128,7 +128,7 @@ avtransport_lib = library('avtransport',
     sources: avtransport_spec_pub_headers,
     include_directories: avtransport_inc,
     dependencies: avtransport_deps_list,
-    version: avtransport_soname_version,
+    version: meson.project_version(),
     soversion: avtransport_soversion,
 )
 

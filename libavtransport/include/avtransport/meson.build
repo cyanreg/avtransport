@@ -35,9 +35,9 @@ avtransport_spec_pub_headers = custom_target('packet*',
 
 # Version header
 version_h_data = configuration_data()
-version_h_data.set('AVTRANSPORT_API_VERSION_MAJOR', avtransport_api_version_major)
-version_h_data.set('AVTRANSPORT_API_VERSION_MINOR', avtransport_api_version_minor)
-version_h_data.set('AVTRANSPORT_API_VERSION_MICRO', avtransport_api_version_micro)
+version_h_data.set('AVTRANSPORT_VERSION_MAJOR', avtransport_version_major)
+version_h_data.set('AVTRANSPORT_VERSION_MINOR', avtransport_version_minor)
+version_h_data.set('AVTRANSPORT_VERSION_MICRO', avtransport_version_micro)
 version_h_target = configure_file(input: 'version.h.in',
     output: 'version.h',
     configuration: version_h_data

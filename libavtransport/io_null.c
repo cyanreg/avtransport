@@ -28,12 +28,12 @@
 #include <stdlib.h>
 #include <errno.h>
 
+#include <avtransport/version.h>
+
 #include "io_common.h"
 #include "utils_internal.h"
 #include "bytestream.h"
 #include "packet_encode.h"
-
-#include "config.h"
 
 struct AVTIOCtx {
     uint64_t seq;
@@ -85,11 +85,11 @@ static avt_pos null_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
     union AVTPacketData pkt = { .session_start = {
         .global_seq = io->seq++,
         .session_flags = 0x0,
-        .producer_major = PROJECT_VERSION_MAJOR,
-        .producer_minor = PROJECT_VERSION_MINOR,
-        .producer_micro = PROJECT_VERSION_MICRO,
+        .producer_major = AVTRANSPORT_VERSION_MAJOR,
+        .producer_minor = AVTRANSPORT_VERSION_MINOR,
+        .producer_micro = AVTRANSPORT_VERSION_MICRO,
     }};
-    memcpy(pkt.session_start.producer_name, PROJECT_NAME, strlen(PROJECT_NAME));
+    memcpy(pkt.session_start.producer_name, "avtransport", strlen("avtransport"));
 
     avt_encode_session_start(&bs, pkt.session_start);
 

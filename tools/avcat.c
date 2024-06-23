@@ -60,9 +60,9 @@ int main(int argc, char **argv)
     AVTContext *avt;
     AVTContextOptions ctx_opts = {
         .producer_name = "avcat",
-        .producer_ver = { PROJECT_VERSION_MAJOR,
-                          PROJECT_VERSION_MICRO,
-                          PROJECT_VERSION_MINOR },
+        .producer_ver = { AVTRANSPORT_VERSION_MAJOR,
+                          AVTRANSPORT_VERSION_MICRO,
+                          AVTRANSPORT_VERSION_MINOR },
     };
 
     ret = avt_init(&avt, &ctx_opts);

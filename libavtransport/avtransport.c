@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include <avtransport/avtransport.h>
+#include <avtransport/version.h>
 
 #include "common.h"
 
@@ -87,4 +88,12 @@ void avt_log(void *ctx, enum AVTLogLevel level, const char *fmt, ...)
         fprintf(std, "\033[0m");
 
     va_end(args);
+}
+
+uint32_t avt_version_int(void)
+{
+    return (AVTRANSPORT_VERSION_MAJOR << 16) |
+           (AVTRANSPORT_VERSION_MINOR <<  8) |
+           (AVTRANSPORT_VERSION_MICRO <<  0);
+
 }

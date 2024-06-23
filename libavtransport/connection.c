@@ -25,6 +25,7 @@
  */
 
 #include <stdlib.h>
+#include <avtransport/version.h>
 
 #include "connection_internal.h"
 #include "protocol_common.h"
@@ -87,14 +88,14 @@ static int send_session_start_pkt(AVTConnection *conn)
         .pkt = AVT_SESSION_START_HDR(
             .session_seq = conn->session_seq,
             .session_flags = 0x0,
-            .producer_major = PROJECT_VERSION_MAJOR,
-            .producer_minor = PROJECT_VERSION_MINOR,
-            .producer_micro = PROJECT_VERSION_MICRO,
+            .producer_major = AVTRANSPORT_VERSION_MAJOR,
+            .producer_minor = AVTRANSPORT_VERSION_MINOR,
+            .producer_micro = AVTRANSPORT_VERSION_MICRO,
         ),
     };
 
     memcpy(p.pkt.session_start.session_uuid, conn->addr.uuid, 16);
-    memccpy(p.pkt.session_start.producer_name, PROJECT_NAME,
+    memccpy(p.pkt.session_start.producer_name, "avtransport",
             '\0', sizeof(p.pkt.session_start.producer_name));
 
     int err = avt_scheduler_push(&conn->out_scheduler, &p);
