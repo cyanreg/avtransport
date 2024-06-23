@@ -176,6 +176,9 @@ static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
     case AVT_PKT_STREAM_REGISTRATION:
         avt_decode_stream_registration(&bs, &p->pkt.stream_registration);
         return 0;
+    case AVT_PKT_STEREO_VIDEO:
+        avt_decode_stereo_video(&bs, &p->pkt.stereo_video);
+        return 0;
     case AVT_PKT_STREAM_END:
         avt_decode_stream_end(&bs, &p->pkt.stream_end);
         return 0;
