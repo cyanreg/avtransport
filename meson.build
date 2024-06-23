@@ -118,9 +118,11 @@ endif
 #============================================================================
 xxh_dep = dependency('libxxhash', required: false)
 cbor_dep = dependency('libcbor', required: false)
+
+xxh_dep = dependency('libxxhash', required: false)
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
-openssl_dep = dependency('openssl', required: false, version : '>3.3.0')
+openssl_dep = dependency('openssl', required: false, version : '>3.4.0')
 brotlienc_dep = dependency('libbrotlienc', required: false)
 brotlidec_dep = dependency('libbrotlienc', required: false)
 
