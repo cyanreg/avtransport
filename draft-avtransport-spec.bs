@@ -677,7 +677,7 @@ be zero-padded.
 
 [=session_seq=] is an ephemeral ID that is supposed to change each time a transmission is initiated. It is meant to help with longer duration disconnections.
 
-## Stream Session Flags Enumeration (enum <dfn enum>SessionFlags</dfn>) ## {#enum-SessionFlags}
+### Stream Session Flags Enumeration (enum <dfn enum>SessionFlags</dfn>) ### {#enum-SessionFlags}
 
 The [=session_flags=] field must be interpreted in the following way:
 
@@ -2204,7 +2204,7 @@ segmentation and parity packets is via the following [[#generic-data-packets]] t
 </figure>
 
 
-## LUT/ICC Profile Flags Enumeration (enum <dfn enum>LutFlags</dfn>) ## {#enum-LutFlags}
+### LUT/ICC Profile Flags Enumeration (enum <dfn enum>LutFlags</dfn>) ### {#enum-LutFlags}
 
 The [=lut_flags=] field must be interpreted in the following way:
 
@@ -2214,7 +2214,7 @@ The [=lut_flags=] field must be interpreted in the following way:
 </div>
 
 
-## LUT/ICC Profile Type Enumeration (enum <dfn enum>LutType</dfn>) ## {#enum-LutType}
+### LUT/ICC Profile Type Enumeration (enum <dfn enum>LutType</dfn>) ### {#enum-LutType}
 
 The [=lut_type=] field must be interpreted in the following way:
 
@@ -2357,7 +2357,7 @@ templates:
 </figure>
 
 
-## Font Flags Enumeration (enum <dfn enum>FontFlags</dfn>) ## {#enum-FontFlags}
+### Font Flags Enumeration (enum <dfn enum>FontFlags</dfn>) ### {#enum-FontFlags}
 
 The [=font_flags=] field must be interpreted in the following way:
 
@@ -2367,7 +2367,7 @@ The [=font_flags=] field must be interpreted in the following way:
 </div>
 
 
-## Font Type Enumeration (enum <dfn enum>FontType</dfn>) ## {#enum-FontType}
+### Font Type Enumeration (enum <dfn enum>FontType</dfn>) ### {#enum-FontType}
 
 The [=font_type=] field must be interpreted in the following way:
 
@@ -2592,7 +2592,7 @@ stream after decoding.
 </figure>
 
 
-## Colorspace Enumeration (enum <dfn enum>Colorspace</dfn>) ## {#enum-Colorspace}
+### Colorspace Enumeration (enum <dfn enum>Colorspace</dfn>) ### {#enum-Colorspace}
 
 The [=colorspace=] field must be interpreted in the following way:
 
@@ -2627,7 +2627,7 @@ The [=colorspace=] field must be interpreted in the following way:
 </div>
 
 
-## Color Range Enumeration (enum <dfn enum>ColorRange</dfn>) ## {#enum-ColorRange}
+### Color Range Enumeration (enum <dfn enum>ColorRange</dfn>) ### {#enum-ColorRange}
 
 <div dfn-type="enum-value" dfn-for="#enum-ColorRange" id="ColorRange">
     : <dfn noexport>COLOR_RANGE_FULL</dfn> = <i>0x0</i>
@@ -2643,7 +2643,7 @@ The [=colorspace=] field must be interpreted in the following way:
 </div>
 
 
-## Chroma Subsampling Enumeration (enum <dfn enum>ChromaSubsampling</dfn>) ## {#enum-ChromaSubsampling}
+### Chroma Subsampling Enumeration (enum <dfn enum>ChromaSubsampling</dfn>) ### {#enum-ChromaSubsampling}
 
 <div dfn-type="enum-value" dfn-for="#enum-ChromaSubsampling" id="ChromaSubsampling">
     : <dfn noexport>CHROMA_444</dfn> = <i>0x0</i>
@@ -2655,7 +2655,7 @@ The [=colorspace=] field must be interpreted in the following way:
 </div>
 
 
-## Interlacing Enumeration (enum <dfn enum>Interlacing</dfn>) ## {#enum-Interlacing}
+### Interlacing Enumeration (enum <dfn enum>Interlacing</dfn>) ### {#enum-Interlacing}
 
 The value of [=interlaced=] determines whether the video is interlaced, as well as how
 to interpret the value of [=field_id=] in stream data packet headers.
@@ -2681,7 +2681,7 @@ may be interchanged if it's possible to output one or the other, depending on
 the setting used, if the codec supports this.
 
 
-## Chroma Position Enumeration (enum <dfn enum>ChromaPosition</dfn>) ## {#enum-ChromaPosition}
+### Chroma Position Enumeration (enum <dfn enum>ChromaPosition</dfn>) ### {#enum-ChromaPosition}
 
 <div dfn-type="enum-value" dfn-for="#enum-ChromaPosition" id="ChromaPosition">
     : <dfn noexport>CHROMA_POS_UNSPEC</dfn> = <i>0x0</i>
@@ -2741,7 +2741,7 @@ To illustrate:
 </figure>
 
 
-## Primaries Enumeration (enum <dfn enum>Primaries</dfn>) ## {#enum-Primaries}
+### Primaries Enumeration (enum <dfn enum>Primaries</dfn>) ### {#enum-Primaries}
 
 These values are copied verbatim from [[H.273]].
 
@@ -2779,7 +2779,7 @@ Note: This list may not be up to date in this version of the AVTransport specifi
 Users should consult [[H.273]] for up-to-date values and how to interpret them.
 
 
-## Transfer Function Enumeration (enum <dfn enum>Transfer</dfn>) ## {#enum-Transfer}
+### Transfer Function Enumeration (enum <dfn enum>Transfer</dfn>) ### {#enum-Transfer}
 
 These values are copied verbatim from [[H.273]]. The same note applies.
 
@@ -2823,7 +2823,7 @@ These values are copied verbatim from [[H.273]]. The same note applies.
 </div>
 
 
-## Matrix Enumeration (enum <dfn enum>Matrix</dfn>) ## {#enum-Matrix}
+### Matrix Enumeration (enum <dfn enum>Matrix</dfn>) ### {#enum-Matrix}
 
 These values are copied verbatim from [[H.273]]. The same note applies.
 
@@ -2924,7 +2924,7 @@ The effects of video orientation packets MUST persist from the [=pts=] value giv
 until a new orientation packet is sent, or the stream is reinitialized.
 
 
-## Video Reflection Enumeration (enum <dfn enum>VideoReflection</dfn>) ## {#enum-VideoReflection}
+### Video Reflection Enumeration (enum <dfn enum>VideoReflection</dfn>) ### {#enum-VideoReflection}
 
 <div dfn-type="enum-value" dfn-for="#enum-VideoReflection" id="VideoReflection">
     : <dfn noexport>VIDEO_REFLECT_NONE</dfn> = <i>0x0</i>
@@ -3054,7 +3054,7 @@ The effects of stereo video packets must persist from the [=pts=] value given,
 until a new stereo video packet is sent, or the stream is reinitialized.
 
 
-## Stereo Video Type Enumeration (enum <dfn enum>StereoVideoType</dfn>) ## {#enum-StereoVideoType}
+### Stereo Video Type Enumeration (enum <dfn enum>StereoVideoType</dfn>) ### {#enum-StereoVideoType}
 
 By convention, the first view is the left eye's view, and the second view is the right eye's view.
 The two are swapped if {{STEREO_VIDEO_FLAG_INVERTED}} is set.
@@ -3078,14 +3078,14 @@ The two are swapped if {{STEREO_VIDEO_FLAG_INVERTED}} is set.
       :: Views are interleaved on a column basis.
 </div>
 
-## Stereo Video Flags Enumeration (enum <dfn enum>StereoVideoFlags</dfn>) ## {#enum-StereoVideoFlags}
+### Stereo Video Flags Enumeration (enum <dfn enum>StereoVideoFlags</dfn>) ### {#enum-StereoVideoFlags}
 
 <div dfn-type="enum-value" dfn-for="#enum-StereoVideoFlags" id="StereoVideoFlags">
     : <dfn noexport>STEREO_VIDEO_FLAG_INVERTED</dfn> = <i>0x0</i>
       :: Views must be swapped during presentation (left->right, right->left).
 </div>
 
-## Stereo Video Primary Eye Enumeration (enum <dfn enum>StereoVideoPrimaryEye</dfn>) ## {#enum-StereoVideoPrimaryEye}
+### Stereo Video Primary Eye Enumeration (enum <dfn enum>StereoVideoPrimaryEye</dfn>) ### {#enum-StereoVideoPrimaryEye}
 
 <div dfn-type="enum-value" dfn-for="#enum-StereoVideoPrimaryEye" id="StereoVideoPrimaryEye">
     : <dfn noexport>STEREO_VIDEO_PRIMARY_EYE_NONE</dfn> = <i>0x0</i>
@@ -4394,7 +4394,7 @@ Note: [[#video-information-packets]] packets must be present. The information in
 is only sufficient to parse data, not enough to present it.
 
 
-## Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ## {#enum-RawVideoFlags}
+### Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ### {#enum-RawVideoFlags}
 
 The [=rv_flags=] field must be interpreted in the following way:
 
@@ -4748,7 +4748,7 @@ for the newsest available data, that data's payload is once again sent over an
 The following error values are allowed:
 
 
-## Error Code Enumeration (enum <dfn enum>ErrorCode</dfn>) ## {#enum-ErrorCode}
+### Error Code Enumeration (enum <dfn enum>ErrorCode</dfn>) ### {#enum-ErrorCode}
 
 <div dfn-type="enum-value" dfn-for="#enum-ErrorCode">
     : <dfn noexport>ERROR_CODE_GENERIC</dfn> = <i>0x1</i>
