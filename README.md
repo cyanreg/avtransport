@@ -96,7 +96,7 @@ This will create a shared library by default, and will compile all [tools](#tool
 
 Dependencies:
  - [libcbor](https://github.com/PJK/libcbor)
- - [librqturbo](https://github.com/cyanreg/librqturbo)
+ - [librqturbo](https://github.com/cyanreg/rqturbo)
 
 The packages can be compiled and statically linked simultaneously as libavtransport is build.
 Simply create a `subprojects` directory, and clone each package into it.
@@ -111,6 +111,10 @@ The following dependencies are optional:
  - [liburing](https://github.com/axboe/liburing)
 
 As with non-optional dependencies, repositories can be cloned into `subprojects`.
+
+Build-time dependencies:
+ - [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/)
+   * Used to parse the specification document and [create](libavtransport/tools/spec2c.py) structures and (de)serialization primitives.
 
 ## Tools
 
