@@ -335,7 +335,7 @@ To simplify implementations, two different lengths are used:
  - <dfn noexport>ldpc_2784_2016</dfn>: specified in [=LDPC(2784, 2016)=]
 
 Note: Applying LDPC error correction is optional for receiver implementations.</br>
-Senders must implement it.
+Senders must implement it. This document provides example routines in [[#annex-g-ldpc]].
 
 
 ## Global sequence ## {#global-sequence}
@@ -418,7 +418,7 @@ of stream timestamps.
 The [=ts_clock_id=] is a unique 8-bit identifier for the clock.
 It allows to associate a clock with a given stream.
 
-The [=ts_clock_id=]of the [[#stream-registration-packets]] packets
+The [=ts_clock_id=] of the [[#stream-registration-packets]] packets
 is matched up to the [=ts_clock_id=] of [[#time-synchronization-packets]]
 packets. If a match is not found, then no processing must be done.
 
@@ -4958,8 +4958,10 @@ void ldpc_encode(uint8_t *pkt, const uint64_t *H,
 }
 </pre>
 
-This algorithm is quite inefficient, but even 10-year old embedded devices can
-do at least 2 million [=LDPC(288, 224)=] encodings per second.
+This code is provided as a reference, and although more efficient
+algorithms exist, embedded devices and microcontrollers are able
+to perform millions of [=LDPC(288, 224)=] encodings per second
+with it.
 
 Implementations should consider using more advanced encoding algorithms, such
 as the [[LDPC-encoding|Richardson-Urbanke method]] to reduce the overhead further.
@@ -4969,7 +4971,7 @@ as the [[LDPC-encoding|Richardson-Urbanke method]] to reduce the overhead furthe
 
 The following parity-check matrices (<b>H</b>) below shall be used for encoding (via the pseudocode above)
 and decoding. Implementations are free to convert them to G matrices and use conventional encoding methods.
-The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.
+The matrices are optimized for AWGN channels, but they will perform nearly as well in other circumstances.
 
 As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:
  - 64x288
