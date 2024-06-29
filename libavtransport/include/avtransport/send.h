@@ -66,6 +66,9 @@ typedef struct AVTSenderOptions {
 
     /* Set to true to enable sending hash packets for all packets with a payload. */
     bool hash;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[4096 - 1*8 - 0*16 - 3*32 - 0*64];
 } AVTSenderOptions;
 
 /* Open a send context and immediately send/write a stream session packet.

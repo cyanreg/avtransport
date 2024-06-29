@@ -199,6 +199,9 @@ typedef struct AVTConnectionInfo {
             /* Opaque pointer which will be used for the data() callback. */
             void *opaque;
         } pkt;
+
+        /* Padding to allow for future options. */
+        uint8_t padding_u[1024 - 17*1 - 1*2 - 5*4 - 0*8];
     };
 
     /* Input options */
@@ -210,6 +213,9 @@ typedef struct AVTConnectionInfo {
          * automatic (very rarely), higher values increase overhead
          * and decrease potential errors, negative values disables decoding. */
         int ldpc_iterations;
+
+        /* Padding to allow for future options. Must always be set to 0. */
+        uint8_t padding[1024 - 0*1 - 0*2 - 1*4 - 1*8];
     } input_opts;
 
     struct {
@@ -246,11 +252,17 @@ typedef struct AVTConnectionInfo {
          *  - N: In addition, send one every N packets (segmentation is ignored).
          */
         unsigned int session_start_freq;
+
+        /* Padding to allow for future options. Must always be set to 0. */
+        uint8_t padding[1024 - 0*1 - 0*2 - 1*4 - 2*8];
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.
      * Values greater than 1 are reserved. */
     int async;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[1024 - 0*1 - 0*2 - 1*4 - 0*8];
 } AVTConnectionInfo;
 
 /**
@@ -357,6 +369,9 @@ typedef struct AVTConnectionStatus {
         /* Total duration of all packets buffered (timebase: 1 nanosecond) */
         int64_t buffer_duration;
     } tx;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[4096 - 0*1 - 0*2 - 3*4 - 10*8];
 } AVTConnectionStatus;
 
 /**

@@ -54,6 +54,9 @@ typedef struct AVTContextOptions {
 
     char producer_name[16];   /* Name of the project linking to libavtransport */
     uint16_t producer_ver[3]; /* Major, minor, micro version */
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[4096 - 16*1 - 3*2 - 0*4 - 2*8];
 } AVTContextOptions;
 
 /* Allocate an AVTransport context with the given context options. */

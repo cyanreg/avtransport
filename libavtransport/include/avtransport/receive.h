@@ -32,7 +32,18 @@
 #include "utils.h"
 
 typedef struct AVTReceiveOptions {
-    ;
+    /* Setting this flag to 1 enables receival of incomplete packets.
+     * Regions with no data are set to 0.
+     *
+     * NOTE: Data from compressed packets will only be passed if decompression
+     *       (partially) succeeds.
+     * NOTE: raw audio and video packets are always passed, even if incomplete,
+     *       as long as they are uncompressed.
+     */
+    bool accept_incomplete;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[4096 - 1*1 - 0*2 - 0*4 - 0*8];
 } AVTReceiveOptions;
 
 /* List of callbacks. All are optional. */

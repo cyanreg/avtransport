@@ -70,6 +70,9 @@ typedef struct AVTStream {
 
     /* libavtransport private stream data. Do not touch or use. */
     struct AVTStreamPriv *priv;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[4096];
 } AVTStream;
 
 typedef struct AVTPacket {
@@ -80,6 +83,9 @@ typedef struct AVTPacket {
     int64_t pts;
     int64_t dts;
     int64_t duration;
+
+    /* Padding to allow for future options. Must always be set to 0. */
+    uint8_t padding[64];
 } AVTPacket;
 
 #endif
