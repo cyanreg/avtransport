@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="3e33a9cf8c57057834e0c9b8803ad79286df39c2" name="document-revision">
+  <meta content="51e901c191737af0e207749cb53b49a5daf57b37" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-06-23">23 June 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-06-29">29 June 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 23 June 2024,
+In addition, as of 29 June 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2564,7 +2564,7 @@ radio connection, they help correct bitflips.</p>
     <li data-md>
      <p><dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="ldpc_2784_2016">ldpc_2784_2016</dfn>: specified in <a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016">LDPC(2784, 2016)</a></p>
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> Applying LDPC error correction is optional for receiver implementations.<br> Senders must implement it.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> Applying LDPC error correction is optional for receiver implementations.<br> Senders must implement it. This document provides example routines in <a href="#annex-g-ldpc">§ 4.1 Annex G: LDPC</a>.</p>
    <h3 class="heading settled" data-level="1.5" id="global-sequence"><span class="secno">1.5. </span><span class="content">Global sequence</span><a class="self-link" href="#global-sequence"></a></h3>
    <p>The <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="global_seq">global_seq</dfn> is a <b>32-bit unsigned integer</b>, incremented by <span class="css">1</span> each time
 after a packet has been sent. Once at <span class="css">0xffffffff</span>, it MUST overflow back to <span class="css">0x0</span>.
@@ -2618,7 +2618,7 @@ of the two special values.</p>
 of stream timestamps.</p>
    <p>The <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id">ts_clock_id</a> is a unique 8-bit identifier for the clock.
 It allows to associate a clock with a given stream.</p>
-   <p>The <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id①">ts_clock_id</a>of the <a href="#stream-registration-packets">§ 2.3 Stream registration</a> packets
+   <p>The <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id①">ts_clock_id</a> of the <a href="#stream-registration-packets">§ 2.3 Stream registration</a> packets
 is matched up to the <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id②">ts_clock_id</a> of <a href="#time-synchronization-packets">§ 2.2 Time synchronization</a> packets. If a match is not found, then no processing must be done.</p>
    <p class="note" role="note"><span class="marker">Note:</span> The only valid targets to perform timestamp jitter compensation are
 streams with the same timebase, which must be equal to the inverse of <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq①">ts_clock_freq</a>.
@@ -6327,14 +6327,16 @@ The full block, along with the check data, shall be sent to an LDPC decoder.</p>
     <c- p>}</c->
 <c- p>}</c->
 </pre>
-   <p>This algorithm is quite inefficient, but even 10-year old embedded devices can
-do at least 2 million <a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②④">LDPC(288, 224)</a> encodings per second.</p>
+   <p>This code is provided as a reference, and although more efficient
+algorithms exist, embedded devices and microcontrollers are able
+to perform millions of <a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224②④">LDPC(288, 224)</a> encodings per second
+with it.</p>
    <p>Implementations should consider using more advanced encoding algorithms, such
 as the <a data-link-type="biblio" href="#biblio-ldpc-encoding" title="Efficient encoding of low-density parity-check codes">Richardson-Urbanke method</a> to reduce the overhead further.</p>
    <h4 class="heading settled" data-level="4.1.1" id="ldpc-h-matrices"><span class="secno">4.1.1. </span><span class="content">LDPC H-matrices</span><a class="self-link" href="#ldpc-h-matrices"></a></h4>
    <p>The following parity-check matrices (<b>H</b>) below shall be used for encoding (via the pseudocode above)
 and decoding. Implementations are free to convert them to G matrices and use conventional encoding methods.
-The matrices are optimized for AWGN channels, but they will perform nearly as well anywhere else.</p>
+The matrices are optimized for AWGN channels, but they will perform nearly as well in other circumstances.</p>
    <p>As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:</p>
    <ul>
     <li data-md>
