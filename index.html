@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="2d823184824731fe7255c24d79c8f26c17788fc0" name="document-revision">
+  <meta content="ac650d458aa14bfb0ba4b86792c47e1071c504b0" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -5491,7 +5491,7 @@ consult the specifications, section <span class="css">5.9.2. Uncompressed header
    </ul>
    <p>A <a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packet may be sent, to speed up stream initialization.
 If they are present, they must contain an <span class="css">AVCDecoderConfigurationRecord</span> structure,
-as defined in <span class="css">IEC 14496-15</span>.</p>
+as defined in <a data-link-type="biblio" href="#biblio-iso14496-15" title="Information technology — Coding of audio-visual objectsPart 15: Carriage of network abstraction layer (NAL) unit structured video in the ISO base media file format">[ISO14496-15]</a>.</p>
    <p>In-band parameters are always required to be present, even if an <span class="css">AVCDecoderConfigurationRecord</span> structure is present in a <a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packet.</p>
    <p class="note" role="note"><span class="marker">Note:</span> On some decoder implementations, giving an <span class="css">AVCDecoderConfigurationRecord</span> structure upon
 initialization will result in the decoder mistaking the packets in the payload as <b>AVCC</b> rather than <b>Annex-B</b>. Implementations should consider whether the decoder being used will
@@ -5507,7 +5507,7 @@ accept configuration data without assuming Annex-B, and only input such data if 
    </ul>
    <p><span class="css">Annex-B</span> formatted packets must be used, with startcode emulation bits included.</p>
    <p>A <a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packet may be sent, to
-speed up stream initialization. If they are present, they must contain an <span class="css">HEVCDecoderConfigurationRecord</span> structure, as defined in <span class="css">IEC 23008</span>.</p>
+speed up stream initialization. If they are present, they must contain an <span class="css">HEVCDecoderConfigurationRecord</span> structure, as defined in <a data-link-type="biblio" href="#biblio-iso23008" title="Information technology — High efficiency coding and media delivery in heterogeneous environments">[ISO23008]</a>.</p>
    <h4 class="heading settled" data-level="3.1.13" id="dirac-vc-2-encapsulation"><span class="secno">3.1.13. </span><span class="content">Dirac/VC-2 encapsulation</span><a class="self-link" href="#dirac-vc-2-encapsulation"></a></h4>
    <p>For Dirac or VC-2 encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①⑤">codec_id</a> in <a href="#stream-registration-packets">§ 2.3 Stream registration</a> MUST be <span class="css">0x42424344</span> (<span class="css">BBCD</span>).</p>
    <p>Dirac streams require no <a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packets.</p>
@@ -7012,12 +7012,16 @@ This is the format that the reference function above expects.</p>
    <dd><a href="https://www.itu.int/rec/T-REC-H.273/en"><cite>Coding-independent code points for video signal type identification</cite></a>. September 2023. URL: <a href="https://www.itu.int/rec/T-REC-H.273/en">https://www.itu.int/rec/T-REC-H.273/en</a>
    <dt id="biblio-ieee-754">[IEEE-754]
    <dd><a href="http://ieeexplore.ieee.org/servlet/opac?punumber=4610933"><cite>IEEE Standard for Floating-Point Arithmetic</cite></a>. 29 August 2008. URL: <a href="http://ieeexplore.ieee.org/servlet/opac?punumber=4610933">http://ieeexplore.ieee.org/servlet/opac?punumber=4610933</a>
+   <dt id="biblio-iso14496-15">[ISO14496-15]
+   <dd><a href="https://www.iso.org/standard/83336.html"><cite>Information technology — Coding of audio-visual objectsPart 15: Carriage of network abstraction layer (NAL) unit structured video in the ISO base media file format</cite></a>. October 2022. URL: <a href="https://www.iso.org/standard/83336.html">https://www.iso.org/standard/83336.html</a>
    <dt id="biblio-iso15444">[ISO15444]
    <dd><a href="https://www.iso.org/standard/78321.html"><cite>JPEG 2000 image coding system</cite></a>. October 2019. URL: <a href="https://www.iso.org/standard/78321.html">https://www.iso.org/standard/78321.html</a>
    <dt id="biblio-iso15444-15">[ISO15444-15]
    <dd><a href="https://www.iso.org/standard/76621.html"><cite>JPEG 2000 image coding system Part 15: High-Throughput JPEG 2000</cite></a>. October 2019. URL: <a href="https://www.iso.org/standard/76621.html">https://www.iso.org/standard/76621.html</a>
    <dt id="biblio-iso18181">[ISO18181]
    <dd><a href="https://www.iso.org/standard/77977.html"><cite>JPEG XL image coding system — Part 1: Core coding system</cite></a>. March 2022. URL: <a href="https://www.iso.org/standard/77977.html">https://www.iso.org/standard/77977.html</a>
+   <dt id="biblio-iso23008">[ISO23008]
+   <dd><a href="https://www.iso.org/standard/76386.html"><cite>Information technology — High efficiency coding and media delivery in heterogeneous environments</cite></a>. January 2023. URL: <a href="https://www.iso.org/standard/76386.html">https://www.iso.org/standard/76386.html</a>
    <dt id="biblio-ldpc">[LDPC]
    <dd>David J.C. MacKay; Radford M. Neal. <a href="https://www.csie.ntu.edu.tw/~mku/research/LDPC/asset/papers/General/LDPC_MacKay.pdf"><cite>Near Shannon Limit Performance of Low Density Parity Check Codes</cite></a>. July 1996. URL: <a href="https://www.csie.ntu.edu.tw/~mku/research/LDPC/asset/papers/General/LDPC_MacKay.pdf">https://www.csie.ntu.edu.tw/~mku/research/LDPC/asset/papers/General/LDPC_MacKay.pdf</a>
    <dt id="biblio-ldpc-encoding">[LDPC-encoding]
