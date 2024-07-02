@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="d03d945b2ae252aad16594539992971948d34b1c" name="document-revision">
+  <meta content="a6df3dcdca260ca4ee968757d02073e417f75d55" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2253,11 +2253,7 @@ Parts of this work may be from another specification document.  If so, those par
        <ol class="toc">
         <li><a href="#index-entry-struct"><span class="secno">2.10.1</span> <span class="content">Index entry (struct <span>IndexEntry</span>)</span></a>
        </ol>
-      <li>
-       <a href="#metadata-packets"><span class="secno">2.11</span> <span class="content">Metadata</span></a>
-       <ol class="toc">
-        <li><a href="#enum-CommonMetadataKeys"><span class="secno">2.11.1</span> <span class="content">Common Metadata Keys</span></a>
-       </ol>
+      <li><a href="#metadata-packets"><span class="secno">2.11</span> <span class="content">Metadata</span></a>
       <li>
        <a href="#lut-icc-profile-packets"><span class="secno">2.12</span> <span class="content">LUT/ICC profile</span></a>
        <ol class="toc">
@@ -2356,14 +2352,15 @@ Parts of this work may be from another specification document.  If so, those par
     <li>
      <a href="#annex"><span class="secno">4</span> <span class="content">Annex</span></a>
      <ol class="toc">
+      <li><a href="#annex-d-metadata-recommendations"><span class="secno">4.1</span> <span class="content">Annex D: Metadata recommendations</span></a>
       <li>
-       <a href="#annex-g-ldpc"><span class="secno">4.1</span> <span class="content">Annex G: LDPC</span></a>
+       <a href="#annex-g-ldpc"><span class="secno">4.2</span> <span class="content">Annex G: LDPC</span></a>
        <ol class="toc">
         <li>
-         <a href="#ldpc-h-matrices"><span class="secno">4.1.1</span> <span class="content">LDPC H-matrices</span></a>
+         <a href="#ldpc-h-matrices"><span class="secno">4.2.1</span> <span class="content">LDPC H-matrices</span></a>
          <ol class="toc">
-          <li><a href="#ldpc_h_matrix_288_224_def"><span class="secno">4.1.1.1</span> <span class="content">ldpc_h_matrix_288_224</span></a>
-          <li><a href="#ldpc_h_matrix_2784_2016_def"><span class="secno">4.1.1.2</span> <span class="content">ldpc_h_matrix_2784_2016</span></a>
+          <li><a href="#ldpc_h_matrix_288_224_def"><span class="secno">4.2.1.1</span> <span class="content">ldpc_h_matrix_288_224</span></a>
+          <li><a href="#ldpc_h_matrix_2784_2016_def"><span class="secno">4.2.1.2</span> <span class="content">ldpc_h_matrix_2784_2016</span></a>
          </ol>
        </ol>
      </ol>
@@ -2384,14 +2381,13 @@ Parts of this work may be from another specification document.  If so, those par
   </nav>
   <main>
    <h2 class="heading settled" data-level="1" id="avtransport-protocol"><span class="secno">1. </span><span class="content">AVTransport protocol</span><a class="self-link" href="#avtransport-protocol"></a></h2>
-   <p>The AVTransport protocol is a new standardized mechanism for multimedia transport and
-storage. This protocol aims to be a simple, reliable and robust low-overhead method
-that borrows design decisions from other protocols and aims to be generic,
-rather than specialized for certain use-cases. With minimal changes, it can be
-processed as a stream or saved to a file as an intermediate step or for post-processing.</p>
-   <p>Rather than just being a new container and protocol filling a niche, this also attempts
-to solve issues with current other containers, like timestamp rounding, lack of DTS,
-inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
+   <p>The AVTransport protocol is a standardized mechanism for multimedia transport and
+storage. This protocol aims to be robust, reliable and low-overhead. Rather than
+being specialized, the protocol is scalable, from archival to chip to chip interconnect,
+Ethernet links to satellite links, post-production intermediates to final cinematic
+deliverables.</p>
+   <p>The protocol addresses shortcomings of other formats, such as timestamp rounding, lack of DTS,
+fragile parsing, inflexible metadata, inconvenient index positions and layout, inextensible formats,
 and rigid overseeing organizations.</p>
    <h3 class="heading settled" data-level="1.1" id="overview"><span class="secno">1.1. </span><span class="content">Overview</span><a class="self-link" href="#overview"></a></h3>
    <p>On a high-level, AVTransport is a packetized wrapper around codec, metadata and
@@ -2550,14 +2546,15 @@ the form <span class="css">descriptor in hex</span>+<span class="css">index</spa
 incremented for each element in a structure.</p>
    <h3 class="heading settled" data-level="1.4" id="ldpc"><span class="secno">1.4. </span><span class="content">LDPC</span><a class="self-link" href="#ldpc"></a></h3>
    <p>To improve reliability, and make the protocol general-purpose, a small amount of
-parity data is added to each header, in the form of <a data-link-type="biblio" href="#biblio-ldpc" title="Near Shannon Limit Performance of Low Density Parity Check Codes">[LDPC]</a> codes. These codes highly
-improve reliability when transmitting over <a href="#udp-lite-streaming">§ 3.2.2 UDP-Lite</a>.</p>
-   <p>They also help in the event of a file desynchronization or corruption, by being able
-to quickly verify whether an arbitrary byte has a valid packet, thus avoiding presentation
-of damaged or invalid stream data.</p>
-   <p>Finally, for long-term archival on tape, or when transmitting over a noisy <a href="#serial-transmission">§ 3.2.5 Serial</a> or
-radio connection, they help correct bitflips.</p>
-   <p>Their theory of operation and specifications are detailed in <a href="#annex-g-ldpc">§ 4.1 Annex G: LDPC</a>.</p>
+parity data is added to each header, in the form of <a data-link-type="biblio" href="#biblio-ldpc" title="Near Shannon Limit Performance of Low Density Parity Check Codes">[LDPC]</a>.</p>
+   <p>Their main purpose is to correct bitflips which may occur during transmission or
+storage of packets.<br> In situations where bitflips are less likely, they eliminate corrupt packets
+which may break demuxer state.<br> Being able to quickly determine whether any 36 or more byte buffer contains a valid packet
+makes AVTransport streams <i>self-synchronizing</i>.</p>
+   <p>This makes AVTransport suitable for not only switched networks, but also raw
+radio frequency links, optical links, or plain serial links.
+Details for each are available in the <a href="#streaming">§ 3.2 Streaming</a> section.</p>
+   <p>Their theory of operation and specifications are detailed in <a href="#annex-g-ldpc">§ 4.2 Annex G: LDPC</a>.</p>
    <p>To simplify implementations, two different lengths are used:</p>
    <ul>
     <li data-md>
@@ -2565,7 +2562,7 @@ radio connection, they help correct bitflips.</p>
     <li data-md>
      <p><dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="ldpc_2784_2016">ldpc_2784_2016</dfn>: specified in <a data-link-type="dfn" href="#ldpc-2784-2016" id="ref-for-ldpc-2784-2016">LDPC(2784, 2016)</a></p>
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> Applying LDPC error correction is optional for receiver implementations.<br> Senders must implement it. This document provides example routines in <a href="#annex-g-ldpc">§ 4.1 Annex G: LDPC</a>.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> Applying LDPC error correction is optional for receiver implementations.<br> Senders must implement it. This document provides example routines in <a href="#annex-g-ldpc">§ 4.2 Annex G: LDPC</a>.</p>
    <h3 class="heading settled" data-level="1.5" id="global-sequence"><span class="secno">1.5. </span><span class="content">Global sequence</span><a class="self-link" href="#global-sequence"></a></h3>
    <p>The <dfn class="dfn-paneled" data-dfn-type="dfn" data-noexport id="global_seq">global_seq</dfn> is a <b>32-bit unsigned integer</b>, incremented by <span class="css">1</span> each time
 after a packet has been sent. Once at <span class="css">0xffffffff</span>, it MUST overflow back to <span class="css">0x0</span>.
@@ -3451,7 +3448,7 @@ the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addenda.</p>
       <p>Packet data contains a keyframe, able to be decoded standalone.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_s"><code>FRAME_TYPE_S</code><a class="self-link" href="#dom-enum-frametype-frame_type_s"></a></dfn> = <i>0x1</i>
      <dd data-md>
-      <p>Packet data contains a scalable/switch frame, able to be decoded standalone with acceptable degradation.</p>
+      <p>Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_p"><code>FRAME_TYPE_P</code><a class="self-link" href="#dom-enum-frametype-frame_type_p"></a></dfn> = <i>0x2</i>
      <dd data-md>
       <p>Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.</p>
@@ -3931,71 +3928,20 @@ correct subtitle presentation, or long duration still pictures like slideshows.<
        <td>Parity data for metadata.
     </table>
    </figure>
-   <p>The actual metadata must be stored using CBOR, as standardized in <a data-link-type="biblio" href="#biblio-rfc8949" title="Concise Binary Object Representation (CBOR)">[RFC8949]</a>.</p>
-   <h4 class="heading settled" data-level="2.11.1" id="enum-CommonMetadataKeys"><span class="secno">2.11.1. </span><span class="content">Common Metadata Keys</span><a class="self-link" href="#enum-CommonMetadataKeys"></a></h4>
-   <p>The following string keys should be used:</p>
-   <div>
-    <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-title"><code>title</code><a class="self-link" href="#dom-enum-commonmetadatakeys-title"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Full name of the stream.</p>
-     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-language"><code>language</code></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Language name subtag, as per <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
-     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-language_tag"><code>language_tag</code></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>More concise language information, including regional variants, as defined by <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.1">Tags for Identifying Languages § section-2.1</a>.</p>
-     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-date"><code>date</code></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Date of release. MUST be formatted according to <a data-link-type="biblio" href="#biblio-rfc3339" title="Date and Time on the Internet: Timestamps">[RFC3339]</a>.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-track"><code>track</code><a class="self-link" href="#dom-enum-commonmetadatakeys-track"></a></dfn> — <span class="css">unsigned integer</span>
-     <dd data-md>
-      <p>Track number, if the stream is part of an album.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-tracks"><code>tracks</code><a class="self-link" href="#dom-enum-commonmetadatakeys-tracks"></a></dfn> — <span class="css">unsigned integer</span>
-     <dd data-md>
-      <p>Total number of tracks, if stream is part of an album.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-artist"><code>artist</code><a class="self-link" href="#dom-enum-commonmetadatakeys-artist"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Full name of the performing artist on this track.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-album_artist"><code>album_artist</code><a class="self-link" href="#dom-enum-commonmetadatakeys-album_artist"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Full name of the album’s artist.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-album"><code>album</code><a class="self-link" href="#dom-enum-commonmetadatakeys-album"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Full name of the album.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-comment"><code>comment</code><a class="self-link" href="#dom-enum-commonmetadatakeys-comment"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Arbitrary release details.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-disc"><code>disc</code><a class="self-link" href="#dom-enum-commonmetadatakeys-disc"></a></dfn> — <span class="css">unsigned integer</span>
-     <dd data-md>
-      <p>Disc number, in case of multi-disc releases.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-discs"><code>discs</code><a class="self-link" href="#dom-enum-commonmetadatakeys-discs"></a></dfn> — <span class="css">unsigned integer</span>
-     <dd data-md>
-      <p>Total number of discs, in case of multi-disc releases.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-media_type"><code>media_type</code><a class="self-link" href="#dom-enum-commonmetadatakeys-media_type"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Original media type of the release.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-isrc"><code>isrc</code><a class="self-link" href="#dom-enum-commonmetadatakeys-isrc"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>International Standard Recording Code of the given track.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-mcn"><code>mcn</code><a class="self-link" href="#dom-enum-commonmetadatakeys-mcn"></a></dfn> — <span class="css">text string</span>
-     <dd data-md>
-      <p>Media Catalog Number for the album, if available.</p>
-    </dl>
-   </div>
-   <p>Implementations are free to insert any other tags.</p>
-   <p>Each name key can be encountered multiple times. Implementations must
+   <p>The actual metadata must be stored using CBOR, as standardized in <a data-link-type="biblio" href="#biblio-rfc8949" title="Concise Binary Object Representation (CBOR)">[RFC8949]</a>,
+as a <a class="property css" data-link-type="property">key</a> and <a class="property css" data-link-type="property">value</a> pair.</p>
+   <p>Implementations are free to use any <a class="property css" data-link-type="property">key</a> or <a class="property css" data-link-type="property">value</a> names. But, to maintain
+interoperability, implementations are <b>highly recommended</b> to follow the
+tags given by <a href="#annex-d-metadata-recommendations">§ 4.1 Annex D: Metadata recommendations</a>.</p>
+   <p>Each key may be present multiple times. Implementations must
 discard the old value associated with the key and update the metadata.</p>
    <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①⑤">stream_id</a> is equal to <span class="css">0xFFFF</span>, the metadata applies for the session as a whole.</p>
    <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①⑥">stream_id</a> is not <span class="css">0xFFFF</span>, the metadata is a separate set of values that just
 describe a single stream. Tags from other streams, or the general file
 metadata must not overwrite each other.</p>
-   <p>Metadata can be updated by sending new metadata packets with new values.</p>
-   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language">language</a></code> field must be formatted as a <b>subtag</b>, according to the <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
-   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language_tag" id="ref-for-dom-enum-commonmetadatakeys-language_tag">language_tag</a></code> field must be formatted as described in <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.1">Tags for Identifying Languages § section-2.1</a>.
-It provides more detailed information than the <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language①">language</a></code> field,
-including regional variation and script.</p>
-   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-date" id="ref-for-dom-enum-commonmetadatakeys-date①">date</a></code> field must be formatted according to <a data-link-type="biblio" href="#biblio-rfc3339" title="Date and Time on the Internet: Timestamps">[RFC3339]</a>.</p>
+   <p>Metadata can be updated by sending new metadata packets with new values. The entire
+metadata must be replaced with the contents of a new metadata packet, incremental updates
+are not possible.</p>
    <p>Metadata may be padded by appending zeroed bytes to the end. This must
 be accounted by the payload value. Implementations may do this to write
 metadata after starting and outputting a packet.</p>
@@ -4495,7 +4441,16 @@ stream after decoding.</p>
       <p>Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-ChromaSubsampling" data-dfn-type="enum-value" data-noexport id="dom-enum-chromasubsampling-chroma_422"><code>CHROMA_422</code></dfn> = <i>0x2</i>
      <dd data-md>
+      <p>Chromatic data is subsampled at half the horizontal resolution of the luminance data.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ChromaSubsampling" data-dfn-type="enum-value" data-noexport id="dom-enum-chromasubsampling-chroma_440"><code>CHROMA_440</code><a class="self-link" href="#dom-enum-chromasubsampling-chroma_440"></a></dfn> = <i>0x3</i>
+     <dd data-md>
       <p>Chromatic data is subsampled at half the vertical resolution of the luminance data.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ChromaSubsampling" data-dfn-type="enum-value" data-noexport id="dom-enum-chromasubsampling-chroma_411"><code>CHROMA_411</code><a class="self-link" href="#dom-enum-chromasubsampling-chroma_411"></a></dfn> = <i>0x4</i>
+     <dd data-md>
+      <p>Chromatic data is subsampled at a quarter of the horizontal resolution of the luminance data.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ChromaSubsampling" data-dfn-type="enum-value" data-noexport id="dom-enum-chromasubsampling-chroma_311"><code>CHROMA_311</code><a class="self-link" href="#dom-enum-chromasubsampling-chroma_311"></a></dfn> = <i>0x5</i>
+     <dd data-md>
+      <p>Luma data is subsampled at 3/4 of the output horizontal resolution, chromatic data is subsampled at 1/4 of the output horizontal resolution.</p>
     </dl>
    </div>
    <h4 class="heading settled" data-level="2.14.4" id="enum-Interlacing"><span class="secno">2.14.4. </span><span class="content">Interlacing Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-interlacing"><code>Interlacing</code></dfn>)</span><a class="self-link" href="#enum-Interlacing"></a></h4>
@@ -5806,6 +5761,8 @@ full-range <i>signed</i> if they’re integers.</p>
 that 24-bit samples are coded as 32-bits, with the data contained in the topmost 24 bits.</p>
    <h4 class="heading settled" data-level="3.1.25" id="raw-video-encapsulation"><span class="secno">3.1.25. </span><span class="content">Raw video encapsulation</span><a class="self-link" href="#raw-video-encapsulation"></a></h4>
    <p>For raw video encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id②⑦">codec_id</a> in <a href="#stream-registration-packets">§ 2.3 Stream registration</a> MUST be <span class="css">0x52415656</span> (<span class="css">RAVV</span>).</p>
+   <p class="note" role="note"><span class="marker">Note:</span> <a href="#video-information-packets">§ 2.14 Video information</a> packets must be present. The information in this structure
+is only sufficient to parse data, not enough to present it.</p>
    <p><a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packets are required, and
 must be laid out in the following way:</p>
    <figure class="table" id="table-RawVideoConfig">
@@ -5816,16 +5773,6 @@ must be laid out in the following way:</p>
        <th>Name
        <th>Value
        <th>Description
-      <tr>
-       <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_width">rv_width</dfn>
-       <td>
-       <td>The number of horizontal pixels the video stream contains.
-      <tr>
-       <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_height">rv_height</dfn>
-       <td>
-       <td>The number of vertical pixels the video stream contains.
       <tr>
        <td><code>u(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_components">rv_components</dfn>
@@ -5841,16 +5788,6 @@ must be laid out in the following way:</p>
        <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_bpp">rv_bpp</dfn>
        <td>
        <td>The number of bits for each <b>individual</b> component pixel.
-      <tr>
-       <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_hor_subsample">rv_hor_subsample<a class="self-link" href="#raw-video-encapsulation-rv_hor_subsample"></a></dfn>
-       <td>
-       <td>Horizontal subsampling factor. Indicates how many bits to shift from <a data-link-type="dfn" href="#raw-video-encapsulation-rv_width" id="ref-for-raw-video-encapsulation-rv_width">rv_width</a> to get the plane height. Must be 0 if video is RGB.
-      <tr>
-       <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_ver_subsample">rv_ver_subsample</dfn>
-       <td>
-       <td>Vertical subsampling factor. Indicates how many bits to shift from <a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height">rv_height</a> to get the plane height. Must be 0 if video is RGB.
       <tr>
        <td><code>u(32)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#raw-video-encapsulation" data-dfn-type="dfn" data-noexport id="raw-video-encapsulation-rv_flags">rv_flags</dfn>
@@ -5892,9 +5829,7 @@ must be laid out in the following way:</p>
 different orderings of pixels in an RGB video, e.g. <span class="css">RGB</span>'s <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset①">rc_offset</a>s will
 be <code>[0, 1, 2]</code>, whilst <span class="css">BGR</span>'s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data②②">packet_data</a> field MUST contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line. The number of horizontal lines being given by <a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height①">rv_height</a> for plane number <span class="css">0</span>, and <code><a data-link-type="dfn" href="#raw-video-encapsulation-rv_height" id="ref-for-raw-video-encapsulation-rv_height②">rv_height</a> >> <a data-link-type="dfn" href="#raw-video-encapsulation-rv_ver_subsample" id="ref-for-raw-video-encapsulation-rv_ver_subsample">rv_ver_subsample</a></code> for all other planes. The actual lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
-   <p class="note" role="note"><span class="marker">Note:</span> <a href="#video-information-packets">§ 2.14 Video information</a> packets must be present. The information in this structure
-is only sufficient to parse data, not enough to present it.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data②②">packet_data</a> field MUST contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line. The number of horizontal lines being given by <a data-link-type="dfn">height</a> for plane number <span class="css">0</span>, and <code><a data-link-type="dfn">rv_height</a> >> <a data-link-type="dfn">rv_ver_subsample</a></code> for all other planes. The actual lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
    <h4 class="heading settled" data-level="3.1.26" id="enum-RawVideoFlags"><span class="secno">3.1.26. </span><span class="content">Raw Video Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-rawvideoflags"><code>RawVideoFlags</code></dfn>)</span><a class="self-link" href="#enum-RawVideoFlags"></a></h4>
    <p>The <a data-link-type="dfn" href="#raw-video-encapsulation-rv_flags" id="ref-for-raw-video-encapsulation-rv_flags">rv_flags</a> field must be interpreted in the following way:</p>
    <div>
@@ -5916,7 +5851,7 @@ is only sufficient to parse data, not enough to present it.</p>
       <p>Video’s components are tightly packed, e.g. video is <i>bitpacked</i>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-RawVideoFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-rawvideoflags-raw_video_big_endian"><code>RAW_VIDEO_BIG_ENDIAN</code><a class="self-link" href="#dom-enum-rawvideoflags-raw_video_big_endian"></a></dfn> = 0x20
      <dd data-md>
-      <p>Video’s values are <b>big-endian</b>. If unset, values are <i>little-endian</i>.</p>
+      <p>Video’s values are <b>big-endian</b>. If unset, values are <i>little-endian</i>. Does not apply for <i>bitpacked</i> video.</p>
     </dl>
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> <a data-link-type="dfn" href="#raw-video-encapsulation-rv_flags" id="ref-for-raw-video-encapsulation-rv_flags①">rv_flags</a> must not signal both <code class="idl"><a data-link-type="idl" href="#dom-enum-rawvideoflags-raw_video_alpha" id="ref-for-dom-enum-rawvideoflags-raw_video_alpha">RAW_VIDEO_ALPHA</a></code> and <code class="idl"><a data-link-type="idl" href="#dom-enum-rawvideoflags-raw_video_alpha_premultiplied" id="ref-for-dom-enum-rawvideoflags-raw_video_alpha_premultiplied">RAW_VIDEO_ALPHA_PREMULTIPLIED</a></code>.
@@ -6274,7 +6209,63 @@ all packets necessary to initialize the stream MUST be resent.</p>
 buffering, and reordering.</p>
    <h2 class="heading settled" data-level="4" id="annex"><span class="secno">4. </span><span class="content">Annex</span><a class="self-link" href="#annex"></a></h2>
    <p>Additional data or recommendations for the AVTransport specification is listed here.</p>
-   <h3 class="heading settled" data-level="4.1" id="annex-g-ldpc"><span class="secno">4.1. </span><span class="content">Annex G: LDPC</span><a class="self-link" href="#annex-g-ldpc"></a></h3>
+   <h3 class="heading settled" data-level="4.1" id="annex-d-metadata-recommendations"><span class="secno">4.1. </span><span class="content">Annex D: Metadata recommendations</span><a class="self-link" href="#annex-d-metadata-recommendations"></a></h3>
+   <p>The following string 'key’s should be used, instead of any others:</p>
+   <div>
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-title"><code>title</code><a class="self-link" href="#dom-enum-commonmetadatakeys-title"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Full name of the stream.</p>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-language"><code>language</code></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Language name subtag, as per <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-language_tag"><code>language_tag</code></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>More concise language information, including regional variants, as defined by <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.1">Tags for Identifying Languages § section-2.1</a>.</p>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-date"><code>date</code></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Date of release. MUST be formatted according to <a data-link-type="biblio" href="#biblio-rfc3339" title="Date and Time on the Internet: Timestamps">[RFC3339]</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-track"><code>track</code><a class="self-link" href="#dom-enum-commonmetadatakeys-track"></a></dfn> — <span class="css">unsigned integer</span>
+     <dd data-md>
+      <p>Track number, if the stream is part of an album.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-tracks"><code>tracks</code><a class="self-link" href="#dom-enum-commonmetadatakeys-tracks"></a></dfn> — <span class="css">unsigned integer</span>
+     <dd data-md>
+      <p>Total number of tracks, if stream is part of an album.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-artist"><code>artist</code><a class="self-link" href="#dom-enum-commonmetadatakeys-artist"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Full name of the performing artist on this track.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-album_artist"><code>album_artist</code><a class="self-link" href="#dom-enum-commonmetadatakeys-album_artist"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Full name of the album’s artist.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-album"><code>album</code><a class="self-link" href="#dom-enum-commonmetadatakeys-album"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Full name of the album.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-comment"><code>comment</code><a class="self-link" href="#dom-enum-commonmetadatakeys-comment"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Arbitrary release details.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-disc"><code>disc</code><a class="self-link" href="#dom-enum-commonmetadatakeys-disc"></a></dfn> — <span class="css">unsigned integer</span>
+     <dd data-md>
+      <p>Disc number, in case of multi-disc releases.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-discs"><code>discs</code><a class="self-link" href="#dom-enum-commonmetadatakeys-discs"></a></dfn> — <span class="css">unsigned integer</span>
+     <dd data-md>
+      <p>Total number of discs, in case of multi-disc releases.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-media_type"><code>media_type</code><a class="self-link" href="#dom-enum-commonmetadatakeys-media_type"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Original media type of the release.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-isrc"><code>isrc</code><a class="self-link" href="#dom-enum-commonmetadatakeys-isrc"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>International Standard Recording Code of the given track.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-mcn"><code>mcn</code><a class="self-link" href="#dom-enum-commonmetadatakeys-mcn"></a></dfn> — <span class="css">text string</span>
+     <dd data-md>
+      <p>Media Catalog Number for the album, if available.</p>
+    </dl>
+   </div>
+   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language">language</a></code> field must be formatted as a <b>subtag</b>, according to the <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
+   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language_tag" id="ref-for-dom-enum-commonmetadatakeys-language_tag">language_tag</a></code> field must be formatted as described in <a href="https://www.rfc-editor.org/rfc/rfc5646#section-2.1">Tags for Identifying Languages § section-2.1</a>.
+It provides more detailed information than the <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language①">language</a></code> field,
+including regional variation and script.</p>
+   <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-date" id="ref-for-dom-enum-commonmetadatakeys-date①">date</a></code> field must be formatted according to <a data-link-type="biblio" href="#biblio-rfc3339" title="Date and Time on the Internet: Timestamps">[RFC3339]</a>.</p>
+   <h3 class="heading settled" data-level="4.2" id="annex-g-ldpc"><span class="secno">4.2. </span><span class="content">Annex G: LDPC</span><a class="self-link" href="#annex-g-ldpc"></a></h3>
    <p>This normative annex shall cover the usage and operation of <a data-link-type="biblio" href="#biblio-ldpc" title="Near Shannon Limit Performance of Low Density Parity Check Codes">[LDPC]</a> within AVTransport.</p>
    <p>The LDPC variant to be used is <b>irregular</b> (each row of each matrix has a non-constant
 amount of bits set to 1), systematic (parity data is separate from message data), with no subblocks.
@@ -6334,19 +6325,20 @@ to perform millions of <a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-
 with it.</p>
    <p>Implementations should consider using more advanced encoding algorithms, such
 as the <a data-link-type="biblio" href="#biblio-ldpc-encoding" title="Efficient encoding of low-density parity-check codes">Richardson-Urbanke method</a> to reduce the overhead further.</p>
-   <h4 class="heading settled" data-level="4.1.1" id="ldpc-h-matrices"><span class="secno">4.1.1. </span><span class="content">LDPC H-matrices</span><a class="self-link" href="#ldpc-h-matrices"></a></h4>
+   <h4 class="heading settled" data-level="4.2.1" id="ldpc-h-matrices"><span class="secno">4.2.1. </span><span class="content">LDPC H-matrices</span><a class="self-link" href="#ldpc-h-matrices"></a></h4>
    <p>The following parity-check matrices (<b>H</b>) below shall be used for encoding (via the pseudocode above)
 and decoding. Implementations are free to convert them to G matrices and use conventional encoding methods.
 The matrices are optimized for AWGN channels, but they will perform nearly as well in other circumstances.</p>
-   <p>As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:</p>
+   <p>As required by LDPC, matrices are of size <code>(n - k) ⨉ n</code>, thus:</p>
    <ul>
     <li data-md>
-     <p>64x288</p>
+     <p>64 ⨉ 288</p>
     <li data-md>
-     <p>768x2784</p>
+     <p>768 ⨉ 2784</p>
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> In standard mathematical notation, matrix sizes are specified as <b>height x width</b>,
-not <i>width x height</i>.</p>
+   <p class="note" role="note"><span class="marker">Note:</span> In standard mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
+not <i>width ⨉ height</i>. This specification uses standard mathematical nomenclature for this
+definition.</p>
    <p>The last (n - k) columns contain the identity matrix. Encode-only implementations may omit them
 in order to save space.</p>
    <p>As each value of a matrix is purely boolean, <b>64 bits in each column are represented as a
@@ -6354,14 +6346,14 @@ in order to save space.</p>
 the bit from the top row, and so on. In other words, <b><i>GF(2⁶)</i></b>.
 This is the format that the reference function above expects.</p>
    <p>The matrices are also listed as standard .alist files, directly usable for analysis and simulations.</p>
-   <h5 class="heading settled" data-level="4.1.1.1" id="ldpc_h_matrix_288_224_def"><span class="secno">4.1.1.1. </span><span class="content">ldpc_h_matrix_288_224</span><a class="self-link" href="#ldpc_h_matrix_288_224_def"></a></h5>
+   <h5 class="heading settled" data-level="4.2.1.1" id="ldpc_h_matrix_288_224_def"><span class="secno">4.2.1.1. </span><span class="content">ldpc_h_matrix_288_224</span><a class="self-link" href="#ldpc_h_matrix_288_224_def"></a></h5>
    <p class="note" role="note"><span class="marker">Note:</span> Spaceholder, working and optimal tables to be done</p>
    <p>alist code:</p>
 <pre># TODO
 </pre>
    <p>Generated data:</p>
 <pre class="highlight line-numbered" id="ldpc_h_matrix_288_224"><span class="line-no" data-line="1"></span><span class="line"><c- k>const</c-> <c- b>uint64_t</c-> <c- n>ldpc_h_matrix_288_224</c-><c- p>[</c-><c- mi>288</c-> <c- d>/* (64 rows/64) * 288 cols */</c-><c- p>]</c-> <c- o>=</c-> <c- p>{</c-></span><span class="line-no" data-line="2"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="3"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="4"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="5"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="6"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="7"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="8"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="9"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="10"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="11"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="12"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="13"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="14"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="15"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="16"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="17"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="18"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="19"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="20"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="21"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="22"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="23"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="24"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="25"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="26"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="27"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="28"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="29"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="30"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="31"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="32"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="33"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="34"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="35"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="36"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="37"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="38"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="39"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="40"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="41"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="42"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="43"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="44"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="45"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="46"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="47"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="48"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="49"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="50"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="51"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="52"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="53"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="54"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="55"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="56"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="57"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="58"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="59"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="60"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="61"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="62"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="63"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="64"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="65"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="66"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="67"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="68"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="69"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="70"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="71"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="72"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="73"></span><span class="line">    <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-> <c- mh>0x0000000000000000</c-><c- p>,</c-></span><span class="line-no" data-line="74"></span><span class="line"><c- p>};</c-></span></pre>
-   <h5 class="heading settled" data-level="4.1.1.2" id="ldpc_h_matrix_2784_2016_def"><span class="secno">4.1.1.2. </span><span class="content">ldpc_h_matrix_2784_2016</span><a class="self-link" href="#ldpc_h_matrix_2784_2016_def"></a></h5>
+   <h5 class="heading settled" data-level="4.2.1.2" id="ldpc_h_matrix_2784_2016_def"><span class="secno">4.2.1.2. </span><span class="content">ldpc_h_matrix_2784_2016</span><a class="self-link" href="#ldpc_h_matrix_2784_2016_def"></a></h5>
    <p class="note" role="note"><span class="marker">Note:</span> Spaceholder, working and optimal tables to be done</p>
    <p>alist code:</p>
 <pre># TODO
@@ -6518,9 +6510,9 @@ This is the format that the reference function above expects.</p>
   <h2 class="no-num no-ref heading settled" id="index"><span class="content">Index</span><a class="self-link" href="#index"></a></h2>
   <h3 class="no-num no-ref heading settled" id="index-defined-here"><span class="content">Terms defined by this specification</span><a class="self-link" href="#index-defined-here"></a></h3>
   <ul class="index">
-   <li><a href="#dom-enum-commonmetadatakeys-album">album</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-album_artist">album_artist</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-artist">artist</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-album">album</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-album_artist">album_artist</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-artist">artist</a><span>, in § 4.1</span>
    <li><a href="#atrac9-encapsulation-atrac9_avg_frame_size">atrac9_avg_frame_size</a><span>, in § 3.1.5</span>
    <li><a href="#atrac9-encapsulation-atrac9_block_align">atrac9_block_align</a><span>, in § 3.1.5</span>
    <li><a href="#atrac9-encapsulation-atrac9_block_config">atrac9_block_config</a><span>, in § 3.1.5</span>
@@ -6533,8 +6525,11 @@ This is the format that the reference function above expects.</p>
    <li><a href="#stereo-video-packets-baseline">baseline</a><span>, in § 2.16</span>
    <li><a href="#time-synchronization-packets-bit_depth">bit_depth</a><span>, in § 2.14</span>
    <li><a href="#session-control-data-packets-cease">cease</a><span>, in § 3.3.1</span>
+   <li><a href="#dom-enum-chromasubsampling-chroma_311">CHROMA_311</a><span>, in § 2.14.3</span>
+   <li><a href="#dom-enum-chromasubsampling-chroma_411">CHROMA_411</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_420">CHROMA_420</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_422">CHROMA_422</a><span>, in § 2.14.3</span>
+   <li><a href="#dom-enum-chromasubsampling-chroma_440">CHROMA_440</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_444">CHROMA_444</a><span>, in § 2.14.3</span>
    <li><a href="#time-synchronization-packets-chroma_pos">chroma_pos</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_bottom">CHROMA_POS_BOTTOM</a><span>, in § 2.14.5</span>
@@ -6589,7 +6584,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-colorrange-color_range_limited">COLOR_RANGE_LIMITED</a><span>, in § 2.14.2</span>
    <li><a href="#enumdef-colorspace">Colorspace</a><span>, in § 2.14.1</span>
    <li><a href="#time-synchronization-packets-colorspace">colorspace</a><span>, in § 2.14</span>
-   <li><a href="#dom-enum-commonmetadatakeys-comment">comment</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-comment">comment</a><span>, in § 4.1</span>
    <li><a href="#feedback-packets-corrupt_packets">corrupt_packets</a><span>, in § 3.3.3</span>
    <li><a href="#time-synchronization-packets-cropped_height">cropped_height</a><span>, in § 2.14</span>
    <li><a href="#time-synchronization-packets-cropped_width">cropped_width</a><span>, in § 2.14</span>
@@ -6616,11 +6611,11 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-datacompression-data_compression_none">DATA_COMPRESSION_NONE</a><span>, in § 2.6.2</span>
    <li><a href="#dom-enum-datacompression-data_compression_zstd">DATA_COMPRESSION_ZSTD</a><span>, in § 2.6.2</span>
    <li><a href="#stream-data-packet-data_length">data_length</a><span>, in § 2.6</span>
-   <li><a href="#dom-enum-commonmetadatakeys-date">date</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-date">date</a><span>, in § 4.1</span>
    <li><a href="#stream-registration-packets-derived_stream_id">derived_stream_id</a><span>, in § 2.3</span>
    <li><a href="#descriptor">descriptor</a><span>, in § 1.2</span>
-   <li><a href="#dom-enum-commonmetadatakeys-disc">disc</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-discs">discs</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-disc">disc</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-discs">discs</a><span>, in § 4.1</span>
    <li><a href="#feedback-packets-dropped_packets">dropped_packets</a><span>, in § 3.3.3</span>
    <li><a href="#dts">dts</a><span>, in § 1.7</span>
    <li><a href="#duration">duration</a><span>, in § 1.7</span>
@@ -6716,12 +6711,12 @@ This is the format that the reference function above expects.</p>
    <li><a href="#stream-registration-packets-init_packets">init_packets</a><span>, in § 2.3</span>
    <li><a href="#time-synchronization-packets-interlaced">interlaced</a><span>, in § 2.14</span>
    <li><a href="#enumdef-interlacing">Interlacing</a><span>, in § 2.14.4</span>
-   <li><a href="#dom-enum-commonmetadatakeys-isrc">isrc</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-language">language</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-language_tag">language_tag</a><span>, in § 2.11.1</span>
-   <li><a href="#ldpc-2784-2016">LDPC(2784, 2016)</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-isrc">isrc</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-language">language</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-language_tag">language_tag</a><span>, in § 4.1</span>
+   <li><a href="#ldpc-2784-2016">LDPC(2784, 2016)</a><span>, in § 4.2</span>
    <li><a href="#ldpc_2784_2016">ldpc_2784_2016</a><span>, in § 1.4</span>
-   <li><a href="#ldpc-288-224">LDPC(288, 224)</a><span>, in § 4.1</span>
+   <li><a href="#ldpc-288-224">LDPC(288, 224)</a><span>, in § 4.2</span>
    <li><a href="#ldpc_288_224">ldpc_288_224</a><span>, in § 1.4</span>
    <li><a href="#time-synchronization-packets-lut_compression">lut_compression</a><span>, in § 2.12</span>
    <li><a href="#time-synchronization-packets-lut_data">lut_data</a><span>, in § 2.12</span>
@@ -6754,8 +6749,8 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-matrix-matrix_unspec">MATRIX_UNSPEC</a><span>, in § 2.14.8</span>
    <li><a href="#dom-enum-matrix-matrix_ycgco">MATRIX_YCGCO</a><span>, in § 2.14.8</span>
    <li><a href="#time-synchronization-packets-max_luminance">max_luminance</a><span>, in § 2.14</span>
-   <li><a href="#dom-enum-commonmetadatakeys-mcn">mcn</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-media_type">media_type</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-mcn">mcn</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-media_type">media_type</a><span>, in § 4.1</span>
    <li><a href="#metadata-packets-metadata_descriptor">metadata_descriptor</a><span>, in § 2.11</span>
    <li><a href="#metadata-packets-metadata_parity_descriptor">metadata_parity_descriptor</a><span>, in § 2.11</span>
    <li><a href="#metadata-packets-metadata_segment_descriptor">metadata_segment_descriptor</a><span>, in § 2.11</span>
@@ -6831,12 +6826,8 @@ This is the format that the reference function above expects.</p>
    <li><a href="#raw-video-encapsulation-rv_bpp">rv_bpp</a><span>, in § 3.1.25</span>
    <li><a href="#raw-video-encapsulation-rv_components">rv_components</a><span>, in § 3.1.25</span>
    <li><a href="#raw-video-encapsulation-rv_flags">rv_flags</a><span>, in § 3.1.25</span>
-   <li><a href="#raw-video-encapsulation-rv_height">rv_height</a><span>, in § 3.1.25</span>
-   <li><a href="#raw-video-encapsulation-rv_hor_subsample">rv_hor_subsample</a><span>, in § 3.1.25</span>
    <li><a href="#raw-video-encapsulation-rv_planes">rv_planes</a><span>, in § 3.1.25</span>
    <li><a href="#raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a><span>, in § 3.1.25</span>
-   <li><a href="#raw-video-encapsulation-rv_ver_subsample">rv_ver_subsample</a><span>, in § 3.1.25</span>
-   <li><a href="#raw-video-encapsulation-rv_width">rv_width</a><span>, in § 3.1.25</span>
    <li><a href="#session-control-data-packets-seek">seek</a><span>, in § 3.3.1</span>
    <li><a href="#session-control-data-packets-seek_pts">seek_pts</a><span>, in § 3.3.1</span>
    <li><a href="#session-control-data-packets-seek_seq">seek_seq</a><span>, in § 3.3.1</span>
@@ -6911,11 +6902,11 @@ This is the format that the reference function above expects.</p>
    <li><a href="#generic-data-segment-packets-target_seq">target_seq</a><span>, in § 2.4.1</span>
    <li><a href="#stream-registration-packets-timebase">timebase</a><span>, in § 2.3</span>
    <li><a href="#time-synchronization-packets-time_sync_descriptor">time_sync_descriptor</a><span>, in § 2.2</span>
-   <li><a href="#dom-enum-commonmetadatakeys-title">title</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-title">title</a><span>, in § 4.1</span>
    <li><a href="#stream-duration-packets-total_duration">total_duration</a><span>, in § 2.18</span>
    <li><a href="#generic-data-packets-total_payload_length">total_payload_length</a><span>, in § 2.4</span>
-   <li><a href="#dom-enum-commonmetadatakeys-track">track</a><span>, in § 2.11.1</span>
-   <li><a href="#dom-enum-commonmetadatakeys-tracks">tracks</a><span>, in § 2.11.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-track">track</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-tracks">tracks</a><span>, in § 4.1</span>
    <li><a href="#enumdef-transfer">Transfer</a><span>, in § 2.14.7</span>
    <li><a href="#time-synchronization-packets-transfer">transfer</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-transfer-transfer_bt1361">TRANSFER_BT1361</a><span>, in § 2.14.7</span>
@@ -7395,7 +7386,7 @@ window.dfnpanelData['padding'] = {"dfnID": "padding", "url": "#padding", "dfnTex
 window.dfnpanelData['ldpc_288_224'] = {"dfnID": "ldpc_288_224", "url": "#ldpc_288_224", "dfnText": "ldpc_288_224", "refSections": [{"refs": [{"id": "ref-for-ldpc_288_224"}, {"id": "ref-for-ldpc_288_224\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461"}], "title": "2.2. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2462"}, {"id": "ref-for-ldpc_288_224\u2463"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2464"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2465"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2466"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2467"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2468"}, {"id": "ref-for-ldpc_288_224\u2460\u24ea"}, {"id": "ref-for-ldpc_288_224\u2460\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2461"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2462"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2464"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2465"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2466"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2460\u2467"}, {"id": "ref-for-ldpc_288_224\u2460\u2468"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u24ea"}], "title": "2.17. User data"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u2460"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-ldpc_288_224\u2461\u2461"}], "title": "2.19. End of stream"}], "external": false};
 window.dfnpanelData['ldpc_2784_2016'] = {"dfnID": "ldpc_2784_2016", "url": "#ldpc_2784_2016", "dfnText": "ldpc_2784_2016", "refSections": [{"refs": [{"id": "ref-for-ldpc_2784_2016"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2460"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2461"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc_2784_2016\u2462"}], "title": "2.14. Video information"}], "external": false};
 window.dfnpanelData['global_seq'] = {"dfnID": "global_seq", "url": "#global_seq", "dfnText": "global_seq", "refSections": [{"refs": [{"id": "ref-for-global_seq"}], "title": "1.5. Global sequence"}, {"refs": [{"id": "ref-for-global_seq\u2460"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-global_seq\u2461"}], "title": "2.2. Time synchronization"}, {"refs": [{"id": "ref-for-global_seq\u2462"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-global_seq\u2463"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-global_seq\u2464"}, {"id": "ref-for-global_seq\u2465"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-global_seq\u2466"}, {"id": "ref-for-global_seq\u2467"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-global_seq\u2468"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u24ea"}, {"id": "ref-for-global_seq\u2460\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2461"}], "title": "2.7.1. FEC Group Source"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2462"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2465"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2466"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2467"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-global_seq\u2460\u2468"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-global_seq\u2461\u24ea"}], "title": "2.17. User data"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2460"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2461"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2462"}], "title": "3.3.4. Resend"}, {"refs": [{"id": "ref-for-global_seq\u2461\u2463"}], "title": "3.3.5. Stream control"}], "external": false};
-window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2462"}, {"id": "ref-for-stream_id\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2464"}, {"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.11.1. Common Metadata Keys"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2463"}, {"id": "ref-for-stream_id\u2461\u2464"}, {"id": "ref-for-stream_id\u2461\u2465"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}], "title": "3.3.2. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.3.3. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2468"}, {"id": "ref-for-stream_id\u2462\u24ea"}], "title": "3.3.5. Stream control"}], "external": false};
+window.dfnpanelData['stream_id'] = {"dfnID": "stream_id", "url": "#stream_id", "dfnText": "stream_id", "refSections": [{"refs": [{"id": "ref-for-stream_id"}], "title": "1.6. Stream ID"}, {"refs": [{"id": "ref-for-stream_id\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-stream_id\u2461"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-stream_id\u2462"}, {"id": "ref-for-stream_id\u2463"}, {"id": "ref-for-stream_id\u2464"}, {"id": "ref-for-stream_id\u2465"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}, {"refs": [{"id": "ref-for-stream_id\u2466"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-stream_id\u2467"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-stream_id\u2468"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-stream_id\u2460\u24ea"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2461"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2462"}, {"id": "ref-for-stream_id\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2464"}, {"id": "ref-for-stream_id\u2460\u2465"}], "title": "2.11. Metadata"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2466"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2467"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-stream_id\u2460\u2468"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-stream_id\u2461\u24ea"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2460"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2461"}, {"id": "ref-for-stream_id\u2461\u2462"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2463"}, {"id": "ref-for-stream_id\u2461\u2464"}, {"id": "ref-for-stream_id\u2461\u2465"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2466"}], "title": "3.3.2. Error Code Enumeration (enum ErrorCode)"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2467"}], "title": "3.3.3. Feedback"}, {"refs": [{"id": "ref-for-stream_id\u2461\u2468"}, {"id": "ref-for-stream_id\u2462\u24ea"}], "title": "3.3.5. Stream control"}], "external": false};
 window.dfnpanelData['pts'] = {"dfnID": "pts", "url": "#pts", "dfnText": "pts", "refSections": [{"refs": [{"id": "ref-for-pts"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-pts\u2460"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-pts\u2461"}, {"id": "ref-for-pts\u2462"}, {"id": "ref-for-pts\u2463"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-pts\u2464"}, {"id": "ref-for-pts\u2465"}, {"id": "ref-for-pts\u2466"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-pts\u2467"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-pts\u2468"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-pts\u2460\u24ea"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-pts\u2460\u2460"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-pts\u2460\u2461"}, {"id": "ref-for-pts\u2460\u2462"}], "title": "2.10.1. Index entry (struct IndexEntry)"}, {"refs": [{"id": "ref-for-pts\u2460\u2463"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-pts\u2460\u2464"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-pts\u2460\u2465"}, {"id": "ref-for-pts\u2460\u2466"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-pts\u2460\u2467"}, {"id": "ref-for-pts\u2460\u2468"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-pts\u2461\u24ea"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2460"}, {"id": "ref-for-pts\u2461\u2461"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2462"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2463"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-pts\u2461\u2464"}], "title": "3.3.1. Session control data"}], "external": false};
 window.dfnpanelData['dts'] = {"dfnID": "dts", "url": "#dts", "dfnText": "dts", "refSections": [{"refs": [{"id": "ref-for-dts"}, {"id": "ref-for-dts\u2460"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-dts\u2461"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-dts\u2462"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2463"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-dts\u2464"}], "title": "3.1.16. ASS encapsulation"}], "external": false};
 window.dfnpanelData['duration'] = {"dfnID": "duration", "url": "#duration", "dfnText": "duration", "refSections": [{"refs": [{"id": "ref-for-duration"}], "title": "1.7. Timestamps"}, {"refs": [{"id": "ref-for-duration\u2460"}, {"id": "ref-for-duration\u2461"}, {"id": "ref-for-duration\u2462"}, {"id": "ref-for-duration\u2463"}, {"id": "ref-for-duration\u2464"}], "title": "1.8. Subtitle timestamps"}, {"refs": [{"id": "ref-for-duration\u2465"}], "title": "1.8.1. Jitter compensation"}, {"refs": [{"id": "ref-for-duration\u2466"}, {"id": "ref-for-duration\u2467"}], "title": "1.8.2. Negative times"}, {"refs": [{"id": "ref-for-duration\u2468"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-duration\u2460\u24ea"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-duration\u2460\u2460"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-duration\u2460\u2461"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
@@ -7450,9 +7441,6 @@ window.dfnpanelData['index-packets-prev_idx'] = {"dfnID": "index-packets-prev_id
 window.dfnpanelData['index-packets-next_idx'] = {"dfnID": "index-packets-next_idx", "url": "#index-packets-next_idx", "dfnText": "next_idx", "refSections": [{"refs": [{"id": "ref-for-index-packets-next_idx"}, {"id": "ref-for-index-packets-next_idx\u2460"}], "title": "2.10. Index"}], "external": false};
 window.dfnpanelData['index-packets-nb_indices'] = {"dfnID": "index-packets-nb_indices", "url": "#index-packets-nb_indices", "dfnText": "nb_indices", "refSections": [{"refs": [{"id": "ref-for-index-packets-nb_indices"}], "title": "2.10. Index"}], "external": false};
 window.dfnpanelData['index-entry-struct-pkt_offset'] = {"dfnID": "index-entry-struct-pkt_offset", "url": "#index-entry-struct-pkt_offset", "dfnText": "pkt_offset", "refSections": [{"refs": [{"id": "ref-for-index-entry-struct-pkt_offset"}], "title": "2.10. Index"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-language'] = {"dfnID": "dom-enum-commonmetadatakeys-language", "url": "#dom-enum-commonmetadatakeys-language", "dfnText": "language", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language"}, {"id": "ref-for-dom-enum-commonmetadatakeys-language\u2460"}], "title": "2.11.1. Common Metadata Keys"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-language_tag'] = {"dfnID": "dom-enum-commonmetadatakeys-language_tag", "url": "#dom-enum-commonmetadatakeys-language_tag", "dfnText": "language_tag", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language_tag"}], "title": "2.11.1. Common Metadata Keys"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-date'] = {"dfnID": "dom-enum-commonmetadatakeys-date", "url": "#dom-enum-commonmetadatakeys-date", "dfnText": "date", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date\u2460"}], "title": "2.11.1. Common Metadata Keys"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_type'] = {"dfnID": "time-synchronization-packets-lut_type", "url": "#time-synchronization-packets-lut_type", "dfnText": "lut_type", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_type"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_major_ver'] = {"dfnID": "time-synchronization-packets-lut_major_ver", "url": "#time-synchronization-packets-lut_major_ver", "dfnText": "lut_major_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_major_ver"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_minor_ver'] = {"dfnID": "time-synchronization-packets-lut_minor_ver", "url": "#time-synchronization-packets-lut_minor_ver", "dfnText": "lut_minor_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_minor_ver"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
@@ -7514,12 +7502,9 @@ window.dfnpanelData['flac-encapsulation-flac_min_framesize'] = {"dfnID": "flac-e
 window.dfnpanelData['webvtt-encapsulation-cue_components_len'] = {"dfnID": "webvtt-encapsulation-cue_components_len", "url": "#webvtt-encapsulation-cue_components_len", "dfnText": "cue_components_len", "refSections": [{"refs": [{"id": "ref-for-webvtt-encapsulation-cue_components_len"}, {"id": "ref-for-webvtt-encapsulation-cue_components_len\u2460"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['webvtt-encapsulation-cue_comenents'] = {"dfnID": "webvtt-encapsulation-cue_comenents", "url": "#webvtt-encapsulation-cue_comenents", "dfnText": "cue_comenents", "refSections": [{"refs": [{"id": "ref-for-webvtt-encapsulation-cue_comenents"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['raw-audio-encapsulation-ra_bits'] = {"dfnID": "raw-audio-encapsulation-ra_bits", "url": "#raw-audio-encapsulation-ra_bits", "dfnText": "ra_bits", "refSections": [{"refs": [{"id": "ref-for-raw-audio-encapsulation-ra_bits"}], "title": "3.1.24. Raw audio encapsulation"}], "external": false};
-window.dfnpanelData['raw-video-encapsulation-rv_width'] = {"dfnID": "raw-video-encapsulation-rv_width", "url": "#raw-video-encapsulation-rv_width", "dfnText": "rv_width", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_width"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
-window.dfnpanelData['raw-video-encapsulation-rv_height'] = {"dfnID": "raw-video-encapsulation-rv_height", "url": "#raw-video-encapsulation-rv_height", "dfnText": "rv_height", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_height"}, {"id": "ref-for-raw-video-encapsulation-rv_height\u2460"}, {"id": "ref-for-raw-video-encapsulation-rv_height\u2461"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_components'] = {"dfnID": "raw-video-encapsulation-rv_components", "url": "#raw-video-encapsulation-rv_components", "dfnText": "rv_components", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_components"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2460"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2461"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2462"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2463"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_planes'] = {"dfnID": "raw-video-encapsulation-rv_planes", "url": "#raw-video-encapsulation-rv_planes", "dfnText": "rv_planes", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_planes"}, {"id": "ref-for-raw-video-encapsulation-rv_planes\u2460"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_bpp'] = {"dfnID": "raw-video-encapsulation-rv_bpp", "url": "#raw-video-encapsulation-rv_bpp", "dfnText": "rv_bpp", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_bpp"}], "title": "3.1.26. Raw Video Flags Enumeration (enum RawVideoFlags)"}], "external": false};
-window.dfnpanelData['raw-video-encapsulation-rv_ver_subsample'] = {"dfnID": "raw-video-encapsulation-rv_ver_subsample", "url": "#raw-video-encapsulation-rv_ver_subsample", "dfnText": "rv_ver_subsample", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_ver_subsample"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_flags'] = {"dfnID": "raw-video-encapsulation-rv_flags", "url": "#raw-video-encapsulation-rv_flags", "dfnText": "rv_flags", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_flags"}, {"id": "ref-for-raw-video-encapsulation-rv_flags\u2460"}], "title": "3.1.26. Raw Video Flags Enumeration (enum RawVideoFlags)"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_plane_stride'] = {"dfnID": "raw-video-encapsulation-rv_plane_stride", "url": "#raw-video-encapsulation-rv_plane_stride", "dfnText": "rv_plane_stride", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_plane_stride"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rc_stride'] = {"dfnID": "raw-video-encapsulation-rc_stride", "url": "#raw-video-encapsulation-rc_stride", "dfnText": "rc_stride", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rc_stride"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
@@ -7534,7 +7519,10 @@ window.dfnpanelData['session-control-data-packets-seek'] = {"dfnID": "session-co
 window.dfnpanelData['session-control-data-packets-seek_pts'] = {"dfnID": "session-control-data-packets-seek_pts", "url": "#session-control-data-packets-seek_pts", "dfnText": "seek_pts", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_pts"}], "title": "3.3.1. Session control data"}], "external": false};
 window.dfnpanelData['session-control-data-packets-seek_seq'] = {"dfnID": "session-control-data-packets-seek_seq", "url": "#session-control-data-packets-seek_seq", "dfnText": "seek_seq", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_seq"}], "title": "3.3.1. Session control data"}], "external": false};
 window.dfnpanelData['enumdef-errorcode'] = {"dfnID": "enumdef-errorcode", "url": "#enumdef-errorcode", "dfnText": "ErrorCode", "refSections": [{"refs": [{"id": "ref-for-enumdef-errorcode"}], "title": "3.3.1. Session control data"}], "external": false};
-window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.2. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}, {"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2460"}], "title": "2.17. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2461"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2462"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2463"}], "title": "4.1. Annex G: LDPC"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-language'] = {"dfnID": "dom-enum-commonmetadatakeys-language", "url": "#dom-enum-commonmetadatakeys-language", "dfnText": "language", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language"}, {"id": "ref-for-dom-enum-commonmetadatakeys-language\u2460"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-language_tag'] = {"dfnID": "dom-enum-commonmetadatakeys-language_tag", "url": "#dom-enum-commonmetadatakeys-language_tag", "dfnText": "language_tag", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language_tag"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-date'] = {"dfnID": "dom-enum-commonmetadatakeys-date", "url": "#dom-enum-commonmetadatakeys-date", "dfnText": "date", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date\u2460"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
+window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.2. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}, {"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2460"}], "title": "2.17. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2461"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2462"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2463"}], "title": "4.2. Annex G: LDPC"}], "external": false};
 window.dfnpanelData['ldpc-2784-2016'] = {"dfnID": "ldpc-2784-2016", "url": "#ldpc-2784-2016", "dfnText": "LDPC(2784, 2016)", "refSections": [{"refs": [{"id": "ref-for-ldpc-2784-2016"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2462"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2463"}], "title": "2.14. Video information"}], "external": false};
 </script>
 <script>/* Boilerplate: script-dom-helper */
