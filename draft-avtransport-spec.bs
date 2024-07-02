@@ -44,6 +44,18 @@ spec:av1-isobmff; type:value; for:ISOBMFF Brand; text:av01
         "date": "March 2022",
         "href": "https://www.iso.org/standard/77977.html"
     },
+    "ISO14496-15": {
+        "title": "Information technology — Coding of audio-visual objectsPart 15: Carriage of network abstraction layer (NAL) unit structured video in the ISO base media file format",
+        "published-by": "International Standards Organization",
+        "date": "October 2022",
+        "href": "https://www.iso.org/standard/83336.html"
+    },
+    "ISO23008": {
+        "title": "Information technology — High efficiency coding and media delivery in heterogeneous environments",
+        "published-by": "International Standards Organization",
+        "date": "January 2023",
+        "href": "https://www.iso.org/standard/76386.html"
+    },
     "BT2100": {
         "title": "BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange",
         "published-by": "International Telecommunication Union",
@@ -3859,7 +3871,7 @@ The [=packet_data=] must contain the following elements, in order:
 
 A [[#stream-configuration-packets]] packet may be sent, to speed up stream initialization.
 If they are present, they must contain an ''AVCDecoderConfigurationRecord'' structure,
-as defined in ''ISO/IEC 14496-15''.
+as defined in [[ISO14496-15]].
 
 In-band parameters are always required to be present, even if an ''AVCDecoderConfigurationRecord''
 structure is present in a [[#stream-configuration-packets]] packet.
@@ -3884,7 +3896,7 @@ The [=packet_data=] must contain the following elements, in order:
 
 A [[#stream-configuration-packets]] packet may be sent, to
 speed up stream initialization. If they are present, they must contain an
-''HEVCDecoderConfigurationRecord'' structure, as defined in ''ISO/IEC 23008''.
+''HEVCDecoderConfigurationRecord'' structure, as defined in [[ISO23008]].
 
 
 ### Dirac/VC-2 encapsulation ### {#dirac-vc-2-encapsulation}
