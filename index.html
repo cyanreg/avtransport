@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="a6df3dcdca260ca4ee968757d02073e417f75d55" name="document-revision">
+  <meta content="a45bd4c8031d5a6bff00f9a11dc328a6b4e99701" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2352,7 +2352,7 @@ Parts of this work may be from another specification document.  If so, those par
     <li>
      <a href="#annex"><span class="secno">4</span> <span class="content">Annex</span></a>
      <ol class="toc">
-      <li><a href="#annex-d-metadata-recommendations"><span class="secno">4.1</span> <span class="content">Annex D: Metadata recommendations</span></a>
+      <li><a href="#annex-d-metadata-tags"><span class="secno">4.1</span> <span class="content">Annex D: Metadata tags</span></a>
       <li>
        <a href="#annex-g-ldpc"><span class="secno">4.2</span> <span class="content">Annex G: LDPC</span></a>
        <ol class="toc">
@@ -3931,8 +3931,9 @@ correct subtitle presentation, or long duration still pictures like slideshows.<
    <p>The actual metadata must be stored using CBOR, as standardized in <a data-link-type="biblio" href="#biblio-rfc8949" title="Concise Binary Object Representation (CBOR)">[RFC8949]</a>,
 as a <a class="property css" data-link-type="property">key</a> and <a class="property css" data-link-type="property">value</a> pair.</p>
    <p>Implementations are free to use any <a class="property css" data-link-type="property">key</a> or <a class="property css" data-link-type="property">value</a> names. But, to maintain
-interoperability, implementations are <b>highly recommended</b> to follow the
-tags given by <a href="#annex-d-metadata-recommendations">§ 4.1 Annex D: Metadata recommendations</a>.</p>
+interoperability, implementations are <b>required</b> to either follow the
+tags given by <a href="#annex-d-metadata-tags">§ 4.1 Annex D: Metadata tags</a>, or use custom tags if the format
+of the values differ.</p>
    <p>Each key may be present multiple times. Implementations must
 discard the old value associated with the key and update the metadata.</p>
    <p>If <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①⑤">stream_id</a> is equal to <span class="css">0xFFFF</span>, the metadata applies for the session as a whole.</p>
@@ -6209,7 +6210,7 @@ all packets necessary to initialize the stream MUST be resent.</p>
 buffering, and reordering.</p>
    <h2 class="heading settled" data-level="4" id="annex"><span class="secno">4. </span><span class="content">Annex</span><a class="self-link" href="#annex"></a></h2>
    <p>Additional data or recommendations for the AVTransport specification is listed here.</p>
-   <h3 class="heading settled" data-level="4.1" id="annex-d-metadata-recommendations"><span class="secno">4.1. </span><span class="content">Annex D: Metadata recommendations</span><a class="self-link" href="#annex-d-metadata-recommendations"></a></h3>
+   <h3 class="heading settled" data-level="4.1" id="annex-d-metadata-tags"><span class="secno">4.1. </span><span class="content">Annex D: Metadata tags</span><a class="self-link" href="#annex-d-metadata-tags"></a></h3>
    <p>The following string 'key’s should be used, instead of any others:</p>
    <div>
     <dl>
@@ -6265,6 +6266,8 @@ buffering, and reordering.</p>
 It provides more detailed information than the <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language①">language</a></code> field,
 including regional variation and script.</p>
    <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-date" id="ref-for-dom-enum-commonmetadatakeys-date①">date</a></code> field must be formatted according to <a data-link-type="biblio" href="#biblio-rfc3339" title="Date and Time on the Internet: Timestamps">[RFC3339]</a>.</p>
+   <p>If the value type differs, or is formatted in a different way outside of these specifications,
+then the metadata field is considered invalid.</p>
    <h3 class="heading settled" data-level="4.2" id="annex-g-ldpc"><span class="secno">4.2. </span><span class="content">Annex G: LDPC</span><a class="self-link" href="#annex-g-ldpc"></a></h3>
    <p>This normative annex shall cover the usage and operation of <a data-link-type="biblio" href="#biblio-ldpc" title="Near Shannon Limit Performance of Low Density Parity Check Codes">[LDPC]</a> within AVTransport.</p>
    <p>The LDPC variant to be used is <b>irregular</b> (each row of each matrix has a non-constant
@@ -7519,9 +7522,9 @@ window.dfnpanelData['session-control-data-packets-seek'] = {"dfnID": "session-co
 window.dfnpanelData['session-control-data-packets-seek_pts'] = {"dfnID": "session-control-data-packets-seek_pts", "url": "#session-control-data-packets-seek_pts", "dfnText": "seek_pts", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_pts"}], "title": "3.3.1. Session control data"}], "external": false};
 window.dfnpanelData['session-control-data-packets-seek_seq'] = {"dfnID": "session-control-data-packets-seek_seq", "url": "#session-control-data-packets-seek_seq", "dfnText": "seek_seq", "refSections": [{"refs": [{"id": "ref-for-session-control-data-packets-seek_seq"}], "title": "3.3.1. Session control data"}], "external": false};
 window.dfnpanelData['enumdef-errorcode'] = {"dfnID": "enumdef-errorcode", "url": "#enumdef-errorcode", "dfnText": "ErrorCode", "refSections": [{"refs": [{"id": "ref-for-enumdef-errorcode"}], "title": "3.3.1. Session control data"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-language'] = {"dfnID": "dom-enum-commonmetadatakeys-language", "url": "#dom-enum-commonmetadatakeys-language", "dfnText": "language", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language"}, {"id": "ref-for-dom-enum-commonmetadatakeys-language\u2460"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-language_tag'] = {"dfnID": "dom-enum-commonmetadatakeys-language_tag", "url": "#dom-enum-commonmetadatakeys-language_tag", "dfnText": "language_tag", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language_tag"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
-window.dfnpanelData['dom-enum-commonmetadatakeys-date'] = {"dfnID": "dom-enum-commonmetadatakeys-date", "url": "#dom-enum-commonmetadatakeys-date", "dfnText": "date", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date\u2460"}], "title": "4.1. Annex D: Metadata recommendations"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-language'] = {"dfnID": "dom-enum-commonmetadatakeys-language", "url": "#dom-enum-commonmetadatakeys-language", "dfnText": "language", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language"}, {"id": "ref-for-dom-enum-commonmetadatakeys-language\u2460"}], "title": "4.1. Annex D: Metadata tags"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-language_tag'] = {"dfnID": "dom-enum-commonmetadatakeys-language_tag", "url": "#dom-enum-commonmetadatakeys-language_tag", "dfnText": "language_tag", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-language_tag"}], "title": "4.1. Annex D: Metadata tags"}], "external": false};
+window.dfnpanelData['dom-enum-commonmetadatakeys-date'] = {"dfnID": "dom-enum-commonmetadatakeys-date", "url": "#dom-enum-commonmetadatakeys-date", "dfnText": "date", "refSections": [{"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date"}], "title": "1.8.3. Epoch definition"}, {"refs": [{"id": "ref-for-dom-enum-commonmetadatakeys-date\u2460"}], "title": "4.1. Annex D: Metadata tags"}], "external": false};
 window.dfnpanelData['ldpc-288-224'] = {"dfnID": "ldpc-288-224", "url": "#ldpc-288-224", "dfnText": "LDPC(288, 224)", "refSections": [{"refs": [{"id": "ref-for-ldpc-288-224"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460"}, {"id": "ref-for-ldpc-288-224\u2461"}], "title": "2.1. Session start"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2462"}], "title": "2.2. Time synchronization"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2463"}, {"id": "ref-for-ldpc-288-224\u2464"}], "title": "2.3. Stream registration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2465"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2466"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2467"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2468"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u24ea"}, {"id": "ref-for-ldpc-288-224\u2460\u2460"}, {"id": "ref-for-ldpc-288-224\u2460\u2461"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2462"}], "title": "2.9. Hash packets"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2463"}], "title": "2.10. Index"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2464"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2465"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2466"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2467"}], "title": "2.15. Video orientation"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2460\u2468"}, {"id": "ref-for-ldpc-288-224\u2461\u24ea"}], "title": "2.16. Stereo video"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2460"}], "title": "2.17. User data"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2461"}], "title": "2.18. Stream duration"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2462"}], "title": "2.19. End of stream"}, {"refs": [{"id": "ref-for-ldpc-288-224\u2461\u2463"}], "title": "4.2. Annex G: LDPC"}], "external": false};
 window.dfnpanelData['ldpc-2784-2016'] = {"dfnID": "ldpc-2784-2016", "url": "#ldpc-2784-2016", "dfnText": "LDPC(2784, 2016)", "refSections": [{"refs": [{"id": "ref-for-ldpc-2784-2016"}], "title": "1.4. LDPC"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2460"}], "title": "2.7. FEC grouping"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2461"}], "title": "2.12. LUT/ICC profile"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2462"}], "title": "2.13. Font data"}, {"refs": [{"id": "ref-for-ldpc-2784-2016\u2463"}], "title": "2.14. Video information"}], "external": false};
 </script>
