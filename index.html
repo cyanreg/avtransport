@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="a45bd4c8031d5a6bff00f9a11dc328a6b4e99701" name="document-revision">
+  <meta content="c0b1e4864c3b5169a8a06c417f79985073ae35e6" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -6259,6 +6259,18 @@ buffering, and reordering.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-mcn"><code>mcn</code><a class="self-link" href="#dom-enum-commonmetadatakeys-mcn"></a></dfn> — <span class="css">text string</span>
      <dd data-md>
       <p>Media Catalog Number for the album, if available.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_gain"><code>REPLAYGAIN_TRACK_GAIN</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_gain"></a></dfn> — <span class="css">floating point number</span>
+     <dd data-md>
+      <p>ReplayGain 2.0 track gain, in <a class="property css" data-link-type="property">dB</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_range"><code>REPLAYGAIN_TRACK_RANGE</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_range"></a></dfn> — <span class="css">floating point number</span>
+     <dd data-md>
+      <p>ReplayGain 2.0 track range, in <a class="property css" data-link-type="property">dB</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_peak"><code>REPLAYGAIN_TRACK_PEAK</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_peak"></a></dfn> — <span class="css">floating point number</span>
+     <dd data-md>
+      <p>ReplayGain 2.0 track peak, in <a class="property css" data-link-type="property">dB</a>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_reference_loudness"><code>REPLAYGAIN_REFERENCE_LOUDNESS</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_reference_loudness"></a></dfn> — <span class="css">floating point number</span>
+     <dd data-md>
+      <p>ReplayGain 2.0 reference loudness, in <a class="property css" data-link-type="property">LUFS</a>.</p>
     </dl>
    </div>
    <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language">language</a></code> field must be formatted as a <b>subtag</b>, according to the <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
@@ -6824,6 +6836,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#raw-video-encapsulation-rc_stride">rc_stride</a><span>, in § 3.1.25</span>
    <li><a href="#video-orientation-packets-reflection">reflection</a><span>, in § 2.15</span>
    <li><a href="#stream-registration-packets-related_stream_id">related_stream_id</a><span>, in § 2.3</span>
+   <li><a href="#dom-enum-commonmetadatakeys-replaygain_reference_loudness">REPLAYGAIN_REFERENCE_LOUDNESS</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-replaygain_track_gain">REPLAYGAIN_TRACK_GAIN</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-replaygain_track_peak">REPLAYGAIN_TRACK_PEAK</a><span>, in § 4.1</span>
+   <li><a href="#dom-enum-commonmetadatakeys-replaygain_track_range">REPLAYGAIN_TRACK_RANGE</a><span>, in § 4.1</span>
    <li><a href="#session-control-data-packets-resend_init">resend_init</a><span>, in § 3.3.1</span>
    <li><a href="#video-orientation-packets-rotation">rotation</a><span>, in § 2.15</span>
    <li><a href="#raw-video-encapsulation-rv_bpp">rv_bpp</a><span>, in § 3.1.25</span>
