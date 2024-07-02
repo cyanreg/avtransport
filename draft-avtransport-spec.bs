@@ -2022,8 +2022,9 @@ The actual metadata must be stored using CBOR, as standardized in [[RFC8949]],
 as a 'key' and 'value' pair.
 
 Implementations are free to use any 'key' or 'value' names. But, to maintain
-interoperability, implementations are <b>highly recommended</b> to follow the
-tags given by [[#annex-d-metadata-recommendations]].
+interoperability, implementations are <b>required</b> to either follow the
+tags given by [[#annex-d-metadata-tags]], or use custom tags if the format
+of the values differ.
 
 Each key may be present multiple times. Implementations must
 discard the old value associated with the key and update the metadata.
@@ -4856,7 +4857,7 @@ buffering, and reordering.
 
 Additional data or recommendations for the AVTransport specification is listed here.
 
-## Annex D: Metadata recommendations ## {#annex-d-metadata-recommendations}
+## Annex D: Metadata tags ## {#annex-d-metadata-tags}
 
 The following string 'key's should be used, instead of any others:
 
@@ -4900,6 +4901,9 @@ It provides more detailed information than the {{language}} field,
 including regional variation and script.
 
 The {{date}} field must be formatted according to [[RFC3339]].
+
+If the value type differs, or is formatted in a different way outside of these specifications,
+then the metadata field is considered invalid.
 
 
 ## Annex G: LDPC ## {#annex-g-ldpc}
