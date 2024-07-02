@@ -7,11 +7,11 @@ URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
 Date: now
-Boilerplate: issues-index no
 Status: LD
 Group: avt
-Abstract: AVTransport is a new mechanism for multimedia transmission and storage. It covers use cases from sub-frame latency streaming of video and audio over raw wireless links, to long-term archival. Its key design goals are robustness and reliability, and it achieves this through extensive error correction, and state-minimal design. Learning from the limitations of other similar protocols and containers, it has built-in future-proofing and allows extensibility.
+Boilerplate: issues-index no
 Markup Shorthands: http no, markup no
+Abstract: AVTransport is a new mechanism for multimedia transmission and storage. It covers use cases from sub-frame latency streaming of video and audio over raw wireless links, to long-term archival. Its key design goals are robustness and reliability, and it achieves this through extensive error correction, and state-minimal design. Learning from the limitations of other similar protocols and containers, it has built-in future-proofing and allows extensibility.
 </pre>
 
 <pre class='biblio'>
@@ -101,15 +101,16 @@ Markup Shorthands: http no, markup no
 
 # AVTransport protocol # {#avtransport-protocol}
 
-The AVTransport protocol is a new standardized mechanism for multimedia transport and
-storage. This protocol aims to be a simple, reliable and robust low-overhead method
-that borrows design decisions from other protocols and aims to be generic,
-rather than specialized for certain use-cases. With minimal changes, it can be
-processed as a stream or saved to a file as an intermediate step or for post-processing.
+The AVTransport protocol is a standardized mechanism for multimedia transport and
+storage. This protocol aims to be robust, reliable and low-overhead. Rather than
+being specialized, the protocol is scalable, from archival to chip to chip interconnect,
+Ethernet links to satellite links, post-production intermediates to final cinematic
+deliverables.
 
-Rather than just being a new container and protocol filling a niche, this also attempts
-to solve issues with current other containers, like timestamp rounding, lack of DTS,
-inflexible metadata, inconvenient index positions, lack of context, inextensible formats,
+<!-- Whoever brings up xkcd 927 𝘄𝗶𝗹𝗹 𝗯𝗲 𝗲𝘅𝗲𝗰𝘂𝘁𝗲𝗱 -->
+
+The protocol addresses shortcomings of other formats, such as timestamp rounding, lack of DTS,
+fragile parsing, inflexible metadata, inconvenient index positions and layout, inextensible formats,
 and rigid overseeing organizations.
 
 
@@ -320,15 +321,18 @@ incremented for each element in a structure.
 ## LDPC ## {#ldpc}
 
 To improve reliability, and make the protocol general-purpose, a small amount of
-parity data is added to each header, in the form of [[LDPC]] codes. These codes highly
-improve reliability when transmitting over [[#udp-lite-streaming]].
+parity data is added to each header, in the form of [[LDPC]].
 
-They also help in the event of a file desynchronization or corruption, by being able
-to quickly verify whether an arbitrary byte has a valid packet, thus avoiding presentation
-of damaged or invalid stream data.
+Their main purpose is to correct bitflips which may occur during transmission or
+storage of packets.<br/>
+In situations where bitflips are less likely, they eliminate corrupt packets
+which may break demuxer state.<br/>
+Being able to quickly determine whether any 36 or more byte buffer contains a valid packet
+makes AVTransport streams <i>self-synchronizing</i>.
 
-Finally, for long-term archival on tape, or when transmitting over a noisy [[#serial-transmission]] or
-radio connection, they help correct bitflips.
+This makes AVTransport suitable for not only switched networks, but also raw
+radio frequency links, optical links, or plain serial links.
+Details for each are available in the [[#streaming]] section.
 
 Their theory of operation and specifications are detailed in [[#annex-g-ldpc]].
 
@@ -1419,7 +1423,7 @@ the [[#codec-encapsulation]] addenda.
     : <dfn noexport>FRAME_TYPE_KEY</dfn> = <i>0x0</i>
       :: Packet data contains a keyframe, able to be decoded standalone.
     : <dfn noexport>FRAME_TYPE_S</dfn> = <i>0x1</i>
-      :: Packet data contains a scalable/switch frame, able to be decoded standalone with acceptable degradation.
+      :: Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.
     : <dfn noexport>FRAME_TYPE_P</dfn> = <i>0x2</i>
       :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
     : <dfn noexport>FRAME_TYPE_C1</dfn> = <i>0x3</i>
@@ -2014,48 +2018,14 @@ The metadata packets can be sent for the overall session, or for a specific
     </table>
 </figure>
 
-The actual metadata must be stored using CBOR, as standardized in [[RFC8949]].
+The actual metadata must be stored using CBOR, as standardized in [[RFC8949]],
+as a 'key' and 'value' pair.
 
-### Common Metadata Keys ### {#enum-CommonMetadataKeys}
+Implementations are free to use any 'key' or 'value' names. But, to maintain
+interoperability, implementations are <b>highly recommended</b> to follow the
+tags given by [[#annex-d-metadata-recommendations]].
 
-The following string keys should be used:
-
-<div dfn-type="enum-value" dfn-for="#enum-CommonMetadataKeys">
-    : <dfn noexport>title</dfn> — ''text string''
-      :: Full name of the stream.
-    : <dfn noexport>language</dfn> — ''text string''
-      :: Language name subtag, as per [[bcp47]].
-    : <dfn noexport>language_tag</dfn> — ''text string''
-      :: More concise language information, including regional variants, as defined by [[RFC5646#section-2.1]].
-    : <dfn noexport>date</dfn> — ''text string''
-      :: Date of release. MUST be formatted according to [[RFC3339]].
-    : <dfn noexport>track</dfn> — ''unsigned integer''
-      :: Track number, if the stream is part of an album.
-    : <dfn noexport>tracks</dfn> — ''unsigned integer''
-      :: Total number of tracks, if stream is part of an album.
-    : <dfn noexport>artist</dfn> — ''text string''
-      :: Full name of the performing artist on this track.
-    : <dfn noexport>album_artist</dfn> — ''text string''
-      :: Full name of the album's artist.
-    : <dfn noexport>album</dfn> — ''text string''
-      :: Full name of the album.
-    : <dfn noexport>comment</dfn> — ''text string''
-      :: Arbitrary release details.
-    : <dfn noexport>disc</dfn> — ''unsigned integer''
-      :: Disc number, in case of multi-disc releases.
-    : <dfn noexport>discs</dfn> — ''unsigned integer''
-      :: Total number of discs, in case of multi-disc releases.
-    : <dfn noexport>media_type</dfn> — ''text string''
-      :: Original media type of the release.
-    : <dfn noexport>isrc</dfn> — ''text string''
-      :: International Standard Recording Code of the given track.
-    : <dfn noexport>mcn</dfn> — ''text string''
-      :: Media Catalog Number for the album, if available.
-</div>
-
-Implementations are free to insert any other tags.
-
-Each name key can be encountered multiple times. Implementations must
+Each key may be present multiple times. Implementations must
 discard the old value associated with the key and update the metadata.
 
 If [=stream_id=] is equal to ''0xFFFF'', the metadata applies for the session as a whole.
@@ -2064,15 +2034,9 @@ If [=stream_id=] is not ''0xFFFF'', the metadata is a separate set of values tha
 describe a single stream. Tags from other streams, or the general file
 metadata must not overwrite each other.
 
-Metadata can be updated by sending new metadata packets with new values.
-
-The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
-
-The {{language_tag}} field must be formatted as described in [[RFC5646#section-2.1]].
-It provides more detailed information than the {{language}} field,
-including regional variation and script.
-
-The {{date}} field must be formatted according to [[RFC3339]].
+Metadata can be updated by sending new metadata packets with new values. The entire
+metadata must be replaced with the contents of a new metadata packet, incremental updates
+are not possible.
 
 Metadata may be padded by appending zeroed bytes to the end. This must
 be accounted by the payload value. Implementations may do this to write
@@ -2654,7 +2618,13 @@ The [=colorspace=] field must be interpreted in the following way:
     : <dfn noexport>CHROMA_420</dfn> = <i>0x1</i>
       :: Chromatic data is subsampled at half the horizontal and vertical resolution of the luminance data.
     : <dfn noexport>CHROMA_422</dfn> = <i>0x2</i>
+      :: Chromatic data is subsampled at half the horizontal resolution of the luminance data.
+    : <dfn noexport>CHROMA_440</dfn> = <i>0x3</i>
       :: Chromatic data is subsampled at half the vertical resolution of the luminance data.
+    : <dfn noexport>CHROMA_411</dfn> = <i>0x4</i>
+      :: Chromatic data is subsampled at a quarter of the horizontal resolution of the luminance data.
+    : <dfn noexport>CHROMA_311</dfn> = <i>0x5</i>
+      :: Luma data is subsampled at 3/4 of the output horizontal resolution, chromatic data is subsampled at 1/4 of the output horizontal resolution.
 </div>
 
 
@@ -4285,6 +4255,9 @@ that 24-bit samples are coded as 32-bits, with the data contained in the topmost
 For raw video encapsulation, the [=codec_id=] in [[#stream-registration-packets]]
 MUST be ''0x52415656'' (''RAVV'').
 
+Note: [[#video-information-packets]] packets must be present. The information in this structure
+is only sufficient to parse data, not enough to present it.
+
 [[#stream-configuration-packets]] packets are required, and
 must be laid out in the following way:
 
@@ -4295,18 +4268,6 @@ must be laid out in the following way:
             <th>Name</th>
             <th>Value</th>
             <th>Description</th>
-        </tr>
-        <tr>
-            <td><code>u(32)</code></td>
-            <td><dfn noexport>rv_width</dfn></td>
-            <td></td>
-            <td>The number of horizontal pixels the video stream contains.</td>
-        </tr>
-        <tr>
-            <td><code>u(32)</code></td>
-            <td><dfn noexport>rv_height</dfn></td>
-            <td></td>
-            <td>The number of vertical pixels the video stream contains.</td>
         </tr>
         <tr>
             <td><code>u(8)</code></td>
@@ -4325,18 +4286,6 @@ must be laid out in the following way:
             <td><dfn noexport>rv_bpp</dfn></td>
             <td></td>
             <td>The number of bits for each <b>individual</b> component pixel.</td>
-        </tr>
-        <tr>
-            <td><code>u(8)</code></td>
-            <td><dfn noexport>rv_hor_subsample</dfn></td>
-            <td></td>
-            <td>Horizontal subsampling factor. Indicates how many bits to shift from [=rv_width=] to get the plane height. Must be 0 if video is RGB.</td>
-        </tr>
-        <tr>
-            <td><code>u(8)</code></td>
-            <td><dfn noexport>rv_ver_subsample</dfn></td>
-            <td></td>
-            <td>Vertical subsampling factor. Indicates how many bits to shift from [=rv_height=] to get the plane height. Must be 0 if video is RGB.</td>
         </tr>
         <tr>
             <td><code>u(32)</code></td>
@@ -4390,11 +4339,8 @@ The components MUST be given in the order they appear in the stream.
 
 The [=packet_data=] field MUST contain [=rv_planes=], with each plane having
 [=rv_plane_stride=] bytes per line. The number of horizontal lines being given by
-[=rv_height=] for plane number ''0'', and <code>[=rv_height=] >> [=rv_ver_subsample=]</code>
+[=height=] for plane number ''0'', and <code>[=rv_height=] >> [=rv_ver_subsample=]</code>
 for all other planes. The actual lines must be filled in according to [=rc_offset=] and [=rc_stride=].
-
-Note: [[#video-information-packets]] packets must be present. The information in this structure
-is only sufficient to parse data, not enough to present it.
 
 
 ### Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ### {#enum-RawVideoFlags}
@@ -4413,7 +4359,7 @@ The [=rv_flags=] field must be interpreted in the following way:
     : <dfn noexport>RAW_VIDEO_BITPACKED</dfn> = 0x10
       :: Video's components are tightly packed, e.g. video is <i>bitpacked</i>.
     : <dfn noexport>RAW_VIDEO_BIG_ENDIAN</dfn> = 0x20
-      :: Video's values are <b>big-endian</b>. If unset, values are <i>little-endian</i>.
+      :: Video's values are <b>big-endian</b>. If unset, values are <i>little-endian</i>. Does not apply for <i>bitpacked</i> video.
 </div>
 
 Note: [=rv_flags=] must not signal both {{RAW_VIDEO_ALPHA}} and {{RAW_VIDEO_ALPHA_PREMULTIPLIED}}.
@@ -4910,6 +4856,52 @@ buffering, and reordering.
 
 Additional data or recommendations for the AVTransport specification is listed here.
 
+## Annex D: Metadata recommendations ## {#annex-d-metadata-recommendations}
+
+The following string 'key's should be used, instead of any others:
+
+<div dfn-type="enum-value" dfn-for="#enum-CommonMetadataKeys">
+    : <dfn noexport>title</dfn> — ''text string''
+      :: Full name of the stream.
+    : <dfn noexport>language</dfn> — ''text string''
+      :: Language name subtag, as per [[bcp47]].
+    : <dfn noexport>language_tag</dfn> — ''text string''
+      :: More concise language information, including regional variants, as defined by [[RFC5646#section-2.1]].
+    : <dfn noexport>date</dfn> — ''text string''
+      :: Date of release. MUST be formatted according to [[RFC3339]].
+    : <dfn noexport>track</dfn> — ''unsigned integer''
+      :: Track number, if the stream is part of an album.
+    : <dfn noexport>tracks</dfn> — ''unsigned integer''
+      :: Total number of tracks, if stream is part of an album.
+    : <dfn noexport>artist</dfn> — ''text string''
+      :: Full name of the performing artist on this track.
+    : <dfn noexport>album_artist</dfn> — ''text string''
+      :: Full name of the album's artist.
+    : <dfn noexport>album</dfn> — ''text string''
+      :: Full name of the album.
+    : <dfn noexport>comment</dfn> — ''text string''
+      :: Arbitrary release details.
+    : <dfn noexport>disc</dfn> — ''unsigned integer''
+      :: Disc number, in case of multi-disc releases.
+    : <dfn noexport>discs</dfn> — ''unsigned integer''
+      :: Total number of discs, in case of multi-disc releases.
+    : <dfn noexport>media_type</dfn> — ''text string''
+      :: Original media type of the release.
+    : <dfn noexport>isrc</dfn> — ''text string''
+      :: International Standard Recording Code of the given track.
+    : <dfn noexport>mcn</dfn> — ''text string''
+      :: Media Catalog Number for the album, if available.
+</div>
+
+The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
+
+The {{language_tag}} field must be formatted as described in [[RFC5646#section-2.1]].
+It provides more detailed information than the {{language}} field,
+including regional variation and script.
+
+The {{date}} field must be formatted according to [[RFC3339]].
+
+
 ## Annex G: LDPC ## {#annex-g-ldpc}
 
 This normative annex shall cover the usage and operation of [[LDPC]] within AVTransport.
@@ -4976,12 +4968,13 @@ The following parity-check matrices (<b>H</b>) below shall be used for encoding 
 and decoding. Implementations are free to convert them to G matrices and use conventional encoding methods.
 The matrices are optimized for AWGN channels, but they will perform nearly as well in other circumstances.
 
-As required by LDPC, matrices are of size <code>(n - k) x n</code>, thus:
- - 64x288
- - 768x2784
+As required by LDPC, matrices are of size <code>(n - k) ⨉ n</code>, thus:
+ - 64 ⨉ 288
+ - 768 ⨉ 2784
 
-Note: In standard mathematical notation, matrix sizes are specified as <b>height x width</b>,
-not <i>width x height</i>.
+Note: In standard mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
+not <i>width ⨉ height</i>. This specification uses standard mathematical nomenclature for this
+definition.
 
 The last (n - k) columns contain the identity matrix. Encode-only implementations may omit them
 in order to save space.

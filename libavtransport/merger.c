@@ -252,6 +252,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
 
     /* Packet needs nothing else */
     if (!srs) {
+#if 0 /* should have enabled LDPC checking if you wanted resilience, luser! */
         /* ERROR RESILIENCE:
          * If we have received two or more segments, and we
          * get the main data packet claiming it isn't segmented, consider
