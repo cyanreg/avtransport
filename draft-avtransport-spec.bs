@@ -14,6 +14,10 @@ Markup Shorthands: http no, markup no
 Abstract: AVTransport is a new mechanism for multimedia transmission and storage. It covers use cases from sub-frame latency streaming of video and audio over raw wireless links, to long-term archival. Its key design goals are robustness and reliability, and it achieves this through extensive error correction, and state-minimal design. Learning from the limitations of other similar protocols and containers, it has built-in future-proofing and allows extensibility.
 </pre>
 
+<pre class=link-defaults>
+spec:av1-isobmff; type:value; for:ISOBMFF Brand; text:av01
+</pre>
+
 <pre class='biblio'>
 {
     "UNIX-time": {
@@ -556,7 +560,7 @@ The recommended URI scheme is:
          - ''active'':means that receivers will actively connect and try to request a stream from the target address.
  - &lt;address&gt; of the remote host, or local host, multicast group, or local file.
  - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols. If not specified, port <b>8212</b> shall be the default port.
- - &lt;sender_uuid&gt; is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID ([[RFC4122]]) value.
+ - &lt;sender_uuid&gt; is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID ([[RFC9562]]) value.
  - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by an <code>&</code> sign:
      * default=&lt;stream_id1&gt;,&lt;stream_id2&gt;: Specifies streams to assign as being the default
 
@@ -613,7 +617,7 @@ as an AVTransport session. The syntax is as follows:
         <tr id="0x4156+4">
             <td><code>16*b(8)</code></td>
             <td><dfn noexport>session_uuid</dfn></td>
-            <td>[[RFC4122|UUID]]</td>
+            <td>[[RFC9562|UUID]]</td>
             <td>Lasting session UUID.</td>
         </tr>
         <tr id="0x4156+3">
@@ -2019,9 +2023,9 @@ The metadata packets can be sent for the overall session, or for a specific
 </figure>
 
 The actual metadata must be stored using CBOR, as standardized in [[RFC8949]],
-as a 'key' and 'value' pair.
+as a ''key'' and ''value'' pair.
 
-Implementations are free to use any 'key' or 'value' names. But, to maintain
+Implementations are free to use any ''key'' or ''value'' names. But, to maintain
 interoperability, implementations are <b>required</b> to either follow the
 tags given by [[#annex-d-metadata-tags]], or use custom tags if the format
 of the values differ.
@@ -2145,8 +2149,9 @@ The following structure MUST be followed:
 </figure>
 
 Often, LUT/ICC profiles may be too large to fit, hence they can be segmented
-in the same way as data packets, as well as have parity data. The syntax for
-segmentation and parity packets is via the following [[#generic-data-packets]] templates:
+in the same way as data packets, as well as have parity data.
+Segmentation happens only when [=lut_data_length=] is less than [=lut_pl_length=].
+The syntax for segmentation and parity packets is via the following [[#generic-data-packets]] templates:
 
 <figure id="table-LUTGenericData" class="table">
     <table class="complex data longlastcol" dfn-for="#lut-icc-profile-packets">
@@ -2170,16 +2175,6 @@ segmentation and parity packets is via the following [[#generic-data-packets]] t
         </tr>
     </table>
 </figure>
-
-
-### LUT/ICC Profile Flags Enumeration (enum <dfn enum>LutFlags</dfn>) ### {#enum-LutFlags}
-
-The [=lut_flags=] field must be interpreted in the following way:
-
-<div dfn-type="enum-value" dfn-for="#enum-LutFlags" id="LutFlags">
-    : <dfn noexport>CLUT_SEGMENTED</dfn> = <i>0x1</i>
-      :: Indicates that tata contains an incomplete part of a LUT/ICC profile, and requires additional segment packets to complete.
-</div>
 
 
 ### LUT/ICC Profile Type Enumeration (enum <dfn enum>LutType</dfn>) ### {#enum-LutType}
@@ -2298,6 +2293,7 @@ The following structure MUST be followed:
 </figure>
 
 Font data can too be segmented in the same way as data packets, as well as have parity data.
+Segmentation happens only when [=font_data_length=] is less than [=font_pl_length=].
 The syntax for segmentation and parity packets is via the following [[#generic-data-packets]]
 templates:
 
@@ -2325,16 +2321,6 @@ templates:
 </figure>
 
 
-### Font Flags Enumeration (enum <dfn enum>FontFlags</dfn>) ### {#enum-FontFlags}
-
-The [=font_flags=] field must be interpreted in the following way:
-
-<div dfn-type="enum-value" dfn-for="#enum-FontFlags" id="FontFlags">
-    : <dfn noexport>FONT_SEGMENTED</dfn> = <i>0x1</i>
-      :: Indicates that tata contains an incomplete part of a font, and requires additional segment packets to complete.
-</div>
-
-
 ### Font Type Enumeration (enum <dfn enum>FontType</dfn>) ### {#enum-FontType}
 
 The [=font_type=] field must be interpreted in the following way:
@@ -2357,7 +2343,7 @@ Video info packets contain everything needed to correctly interpret a video
 stream after decoding.
 
 <figure id="table-VideoInformation" class="table">
-    <table class="complex data longlastcol" dfn-for="#time-synchronization-packets">
+    <table class="complex data longlastcol" dfn-for="#video-information-packets">
         <tr>
             <th>Type</th>
             <th>Name</th>
@@ -2396,7 +2382,7 @@ stream after decoding.
         </tr>
         <tr id="0x0008+5">
             <td><code>u(32)</code></td>
-            <td><dfn noexport>height</dfn></td>
+            <td><dfn noexport for="#video-information-packets">height</dfn></td>
             <td></td>
             <td>Indicates the video height in pixels, before any cropping</td>
         </tr>
@@ -3041,7 +3027,7 @@ The two are swapped if {{STEREO_VIDEO_FLAG_INVERTED}} is set.
     : <dfn noexport>STEREO_VIDEO_TYPE_TOP_AND_BOTTOM</dfn> = <i>0x2</i>
       :: Views are on top of each other.
     : <dfn noexport>STEREO_VIDEO_TYPE_INDIVIDUAL</dfn> = <i>0x3</i>
-      :: Views are separate, one in each frame. Indicated by the [=field_id=], if set to 1, then view is the [=primary-eye=].
+      :: Views are separate, one in each frame. Indicated by the [=field_id=], if set to 1, then view is the [=primary_eye=].
     : <dfn noexport>STEREO_VIDEO_TYPE_CHECKERBOARD</dfn> = <i>0x4</i>
       :: Pixels from each view are interleaved in a checkerboard structure.
     : <dfn noexport>STEREO_VIDEO_TYPE_SIDE_BY_SIDE_QUINCUNX</dfn> = <i>0x5</i>
@@ -3852,7 +3838,7 @@ VP9 specifications.
 
 For [[AV1]] encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
-must be ''0x41563031'' (<code>AV01</code>).
+must be ''0x41563031'' (''AV01'').
 
 The [[#stream-configuration-packets]] packet payload must be the
 codec's so-called ''uncompressed header''. For information on its syntax,
@@ -4113,7 +4099,7 @@ After the timestamp for each cue (line), WebVTT allows a number
 of cue components to style the line, terminated by a newline.
 As they are not part of the line, they are separated, and provided
 upfront as [=cue_comenents=]. The line ending may be retained for
-the [=cue_components=], allowing for direct copy of the cue data.
+the [=cue_data=], allowing for direct copy of the cue data.
 
 The timestamps for each cue are translated into a [=pts=] and
 [=duration=], as with SubRip.
@@ -4338,10 +4324,13 @@ different orderings of pixels in an RGB video, e.g. ''RGB'''s [=rc_offset=]s wil
 be <code>[0, 1, 2]</code>, whilst ''BGR'''s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.
 
-The [=packet_data=] field MUST contain [=rv_planes=], with each plane having
-[=rv_plane_stride=] bytes per line. The number of horizontal lines being given by
-[=height=] for plane number ''0'', and <code>[=rv_height=] >> [=rv_ver_subsample=]</code>
-for all other planes. The actual lines must be filled in according to [=rc_offset=] and [=rc_stride=].
+The [=packet_data=] field must contain [=rv_planes=], with each plane having
+[=rv_plane_stride=] bytes per line.
+
+The number of horizontal lines is <a for="#video-information-packets">height</a>, whicl will be modified by the value of [=chroma_subsampling=]
+for each individual plane as specified.
+
+The actual data within the lines must be filled in according to [=rc_offset=] and [=rc_stride=].
 
 
 ### Raw Video Flags Enumeration (enum <dfn enum>RawVideoFlags</dfn>) ### {#enum-RawVideoFlags}
@@ -4893,13 +4882,13 @@ The following string 'key's should be used, instead of any others:
     : <dfn noexport>mcn</dfn> — ''text string''
       :: Media Catalog Number for the album, if available.
     : <dfn noexport>REPLAYGAIN_TRACK_GAIN</dfn> — ''floating point number''
-      :: ReplayGain 2.0 track gain, in 'dB'.
+      :: ReplayGain 2.0 track gain, in ''dB''.
     : <dfn noexport>REPLAYGAIN_TRACK_RANGE</dfn> — ''floating point number''
-      :: ReplayGain 2.0 track range, in 'dB'.
+      :: ReplayGain 2.0 track range, in ''dB''.
     : <dfn noexport>REPLAYGAIN_TRACK_PEAK</dfn> — ''floating point number''
-      :: ReplayGain 2.0 track peak, in 'dB'.
+      :: ReplayGain 2.0 track peak, in ''dB''.
     : <dfn noexport>REPLAYGAIN_REFERENCE_LOUDNESS</dfn> — ''floating point number''
-      :: ReplayGain 2.0 reference loudness, in 'LUFS'.
+      :: ReplayGain 2.0 reference loudness, in ''LUFS''.
 </div>
 
 The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
@@ -4936,7 +4925,9 @@ void ldpc_encode(uint8_t *pkt, const uint64_t *H,
 {
     int i, j, k;
     uint64_t parity, data, bits[8];
-    uint8_t *dst = &pkt[message_bits / 8]; /* Parity data goes last */
+
+    /* Parity data goes last */
+    uint8_t *dst = pkt + (message_bits / 8);
 
     /* Process 64 rows at a time */
     for (i = 0; i < (parity_bits / 64); i++) {
@@ -4984,8 +4975,8 @@ As required by LDPC, matrices are of size <code>(n - k) ⨉ n</code>, thus:
  - 64 ⨉ 288
  - 768 ⨉ 2784
 
-Note: In standard mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
-not <i>width ⨉ height</i>. This specification uses standard mathematical nomenclature for this
+Note: In mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
+not <i>width ⨉ height</i>. This specification uses mathematical nomenclature for this
 definition.
 
 The last (n - k) columns contain the identity matrix. Encode-only implementations may omit them
