@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="c0b1e4864c3b5169a8a06c417f79985073ae35e6" name="document-revision">
+  <meta content="2d823184824731fe7255c24d79c8f26c17788fc0" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2257,14 +2257,12 @@ Parts of this work may be from another specification document.  If so, those par
       <li>
        <a href="#lut-icc-profile-packets"><span class="secno">2.12</span> <span class="content">LUT/ICC profile</span></a>
        <ol class="toc">
-        <li><a href="#enum-LutFlags"><span class="secno">2.12.1</span> <span class="content">LUT/ICC Profile Flags Enumeration (enum <span><code>LutFlags</code></span>)</span></a>
-        <li><a href="#enum-LutType"><span class="secno">2.12.2</span> <span class="content">LUT/ICC Profile Type Enumeration (enum <span><code>LutType</code></span>)</span></a>
+        <li><a href="#enum-LutType"><span class="secno">2.12.1</span> <span class="content">LUT/ICC Profile Type Enumeration (enum <span><code>LutType</code></span>)</span></a>
        </ol>
       <li>
        <a href="#font-data-packets"><span class="secno">2.13</span> <span class="content">Font data</span></a>
        <ol class="toc">
-        <li><a href="#enum-FontFlags"><span class="secno">2.13.1</span> <span class="content">Font Flags Enumeration (enum <span><code>FontFlags</code></span>)</span></a>
-        <li><a href="#enum-FontType"><span class="secno">2.13.2</span> <span class="content">Font Type Enumeration (enum <span><code>FontType</code></span>)</span></a>
+        <li><a href="#enum-FontType"><span class="secno">2.13.1</span> <span class="content">Font Type Enumeration (enum <span><code>FontType</code></span>)</span></a>
        </ol>
       <li>
        <a href="#video-information-packets"><span class="secno">2.14</span> <span class="content">Video information</span></a>
@@ -2743,7 +2741,7 @@ simply assume all device are already synchronized.</p>
     <li data-md>
      <p>&lt;port> on which to listen on/transmit to. Only valid for <span class="css">udp</span>, <span class="css">udplite</span> and <span class="css">quic</span> protocols. If not specified, port <b>8212</b> shall be the default port.</p>
     <li data-md>
-     <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc4122" title="Universally Unique IDentifiers (UUIDs)">[RFC4122]</a>) value.</p>
+     <p>&lt;sender_uuid> is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID (<a data-link-type="biblio" href="#biblio-rfc9562" title="Universally Unique IDentifiers (UUIDs)">[RFC9562]</a>) value.</p>
     <li data-md>
      <p>&lt;params> are a &lt;key>=&lt;value> pair of settings for the connection, separated by an <code>&amp;</code> sign:</p>
      <ul>
@@ -2791,7 +2789,7 @@ as an AVTransport session. The syntax is as follows:</p>
       <tr id="0x4156+4">
        <td><code>16*b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#session-start-packets" data-dfn-type="dfn" data-noexport id="session-start-packets-session_uuid">session_uuid</dfn>
-       <td><a data-link-type="biblio" href="#biblio-rfc4122" title="Universally Unique IDentifiers (UUIDs)">UUID</a>
+       <td><a data-link-type="biblio" href="#biblio-rfc9562" title="Universally Unique IDentifiers (UUIDs)">UUID</a>
        <td>Lasting session UUID.
       <tr id="0x4156+3">
        <td><code>u(32)</code>
@@ -3929,8 +3927,8 @@ correct subtitle presentation, or long duration still pictures like slideshows.<
     </table>
    </figure>
    <p>The actual metadata must be stored using CBOR, as standardized in <a data-link-type="biblio" href="#biblio-rfc8949" title="Concise Binary Object Representation (CBOR)">[RFC8949]</a>,
-as a <a class="property css" data-link-type="property">key</a> and <a class="property css" data-link-type="property">value</a> pair.</p>
-   <p>Implementations are free to use any <a class="property css" data-link-type="property">key</a> or <a class="property css" data-link-type="property">value</a> names. But, to maintain
+as a <span class="css">key</span> and <span class="css">value</span> pair.</p>
+   <p>Implementations are free to use any <span class="css">key</span> or <span class="css">value</span> names. But, to maintain
 interoperability, implementations are <b>required</b> to either follow the
 tags given by <a href="#annex-d-metadata-tags">§ 4.1 Annex D: Metadata tags</a>, or use custom tags if the format
 of the values differ.</p>
@@ -3998,7 +3996,7 @@ metadata after starting and outputting a packet.</p>
        <td>LUT/ICC data compression.
       <tr id="0x0010+8">
        <td><code>b(32)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_data_length">lut_data_length<a class="self-link" href="#time-synchronization-packets-lut_data_length"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-lut_data_length">lut_data_length</dfn>
        <td>
        <td>The length of the LUT/ICC profile.
       <tr id="0x0010+9">
@@ -4029,8 +4027,9 @@ metadata after starting and outputting a packet.</p>
     </table>
    </figure>
    <p>Often, LUT/ICC profiles may be too large to fit, hence they can be segmented
-in the same way as data packets, as well as have parity data. The syntax for
-segmentation and parity packets is via the following <a href="#generic-data-packets">§ 2.4 Generic data</a> templates:</p>
+in the same way as data packets, as well as have parity data.
+Segmentation happens only when <a data-link-type="dfn" href="#time-synchronization-packets-lut_data_length" id="ref-for-time-synchronization-packets-lut_data_length">lut_data_length</a> is less than <a data-link-type="dfn" href="#time-synchronization-packets-lut_pl_length" id="ref-for-time-synchronization-packets-lut_pl_length①">lut_pl_length</a>.
+The syntax for segmentation and parity packets is via the following <a href="#generic-data-packets">§ 2.4 Generic data</a> templates:</p>
    <figure class="table" id="table-LUTGenericData">
     <table class="complex data longlastcol">
      <tbody>
@@ -4051,16 +4050,7 @@ segmentation and parity packets is via the following <a href="#generic-data-pack
        <td>Final segment of a segmented LUT/ICC profile.
     </table>
    </figure>
-   <h4 class="heading settled" data-level="2.12.1" id="enum-LutFlags"><span class="secno">2.12.1. </span><span class="content">LUT/ICC Profile Flags Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-lutflags"><code>LutFlags</code><a class="self-link" href="#enumdef-lutflags"></a></dfn>)</span><a class="self-link" href="#enum-LutFlags"></a></h4>
-   <p>The <a data-link-type="dfn">lut_flags</a> field must be interpreted in the following way:</p>
-   <div id="LutFlags">
-    <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-LutFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-lutflags-clut_segmented"><code>CLUT_SEGMENTED</code><a class="self-link" href="#dom-enum-lutflags-clut_segmented"></a></dfn> = <i>0x1</i>
-     <dd data-md>
-      <p>Indicates that tata contains an incomplete part of a LUT/ICC profile, and requires additional segment packets to complete.</p>
-    </dl>
-   </div>
-   <h4 class="heading settled" data-level="2.12.2" id="enum-LutType"><span class="secno">2.12.2. </span><span class="content">LUT/ICC Profile Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-luttype"><code>LutType</code></dfn>)</span><a class="self-link" href="#enum-LutType"></a></h4>
+   <h4 class="heading settled" data-level="2.12.1" id="enum-LutType"><span class="secno">2.12.1. </span><span class="content">LUT/ICC Profile Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-luttype"><code>LutType</code></dfn>)</span><a class="self-link" href="#enum-LutType"></a></h4>
    <p>The <a data-link-type="dfn" href="#time-synchronization-packets-lut_type" id="ref-for-time-synchronization-packets-lut_type">lut_type</a> field must be interpreted in the following way:</p>
    <div id="LutType">
     <dl>
@@ -4119,7 +4109,7 @@ these fonts must be made available for the ASS stream.</p>
        <td>Font data compression.
       <tr id="0x0020+5">
        <td><code>u(32)</code>
-       <td><dfn data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_data_length">font_data_length<a class="self-link" href="#font-data-packets-font_data_length"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#font-data-packets" data-dfn-type="dfn" data-noexport id="font-data-packets-font_data_length">font_data_length</dfn>
        <td>
        <td>The length in bytes of the font file data.
       <tr id="0x0020+6">
@@ -4155,6 +4145,7 @@ these fonts must be made available for the ASS stream.</p>
     </table>
    </figure>
    <p>Font data can too be segmented in the same way as data packets, as well as have parity data.
+Segmentation happens only when <a data-link-type="dfn" href="#font-data-packets-font_data_length" id="ref-for-font-data-packets-font_data_length">font_data_length</a> is less than <a data-link-type="dfn" href="#font-data-packets-font_pl_length" id="ref-for-font-data-packets-font_pl_length①">font_pl_length</a>.
 The syntax for segmentation and parity packets is via the following <a href="#generic-data-packets">§ 2.4 Generic data</a> templates:</p>
    <figure class="table" id="table-FontGenericData">
     <table class="complex data longlastcol">
@@ -4176,16 +4167,7 @@ The syntax for segmentation and parity packets is via the following <a href="#ge
        <td>Parity data for a font file.
     </table>
    </figure>
-   <h4 class="heading settled" data-level="2.13.1" id="enum-FontFlags"><span class="secno">2.13.1. </span><span class="content">Font Flags Enumeration (enum <dfn class="idl-code" data-dfn-type="enum" data-export id="enumdef-fontflags"><code>FontFlags</code><a class="self-link" href="#enumdef-fontflags"></a></dfn>)</span><a class="self-link" href="#enum-FontFlags"></a></h4>
-   <p>The <a data-link-type="dfn">font_flags</a> field must be interpreted in the following way:</p>
-   <div id="FontFlags">
-    <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FontFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-fontflags-font_segmented"><code>FONT_SEGMENTED</code><a class="self-link" href="#dom-enum-fontflags-font_segmented"></a></dfn> = <i>0x1</i>
-     <dd data-md>
-      <p>Indicates that tata contains an incomplete part of a font, and requires additional segment packets to complete.</p>
-    </dl>
-   </div>
-   <h4 class="heading settled" data-level="2.13.2" id="enum-FontType"><span class="secno">2.13.2. </span><span class="content">Font Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-fonttype"><code>FontType</code></dfn>)</span><a class="self-link" href="#enum-FontType"></a></h4>
+   <h4 class="heading settled" data-level="2.13.1" id="enum-FontType"><span class="secno">2.13.1. </span><span class="content">Font Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-fonttype"><code>FontType</code></dfn>)</span><a class="self-link" href="#enum-FontType"></a></h4>
    <p>The <a data-link-type="dfn" href="#font-data-packets-font_type" id="ref-for-font-data-packets-font_type">font_type</a> field must be interpreted in the following way:</p>
    <div id="FontType">
     <dl>
@@ -4214,7 +4196,7 @@ stream after decoding.</p>
        <th>Description
       <tr id="0x0008+0">
        <td><code>b(16)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-video_info_descriptor">video_info_descriptor<a class="self-link" href="#time-synchronization-packets-video_info_descriptor"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-video_info_descriptor">video_info_descriptor<a class="self-link" href="#video-information-packets-video_info_descriptor"></a></dfn>
        <td><span class="css">0x0008</span>
        <td>Indicates this packet contains video information.
       <tr id="0x0008+1">
@@ -4234,32 +4216,32 @@ stream after decoding.</p>
        <td>Timestamp (in stream <a data-link-type="dfn" href="#stream-registration-packets-timebase" id="ref-for-stream-registration-packets-timebase③">timebase</a> units) at which this orientation packet has to be applied at.
       <tr id="0x0008+4">
        <td><code>u(32)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-width">width<a class="self-link" href="#time-synchronization-packets-width"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-width">width<a class="self-link" href="#video-information-packets-width"></a></dfn>
        <td>
        <td>Indicates the video width in pixels, before any cropping.
       <tr id="0x0008+5">
        <td><code>u(32)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-height">height<a class="self-link" href="#time-synchronization-packets-height"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-height">height</dfn>
        <td>
        <td>Indicates the video height in pixels, before any cropping
       <tr id="0x0008+6">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-chroma_subsampling">chroma_subsampling<a class="self-link" href="#time-synchronization-packets-chroma_subsampling"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-chroma_subsampling">chroma_subsampling</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-chromasubsampling" id="ref-for-enumdef-chromasubsampling">ChromaSubsampling</a></code>
        <td>Indicates the chroma subsampling being used.
       <tr id="0x0008+7">
        <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-colorspace">colorspace</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-colorspace">colorspace</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-colorspace" id="ref-for-enumdef-colorspace">Colorspace</a></code>
        <td>Indicates the kind of colorspace the video is in.
       <tr id="0x0008+8">
        <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-bit_depth">bit_depth</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-bit_depth">bit_depth</dfn>
        <td>
        <td>Number of bits per output video sample.
       <tr id="0x0008+9">
        <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-interlaced">interlaced</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-interlaced">interlaced</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-interlacing" id="ref-for-enumdef-interlacing①">Interlacing</a></code>
        <td>Indicates the video interleaving.
       <tr id="0x0008+10">
@@ -4269,97 +4251,97 @@ stream after decoding.</p>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
       <tr id="0x0008+11">
        <td><code>R(64)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-signal_aspect">signal_aspect<a class="self-link" href="#time-synchronization-packets-signal_aspect"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-signal_aspect">signal_aspect<a class="self-link" href="#video-information-packets-signal_aspect"></a></dfn>
        <td>
        <td>Indicates the sample aspect ratio of the image.
       <tr id="0x0008+12">
        <td><code>R(64)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-gamma">gamma<a class="self-link" href="#time-synchronization-packets-gamma"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-gamma">gamma<a class="self-link" href="#video-information-packets-gamma"></a></dfn>
        <td>
        <td>Indicates the gamma power curve for the video sample values.
       <tr id="0x0008+13">
        <td><code>R(64)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-framerate">framerate<a class="self-link" href="#time-synchronization-packets-framerate"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-framerate">framerate<a class="self-link" href="#video-information-packets-framerate"></a></dfn>
        <td>
-       <td>Indicates the framerate of the video. If it’s variable, may be used to indicate the average bitrate. If the video is <a data-link-type="dfn" href="#time-synchronization-packets-interlaced" id="ref-for-time-synchronization-packets-interlaced">interlaced</a>, indicates the field rate.
+       <td>Indicates the framerate of the video. If it’s variable, may be used to indicate the average bitrate. If the video is <a data-link-type="dfn" href="#video-information-packets-interlaced" id="ref-for-video-information-packets-interlaced">interlaced</a>, indicates the field rate.
       <tr id="0x0008+14">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-output_range">output_range<a class="self-link" href="#time-synchronization-packets-output_range"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-output_range">output_range<a class="self-link" href="#video-information-packets-output_range"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-colorrange" id="ref-for-enumdef-colorrange">ColorRange</a></code>
        <td>Indicates the range for the output video samples.
       <tr id="0x0008+15">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-chroma_pos">chroma_pos<a class="self-link" href="#time-synchronization-packets-chroma_pos"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-chroma_pos">chroma_pos<a class="self-link" href="#video-information-packets-chroma_pos"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-chromaposition" id="ref-for-enumdef-chromaposition">ChromaPosition</a></code>
        <td>Chroma sample alignment for subsampled chroma.
       <tr id="0x0008+16">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-primaries">primaries<a class="self-link" href="#time-synchronization-packets-primaries"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-primaries">primaries<a class="self-link" href="#video-information-packets-primaries"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-primaries" id="ref-for-enumdef-primaries">Primaries</a></code>
        <td>Video color primaries. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">ColourPrimaries</span> field.
       <tr id="0x0008+17">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-transfer">transfer<a class="self-link" href="#time-synchronization-packets-transfer"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-transfer">transfer<a class="self-link" href="#video-information-packets-transfer"></a></dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-transfer" id="ref-for-enumdef-transfer">Transfer</a></code>
        <td>Video transfer characteristics. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">TransferCharacteristics</span> field.
       <tr id="0x0008+18">
        <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-matrix">matrix</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-matrix">matrix</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-matrix" id="ref-for-enumdef-matrix">Matrix</a></code>
        <td>Video matrix coefficients. Must be interpreted according to ITU Standard <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, <span class="css">MatrixCoefficients</span> field.
       <tr id="0x0008+19">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-has_mastering_primaries">has_mastering_primaries<a class="self-link" href="#time-synchronization-packets-has_mastering_primaries"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-has_mastering_primaries">has_mastering_primaries<a class="self-link" href="#video-information-packets-has_mastering_primaries"></a></dfn>
        <td>
-       <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#time-synchronization-packets-mastering_primaries" id="ref-for-time-synchronization-packets-mastering_primaries">mastering_primaries</a> and <a data-link-type="dfn" href="#time-synchronization-packets-mastering_white_point" id="ref-for-time-synchronization-packets-mastering_white_point">mastering_white_point</a> contain valid data. Other values are reserved.
+       <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#video-information-packets-mastering_primaries" id="ref-for-video-information-packets-mastering_primaries">mastering_primaries</a> and <a data-link-type="dfn" href="#video-information-packets-mastering_white_point" id="ref-for-video-information-packets-mastering_white_point">mastering_white_point</a> contain valid data. Other values are reserved.
       <tr id="0x0008+20">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-has_luminance">has_luminance<a class="self-link" href="#time-synchronization-packets-has_luminance"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-has_luminance">has_luminance<a class="self-link" href="#video-information-packets-has_luminance"></a></dfn>
        <td>
-       <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#time-synchronization-packets-min_luminance" id="ref-for-time-synchronization-packets-min_luminance">min_luminance</a> and <a data-link-type="dfn" href="#time-synchronization-packets-max_luminance" id="ref-for-time-synchronization-packets-max_luminance">max_luminance</a> contain valid data. Other values are reseved.
+       <td>If <span class="css">1</span>, indicates that the following <a data-link-type="dfn" href="#video-information-packets-min_luminance" id="ref-for-video-information-packets-min_luminance">min_luminance</a> and <a data-link-type="dfn" href="#video-information-packets-max_luminance" id="ref-for-video-information-packets-max_luminance">max_luminance</a> contain valid data. Other values are reseved.
       <tr id="0x0008+21">
        <td><code>16*R(64)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-custom_matrix">custom_matrix</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-custom_matrix">custom_matrix</dfn>
        <td>
-       <td>If the color <a data-link-type="dfn" href="#time-synchronization-packets-matrix" id="ref-for-time-synchronization-packets-matrix">matrix</a> value is equal to <span class="css">0xFF</span>, use this custom matrix instead. Top left to bottom right, in "raster-order". Otherwise, must be set to <span class="css">0</span>.
+       <td>If the color <a data-link-type="dfn" href="#video-information-packets-matrix" id="ref-for-video-information-packets-matrix">matrix</a> value is equal to <span class="css">0xFF</span>, use this custom matrix instead. Top left to bottom right, in "raster-order". Otherwise, must be set to <span class="css">0</span>.
       <tr id="0x0008+22">
        <td><code>6*R(64)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-mastering_primaries">mastering_primaries</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-mastering_primaries">mastering_primaries</dfn>
        <td>
        <td><a data-link-type="biblio" href="#biblio-cie1931" title="Commission internationale de l&apos;Eclairage proceedings">[CIE1931]</a> X/Y chromacity coordinates of the color primaries, <code>x</code> value, then <code>y</code> value, for each <code>r</code>, <code>g</code>, <code>b</code>, in order.
       <tr id="0x0008+23">
        <td><code>2*R(64)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-mastering_white_point">mastering_white_point</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-mastering_white_point">mastering_white_point</dfn>
        <td>
        <td><a data-link-type="biblio" href="#biblio-cie1931" title="Commission internationale de l&apos;Eclairage proceedings">[CIE1931]</a> X/Y chromacity coordinates of the white point, <code>x</code> value, then <code>y</code> value.
       <tr id="0x0008+24">
        <td><code>R(64)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-min_luminance">min_luminance</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-min_luminance">min_luminance</dfn>
        <td>
        <td>Minimal luminance of the mastering display, in cd/m<sup>2</sup>.
       <tr id="0x0008+25">
        <td><code>R(64)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-max_luminance">max_luminance</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-max_luminance">max_luminance</dfn>
        <td>
        <td>Maximum luminance of the mastering display, in cd/m<sup>2</sup>.
       <tr id="0x0008+26">
        <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-cropped_width">cropped_width</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-cropped_width">cropped_width</dfn>
        <td>
        <td>Indicates the presentable video width in samples.
       <tr id="0x0008+27">
        <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-cropped_height">cropped_height</dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-cropped_height">cropped_height</dfn>
        <td>
        <td>Indicates the presentable video height in samples.
       <tr id="0x0008+28">
        <td><code>u(16)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-crop_x_offset">crop_x_offset<a class="self-link" href="#time-synchronization-packets-crop_x_offset"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-crop_x_offset">crop_x_offset<a class="self-link" href="#video-information-packets-crop_x_offset"></a></dfn>
        <td>
        <td>X offset for the location of the final presentation box.
       <tr id="0x0008+29">
        <td><code>u(16)</code>
-       <td><dfn data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-crop_y_offset">crop_y_offset<a class="self-link" href="#time-synchronization-packets-crop_y_offset"></a></dfn>
+       <td><dfn data-dfn-for="#video-information-packets" data-dfn-type="dfn" data-noexport id="video-information-packets-crop_y_offset">crop_y_offset<a class="self-link" href="#video-information-packets-crop_y_offset"></a></dfn>
        <td>
        <td>Y offset for the location of the final presentation box.
       <tr id="0x0008+30">
@@ -4375,7 +4357,7 @@ stream after decoding.</p>
     </table>
    </figure>
    <h4 class="heading settled" data-level="2.14.1" id="enum-Colorspace"><span class="secno">2.14.1. </span><span class="content">Colorspace Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-colorspace"><code>Colorspace</code></dfn>)</span><a class="self-link" href="#enum-Colorspace"></a></h4>
-   <p>The <a data-link-type="dfn" href="#time-synchronization-packets-colorspace" id="ref-for-time-synchronization-packets-colorspace">colorspace</a> field must be interpreted in the following way:</p>
+   <p>The <a data-link-type="dfn" href="#video-information-packets-colorspace" id="ref-for-video-information-packets-colorspace">colorspace</a> field must be interpreted in the following way:</p>
    <div id="Colorspace">
     <dl>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-noexport id="dom-enum-colorspace-csp_mono"><code>CSP_MONO</code><a class="self-link" href="#dom-enum-colorspace-csp_mono"></a></dfn> = <i>0x0</i>
@@ -4399,7 +4381,7 @@ stream after decoding.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-noexport id="dom-enum-colorspace-csp_xyb"><code>CSP_XYB</code><a class="self-link" href="#dom-enum-colorspace-csp_xyb"></a></dfn> = <i>0x6</i>
      <dd data-md>
       <p>Video contains XYB color data, as defined by <a data-link-type="biblio" href="#biblio-iso18181" title="JPEG XL image coding system — Part 1: Core coding system">[ISO18181]</a>.</p>
-      <p class="note" role="note"><span class="marker">Note:</span> <a data-link-type="dfn" href="#time-synchronization-packets-matrix" id="ref-for-time-synchronization-packets-matrix①">matrix</a> must be equal to <span class="css">0xFF</span> and the <a data-link-type="dfn" href="#time-synchronization-packets-custom_matrix" id="ref-for-time-synchronization-packets-custom_matrix">custom_matrix</a> must be a valid matrix to transform XYB into RGB.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> <a data-link-type="dfn" href="#video-information-packets-matrix" id="ref-for-video-information-packets-matrix①">matrix</a> must be equal to <span class="css">0xFF</span> and the <a data-link-type="dfn" href="#video-information-packets-custom_matrix" id="ref-for-video-information-packets-custom_matrix">custom_matrix</a> must be a valid matrix to transform XYB into RGB.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Colorspace" data-dfn-type="enum-value" data-noexport id="dom-enum-colorspace-csp_ictcp"><code>CSP_ICTCP</code><a class="self-link" href="#dom-enum-colorspace-csp_ictcp"></a></dfn> = <i>0x5</i>
      <dd data-md>
       <p>Video contains <a data-link-type="biblio" href="#biblio-bt2100" title="BT.2100: Image parameter values for high dynamic range television for use in production and international programme exchange">[BT2100]</a> ICtCp color data.</p>
@@ -4422,11 +4404,11 @@ stream after decoding.</p>
     <dl>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ColorRange" data-dfn-type="enum-value" data-noexport id="dom-enum-colorrange-color_range_full"><code>COLOR_RANGE_FULL</code><a class="self-link" href="#dom-enum-colorrange-color_range_full"></a></dfn> = <i>0x0</i>
      <dd data-md>
-      <p>Video sample values contains the full range of the <a data-link-type="dfn" href="#time-synchronization-packets-bit_depth" id="ref-for-time-synchronization-packets-bit_depth">bit_depth</a>.</p>
+      <p>Video sample values contains the full range of the <a data-link-type="dfn" href="#video-information-packets-bit_depth" id="ref-for-video-information-packets-bit_depth">bit_depth</a>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-ColorRange" data-dfn-type="enum-value" data-noexport id="dom-enum-colorrange-color_range_limited"><code>COLOR_RANGE_LIMITED</code><a class="self-link" href="#dom-enum-colorrange-color_range_limited"></a></dfn> = <i>0x1</i>
      <dd data-md>
-      <p>Video sample values contains the limited range of the <a data-link-type="dfn" href="#time-synchronization-packets-bit_depth" id="ref-for-time-synchronization-packets-bit_depth①">bit_depth</a>.</p>
-      <p class="note" role="note"><span class="marker">Note:</span> This describes the <i>cannonical</i> limited range representation: <code>(219 * E + 16) * 2<sup>(<a data-link-type="dfn" href="#time-synchronization-packets-bit_depth" id="ref-for-time-synchronization-packets-bit_depth②">bit_depth</a>-8)</sup></code>,
+      <p>Video sample values contains the limited range of the <a data-link-type="dfn" href="#video-information-packets-bit_depth" id="ref-for-video-information-packets-bit_depth①">bit_depth</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> This describes the <i>cannonical</i> limited range representation: <code>(219 * E + 16) * 2<sup>(<a data-link-type="dfn" href="#video-information-packets-bit_depth" id="ref-for-video-information-packets-bit_depth②">bit_depth</a>-8)</sup></code>,
         where <code>E</code>, the input range, is <span class="css">0.0</span> to <span class="css">1.0</span> for <i>luma</i> planes and <span class="css">-0.5</span> to <span class="css">0.5</span> for <i>chroma</i> planes. This means, for 8-bits, the luma
         range is 16-235 and the chroma range is 16-240.</p>
     </dl>
@@ -4455,7 +4437,7 @@ stream after decoding.</p>
     </dl>
    </div>
    <h4 class="heading settled" data-level="2.14.4" id="enum-Interlacing"><span class="secno">2.14.4. </span><span class="content">Interlacing Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-interlacing"><code>Interlacing</code></dfn>)</span><a class="self-link" href="#enum-Interlacing"></a></h4>
-   <p>The value of <a data-link-type="dfn" href="#time-synchronization-packets-interlaced" id="ref-for-time-synchronization-packets-interlaced①">interlaced</a> determines whether the video is interlaced, as well as how
+   <p>The value of <a data-link-type="dfn" href="#video-information-packets-interlaced" id="ref-for-video-information-packets-interlaced①">interlaced</a> determines whether the video is interlaced, as well as how
 to interpret the value of <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id">field_id</a> in stream data packet headers.</p>
    <div id="Interlacing">
     <dl>
@@ -4760,12 +4742,12 @@ until a new orientation packet is sent, or the stream is reinitialized.</p>
    <p><a data-link-type="dfn" href="#video-orientation-packets-reflection" id="ref-for-video-orientation-packets-reflection">reflection</a> must be applied first, before <a data-link-type="dfn" href="#video-orientation-packets-rotation" id="ref-for-video-orientation-packets-rotation">rotation</a>.</p>
    <p>The actual rotation in radians is given by <code>π * (<a data-link-type="dfn" href="#video-orientation-packets-rotation" id="ref-for-video-orientation-packets-rotation①">rotation</a>.num/<a data-link-type="dfn" href="#video-orientation-packets-rotation" id="ref-for-video-orientation-packets-rotation②">rotation</a>.den)</code>.</p>
    <p>Rotation should be applied after all other transformations have been performed on the image,
-including cropping via the <a data-link-type="dfn" href="#time-synchronization-packets-cropped_width" id="ref-for-time-synchronization-packets-cropped_width">cropped_width</a>/<a data-link-type="dfn" href="#time-synchronization-packets-cropped_height" id="ref-for-time-synchronization-packets-cropped_height">cropped_height</a> fields in <a href="#video-information-packets">§ 2.14 Video information</a> packets.</p>
+including cropping via the <a data-link-type="dfn" href="#video-information-packets-cropped_width" id="ref-for-video-information-packets-cropped_width">cropped_width</a>/<a data-link-type="dfn" href="#video-information-packets-cropped_height" id="ref-for-video-information-packets-cropped_height">cropped_height</a> fields in <a href="#video-information-packets">§ 2.14 Video information</a> packets.</p>
    <h3 class="heading settled" data-level="2.16" id="stereo-video-packets"><span class="secno">2.16. </span><span class="content">Stereo video</span><a class="self-link" href="#stereo-video-packets"></a></h3>
    <p>A stereoscopic video file consists in multiple views embedded in a single
 frame, usually describing two views of a scene.</p>
    <p>Interlacing and stereoscopic video are explicitly unsupported. Implementations
-must ignore any stereoscopic information if the value of <a data-link-type="dfn" href="#time-synchronization-packets-interlaced" id="ref-for-time-synchronization-packets-interlaced②">interlaced</a> is anything
+must ignore any stereoscopic information if the value of <a data-link-type="dfn" href="#video-information-packets-interlaced" id="ref-for-video-information-packets-interlaced②">interlaced</a> is anything
 except <code class="idl"><a data-link-type="idl" href="#dom-enum-interlacing-ilace_prog" id="ref-for-dom-enum-interlacing-ilace_prog">ILACE_PROG</a></code>.</p>
    <p>A standardized way to transmit stereoscopic video information is as follows:</p>
    <figure class="table" id="table-StereoVideoData">
@@ -4808,7 +4790,7 @@ except <code class="idl"><a data-link-type="idl" href="#dom-enum-interlacing-ila
        <td>Additional flags.
       <tr id="0x0041+6">
        <td><code>u(8)</code>
-       <td><dfn data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-primary_eye">primary_eye<a class="self-link" href="#stereo-video-packets-primary_eye"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#stereo-video-packets" data-dfn-type="dfn" data-noexport id="stereo-video-packets-primary_eye">primary_eye</dfn>
        <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-stereovideoprimaryeye" id="ref-for-enumdef-stereovideoprimaryeye">StereoVideoPrimaryEye</a></code>
        <td>Determines which eye is the primary eye when rendering in 2D.
       <tr id="0x0041+7">
@@ -4866,7 +4848,7 @@ The two are swapped if <code class="idl"><a data-link-type="idl" href="#dom-enum
       <p>Views are on top of each other.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_individual"><code>STEREO_VIDEO_TYPE_INDIVIDUAL</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_individual"></a></dfn> = <i>0x3</i>
      <dd data-md>
-      <p>Views are separate, one in each frame. Indicated by the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id④">field_id</a>, if set to 1, then view is the <a data-link-type="dfn">primary-eye</a>.</p>
+      <p>Views are separate, one in each frame. Indicated by the <a data-link-type="dfn" href="#stream-data-packet-field_id" id="ref-for-stream-data-packet-field_id④">field_id</a>, if set to 1, then view is the <a data-link-type="dfn" href="#stereo-video-packets-primary_eye" id="ref-for-stereo-video-packets-primary_eye">primary_eye</a>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-StereoVideoType" data-dfn-type="enum-value" data-noexport id="dom-enum-stereovideotype-stereo_video_type_checkerboard"><code>STEREO_VIDEO_TYPE_CHECKERBOARD</code><a class="self-link" href="#dom-enum-stereovideotype-stereo_video_type_checkerboard"></a></dfn> = <i>0x4</i>
      <dd data-md>
       <p>Pixels from each view are interleaved in a checkerboard structure.</p>
@@ -5141,7 +5123,7 @@ definitions. Below, a mapping between <a data-link-type="dfn" href="#stream-regi
        <td><a href="#vp9-encapsulation">§ 3.1.9 VP9 encapsulation</a>
       <tr id="codec_id_map+9">
        <td><span class="css">0x41563031</span>
-       <td><a class="css" data-link-type="maybe" href="https://aomediacodec.github.io/av1-avif/#valdef-av1-image-item-type-av01" id="ref-for-valdef-av1-image-item-type-av01">AV01</a>
+       <td><a class="css" data-link-type="maybe" href="https://aomediacodec.github.io/av1-isobmff/#valdef-isobmff-brand-av01" id="ref-for-valdef-isobmff-brand-av01">AV01</a>
        <td><dfn data-dfn-for="#codec-encapsulation" data-dfn-type="dfn" data-noexport id="codec-encapsulation-codec_id_av1">CODEC_ID_AV1<a class="self-link" href="#codec-encapsulation-codec_id_av1"></a></dfn>
        <td><a href="#av1-encapsulation">§ 3.1.10 AV1 encapsulation</a>
       <tr id="codec_id_map+10">
@@ -5493,7 +5475,7 @@ consult the specifications, section <span class="css">6.2 Uncompressed header sy
    <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data⑤">packet_data</a> must contain raw <b>superframe</b> packets, as defined in <span class="css">Annex B</span> of the
 VP9 specifications.</p>
    <h4 class="heading settled" data-level="3.1.10" id="av1-encapsulation"><span class="secno">3.1.10. </span><span class="content">AV1 encapsulation</span><a class="self-link" href="#av1-encapsulation"></a></h4>
-   <p>For <a data-link-type="biblio" href="#biblio-av1" title="AV1 Bitstream &amp; Decoding Process Specification">[AV1]</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①②">codec_id</a> in <a href="#stream-registration-packets">§ 2.3 Stream registration</a> must be <span class="css">0x41563031</span> (<code>AV01</code>).</p>
+   <p>For <a data-link-type="biblio" href="#biblio-av1" title="AV1 Bitstream &amp; Decoding Process Specification">[AV1]</a> encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id①②">codec_id</a> in <a href="#stream-registration-packets">§ 2.3 Stream registration</a> must be <span class="css">0x41563031</span> (<a class="css" data-link-type="maybe" href="https://aomediacodec.github.io/av1-isobmff/#valdef-isobmff-brand-av01" id="ref-for-valdef-isobmff-brand-av01①">AV01</a>).</p>
    <p>The <a href="#stream-configuration-packets">§ 2.5 Stream configuration</a> packet payload must be the
 codec’s so-called <span class="css">uncompressed header</span>. For information on its syntax,
 consult the specifications, section <span class="css">5.9.2. Uncompressed header syntax</span>.</p>
@@ -5672,7 +5654,7 @@ alongside, in the way they appear, into the <a href="#stream-configuration-packe
        <td>A string with all cue components
       <tr id="WebVTT+2">
        <td><code>(<a data-link-type="dfn" href="#stream-data-packet-data_length" id="ref-for-stream-data-packet-data_length②">data_length</a> - <a data-link-type="dfn" href="#webvtt-encapsulation-cue_components_len" id="ref-for-webvtt-encapsulation-cue_components_len①">cue_components_len</a> - 1)*u(8)</code>
-       <td><dfn data-dfn-for="#webvtt-encapsulation" data-dfn-type="dfn" data-noexport id="webvtt-encapsulation-cue_data">cue_data<a class="self-link" href="#webvtt-encapsulation-cue_data"></a></dfn>
+       <td><dfn class="dfn-paneled" data-dfn-for="#webvtt-encapsulation" data-dfn-type="dfn" data-noexport id="webvtt-encapsulation-cue_data">cue_data</dfn>
        <td>
        <td>The actual line of text to present.
     </table>
@@ -5681,7 +5663,7 @@ alongside, in the way they appear, into the <a href="#stream-configuration-packe
 of cue components to style the line, terminated by a newline.
 As they are not part of the line, they are separated, and provided
 upfront as <a data-link-type="dfn" href="#webvtt-encapsulation-cue_comenents" id="ref-for-webvtt-encapsulation-cue_comenents">cue_comenents</a>. The line ending may be retained for
-the <a data-link-type="dfn">cue_components</a>, allowing for direct copy of the cue data.</p>
+the <a data-link-type="dfn" href="#webvtt-encapsulation-cue_data" id="ref-for-webvtt-encapsulation-cue_data">cue_data</a>, allowing for direct copy of the cue data.</p>
    <p>The timestamps for each cue are translated into a <a data-link-type="dfn" href="#pts" id="ref-for-pts②④">pts</a> and <a data-link-type="dfn" href="#duration" id="ref-for-duration①②">duration</a>, as with SubRip.</p>
    <h4 class="heading settled" data-level="3.1.19" id="dng-tiff-encapsulation"><span class="secno">3.1.19. </span><span class="content">DNG/TIFF encapsulation</span><a class="self-link" href="#dng-tiff-encapsulation"></a></h4>
    <p>For DNG/TIFF encapsulation, the <a data-link-type="dfn" href="#stream-registration-packets-codec_id" id="ref-for-stream-registration-packets-codec_id②⓪">codec_id</a> in <a href="#stream-registration-packets">§ 2.3 Stream registration</a> must be <span class="css">0x54494646</span> (<span class="css">TIFF</span>).</p>
@@ -5830,7 +5812,9 @@ must be laid out in the following way:</p>
 different orderings of pixels in an RGB video, e.g. <span class="css">RGB</span>'s <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset①">rc_offset</a>s will
 be <code>[0, 1, 2]</code>, whilst <span class="css">BGR</span>'s will be <code>[2, 1, 0]</code>.
 The components MUST be given in the order they appear in the stream.</p>
-   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data②②">packet_data</a> field MUST contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line. The number of horizontal lines being given by <a data-link-type="dfn">height</a> for plane number <span class="css">0</span>, and <code><a data-link-type="dfn">rv_height</a> >> <a data-link-type="dfn">rv_ver_subsample</a></code> for all other planes. The actual lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
+   <p>The <a data-link-type="dfn" href="#stream-data-packet-packet_data" id="ref-for-stream-data-packet-packet_data②②">packet_data</a> field must contain <a data-link-type="dfn" href="#raw-video-encapsulation-rv_planes" id="ref-for-raw-video-encapsulation-rv_planes①">rv_planes</a>, with each plane having <a data-link-type="dfn" href="#raw-video-encapsulation-rv_plane_stride" id="ref-for-raw-video-encapsulation-rv_plane_stride">rv_plane_stride</a> bytes per line.</p>
+   <p>The number of horizontal lines is <a data-link-type="dfn" href="#video-information-packets-height" id="ref-for-video-information-packets-height">height</a>, whicl will be modified by the value of <a data-link-type="dfn" href="#video-information-packets-chroma_subsampling" id="ref-for-video-information-packets-chroma_subsampling">chroma_subsampling</a> for each individual plane as specified.</p>
+   <p>The actual data within the lines must be filled in according to <a data-link-type="dfn" href="#raw-video-encapsulation-rc_offset" id="ref-for-raw-video-encapsulation-rc_offset②">rc_offset</a> and <a data-link-type="dfn" href="#raw-video-encapsulation-rc_stride" id="ref-for-raw-video-encapsulation-rc_stride">rc_stride</a>.</p>
    <h4 class="heading settled" data-level="3.1.26" id="enum-RawVideoFlags"><span class="secno">3.1.26. </span><span class="content">Raw Video Flags Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-rawvideoflags"><code>RawVideoFlags</code></dfn>)</span><a class="self-link" href="#enum-RawVideoFlags"></a></h4>
    <p>The <a data-link-type="dfn" href="#raw-video-encapsulation-rv_flags" id="ref-for-raw-video-encapsulation-rv_flags">rv_flags</a> field must be interpreted in the following way:</p>
    <div>
@@ -6261,16 +6245,16 @@ buffering, and reordering.</p>
       <p>Media Catalog Number for the album, if available.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_gain"><code>REPLAYGAIN_TRACK_GAIN</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_gain"></a></dfn> — <span class="css">floating point number</span>
      <dd data-md>
-      <p>ReplayGain 2.0 track gain, in <a class="property css" data-link-type="property">dB</a>.</p>
+      <p>ReplayGain 2.0 track gain, in <span class="css">dB</span>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_range"><code>REPLAYGAIN_TRACK_RANGE</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_range"></a></dfn> — <span class="css">floating point number</span>
      <dd data-md>
-      <p>ReplayGain 2.0 track range, in <a class="property css" data-link-type="property">dB</a>.</p>
+      <p>ReplayGain 2.0 track range, in <span class="css">dB</span>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_track_peak"><code>REPLAYGAIN_TRACK_PEAK</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_track_peak"></a></dfn> — <span class="css">floating point number</span>
      <dd data-md>
-      <p>ReplayGain 2.0 track peak, in <a class="property css" data-link-type="property">dB</a>.</p>
+      <p>ReplayGain 2.0 track peak, in <span class="css">dB</span>.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_reference_loudness"><code>REPLAYGAIN_REFERENCE_LOUDNESS</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_reference_loudness"></a></dfn> — <span class="css">floating point number</span>
      <dd data-md>
-      <p>ReplayGain 2.0 reference loudness, in <a class="property css" data-link-type="property">LUFS</a>.</p>
+      <p>ReplayGain 2.0 reference loudness, in <span class="css">LUFS</span>.</p>
     </dl>
    </div>
    <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language">language</a></code> field must be formatted as a <b>subtag</b>, according to the <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
@@ -6306,7 +6290,9 @@ The full block, along with the check data, shall be sent to an LDPC decoder.</p>
 <c- p>{</c->
     <c- b>int</c-> <c- n>i</c-><c- p>,</c-> <c- n>j</c-><c- p>,</c-> <c- n>k</c-><c- p>;</c->
     <c- b>uint64_t</c-> <c- n>parity</c-><c- p>,</c-> <c- n>data</c-><c- p>,</c-> <c- n>bits</c-><c- p>[</c-><c- mi>8</c-><c- p>];</c->
-    <c- b>uint8_t</c-> <c- o>*</c-><c- n>dst</c-> <c- o>=</c-> <c- o>&amp;</c-><c- n>pkt</c-><c- p>[</c-><c- n>message_bits</c-> <c- o>/</c-> <c- mi>8</c-><c- p>];</c-> <c- d>/* Parity data goes last */</c->
+
+    <c- d>/* Parity data goes last */</c->
+    <c- b>uint8_t</c-> <c- o>*</c-><c- n>dst</c-> <c- o>=</c-> <c- n>pkt</c-> <c- o>+</c-> <c- p>(</c-><c- n>message_bits</c-> <c- o>/</c-> <c- mi>8</c-><c- p>);</c->
 
     <c- d>/* Process 64 rows at a time */</c->
     <c- k>for</c-> <c- p>(</c-><c- n>i</c-> <c- o>=</c-> <c- mi>0</c-><c- p>;</c-> <c- n>i</c-> <c- o>&lt;</c-> <c- p>(</c-><c- n>parity_bits</c-> <c- o>/</c-> <c- mi>64</c-><c- p>);</c-> <c- n>i</c-><c- o>++</c-><c- p>)</c-> <c- p>{</c->
@@ -6351,8 +6337,8 @@ The matrices are optimized for AWGN channels, but they will perform nearly as we
     <li data-md>
      <p>768 ⨉ 2784</p>
    </ul>
-   <p class="note" role="note"><span class="marker">Note:</span> In standard mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
-not <i>width ⨉ height</i>. This specification uses standard mathematical nomenclature for this
+   <p class="note" role="note"><span class="marker">Note:</span> In mathematical notation, matrix sizes are specified as <b>height ⨉ width</b>,
+not <i>width ⨉ height</i>. This specification uses mathematical nomenclature for this
 definition.</p>
    <p>The last (n - k) columns contain the identity matrix. Encode-only implementations may omit them
 in order to save space.</p>
@@ -6538,7 +6524,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#atrac9-encapsulation-atrac9_version">atrac9_version</a><span>, in § 3.1.5</span>
    <li><a href="#stream-registration-packets-bandwidth">bandwidth</a><span>, in § 2.3</span>
    <li><a href="#stereo-video-packets-baseline">baseline</a><span>, in § 2.16</span>
-   <li><a href="#time-synchronization-packets-bit_depth">bit_depth</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-bit_depth">bit_depth</a><span>, in § 2.14</span>
    <li><a href="#session-control-data-packets-cease">cease</a><span>, in § 3.3.1</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_311">CHROMA_311</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_411">CHROMA_411</a><span>, in § 2.14.3</span>
@@ -6546,7 +6532,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-chromasubsampling-chroma_422">CHROMA_422</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_440">CHROMA_440</a><span>, in § 2.14.3</span>
    <li><a href="#dom-enum-chromasubsampling-chroma_444">CHROMA_444</a><span>, in § 2.14.3</span>
-   <li><a href="#time-synchronization-packets-chroma_pos">chroma_pos</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-chroma_pos">chroma_pos</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_bottom">CHROMA_POS_BOTTOM</a><span>, in § 2.14.5</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_bottomleft">CHROMA_POS_BOTTOMLEFT</a><span>, in § 2.14.5</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_center">CHROMA_POS_CENTER</a><span>, in § 2.14.5</span>
@@ -6555,11 +6541,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-chromaposition-chroma_pos_top">CHROMA_POS_TOP</a><span>, in § 2.14.5</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_topleft">CHROMA_POS_TOPLEFT</a><span>, in § 2.14.5</span>
    <li><a href="#dom-enum-chromaposition-chroma_pos_unspec">CHROMA_POS_UNSPEC</a><span>, in § 2.14.5</span>
-   <li><a href="#time-synchronization-packets-chroma_subsampling">chroma_subsampling</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-chroma_subsampling">chroma_subsampling</a><span>, in § 2.14</span>
    <li><a href="#enumdef-chromasubsampling">ChromaSubsampling</a><span>, in § 2.14.3</span>
-   <li><a href="#dom-enum-lutflags-clut_segmented">CLUT_SEGMENTED</a><span>, in § 2.12.1</span>
-   <li><a href="#dom-enum-luttype-clut_type_adobe_cube">CLUT_TYPE_ADOBE_CUBE</a><span>, in § 2.12.2</span>
-   <li><a href="#dom-enum-luttype-clut_type_icc_profile">CLUT_TYPE_ICC_PROFILE</a><span>, in § 2.12.2</span>
+   <li><a href="#dom-enum-luttype-clut_type_adobe_cube">CLUT_TYPE_ADOBE_CUBE</a><span>, in § 2.12.1</span>
+   <li><a href="#dom-enum-luttype-clut_type_icc_profile">CLUT_TYPE_ICC_PROFILE</a><span>, in § 2.12.1</span>
    <li><a href="#stream-registration-packets-codec_id">codec_id</a><span>, in § 2.3</span>
    <li><a href="#codec-encapsulation-codec_id_aac">CODEC_ID_AAC</a><span>, in § 3.1</span>
    <li><a href="#codec-encapsulation-codec_id_ac3">CODEC_ID_AC3</a><span>, in § 3.1</span>
@@ -6598,13 +6583,13 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-colorrange-color_range_full">COLOR_RANGE_FULL</a><span>, in § 2.14.2</span>
    <li><a href="#dom-enum-colorrange-color_range_limited">COLOR_RANGE_LIMITED</a><span>, in § 2.14.2</span>
    <li><a href="#enumdef-colorspace">Colorspace</a><span>, in § 2.14.1</span>
-   <li><a href="#time-synchronization-packets-colorspace">colorspace</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-colorspace">colorspace</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-commonmetadatakeys-comment">comment</a><span>, in § 4.1</span>
    <li><a href="#feedback-packets-corrupt_packets">corrupt_packets</a><span>, in § 3.3.3</span>
-   <li><a href="#time-synchronization-packets-cropped_height">cropped_height</a><span>, in § 2.14</span>
-   <li><a href="#time-synchronization-packets-cropped_width">cropped_width</a><span>, in § 2.14</span>
-   <li><a href="#time-synchronization-packets-crop_x_offset">crop_x_offset</a><span>, in § 2.14</span>
-   <li><a href="#time-synchronization-packets-crop_y_offset">crop_y_offset</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-cropped_height">cropped_height</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-cropped_width">cropped_width</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-crop_x_offset">crop_x_offset</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-crop_y_offset">crop_y_offset</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-colorspace-csp_bayer_bggr">CSP_BAYER_BGGR</a><span>, in § 2.14.1</span>
    <li><a href="#dom-enum-colorspace-csp_bayer_gbrg">CSP_BAYER_GBRG</a><span>, in § 2.14.1</span>
    <li><a href="#dom-enum-colorspace-csp_bayer_grbg">CSP_BAYER_GRBG</a><span>, in § 2.14.1</span>
@@ -6620,7 +6605,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#webvtt-encapsulation-cue_comenents">cue_comenents</a><span>, in § 3.1.18</span>
    <li><a href="#webvtt-encapsulation-cue_components_len">cue_components_len</a><span>, in § 3.1.18</span>
    <li><a href="#webvtt-encapsulation-cue_data">cue_data</a><span>, in § 3.1.18</span>
-   <li><a href="#time-synchronization-packets-custom_matrix">custom_matrix</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-custom_matrix">custom_matrix</a><span>, in § 2.14</span>
    <li><a href="#enumdef-datacompression">DataCompression</a><span>, in § 2.6.2</span>
    <li><a href="#dom-enum-datacompression-data_compression_brotli">DATA_COMPRESSION_BROTLI</a><span>, in § 2.6.2</span>
    <li><a href="#dom-enum-datacompression-data_compression_none">DATA_COMPRESSION_NONE</a><span>, in § 2.6.2</span>
@@ -6677,16 +6662,14 @@ This is the format that the reference function above expects.</p>
    <li><a href="#font-data-packets-font_data_length">font_data_length</a><span>, in § 2.13</span>
    <li><a href="#font-data-packets-font_data_parity_descriptor">font_data_parity_descriptor</a><span>, in § 2.13</span>
    <li><a href="#font-data-packets-font_data_segment_descriptor">font_data_segment_descriptor</a><span>, in § 2.13</span>
-   <li><a href="#enumdef-fontflags">FontFlags</a><span>, in § 2.13.1</span>
    <li><a href="#font-data-packets-font_name">font_name</a><span>, in § 2.13</span>
    <li><a href="#font-data-packets-font_pl_length">font_pl_length</a><span>, in § 2.13</span>
-   <li><a href="#dom-enum-fontflags-font_segmented">FONT_SEGMENTED</a><span>, in § 2.13.1</span>
    <li><a href="#font-data-packets-font_type">font_type</a><span>, in § 2.13</span>
-   <li><a href="#enumdef-fonttype">FontType</a><span>, in § 2.13.2</span>
-   <li><a href="#dom-enum-fonttype-font_type_otf">FONT_TYPE_OTF</a><span>, in § 2.13.2</span>
-   <li><a href="#dom-enum-fonttype-font_type_ttf">FONT_TYPE_TTF</a><span>, in § 2.13.2</span>
-   <li><a href="#dom-enum-fonttype-font_type_woff2">FONT_TYPE_WOFF2</a><span>, in § 2.13.2</span>
-   <li><a href="#time-synchronization-packets-framerate">framerate</a><span>, in § 2.14</span>
+   <li><a href="#enumdef-fonttype">FontType</a><span>, in § 2.13.1</span>
+   <li><a href="#dom-enum-fonttype-font_type_otf">FONT_TYPE_OTF</a><span>, in § 2.13.1</span>
+   <li><a href="#dom-enum-fonttype-font_type_ttf">FONT_TYPE_TTF</a><span>, in § 2.13.1</span>
+   <li><a href="#dom-enum-fonttype-font_type_woff2">FONT_TYPE_WOFF2</a><span>, in § 2.13.1</span>
+   <li><a href="#video-information-packets-framerate">framerate</a><span>, in § 2.14</span>
    <li><a href="#stream-data-packet-frame_type">frame_type</a><span>, in § 2.6</span>
    <li><a href="#enumdef-frametype">FrameType</a><span>, in § 2.6.1</span>
    <li><a href="#dom-enum-frametype-frame_type_c1">FRAME_TYPE_C1</a><span>, in § 2.6.1</span>
@@ -6697,7 +6680,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-frametype-frame_type_key">FRAME_TYPE_KEY</a><span>, in § 2.6.1</span>
    <li><a href="#dom-enum-frametype-frame_type_p">FRAME_TYPE_P</a><span>, in § 2.6.1</span>
    <li><a href="#dom-enum-frametype-frame_type_s">FRAME_TYPE_S</a><span>, in § 2.6.1</span>
-   <li><a href="#time-synchronization-packets-gamma">gamma</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-gamma">gamma</a><span>, in § 2.14</span>
    <li><a href="#generic-data-packets-generic_data_compression">generic_data_compression</a><span>, in § 2.4</span>
    <li><a href="#generic-data-packets-generic_data_descriptor">generic_data_descriptor</a><span>, in § 2.4</span>
    <li><a href="#generic-data-parity-packets-generic_parity_descriptor">generic_parity_descriptor</a><span>, in § 2.4.2</span>
@@ -6709,10 +6692,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#hash-packets-hash_data">hash_data</a><span>, in § 2.9</span>
    <li><a href="#hash-packets-hash_data_descriptor">hash_data_descriptor</a><span>, in § 2.9</span>
    <li><a href="#hash-packets-hash_target">hash_target</a><span>, in § 2.9</span>
-   <li><a href="#time-synchronization-packets-has_luminance">has_luminance</a><span>, in § 2.14</span>
-   <li><a href="#time-synchronization-packets-has_mastering_primaries">has_mastering_primaries</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-has_luminance">has_luminance</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-has_mastering_primaries">has_mastering_primaries</a><span>, in § 2.14</span>
    <li><a href="#generic-data-segment-packets-header_7">header_7</a><span>, in § 2.4.1</span>
-   <li><a href="#time-synchronization-packets-height">height</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-height">height</a><span>, in § 2.14</span>
    <li><a href="#stereo-video-packets-horizontal_disparity_adjustment">horizontal_disparity_adjustment</a><span>, in § 2.16</span>
    <li><a href="#stereo-video-packets-horizontal_field_of_view">horizontal_field_of_view</a><span>, in § 2.16</span>
    <li><a href="#dom-enum-interlacing-ilace_bff">ILACE_BFF</a><span>, in § 2.14.4</span>
@@ -6724,7 +6707,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#index-entry-struct-index_entry_descriptor">index_entry_descriptor</a><span>, in § 2.10.1</span>
    <li><a href="#index-packets-index_entry_list">index_entry_list</a><span>, in § 2.10</span>
    <li><a href="#stream-registration-packets-init_packets">init_packets</a><span>, in § 2.3</span>
-   <li><a href="#time-synchronization-packets-interlaced">interlaced</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-interlaced">interlaced</a><span>, in § 2.14</span>
    <li><a href="#enumdef-interlacing">Interlacing</a><span>, in § 2.14.4</span>
    <li><a href="#dom-enum-commonmetadatakeys-isrc">isrc</a><span>, in § 4.1</span>
    <li><a href="#dom-enum-commonmetadatakeys-language">language</a><span>, in § 4.1</span>
@@ -6736,7 +6719,6 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-lut_compression">lut_compression</a><span>, in § 2.12</span>
    <li><a href="#time-synchronization-packets-lut_data">lut_data</a><span>, in § 2.12</span>
    <li><a href="#time-synchronization-packets-lut_data_length">lut_data_length</a><span>, in § 2.12</span>
-   <li><a href="#enumdef-lutflags">LutFlags</a><span>, in § 2.12.1</span>
    <li><a href="#time-synchronization-packets-lut_icc_descriptor">lut_icc_descriptor</a><span>, in § 2.12</span>
    <li><a href="#lut-icc-profile-packets-lut_icc_parity_descriptor">lut_icc_parity_descriptor</a><span>, in § 2.12</span>
    <li><a href="#lut-icc-profile-packets-lut_icc_segment_descriptor">lut_icc_segment_descriptor</a><span>, in § 2.12</span>
@@ -6745,11 +6727,11 @@ This is the format that the reference function above expects.</p>
    <li><a href="#time-synchronization-packets-lut_name">lut_name</a><span>, in § 2.12</span>
    <li><a href="#time-synchronization-packets-lut_pl_length">lut_pl_length</a><span>, in § 2.12</span>
    <li><a href="#time-synchronization-packets-lut_type">lut_type</a><span>, in § 2.12</span>
-   <li><a href="#enumdef-luttype">LutType</a><span>, in § 2.12.2</span>
-   <li><a href="#time-synchronization-packets-mastering_primaries">mastering_primaries</a><span>, in § 2.14</span>
-   <li><a href="#time-synchronization-packets-mastering_white_point">mastering_white_point</a><span>, in § 2.14</span>
+   <li><a href="#enumdef-luttype">LutType</a><span>, in § 2.12.1</span>
+   <li><a href="#video-information-packets-mastering_primaries">mastering_primaries</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-mastering_white_point">mastering_white_point</a><span>, in § 2.14</span>
    <li><a href="#enumdef-matrix">Matrix</a><span>, in § 2.14.8</span>
-   <li><a href="#time-synchronization-packets-matrix">matrix</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-matrix">matrix</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-matrix-matrix_bt2020_cl">MATRIX_BT2020_CL</a><span>, in § 2.14.8</span>
    <li><a href="#dom-enum-matrix-matrix_bt2020_ncl">MATRIX_BT2020_NCL</a><span>, in § 2.14.8</span>
    <li><a href="#dom-enum-matrix-matrix_bt470">MATRIX_BT470</a><span>, in § 2.14.8</span>
@@ -6763,13 +6745,13 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-matrix-matrix_st240">MATRIX_ST240</a><span>, in § 2.14.8</span>
    <li><a href="#dom-enum-matrix-matrix_unspec">MATRIX_UNSPEC</a><span>, in § 2.14.8</span>
    <li><a href="#dom-enum-matrix-matrix_ycgco">MATRIX_YCGCO</a><span>, in § 2.14.8</span>
-   <li><a href="#time-synchronization-packets-max_luminance">max_luminance</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-max_luminance">max_luminance</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-commonmetadatakeys-mcn">mcn</a><span>, in § 4.1</span>
    <li><a href="#dom-enum-commonmetadatakeys-media_type">media_type</a><span>, in § 4.1</span>
    <li><a href="#metadata-packets-metadata_descriptor">metadata_descriptor</a><span>, in § 2.11</span>
    <li><a href="#metadata-packets-metadata_parity_descriptor">metadata_parity_descriptor</a><span>, in § 2.11</span>
    <li><a href="#metadata-packets-metadata_segment_descriptor">metadata_segment_descriptor</a><span>, in § 2.11</span>
-   <li><a href="#time-synchronization-packets-min_luminance">min_luminance</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-min_luminance">min_luminance</a><span>, in § 2.14</span>
    <li><a href="#index-packets-nb_indices">nb_indices</a><span>, in § 2.10</span>
    <li><a href="#index-packets-next_idx">next_idx</a><span>, in § 2.10</span>
    <li><a href="#user-data-packets-opaque">opaque</a><span>, in § 2.17</span>
@@ -6783,7 +6765,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#opus-encapsulation-opus_prepad">opus_prepad</a><span>, in § 3.1.1</span>
    <li><a href="#opus-encapsulation-opus_rate">opus_rate</a><span>, in § 3.1.1</span>
    <li><a href="#opus-encapsulation-opus_stream_count">opus_stream_count</a><span>, in § 3.1.1</span>
-   <li><a href="#time-synchronization-packets-output_range">output_range</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-output_range">output_range</a><span>, in § 2.14</span>
    <li><a href="#stream-data-packet-packet_data">packet_data</a><span>, in § 2.6</span>
    <li><a href="#resend-packets-packet_resend_descriptor">packet_resend_descriptor</a><span>, in § 3.3.4</span>
    <li><a href="#padding">padding</a><span>, in § 1.3</span>
@@ -6799,7 +6781,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#generic-data-segment-packets-pkt_total_data">pkt_total_data</a><span>, in § 2.4.1</span>
    <li><a href="#index-packets-prev_idx">prev_idx</a><span>, in § 2.10</span>
    <li><a href="#enumdef-primaries">Primaries</a><span>, in § 2.14.6</span>
-   <li><a href="#time-synchronization-packets-primaries">primaries</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-primaries">primaries</a><span>, in § 2.14</span>
    <li><a href="#stereo-video-packets-primary_eye">primary_eye</a><span>, in § 2.16</span>
    <li><a href="#dom-enum-primaries-prim_bt2020">PRIM_BT2020</a><span>, in § 2.14.6</span>
    <li><a href="#dom-enum-primaries-prim_bt470">PRIM_BT470</a><span>, in § 2.14.6</span>
@@ -6860,7 +6842,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-start-packets-session_start_descriptor">session_start_descriptor</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_uuid">session_uuid</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_version">session_version</a><span>, in § 2.1</span>
-   <li><a href="#time-synchronization-packets-signal_aspect">signal_aspect</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-signal_aspect">signal_aspect</a><span>, in § 2.14</span>
    <li><a href="#stream-registration-packets-skip_preroll">skip_preroll</a><span>, in § 2.3</span>
    <li><a href="#stereo-video-packets-stereo_video_descriptor">stereo_video_descriptor</a><span>, in § 2.16</span>
    <li><a href="#dom-enum-stereovideoflags-stereo_video_flag_inverted">STEREO_VIDEO_FLAG_INVERTED</a><span>, in § 2.16.2</span>
@@ -6927,7 +6909,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-commonmetadatakeys-track">track</a><span>, in § 4.1</span>
    <li><a href="#dom-enum-commonmetadatakeys-tracks">tracks</a><span>, in § 4.1</span>
    <li><a href="#enumdef-transfer">Transfer</a><span>, in § 2.14.7</span>
-   <li><a href="#time-synchronization-packets-transfer">transfer</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-transfer">transfer</a><span>, in § 2.14</span>
    <li><a href="#dom-enum-transfer-transfer_bt1361">TRANSFER_BT1361</a><span>, in § 2.14.7</span>
    <li><a href="#dom-enum-transfer-transfer_bt2020_10">TRANSFER_BT2020_10</a><span>, in § 2.14.7</span>
    <li><a href="#dom-enum-transfer-transfer_bt2020_12">TRANSFER_BT2020_12</a><span>, in § 2.14.7</span>
@@ -6962,20 +6944,20 @@ This is the format that the reference function above expects.</p>
    <li><a href="#user-data-packets-userdata_pl_length">userdata_pl_length</a><span>, in § 2.17</span>
    <li><a href="#user-data-packets-user_data_segment_descriptor">user_data_segment_descriptor</a><span>, in § 2.17</span>
    <li><a href="#user-data-packets-user_field">user_field</a><span>, in § 2.17</span>
-   <li><a href="#time-synchronization-packets-video_info_descriptor">video_info_descriptor</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-video_info_descriptor">video_info_descriptor</a><span>, in § 2.14</span>
    <li><a href="#video-orientation-packets-video_orientation_descriptor">video_orientation_descriptor</a><span>, in § 2.15</span>
    <li><a href="#dom-enum-videoreflection-video_reflect_flip">VIDEO_REFLECT_FLIP</a><span>, in § 2.15.1</span>
    <li><a href="#enumdef-videoreflection">VideoReflection</a><span>, in § 2.15.1</span>
    <li><a href="#dom-enum-videoreflection-video_reflect_mirror">VIDEO_REFLECT_MIRROR</a><span>, in § 2.15.1</span>
    <li><a href="#dom-enum-videoreflection-video_reflect_none">VIDEO_REFLECT_NONE</a><span>, in § 2.15.1</span>
-   <li><a href="#time-synchronization-packets-width">width</a><span>, in § 2.14</span>
+   <li><a href="#video-information-packets-width">width</a><span>, in § 2.14</span>
   </ul>
   <h3 class="no-num no-ref heading settled" id="index-defined-elsewhere"><span class="content">Terms defined by reference</span><a class="self-link" href="#index-defined-elsewhere"></a></h3>
   <ul class="index">
    <li>
-    <a data-link-type="biblio">[AV1-AVIF]</a> defines the following terms:
+    <a data-link-type="biblio">[AV1-ISOBMFF]</a> defines the following terms:
     <ul>
-     <li><span class="dfn-paneled" id="ee424399">av01</span>
+     <li><span class="dfn-paneled" id="30e0ce88">av01</span>
     </ul>
    <li>
     <a data-link-type="biblio">[CSS-COLOR-4]</a> defines the following terms:
@@ -6993,8 +6975,8 @@ This is the format that the reference function above expects.</p>
   <h2 class="no-num no-ref heading settled" id="references"><span class="content">References</span><a class="self-link" href="#references"></a></h2>
   <h3 class="no-num no-ref heading settled" id="normative"><span class="content">Normative References</span><a class="self-link" href="#normative"></a></h3>
   <dl>
-   <dt id="biblio-av1-avif">[AV1-AVIF]
-   <dd><a href="https://aomediacodec.github.io/av1-avif/"><cite>AV1 Image File Format (AVIF)</cite></a>. Final Deliverable. URL: <a href="https://aomediacodec.github.io/av1-avif/">https://aomediacodec.github.io/av1-avif/</a>
+   <dt id="biblio-av1-isobmff">[AV1-ISOBMFF]
+   <dd><a href="https://aomediacodec.github.io/av1-isobmff/"><cite>AV1 Codec ISO Media File Format Binding</cite></a>. Draft Deliverable. URL: <a href="https://aomediacodec.github.io/av1-isobmff/">https://aomediacodec.github.io/av1-isobmff/</a>
    <dt id="biblio-bcp47">[BCP47]
    <dd>A. Phillips, Ed.; M. Davis, Ed.. <a href="https://www.rfc-editor.org/rfc/rfc5646"><cite>Tags for Identifying Languages</cite></a>. September 2009. Best Current Practice. URL: <a href="https://www.rfc-editor.org/rfc/rfc5646">https://www.rfc-editor.org/rfc/rfc5646</a>
    <dt id="biblio-css-color-4">[CSS-COLOR-4]
@@ -7056,8 +7038,6 @@ This is the format that the reference function above expects.</p>
    <dd>F. Yergeau. <a href="https://www.rfc-editor.org/rfc/rfc3629"><cite>UTF-8, a transformation format of ISO 10646</cite></a>. November 2003. Internet Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc3629">https://www.rfc-editor.org/rfc/rfc3629</a>
    <dt id="biblio-rfc3828">[RFC3828]
    <dd>L-A. Larzon; et al. <a href="https://www.rfc-editor.org/rfc/rfc3828"><cite>The Lightweight User Datagram Protocol (UDP-Lite)</cite></a>. July 2004. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc3828">https://www.rfc-editor.org/rfc/rfc3828</a>
-   <dt id="biblio-rfc4122">[RFC4122]
-   <dd>K. Davis; B. Peabody; P. Leach. <a href="https://www.rfc-editor.org/rfc/rfc9562"><cite>Universally Unique IDentifiers (UUIDs)</cite></a>. May 2024. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9562">https://www.rfc-editor.org/rfc/rfc9562</a>
    <dt id="biblio-rfc5905">[RFC5905]
    <dd>D. Mills; et al. <a href="https://www.rfc-editor.org/rfc/rfc5905"><cite>Network Time Protocol Version 4: Protocol and Algorithms Specification</cite></a>. June 2010. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc5905">https://www.rfc-editor.org/rfc/rfc5905</a>
    <dt id="biblio-rfc6716">[RFC6716]
@@ -7078,6 +7058,8 @@ This is the format that the reference function above expects.</p>
    <dd>C. Bormann; P. Hoffman. <a href="https://www.rfc-editor.org/rfc/rfc8949"><cite>Concise Binary Object Representation (CBOR)</cite></a>. December 2020. Internet Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc8949">https://www.rfc-editor.org/rfc/rfc8949</a>
    <dt id="biblio-rfc9221">[RFC9221]
    <dd>T. Pauly; E. Kinnear; D. Schinazi. <a href="https://www.rfc-editor.org/rfc/rfc9221"><cite>An Unreliable Datagram Extension to QUIC</cite></a>. March 2022. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9221">https://www.rfc-editor.org/rfc/rfc9221</a>
+   <dt id="biblio-rfc9562">[RFC9562]
+   <dd>K. Davis; B. Peabody; P. Leach. <a href="https://www.rfc-editor.org/rfc/rfc9562"><cite>Universally Unique IDentifiers (UUIDs)</cite></a>. May 2024. Proposed Standard. URL: <a href="https://www.rfc-editor.org/rfc/rfc9562">https://www.rfc-editor.org/rfc/rfc9562</a>
    <dt id="biblio-truetype">[TrueType]
    <dd><a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/"><cite>TrueType™ Reference Manual</cite></a>. URL: <a href="https://developer.apple.com/fonts/TrueType-Reference-Manual/">https://developer.apple.com/fonts/TrueType-Reference-Manual/</a>
    <dt id="biblio-unix-time">[UNIX-time]
@@ -7395,7 +7377,7 @@ This is the format that the reference function above expects.</p>
 </script>
 <script>/* Boilerplate: script-dfn-panel-json */
 window.dfnpanelData = {};
-window.dfnpanelData['ee424399'] = {"dfnID": "ee424399", "url": "https://aomediacodec.github.io/av1-avif/#valdef-av1-image-item-type-av01", "dfnText": "av01", "refSections": [{"refs": [{"id": "ref-for-valdef-av1-image-item-type-av01"}], "title": "3.1. Codec encapsulation"}], "external": true};
+window.dfnpanelData['30e0ce88'] = {"dfnID": "30e0ce88", "url": "https://aomediacodec.github.io/av1-isobmff/#valdef-isobmff-brand-av01", "dfnText": "av01", "refSections": [{"refs": [{"id": "ref-for-valdef-isobmff-brand-av01"}], "title": "3.1. Codec encapsulation"}, {"refs": [{"id": "ref-for-valdef-isobmff-brand-av01\u2460"}], "title": "3.1.10. AV1 encapsulation"}], "external": true};
 window.dfnpanelData['f17eedd8'] = {"dfnID": "f17eedd8", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-blue", "dfnText": "blue", "refSections": [{"refs": [{"id": "ref-for-valdef-color-blue"}, {"id": "ref-for-valdef-color-blue\u2460"}, {"id": "ref-for-valdef-color-blue\u2461"}, {"id": "ref-for-valdef-color-blue\u2462"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['b06bf874'] = {"dfnID": "b06bf874", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-green", "dfnText": "green", "refSections": [{"refs": [{"id": "ref-for-valdef-color-green"}, {"id": "ref-for-valdef-color-green\u2460"}, {"id": "ref-for-valdef-color-green\u2461"}, {"id": "ref-for-valdef-color-green\u2462"}, {"id": "ref-for-valdef-color-green\u2463"}, {"id": "ref-for-valdef-color-green\u2464"}, {"id": "ref-for-valdef-color-green\u2465"}, {"id": "ref-for-valdef-color-green\u2466"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": true};
 window.dfnpanelData['82ed5c4b'] = {"dfnID": "82ed5c4b", "url": "https://drafts.csswg.org/css-color-4/#valdef-color-red", "dfnText": "red", "refSections": [{"refs": [{"id": "ref-for-valdef-color-red"}, {"id": "ref-for-valdef-color-red\u2460"}, {"id": "ref-for-valdef-color-red\u2461"}, {"id": "ref-for-valdef-color-red\u2462"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": true};
@@ -7460,28 +7442,32 @@ window.dfnpanelData['index-packets-prev_idx'] = {"dfnID": "index-packets-prev_id
 window.dfnpanelData['index-packets-next_idx'] = {"dfnID": "index-packets-next_idx", "url": "#index-packets-next_idx", "dfnText": "next_idx", "refSections": [{"refs": [{"id": "ref-for-index-packets-next_idx"}, {"id": "ref-for-index-packets-next_idx\u2460"}], "title": "2.10. Index"}], "external": false};
 window.dfnpanelData['index-packets-nb_indices'] = {"dfnID": "index-packets-nb_indices", "url": "#index-packets-nb_indices", "dfnText": "nb_indices", "refSections": [{"refs": [{"id": "ref-for-index-packets-nb_indices"}], "title": "2.10. Index"}], "external": false};
 window.dfnpanelData['index-entry-struct-pkt_offset'] = {"dfnID": "index-entry-struct-pkt_offset", "url": "#index-entry-struct-pkt_offset", "dfnText": "pkt_offset", "refSections": [{"refs": [{"id": "ref-for-index-entry-struct-pkt_offset"}], "title": "2.10. Index"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_type'] = {"dfnID": "time-synchronization-packets-lut_type", "url": "#time-synchronization-packets-lut_type", "dfnText": "lut_type", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_type"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_major_ver'] = {"dfnID": "time-synchronization-packets-lut_major_ver", "url": "#time-synchronization-packets-lut_major_ver", "dfnText": "lut_major_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_major_ver"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_minor_ver'] = {"dfnID": "time-synchronization-packets-lut_minor_ver", "url": "#time-synchronization-packets-lut_minor_ver", "dfnText": "lut_minor_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_minor_ver"}], "title": "2.12.2. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-lut_pl_length'] = {"dfnID": "time-synchronization-packets-lut_pl_length", "url": "#time-synchronization-packets-lut_pl_length", "dfnText": "lut_pl_length", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_pl_length"}], "title": "2.12. LUT/ICC profile"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_type'] = {"dfnID": "time-synchronization-packets-lut_type", "url": "#time-synchronization-packets-lut_type", "dfnText": "lut_type", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_type"}], "title": "2.12.1. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_major_ver'] = {"dfnID": "time-synchronization-packets-lut_major_ver", "url": "#time-synchronization-packets-lut_major_ver", "dfnText": "lut_major_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_major_ver"}], "title": "2.12.1. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_minor_ver'] = {"dfnID": "time-synchronization-packets-lut_minor_ver", "url": "#time-synchronization-packets-lut_minor_ver", "dfnText": "lut_minor_ver", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_minor_ver"}], "title": "2.12.1. LUT/ICC Profile Type Enumeration (enum LutType)"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_data_length'] = {"dfnID": "time-synchronization-packets-lut_data_length", "url": "#time-synchronization-packets-lut_data_length", "dfnText": "lut_data_length", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_data_length"}], "title": "2.12. LUT/ICC profile"}], "external": false};
+window.dfnpanelData['time-synchronization-packets-lut_pl_length'] = {"dfnID": "time-synchronization-packets-lut_pl_length", "url": "#time-synchronization-packets-lut_pl_length", "dfnText": "lut_pl_length", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_pl_length"}, {"id": "ref-for-time-synchronization-packets-lut_pl_length\u2460"}], "title": "2.12. LUT/ICC profile"}], "external": false};
 window.dfnpanelData['time-synchronization-packets-lut_data'] = {"dfnID": "time-synchronization-packets-lut_data", "url": "#time-synchronization-packets-lut_data", "dfnText": "lut_data", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-lut_data"}], "title": "2.12. LUT/ICC profile"}], "external": false};
 window.dfnpanelData['enumdef-luttype'] = {"dfnID": "enumdef-luttype", "url": "#enumdef-luttype", "dfnText": "LutType", "refSections": [{"refs": [{"id": "ref-for-enumdef-luttype"}], "title": "2.12. LUT/ICC profile"}], "external": false};
-window.dfnpanelData['font-data-packets-font_type'] = {"dfnID": "font-data-packets-font_type", "url": "#font-data-packets-font_type", "dfnText": "font_type", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_type"}], "title": "2.13.2. Font Type Enumeration (enum FontType)"}], "external": false};
-window.dfnpanelData['font-data-packets-font_pl_length'] = {"dfnID": "font-data-packets-font_pl_length", "url": "#font-data-packets-font_pl_length", "dfnText": "font_pl_length", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_pl_length"}], "title": "2.13. Font data"}], "external": false};
+window.dfnpanelData['font-data-packets-font_type'] = {"dfnID": "font-data-packets-font_type", "url": "#font-data-packets-font_type", "dfnText": "font_type", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_type"}], "title": "2.13.1. Font Type Enumeration (enum FontType)"}], "external": false};
+window.dfnpanelData['font-data-packets-font_data_length'] = {"dfnID": "font-data-packets-font_data_length", "url": "#font-data-packets-font_data_length", "dfnText": "font_data_length", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_data_length"}], "title": "2.13. Font data"}], "external": false};
+window.dfnpanelData['font-data-packets-font_pl_length'] = {"dfnID": "font-data-packets-font_pl_length", "url": "#font-data-packets-font_pl_length", "dfnText": "font_pl_length", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_pl_length"}, {"id": "ref-for-font-data-packets-font_pl_length\u2460"}], "title": "2.13. Font data"}], "external": false};
 window.dfnpanelData['font-data-packets-font_data'] = {"dfnID": "font-data-packets-font_data", "url": "#font-data-packets-font_data", "dfnText": "font_data", "refSections": [{"refs": [{"id": "ref-for-font-data-packets-font_data"}], "title": "2.13. Font data"}], "external": false};
 window.dfnpanelData['enumdef-fonttype'] = {"dfnID": "enumdef-fonttype", "url": "#enumdef-fonttype", "dfnText": "FontType", "refSections": [{"refs": [{"id": "ref-for-enumdef-fonttype"}], "title": "2.13. Font data"}], "external": false};
-window.dfnpanelData['dom-enum-fonttype-font_type_woff2'] = {"dfnID": "dom-enum-fonttype-font_type_woff2", "url": "#dom-enum-fonttype-font_type_woff2", "dfnText": "FONT_TYPE_WOFF2", "refSections": [{"refs": [{"id": "ref-for-dom-enum-fonttype-font_type_woff2"}], "title": "2.13.2. Font Type Enumeration (enum FontType)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-colorspace'] = {"dfnID": "time-synchronization-packets-colorspace", "url": "#time-synchronization-packets-colorspace", "dfnText": "colorspace", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-colorspace"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-bit_depth'] = {"dfnID": "time-synchronization-packets-bit_depth", "url": "#time-synchronization-packets-bit_depth", "dfnText": "bit_depth", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-bit_depth"}, {"id": "ref-for-time-synchronization-packets-bit_depth\u2460"}, {"id": "ref-for-time-synchronization-packets-bit_depth\u2461"}], "title": "2.14.2. Color Range Enumeration (enum ColorRange)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-interlaced'] = {"dfnID": "time-synchronization-packets-interlaced", "url": "#time-synchronization-packets-interlaced", "dfnText": "interlaced", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-interlaced"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-time-synchronization-packets-interlaced\u2460"}], "title": "2.14.4. Interlacing Enumeration (enum Interlacing)"}, {"refs": [{"id": "ref-for-time-synchronization-packets-interlaced\u2461"}], "title": "2.16. Stereo video"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-matrix'] = {"dfnID": "time-synchronization-packets-matrix", "url": "#time-synchronization-packets-matrix", "dfnText": "matrix", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-matrix"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-time-synchronization-packets-matrix\u2460"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-custom_matrix'] = {"dfnID": "time-synchronization-packets-custom_matrix", "url": "#time-synchronization-packets-custom_matrix", "dfnText": "custom_matrix", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-custom_matrix"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-mastering_primaries'] = {"dfnID": "time-synchronization-packets-mastering_primaries", "url": "#time-synchronization-packets-mastering_primaries", "dfnText": "mastering_primaries", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-mastering_primaries"}], "title": "2.14. Video information"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-mastering_white_point'] = {"dfnID": "time-synchronization-packets-mastering_white_point", "url": "#time-synchronization-packets-mastering_white_point", "dfnText": "mastering_white_point", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-mastering_white_point"}], "title": "2.14. Video information"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-min_luminance'] = {"dfnID": "time-synchronization-packets-min_luminance", "url": "#time-synchronization-packets-min_luminance", "dfnText": "min_luminance", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-min_luminance"}], "title": "2.14. Video information"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-max_luminance'] = {"dfnID": "time-synchronization-packets-max_luminance", "url": "#time-synchronization-packets-max_luminance", "dfnText": "max_luminance", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-max_luminance"}], "title": "2.14. Video information"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-cropped_width'] = {"dfnID": "time-synchronization-packets-cropped_width", "url": "#time-synchronization-packets-cropped_width", "dfnText": "cropped_width", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-cropped_width"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
-window.dfnpanelData['time-synchronization-packets-cropped_height'] = {"dfnID": "time-synchronization-packets-cropped_height", "url": "#time-synchronization-packets-cropped_height", "dfnText": "cropped_height", "refSections": [{"refs": [{"id": "ref-for-time-synchronization-packets-cropped_height"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
+window.dfnpanelData['dom-enum-fonttype-font_type_woff2'] = {"dfnID": "dom-enum-fonttype-font_type_woff2", "url": "#dom-enum-fonttype-font_type_woff2", "dfnText": "FONT_TYPE_WOFF2", "refSections": [{"refs": [{"id": "ref-for-dom-enum-fonttype-font_type_woff2"}], "title": "2.13.1. Font Type Enumeration (enum FontType)"}], "external": false};
+window.dfnpanelData['video-information-packets-height'] = {"dfnID": "video-information-packets-height", "url": "#video-information-packets-height", "dfnText": "height", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-height"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
+window.dfnpanelData['video-information-packets-chroma_subsampling'] = {"dfnID": "video-information-packets-chroma_subsampling", "url": "#video-information-packets-chroma_subsampling", "dfnText": "chroma_subsampling", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-chroma_subsampling"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
+window.dfnpanelData['video-information-packets-colorspace'] = {"dfnID": "video-information-packets-colorspace", "url": "#video-information-packets-colorspace", "dfnText": "colorspace", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-colorspace"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
+window.dfnpanelData['video-information-packets-bit_depth'] = {"dfnID": "video-information-packets-bit_depth", "url": "#video-information-packets-bit_depth", "dfnText": "bit_depth", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-bit_depth"}, {"id": "ref-for-video-information-packets-bit_depth\u2460"}, {"id": "ref-for-video-information-packets-bit_depth\u2461"}], "title": "2.14.2. Color Range Enumeration (enum ColorRange)"}], "external": false};
+window.dfnpanelData['video-information-packets-interlaced'] = {"dfnID": "video-information-packets-interlaced", "url": "#video-information-packets-interlaced", "dfnText": "interlaced", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-interlaced"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-video-information-packets-interlaced\u2460"}], "title": "2.14.4. Interlacing Enumeration (enum Interlacing)"}, {"refs": [{"id": "ref-for-video-information-packets-interlaced\u2461"}], "title": "2.16. Stereo video"}], "external": false};
+window.dfnpanelData['video-information-packets-matrix'] = {"dfnID": "video-information-packets-matrix", "url": "#video-information-packets-matrix", "dfnText": "matrix", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-matrix"}], "title": "2.14. Video information"}, {"refs": [{"id": "ref-for-video-information-packets-matrix\u2460"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
+window.dfnpanelData['video-information-packets-custom_matrix'] = {"dfnID": "video-information-packets-custom_matrix", "url": "#video-information-packets-custom_matrix", "dfnText": "custom_matrix", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-custom_matrix"}], "title": "2.14.1. Colorspace Enumeration (enum Colorspace)"}], "external": false};
+window.dfnpanelData['video-information-packets-mastering_primaries'] = {"dfnID": "video-information-packets-mastering_primaries", "url": "#video-information-packets-mastering_primaries", "dfnText": "mastering_primaries", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-mastering_primaries"}], "title": "2.14. Video information"}], "external": false};
+window.dfnpanelData['video-information-packets-mastering_white_point'] = {"dfnID": "video-information-packets-mastering_white_point", "url": "#video-information-packets-mastering_white_point", "dfnText": "mastering_white_point", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-mastering_white_point"}], "title": "2.14. Video information"}], "external": false};
+window.dfnpanelData['video-information-packets-min_luminance'] = {"dfnID": "video-information-packets-min_luminance", "url": "#video-information-packets-min_luminance", "dfnText": "min_luminance", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-min_luminance"}], "title": "2.14. Video information"}], "external": false};
+window.dfnpanelData['video-information-packets-max_luminance'] = {"dfnID": "video-information-packets-max_luminance", "url": "#video-information-packets-max_luminance", "dfnText": "max_luminance", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-max_luminance"}], "title": "2.14. Video information"}], "external": false};
+window.dfnpanelData['video-information-packets-cropped_width'] = {"dfnID": "video-information-packets-cropped_width", "url": "#video-information-packets-cropped_width", "dfnText": "cropped_width", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-cropped_width"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
+window.dfnpanelData['video-information-packets-cropped_height'] = {"dfnID": "video-information-packets-cropped_height", "url": "#video-information-packets-cropped_height", "dfnText": "cropped_height", "refSections": [{"refs": [{"id": "ref-for-video-information-packets-cropped_height"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['enumdef-colorspace'] = {"dfnID": "enumdef-colorspace", "url": "#enumdef-colorspace", "dfnText": "Colorspace", "refSections": [{"refs": [{"id": "ref-for-enumdef-colorspace"}], "title": "2.14. Video information"}], "external": false};
 window.dfnpanelData['enumdef-colorrange'] = {"dfnID": "enumdef-colorrange", "url": "#enumdef-colorrange", "dfnText": "ColorRange", "refSections": [{"refs": [{"id": "ref-for-enumdef-colorrange"}], "title": "2.14. Video information"}], "external": false};
 window.dfnpanelData['enumdef-chromasubsampling'] = {"dfnID": "enumdef-chromasubsampling", "url": "#enumdef-chromasubsampling", "dfnText": "ChromaSubsampling", "refSections": [{"refs": [{"id": "ref-for-enumdef-chromasubsampling"}], "title": "2.14. Video information"}], "external": false};
@@ -7506,6 +7492,7 @@ window.dfnpanelData['enumdef-matrix'] = {"dfnID": "enumdef-matrix", "url": "#enu
 window.dfnpanelData['video-orientation-packets-reflection'] = {"dfnID": "video-orientation-packets-reflection", "url": "#video-orientation-packets-reflection", "dfnText": "reflection", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-reflection"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['video-orientation-packets-rotation'] = {"dfnID": "video-orientation-packets-rotation", "url": "#video-orientation-packets-rotation", "dfnText": "rotation", "refSections": [{"refs": [{"id": "ref-for-video-orientation-packets-rotation"}, {"id": "ref-for-video-orientation-packets-rotation\u2460"}, {"id": "ref-for-video-orientation-packets-rotation\u2461"}], "title": "2.15.1. Video Reflection Enumeration (enum VideoReflection)"}], "external": false};
 window.dfnpanelData['enumdef-videoreflection'] = {"dfnID": "enumdef-videoreflection", "url": "#enumdef-videoreflection", "dfnText": "VideoReflection", "refSections": [{"refs": [{"id": "ref-for-enumdef-videoreflection"}], "title": "2.15. Video orientation"}], "external": false};
+window.dfnpanelData['stereo-video-packets-primary_eye'] = {"dfnID": "stereo-video-packets-primary_eye", "url": "#stereo-video-packets-primary_eye", "dfnText": "primary_eye", "refSections": [{"refs": [{"id": "ref-for-stereo-video-packets-primary_eye"}], "title": "2.16.1. Stereo Video Type Enumeration (enum StereoVideoType)"}], "external": false};
 window.dfnpanelData['enumdef-stereovideotype'] = {"dfnID": "enumdef-stereovideotype", "url": "#enumdef-stereovideotype", "dfnText": "StereoVideoType", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideotype"}], "title": "2.16. Stereo video"}], "external": false};
 window.dfnpanelData['enumdef-stereovideoflags'] = {"dfnID": "enumdef-stereovideoflags", "url": "#enumdef-stereovideoflags", "dfnText": "StereoVideoFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-stereovideoflags"}], "title": "2.16. Stereo video"}], "external": false};
 window.dfnpanelData['dom-enum-stereovideoflags-stereo_video_flag_inverted'] = {"dfnID": "dom-enum-stereovideoflags-stereo_video_flag_inverted", "url": "#dom-enum-stereovideoflags-stereo_video_flag_inverted", "dfnText": "STEREO_VIDEO_FLAG_INVERTED", "refSections": [{"refs": [{"id": "ref-for-dom-enum-stereovideoflags-stereo_video_flag_inverted"}], "title": "2.16.1. Stereo Video Type Enumeration (enum StereoVideoType)"}], "external": false};
@@ -7520,6 +7507,7 @@ window.dfnpanelData['flac-encapsulation-flac_min_blocksize'] = {"dfnID": "flac-e
 window.dfnpanelData['flac-encapsulation-flac_min_framesize'] = {"dfnID": "flac-encapsulation-flac_min_framesize", "url": "#flac-encapsulation-flac_min_framesize", "dfnText": "flac_min_framesize", "refSections": [{"refs": [{"id": "ref-for-flac-encapsulation-flac_min_framesize"}], "title": "3.1.7. FLAC encapsulation"}], "external": false};
 window.dfnpanelData['webvtt-encapsulation-cue_components_len'] = {"dfnID": "webvtt-encapsulation-cue_components_len", "url": "#webvtt-encapsulation-cue_components_len", "dfnText": "cue_components_len", "refSections": [{"refs": [{"id": "ref-for-webvtt-encapsulation-cue_components_len"}, {"id": "ref-for-webvtt-encapsulation-cue_components_len\u2460"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['webvtt-encapsulation-cue_comenents'] = {"dfnID": "webvtt-encapsulation-cue_comenents", "url": "#webvtt-encapsulation-cue_comenents", "dfnText": "cue_comenents", "refSections": [{"refs": [{"id": "ref-for-webvtt-encapsulation-cue_comenents"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
+window.dfnpanelData['webvtt-encapsulation-cue_data'] = {"dfnID": "webvtt-encapsulation-cue_data", "url": "#webvtt-encapsulation-cue_data", "dfnText": "cue_data", "refSections": [{"refs": [{"id": "ref-for-webvtt-encapsulation-cue_data"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['raw-audio-encapsulation-ra_bits'] = {"dfnID": "raw-audio-encapsulation-ra_bits", "url": "#raw-audio-encapsulation-ra_bits", "dfnText": "ra_bits", "refSections": [{"refs": [{"id": "ref-for-raw-audio-encapsulation-ra_bits"}], "title": "3.1.24. Raw audio encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_components'] = {"dfnID": "raw-video-encapsulation-rv_components", "url": "#raw-video-encapsulation-rv_components", "dfnText": "rv_components", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_components"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2460"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2461"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2462"}, {"id": "ref-for-raw-video-encapsulation-rv_components\u2463"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
 window.dfnpanelData['raw-video-encapsulation-rv_planes'] = {"dfnID": "raw-video-encapsulation-rv_planes", "url": "#raw-video-encapsulation-rv_planes", "dfnText": "rv_planes", "refSections": [{"refs": [{"id": "ref-for-raw-video-encapsulation-rv_planes"}, {"id": "ref-for-raw-video-encapsulation-rv_planes\u2460"}], "title": "3.1.25. Raw video encapsulation"}], "external": false};
