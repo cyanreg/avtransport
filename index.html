@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="370b94b6cccf93f6eec12f0a07164d6bb88ce3bc" name="document-revision">
+  <meta content="d03d945b2ae252aad16594539992971948d34b1c" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-06-29">29 June 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-02">2 July 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 29 June 2024,
+In addition, as of 2 July 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2397,7 +2397,8 @@ and rigid overseeing organizations.</p>
    <p>On a high-level, AVTransport is a packetized wrapper around codec, metadata and
 user packets and provides context and error resilience, as well as defining a
 standardized way to transmit such data between clients.</p>
-   <p>AVTransport is based on <b>packets</b>.</p>
+   <p>AVTransport is based on <b>individual packets</b>, for which a demuxer interprets and maintains a structure.
+There is no higher-level structure to the data stored or transmitted.</p>
    <p>As a simple example, a possible structure of packets in a general AVTransport session could be:</p>
    <figure class="table" id="table-Overview">
     <table class="complex data longlastcol">
@@ -2617,7 +2618,8 @@ of the two special values.</p>
    <p>Implementations should use the derived <a data-link-type="dfn" href="#ts_clock_freq" id="ref-for-ts_clock_freq">ts_clock_freq</a> field from <a href="#time-synchronization-packets">§ 2.2 Time synchronization</a> packets to perform jitter compensation
 of stream timestamps.</p>
    <p>The <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id">ts_clock_id</a> is a unique 8-bit identifier for the clock.
-It allows to associate a clock with a given stream.</p>
+It allows to associate a clock with a given stream. A value of zero indicates the
+stream has no associated clock.</p>
    <p>The <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id①">ts_clock_id</a> of the <a href="#stream-registration-packets">§ 2.3 Stream registration</a> packets
 is matched up to the <a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id②">ts_clock_id</a> of <a href="#time-synchronization-packets">§ 2.2 Time synchronization</a> packets. If a match is not found, then no processing must be done.</p>
    <p class="note" role="note"><span class="marker">Note:</span> The only valid targets to perform timestamp jitter compensation are
@@ -2644,8 +2646,7 @@ can be used to compensate the <a data-link-type="dfn" href="#pts" id="ref-for-pt
     <li data-md>
      <p>Otherwise, add <span class="css">Δ</span> to <span class="css">local_ts_clock_seq</span>.</p>
    </ul>
-   <p>This is a very simple example which depends on the local receiver oscillator simply being
-*more precise* than the transmitter’s oscillator.</p>
+   <p>This is a very simple example which depends on the local receiver oscillator simply being <i>more precise</i> than the transmitter’s oscillator.</p>
    <p class="note" role="note"><span class="marker">Note:</span> The way receivers handle jitter is intentionally left undefined. As a recommendation,
 implementations <b>should</b> resampple the audio and adjust video frame duration such that
 synchronization is maintained. Otherwise, implementations can drop or duplicate frames.</p>
@@ -2886,7 +2887,7 @@ be zero-padded.</p>
        <td><code>b(8)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_id">ts_clock_id</dfn>
        <td>
-       <td>Signals the clock ID for this clock.
+       <td>Signals the clock ID for this clock. A value of 0 indicates this packet only carries epoch data.
       <tr id="0x0300+2">
        <td><code>u(16)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#time-synchronization-packets" data-dfn-type="dfn" data-noexport id="time-synchronization-packets-ts_clock_hz2">ts_clock_hz2</dfn>
@@ -2995,7 +2996,7 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
        <td><code>b(8)</code>
        <td><a data-link-type="dfn" href="#time-synchronization-packets-ts_clock_id" id="ref-for-time-synchronization-packets-ts_clock_id③">ts_clock_id</a>
        <td>
-       <td>An 8-bit clock ID identifier to associate a stream with a given clock.
+       <td>An 8-bit non-zero clock ID identifier to associate a stream with a given clock.
       <tr id="0x0002+11">
        <td><code>i(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#stream-registration-packets" data-dfn-type="dfn" data-noexport id="stream-registration-packets-skip_preroll">skip_preroll</dfn>
@@ -3069,7 +3070,7 @@ in the following manner:</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-streamflags-stream_cover_art"><code>STREAM_COVER_ART</code></dfn> = <i>0x8</i>
      <dd data-md>
       <p>Stream is a cover art picture for the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①">related_stream_id</a>.</p>
-     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-streamflags-session_low_quality"><code>SESSION_LOW_QUALITY</code></dfn> = <i>0x10</i>
+     <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-streamflags-stream_low_quality"><code>STREAM_LOW_QUALITY</code></dfn> = <i>0x10</i>
      <dd data-md>
       <p>Stream is a lower quality version of the stream signalled in <a data-link-type="dfn" href="#stream-registration-packets-derived_stream_id" id="ref-for-stream-registration-packets-derived_stream_id">derived_stream_id</a>.</p>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-StreamFlags" data-dfn-type="enum-value" data-noexport id="dom-enum-streamflags-stream_dub"><code>STREAM_DUB</code></dfn> = <i>0x20</i>
@@ -3113,9 +3114,9 @@ in the following manner:</p>
       <p>Stream contains binaural audio. If set, pre-processing for headphones should be disabled.</p>
     </dl>
    </div>
-   <p>Several streams can be <b>chained</b> with the <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-session_low_quality" id="ref-for-dom-enum-streamflags-session_low_quality">SESSION_LOW_QUALITY</a></code> bit set to indicate
+   <p>Several streams can be <b>chained</b> with the <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_low_quality" id="ref-for-dom-enum-streamflags-stream_low_quality">STREAM_LOW_QUALITY</a></code> bit set to indicate
 progressively lower quality/bitrate versions of the same stream. The very first
-stream in the chain MUST NOT have bit <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-session_low_quality" id="ref-for-dom-enum-streamflags-session_low_quality①">SESSION_LOW_QUALITY</a></code> set.</p>
+stream in the chain MUST NOT have bit <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_low_quality" id="ref-for-dom-enum-streamflags-stream_low_quality①">STREAM_LOW_QUALITY</a></code> set.</p>
    <p>Sparse thumbnail streams may exactly match chapters from <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①①">related_stream_id</a>,
 but could be sparser or more frequent.</p>
    <p>If bits <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_cover_art" id="ref-for-dom-enum-streamflags-stream_cover_art">STREAM_COVER_ART</a></code>, <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_dub" id="ref-for-dom-enum-streamflags-stream_dub">STREAM_DUB</a></code>, <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_commentary" id="ref-for-dom-enum-streamflags-stream_commentary">STREAM_COMMENTARY</a></code>, <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_lyrics" id="ref-for-dom-enum-streamflags-stream_lyrics">STREAM_LYRICS</a></code>, <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_karaoke" id="ref-for-dom-enum-streamflags-stream_karaoke">STREAM_KARAOKE</a></code>, <code class="idl"><a data-link-type="idl" href="#dom-enum-streamflags-stream_hearing_impaired" id="ref-for-dom-enum-streamflags-stream_hearing_impaired">STREAM_HEARING_IMPAIRED</a></code> are all unset, then <a data-link-type="dfn" href="#stream-registration-packets-related_stream_id" id="ref-for-stream-registration-packets-related_stream_id①②">related_stream_id</a> must match <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id⑥">stream_id</a>, otherwise the stream with a
@@ -6844,7 +6845,6 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-control-data-packets-session_control_descriptor">session_control_descriptor</a><span>, in § 3.3.1</span>
    <li><a href="#session-start-packets-session_flags">session_flags</a><span>, in § 2.1</span>
    <li><a href="#enumdef-sessionflags">SessionFlags</a><span>, in § 2.1.1</span>
-   <li><a href="#dom-enum-streamflags-session_low_quality">SESSION_LOW_QUALITY</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-sessionflags-session_reverse_signal_ready">SESSION_REVERSE_SIGNAL_READY</a><span>, in § 2.1.1</span>
    <li><a href="#session-start-packets-session_seq">session_seq</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_start_descriptor">session_start_descriptor</a><span>, in § 2.1</span>
@@ -6898,6 +6898,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-streaminitpackets-stream_init_pkt_stream_duration">STREAM_INIT_PKT_STREAM_DURATION</a><span>, in § 2.3.1</span>
    <li><a href="#dom-enum-streaminitpackets-stream_init_pkt_video_info">STREAM_INIT_PKT_VIDEO_INFO</a><span>, in § 2.3.1</span>
    <li><a href="#dom-enum-streamflags-stream_karaoke">STREAM_KARAOKE</a><span>, in § 2.3.2</span>
+   <li><a href="#dom-enum-streamflags-stream_low_quality">STREAM_LOW_QUALITY</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-streamflags-stream_lyrics">STREAM_LYRICS</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-streamflags-stream_no_dialogue">STREAM_NO_DIALOGUE</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-streamflags-stream_non_diegetic">STREAM_NON_DIEGETIC</a><span>, in § 2.3.2</span>
@@ -7422,7 +7423,7 @@ window.dfnpanelData['enumdef-streaminitpackets'] = {"dfnID": "enumdef-streaminit
 window.dfnpanelData['enumdef-streamflags'] = {"dfnID": "enumdef-streamflags", "url": "#enumdef-streamflags", "dfnText": "StreamFlags", "refSections": [{"refs": [{"id": "ref-for-enumdef-streamflags"}, {"id": "ref-for-enumdef-streamflags\u2460"}, {"id": "ref-for-enumdef-streamflags\u2461"}], "title": "2.3. Stream registration"}], "external": false};
 window.dfnpanelData['dom-enum-streamflags-stream_subtitles'] = {"dfnID": "dom-enum-streamflags-stream_subtitles", "url": "#dom-enum-streamflags-stream_subtitles", "dfnText": "STREAM_SUBTITLES", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_subtitles"}], "title": "3.1.23. SVG encapsulation"}], "external": false};
 window.dfnpanelData['dom-enum-streamflags-stream_cover_art'] = {"dfnID": "dom-enum-streamflags-stream_cover_art", "url": "#dom-enum-streamflags-stream_cover_art", "dfnText": "STREAM_COVER_ART", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_cover_art"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
-window.dfnpanelData['dom-enum-streamflags-session_low_quality'] = {"dfnID": "dom-enum-streamflags-session_low_quality", "url": "#dom-enum-streamflags-session_low_quality", "dfnText": "SESSION_LOW_QUALITY", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-session_low_quality"}, {"id": "ref-for-dom-enum-streamflags-session_low_quality\u2460"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
+window.dfnpanelData['dom-enum-streamflags-stream_low_quality'] = {"dfnID": "dom-enum-streamflags-stream_low_quality", "url": "#dom-enum-streamflags-stream_low_quality", "dfnText": "STREAM_LOW_QUALITY", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_low_quality"}, {"id": "ref-for-dom-enum-streamflags-stream_low_quality\u2460"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['dom-enum-streamflags-stream_dub'] = {"dfnID": "dom-enum-streamflags-stream_dub", "url": "#dom-enum-streamflags-stream_dub", "dfnText": "STREAM_DUB", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_dub"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['dom-enum-streamflags-stream_commentary'] = {"dfnID": "dom-enum-streamflags-stream_commentary", "url": "#dom-enum-streamflags-stream_commentary", "dfnText": "STREAM_COMMENTARY", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_commentary"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
 window.dfnpanelData['dom-enum-streamflags-stream_lyrics'] = {"dfnID": "dom-enum-streamflags-stream_lyrics", "url": "#dom-enum-streamflags-stream_lyrics", "dfnText": "STREAM_LYRICS", "refSections": [{"refs": [{"id": "ref-for-dom-enum-streamflags-stream_lyrics"}], "title": "2.3.2. Stream Flags Enumeration (enum StreamFlags)"}], "external": false};
