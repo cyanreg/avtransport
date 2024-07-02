@@ -4892,6 +4892,14 @@ The following string 'key's should be used, instead of any others:
       :: International Standard Recording Code of the given track.
     : <dfn noexport>mcn</dfn> — ''text string''
       :: Media Catalog Number for the album, if available.
+    : <dfn noexport>REPLAYGAIN_TRACK_GAIN</dfn> — ''floating point number''
+      :: ReplayGain 2.0 track gain, in 'dB'.
+    : <dfn noexport>REPLAYGAIN_TRACK_RANGE</dfn> — ''floating point number''
+      :: ReplayGain 2.0 track range, in 'dB'.
+    : <dfn noexport>REPLAYGAIN_TRACK_PEAK</dfn> — ''floating point number''
+      :: ReplayGain 2.0 track peak, in 'dB'.
+    : <dfn noexport>REPLAYGAIN_REFERENCE_LOUDNESS</dfn> — ''floating point number''
+      :: ReplayGain 2.0 reference loudness, in 'LUFS'.
 </div>
 
 The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
