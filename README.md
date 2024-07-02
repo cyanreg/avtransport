@@ -114,7 +114,7 @@ As with non-optional dependencies, repositories can be cloned into `subprojects`
 
 Build-time dependencies:
  - [Beautiful Soup](https://www.crummy.com/software/BeautifulSoup/)
-   * Used to parse the specification document and [create](libavtransport/tools/spec2c.py) structures and (de)serialization primitives.
+   * Used to parse the specification document and [create](libavtransport/tools/spec2c.py) (de)serialization routines.
 
 ## Tools
 
@@ -146,7 +146,7 @@ You can talk about the project and get in touch with developers on:
 ## License
 
 The [specifications document](draft-avtransport-spec.bs), and generated [HTML](https://cyanreg.github.io/avtransport/)
-are licensed under the **MIT-Zero** license (public domain).
+are licensed under the **CC0** license (public domain).
 
 The software in this repository is completely licensed under the [**BSD 2-clause license**](LICENSE.md),
 in order to permit embedding, and free creation of alternative implementations.

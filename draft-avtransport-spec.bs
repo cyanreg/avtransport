@@ -2,13 +2,14 @@
 Title: AVTransport
 Editor: Lynne, dev@lynne.ee
 Repository: cyanreg/avtransport
-Shortname: avtransport
+Shortname: avt
 URL: https://cyanreg.github.io/avtransport/
 Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
 Date: now
+Boilerplate: issues-index no
 Status: LD
-Group: FFmpeg
+Group: avt
 Abstract: AVTransport is a new mechanism for multimedia transmission and storage. It covers use cases from sub-frame latency streaming of video and audio over raw wireless links, to long-term archival. Its key design goals are robustness and reliability, and it achieves this through extensive error correction, and state-minimal design. Learning from the limitations of other similar protocols and containers, it has built-in future-proofing and allows extensibility.
 Markup Shorthands: http no, markup no
 </pre>
@@ -118,7 +119,8 @@ On a high-level, AVTransport is a packetized wrapper around codec, metadata and
 user packets and provides context and error resilience, as well as defining a
 standardized way to transmit such data between clients.
 
-AVTransport is based on <b>packets</b>.
+AVTransport is based on <b>individual packets</b>, for which a demuxer interprets and maintains a structure.
+There is no higher-level structure to the data stored or transmitted.
 
 As a simple example, a possible structure of packets in a general AVTransport session could be:
 
@@ -416,7 +418,8 @@ Implementations should use the derived [=ts_clock_freq=] field from
 of stream timestamps.
 
 The [=ts_clock_id=] is a unique 8-bit identifier for the clock.
-It allows to associate a clock with a given stream.
+It allows to associate a clock with a given stream. A value of zero indicates the
+stream has no associated clock.
 
 The [=ts_clock_id=] of the [[#stream-registration-packets]] packets
 is matched up to the [=ts_clock_id=] of [[#time-synchronization-packets]]
@@ -441,7 +444,7 @@ On every received packet:
  - Otherwise, add ''Δ'' to ''local_ts_clock_seq''.
 
 This is a very simple example which depends on the local receiver oscillator simply being
-*more precise* than the transmitter's oscillator.
+<i>more precise</i> than the transmitter's oscillator.
 
 Note: The way receivers handle jitter is intentionally left undefined. As a recommendation,
 implementations <b>should</b> resampple the audio and adjust video frame duration such that
@@ -718,7 +721,7 @@ The structure of the data in a [[#time-synchronization-packets]] packet is as fo
             <td><code>b(8)</code></td>
             <td><dfn noexport>ts_clock_id</dfn></td>
             <td></td>
-            <td>Signals the clock ID for this clock.</td>
+            <td>Signals the clock ID for this clock. A value of 0 indicates this packet only carries epoch data.</td>
         </tr>
         <tr id="0x0300+2">
             <td><code>u(16)</code></td>
@@ -859,7 +862,7 @@ The layout of the data is as follows:
             <td><code>b(8)</code></td>
             <td>[=ts_clock_id=]</td>
             <td></td>
-            <td>An 8-bit clock ID identifier to associate a stream with a given clock.</td>
+            <td>An 8-bit non-zero clock ID identifier to associate a stream with a given clock.</td>
         </tr>
         <tr id="0x0002+11">
             <td><code>i(64)</code></td>
@@ -946,7 +949,7 @@ in the following manner:
     : <dfn noexport>STREAM_COVER_ART</dfn> = <i>0x8</i>
       :: Stream is a cover art picture for the stream signalled in [=related_stream_id=].
 
-    : <dfn noexport>SESSION_LOW_QUALITY</dfn> = <i>0x10</i>
+    : <dfn noexport>STREAM_LOW_QUALITY</dfn> = <i>0x10</i>
       :: Stream is a lower quality version of the stream signalled in [=derived_stream_id=].
 
     : <dfn noexport>STREAM_DUB</dfn> = <i>0x20</i>
@@ -992,9 +995,9 @@ in the following manner:
       :: Stream contains binaural audio. If set, pre-processing for headphones should be disabled.
 </div>
 
-Several streams can be <b>chained</b> with the {{SESSION_LOW_QUALITY}} bit set to indicate
+Several streams can be <b>chained</b> with the {{STREAM_LOW_QUALITY}} bit set to indicate
 progressively lower quality/bitrate versions of the same stream. The very first
-stream in the chain MUST NOT have bit {{SESSION_LOW_QUALITY}} set.
+stream in the chain MUST NOT have bit {{STREAM_LOW_QUALITY}} set.
 
 Sparse thumbnail streams may exactly match chapters from [=related_stream_id=],
 but could be sparser or more frequent.

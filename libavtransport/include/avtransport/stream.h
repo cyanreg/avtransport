@@ -38,12 +38,19 @@
 #include "packet_enums.h"
 #include "packet_data.h"
 
+/* Stream context.
+ * Current values reflect what should be used for the **next frame** to be
+ * presented.
+ * Users can tune into individual packets and maintain their own state. */
 typedef struct AVTStream {
     uint32_t id;
     enum AVTCodecID codec_id;
     AVTMetadata *meta;
 
-    /* Duration in nanoseconds, if known. */
+    /* Timebase of all timestamps in this structure */
+    AVTRational timebase;
+
+    /* Duration in timebase units, if known. */
     uint64_t duration;
 
     AVTVideoInfo video_info;
@@ -60,7 +67,6 @@ typedef struct AVTStream {
     int nb_lut;
 
     enum AVTStreamFlags flags;
-    AVTRational timebase;
     uint64_t bitrate;
 
     AVTBuffer *init_data;

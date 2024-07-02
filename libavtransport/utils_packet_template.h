@@ -147,6 +147,7 @@ static inline int RENAME(avt_packet_series)(const TYPE p, bool *is_parity,
         *is_parity = true;
         return -1;
     default:
+        /* Packet is not a part of a series */
         return 0;
     }
 }

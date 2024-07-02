@@ -83,13 +83,24 @@ AVT_API int avt_send_open(AVTContext *ctx, AVTSender **s,
  * If zero, or not called, the current time will be used. */
 AVT_API int avt_send_set_epoch(AVTSender *s, uint64_t epoch);
 
+/* Update a given clock.
+ * clock_id must be assigned to at least a single stream, and must be non-zero.
+ * clock_hz is the clock's frequency hertz.
+ * clock_hz16 is the remainder of the clock's frequency, in 1/65536 of a hertz.
+ * clock_seq is the clock's current value
+ * */
+AVT_API int avt_send_clock_sync(AVTSender *s, uint8_t clock_id,
+                                uint32_t clock_hz, uint16_t clock_hz16,
+                                uint64_t clock_seq);
+
 /* Register a stream and allocate internal state for it.
  * To automatically assign a stream ID, set id to UINT16_MAX.
  * If there's an existing stream with the same ID, will return NULL. */
 AVT_API AVTStream *avt_send_stream_add(AVTSender *s, uint16_t id);
 
 /* Update a stream, (re-)emmitting a stream registration packet.
- * The id MUST match the one from avt_send_add_stream(). */
+ * The id MUST match the one from avt_send_add_stream().
+ * All present fields in the AVTStream input must be set. */
 AVT_API int avt_send_stream_update(AVTStream *st);
 
 /* Attach a font to a stream. The font data must be fully in the AVTBuffer.
