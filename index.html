@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="c86cc062bc369a13f3d949b74cc6fd679202b3d9" name="document-revision">
+  <meta content="9862396320810fd516f17f6b29b11bb4ef445734" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2234,13 +2234,16 @@ Parts of this work may be from another specification document.  If so, those par
         <li><a href="#generic-data-parity-packets"><span class="secno">2.4.2</span> <span class="content">Generic data parity</span></a>
        </ol>
       <li><a href="#stream-configuration-packets"><span class="secno">2.5</span> <span class="content">Stream configuration</span></a>
-      <li><a href="#stream-data-packets"><span class="secno">2.6</span> <span class="content">Stream Data</span></a>
+      <li>
+       <a href="#stream-data-packets"><span class="secno">2.6</span> <span class="content">Stream Data</span></a>
+       <ol class="toc">
+        <li><a href="#enum-FrameType"><span class="secno">2.6.1</span> <span class="content">Frame Type Enumeration (enum <span><code>FrameType</code></span>)</span></a>
+        <li><a href="#enum-DataCompression"><span class="secno">2.6.2</span> <span class="content">Data Compression Enumeration (enum <span><code>DataCompression</code></span>)</span></a>
+       </ol>
       <li>
        <a href="#extended-stream-data-packets"><span class="secno">2.7</span> <span class="content">Extended stream data</span></a>
        <ol class="toc">
-        <li><a href="#enum-FrameType"><span class="secno">2.7.1</span> <span class="content">Frame Type Enumeration (enum <span><code>FrameType</code></span>)</span></a>
-        <li><a href="#enum-DataCompression"><span class="secno">2.7.2</span> <span class="content">Data Compression Enumeration (enum <span><code>DataCompression</code></span>)</span></a>
-        <li><a href="#stream-data-segment-packets"><span class="secno">2.7.3</span> <span class="content">Stream data segmentation</span></a>
+        <li><a href="#stream-data-segment-packets"><span class="secno">2.7.1</span> <span class="content">Stream data segmentation</span></a>
        </ol>
       <li>
        <a href="#fec-grouping-packets"><span class="secno">2.8</span> <span class="content">FEC grouping</span></a>
@@ -2423,7 +2426,7 @@ There is no higher-level structure to the data stored or transmitted.</p>
        <td><a href="#stream-data-packets">§ 2.6 Stream Data</a>
        <td>Stream data packets.
       <tr>
-       <td><a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation</a>
+       <td><a href="#stream-data-segment-packets">§ 2.7.1 Stream data segmentation</a>
        <td>Segmented stream data packets.
       <tr>
        <td><a href="#user-data-packets">§ 2.18 User data</a>
@@ -2486,7 +2489,7 @@ Below is a table of how they’re allocated:</p>
        <td><a href="#stream-data-parity-packets">§ 2.9 Stream data parity</a>
       <tr>
        <td><span class="css">0x00FF</span>
-       <td><a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation</a>
+       <td><a href="#stream-data-segment-packets">§ 2.7.1 Stream data segmentation</a>
       <tr>
        <td>[<span class="css">0x0100</span>:<span class="css">0x01FF</span>]
        <td><a href="#stream-data-packets">§ 2.6 Stream Data</a>
@@ -3362,7 +3365,7 @@ it must send an <span class="css">'unsupported</span> <a href="#session-control-
 connection is open.</p>
    <h3 class="heading settled" data-level="2.6" id="stream-data-packets"><span class="secno">2.6. </span><span class="content">Stream Data</span><a class="self-link" href="#stream-data-packets"></a></h3>
    <p>The data packets indicate the start of a stream packet, which may be fragmented into
-more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation</a>. It is laid out as follows:</p>
+more <a href="#stream-data-segment-packets">§ 2.7.1 Stream data segmentation</a>. It is laid out as follows:</p>
    <figure class="table" id="table-StreamData">
     <table class="complex data longlastcol">
      <tbody>
@@ -3442,6 +3445,42 @@ more <a href="#stream-data-segment-packets">§ 2.7.3 Stream data segmentation<
    </figure>
    <p>For information on the layout of the specific codec-specific packet data, consult
 the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addenda.</p>
+   <h4 class="heading settled" data-level="2.6.1" id="enum-FrameType"><span class="secno">2.6.1. </span><span class="content">Frame Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-frametype"><code>FrameType</code></dfn>)</span><a class="self-link" href="#enum-FrameType"></a></h4>
+   <div id="FrameType">
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_key"><code>FRAME_TYPE_KEY</code><a class="self-link" href="#dom-enum-frametype-frame_type_key"></a></dfn> = <i>0x0</i>
+     <dd data-md>
+      <p>Packet data contains a keyframe, able to be decoded standalone.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_s"><code>FRAME_TYPE_S</code><a class="self-link" href="#dom-enum-frametype-frame_type_s"></a></dfn> = <i>0x1</i>
+     <dd data-md>
+      <p>Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_p"><code>FRAME_TYPE_P</code><a class="self-link" href="#dom-enum-frametype-frame_type_p"></a></dfn> = <i>0x2</i>
+     <dd data-md>
+      <p>Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.</p>
+    </dl>
+   </div>
+   <h4 class="heading settled" data-level="2.6.2" id="enum-DataCompression"><span class="secno">2.6.2. </span><span class="content">Data Compression Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-datacompression"><code>DataCompression</code></dfn>)</span><a class="self-link" href="#enum-DataCompression"></a></h4>
+   <div id="DataCompression">
+    <dl>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_none"><code>DATA_COMPRESSION_NONE</code><a class="self-link" href="#dom-enum-datacompression-data_compression_none"></a></dfn> = <i>0x0</i>
+     <dd data-md>
+      <p>Packet data is uncompressed</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_zstd"><code>DATA_COMPRESSION_ZSTD</code><a class="self-link" href="#dom-enum-datacompression-data_compression_zstd"></a></dfn> = <i>0x1</i>
+     <dd data-md>
+      <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc8878" title="Zstandard Compression and the &apos;application/zstd&apos; Media Type">[RFC8878]</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> Zstandard is a general purpose format, suitable for images,
+        audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
+        Therefore, it should be the preferred format for such payloads.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_brotli"><code>DATA_COMPRESSION_BROTLI</code><a class="self-link" href="#dom-enum-datacompression-data_compression_brotli"></a></dfn> = <i>0x2</i>
+     <dd data-md>
+      <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc7932" title="Brotli Compressed Data Format">[RFC7932]</a>.</p>
+      <p class="note" role="note"><span class="marker">Note:</span> Brotli is more optimized for <b>text</b> rather than generic data,
+        and should be the preferred format for subtitles. Presently, it is
+        also more supported on the web.</p>
+    </dl>
+   </div>
+   <p>Any undefined values are hereby reserved and must not be present in a compliant
+AVTransport stream with this version.</p>
    <h3 class="heading settled" data-level="2.7" id="extended-stream-data-packets"><span class="secno">2.7. </span><span class="content">Extended stream data</span><a class="self-link" href="#extended-stream-data-packets"></a></h3>
    <p>Depending upon the codec, using an extended stream data header may be required.
 It is laid out in the following way:</p>
@@ -3564,43 +3603,7 @@ It is laid out in the following way:</p>
    </figure>
    <p>Extended stream data packets should only be used if there’s a need to use them.
 Regular stream data packets have a much lower overhead.</p>
-   <h4 class="heading settled" data-level="2.7.1" id="enum-FrameType"><span class="secno">2.7.1. </span><span class="content">Frame Type Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-frametype"><code>FrameType</code></dfn>)</span><a class="self-link" href="#enum-FrameType"></a></h4>
-   <div id="FrameType">
-    <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_key"><code>FRAME_TYPE_KEY</code><a class="self-link" href="#dom-enum-frametype-frame_type_key"></a></dfn> = <i>0x0</i>
-     <dd data-md>
-      <p>Packet data contains a keyframe, able to be decoded standalone.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_s"><code>FRAME_TYPE_S</code><a class="self-link" href="#dom-enum-frametype-frame_type_s"></a></dfn> = <i>0x1</i>
-     <dd data-md>
-      <p>Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-FrameType" data-dfn-type="enum-value" data-noexport id="dom-enum-frametype-frame_type_p"><code>FRAME_TYPE_P</code><a class="self-link" href="#dom-enum-frametype-frame_type_p"></a></dfn> = <i>0x2</i>
-     <dd data-md>
-      <p>Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.</p>
-    </dl>
-   </div>
-   <h4 class="heading settled" data-level="2.7.2" id="enum-DataCompression"><span class="secno">2.7.2. </span><span class="content">Data Compression Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-datacompression"><code>DataCompression</code></dfn>)</span><a class="self-link" href="#enum-DataCompression"></a></h4>
-   <div id="DataCompression">
-    <dl>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_none"><code>DATA_COMPRESSION_NONE</code><a class="self-link" href="#dom-enum-datacompression-data_compression_none"></a></dfn> = <i>0x0</i>
-     <dd data-md>
-      <p>Packet data is uncompressed</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_zstd"><code>DATA_COMPRESSION_ZSTD</code><a class="self-link" href="#dom-enum-datacompression-data_compression_zstd"></a></dfn> = <i>0x1</i>
-     <dd data-md>
-      <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc8878" title="Zstandard Compression and the &apos;application/zstd&apos; Media Type">[RFC8878]</a>.</p>
-      <p class="note" role="note"><span class="marker">Note:</span> Zstandard is a general purpose format, suitable for images,
-        audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
-        Therefore, it should be the preferred format for such payloads.</p>
-     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-DataCompression" data-dfn-type="enum-value" data-noexport id="dom-enum-datacompression-data_compression_brotli"><code>DATA_COMPRESSION_BROTLI</code><a class="self-link" href="#dom-enum-datacompression-data_compression_brotli"></a></dfn> = <i>0x2</i>
-     <dd data-md>
-      <p>Packet data is compressed with Zstandard, defined in IETF <a data-link-type="biblio" href="#biblio-rfc7932" title="Brotli Compressed Data Format">[RFC7932]</a>.</p>
-      <p class="note" role="note"><span class="marker">Note:</span> Brotli is more optimized for <b>text</b> rather than generic data,
-        and should be the preferred format for subtitles. Presently, it is
-        also more supported on the web.</p>
-    </dl>
-   </div>
-   <p>Any undefined values are hereby reserved and must not be present in a compliant
-AVTransport stream with this version.</p>
-   <h4 class="heading settled" data-level="2.7.3" id="stream-data-segment-packets"><span class="secno">2.7.3. </span><span class="content">Stream data segmentation</span><a class="self-link" href="#stream-data-segment-packets"></a></h4>
+   <h4 class="heading settled" data-level="2.7.1" id="stream-data-segment-packets"><span class="secno">2.7.1. </span><span class="content">Stream data segmentation</span><a class="self-link" href="#stream-data-segment-packets"></a></h4>
    <p>Packets can be split up into separate chunks that may be received out of order
 and assembled. This allows transmission over switched networks with a limited MTU,
 or prevents very large packets from one stream interfering with another stream.
@@ -6710,10 +6713,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#webvtt-encapsulation-cue_components_len">cue_components_len</a><span>, in § 3.1.18</span>
    <li><a href="#webvtt-encapsulation-cue_data">cue_data</a><span>, in § 3.1.18</span>
    <li><a href="#video-information-packets-custom_matrix">custom_matrix</a><span>, in § 2.15</span>
-   <li><a href="#enumdef-datacompression">DataCompression</a><span>, in § 2.7.2</span>
-   <li><a href="#dom-enum-datacompression-data_compression_brotli">DATA_COMPRESSION_BROTLI</a><span>, in § 2.7.2</span>
-   <li><a href="#dom-enum-datacompression-data_compression_none">DATA_COMPRESSION_NONE</a><span>, in § 2.7.2</span>
-   <li><a href="#dom-enum-datacompression-data_compression_zstd">DATA_COMPRESSION_ZSTD</a><span>, in § 2.7.2</span>
+   <li><a href="#enumdef-datacompression">DataCompression</a><span>, in § 2.6.2</span>
+   <li><a href="#dom-enum-datacompression-data_compression_brotli">DATA_COMPRESSION_BROTLI</a><span>, in § 2.6.2</span>
+   <li><a href="#dom-enum-datacompression-data_compression_none">DATA_COMPRESSION_NONE</a><span>, in § 2.6.2</span>
+   <li><a href="#dom-enum-datacompression-data_compression_zstd">DATA_COMPRESSION_ZSTD</a><span>, in § 2.6.2</span>
    <li><a href="#stream-data-packets-data_length">data_length</a><span>, in § 2.6</span>
    <li><a href="#dom-enum-commonmetadatakeys-date">date</a><span>, in § 4.1</span>
    <li><a href="#stream-registration-packets-derived_stream_id">derived_stream_id</a><span>, in § 2.3</span>
@@ -6778,10 +6781,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-fonttype-font_type_woff2">FONT_TYPE_WOFF2</a><span>, in § 2.14.1</span>
    <li><a href="#video-information-packets-framerate">framerate</a><span>, in § 2.15</span>
    <li><a href="#stream-data-packets-frame_type">frame_type</a><span>, in § 2.6</span>
-   <li><a href="#enumdef-frametype">FrameType</a><span>, in § 2.7.1</span>
-   <li><a href="#dom-enum-frametype-frame_type_key">FRAME_TYPE_KEY</a><span>, in § 2.7.1</span>
-   <li><a href="#dom-enum-frametype-frame_type_p">FRAME_TYPE_P</a><span>, in § 2.7.1</span>
-   <li><a href="#dom-enum-frametype-frame_type_s">FRAME_TYPE_S</a><span>, in § 2.7.1</span>
+   <li><a href="#enumdef-frametype">FrameType</a><span>, in § 2.6.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_key">FRAME_TYPE_KEY</a><span>, in § 2.6.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_p">FRAME_TYPE_P</a><span>, in § 2.6.1</span>
+   <li><a href="#dom-enum-frametype-frame_type_s">FRAME_TYPE_S</a><span>, in § 2.6.1</span>
    <li><a href="#video-information-packets-gamma">gamma</a><span>, in § 2.15</span>
    <li><a href="#generic-data-packets-generic_data_compression">generic_data_compression</a><span>, in § 2.4</span>
    <li><a href="#generic-data-packets-generic_data_descriptor">generic_data_descriptor</a><span>, in § 2.4</span>
@@ -6975,7 +6978,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#stream-data-packets-stream_data_descriptor">stream_data_descriptor</a><span>, in § 2.6</span>
    <li><a href="#stream-data-packets-stream_data_descriptor_structure">stream_data_descriptor_structure</a><span>, in § 2.6</span>
    <li><a href="#stream-data-parity-packets-stream_data_parity_descriptor">stream_data_parity_descriptor</a><span>, in § 2.9</span>
-   <li><a href="#stream-data-segment-packets-stream_data_segment_descriptor">stream_data_segment_descriptor</a><span>, in § 2.7.3</span>
+   <li><a href="#stream-data-segment-packets-stream_data_segment_descriptor">stream_data_segment_descriptor</a><span>, in § 2.7.1</span>
    <li><a href="#dom-enum-streamflags-stream_default">STREAM_DEFAULT</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-streamflags-stream_descriptions">STREAM_DESCRIPTIONS</a><span>, in § 2.3.2</span>
    <li><a href="#dom-enum-streamflags-stream_dub">STREAM_DUB</a><span>, in § 2.3.2</span>
@@ -7535,14 +7538,14 @@ window.dfnpanelData['generic-data-packets-generic_data_descriptor'] = {"dfnID": 
 window.dfnpanelData['generic-data-packets-payload_length'] = {"dfnID": "generic-data-packets-payload_length", "url": "#generic-data-packets-payload_length", "dfnText": "payload_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-packets-payload_length"}], "title": "2.4. Generic data"}], "external": false};
 window.dfnpanelData['generic-data-segment-packets-generic_segment_descriptor'] = {"dfnID": "generic-data-segment-packets-generic_segment_descriptor", "url": "#generic-data-segment-packets-generic_segment_descriptor", "dfnText": "generic_segment_descriptor", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-generic_segment_descriptor"}], "title": "2.4.1. Generic data segmentation"}], "external": false};
 window.dfnpanelData['generic-data-segment-packets-target_seq'] = {"dfnID": "generic-data-segment-packets-target_seq", "url": "#generic-data-segment-packets-target_seq", "dfnText": "target_seq", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-target_seq"}], "title": "2.4.2. Generic data parity"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-target_seq\u2460"}], "title": "2.11.1. Index entry (struct IndexEntry)"}], "external": false};
-window.dfnpanelData['generic-data-segment-packets-seg_length'] = {"dfnID": "generic-data-segment-packets-seg_length", "url": "#generic-data-segment-packets-seg_length", "dfnText": "seg_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length\u2460"}], "title": "2.7.3. Stream data segmentation"}], "external": false};
+window.dfnpanelData['generic-data-segment-packets-seg_length'] = {"dfnID": "generic-data-segment-packets-seg_length", "url": "#generic-data-segment-packets-seg_length", "dfnText": "seg_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-seg_length\u2460"}], "title": "2.7.1. Stream data segmentation"}], "external": false};
 window.dfnpanelData['generic-data-segment-packets-header_7'] = {"dfnID": "generic-data-segment-packets-header_7", "url": "#generic-data-segment-packets-header_7", "dfnText": "header_7", "refSections": [{"refs": [{"id": "ref-for-generic-data-segment-packets-header_7"}], "title": "2.4.1. Generic data segmentation"}, {"refs": [{"id": "ref-for-generic-data-segment-packets-header_7\u2460"}, {"id": "ref-for-generic-data-segment-packets-header_7\u2461"}], "title": "2.4.2. Generic data parity"}], "external": false};
 window.dfnpanelData['generic-data-parity-packets-parity_data_length'] = {"dfnID": "generic-data-parity-packets-parity_data_length", "url": "#generic-data-parity-packets-parity_data_length", "dfnText": "parity_data_length", "refSections": [{"refs": [{"id": "ref-for-generic-data-parity-packets-parity_data_length"}], "title": "2.4.2. Generic data parity"}], "external": false};
 window.dfnpanelData['stream-data-packets-frame_type'] = {"dfnID": "stream-data-packets-frame_type", "url": "#stream-data-packets-frame_type", "dfnText": "frame_type", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-frame_type"}], "title": "2.7. Extended stream data"}], "external": false};
 window.dfnpanelData['stream-data-packets-pkt_in_fec_group'] = {"dfnID": "stream-data-packets-pkt_in_fec_group", "url": "#stream-data-packets-pkt_in_fec_group", "dfnText": "pkt_in_fec_group", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-pkt_in_fec_group"}], "title": "2.7. Extended stream data"}], "external": false};
 window.dfnpanelData['stream-data-packets-field_id'] = {"dfnID": "stream-data-packets-field_id", "url": "#stream-data-packets-field_id", "dfnText": "field_id", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-field_id"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-field_id\u2460"}, {"id": "ref-for-stream-data-packets-field_id\u2461"}, {"id": "ref-for-stream-data-packets-field_id\u2462"}, {"id": "ref-for-stream-data-packets-field_id\u2463"}], "title": "2.15.4. Interlacing Enumeration (enum Interlacing)"}, {"refs": [{"id": "ref-for-stream-data-packets-field_id\u2464"}], "title": "2.17.1. Stereo Video Type Enumeration (enum StereoVideoType)"}], "external": false};
 window.dfnpanelData['stream-data-packets-pkt_compression'] = {"dfnID": "stream-data-packets-pkt_compression", "url": "#stream-data-packets-pkt_compression", "dfnText": "pkt_compression", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-pkt_compression"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-pkt_compression\u2460"}], "title": "3.1.23. SVG encapsulation"}], "external": false};
-window.dfnpanelData['stream-data-packets-data_length'] = {"dfnID": "stream-data-packets-data_length", "url": "#stream-data-packets-data_length", "dfnText": "data_length", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-data_length"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2460"}, {"id": "ref-for-stream-data-packets-data_length\u2461"}, {"id": "ref-for-stream-data-packets-data_length\u2462"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2463"}], "title": "2.7.3. Stream data segmentation"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2464"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
+window.dfnpanelData['stream-data-packets-data_length'] = {"dfnID": "stream-data-packets-data_length", "url": "#stream-data-packets-data_length", "dfnText": "data_length", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-data_length"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2460"}, {"id": "ref-for-stream-data-packets-data_length\u2461"}, {"id": "ref-for-stream-data-packets-data_length\u2462"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2463"}], "title": "2.7.1. Stream data segmentation"}, {"refs": [{"id": "ref-for-stream-data-packets-data_length\u2464"}], "title": "3.1.18. WebVTT encapsulation"}], "external": false};
 window.dfnpanelData['stream-data-packets-packet_data'] = {"dfnID": "stream-data-packets-packet_data", "url": "#stream-data-packets-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-packet_data"}, {"id": "ref-for-stream-data-packets-packet_data\u2460"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2462"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2463"}], "title": "3.1.5. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2464"}], "title": "3.1.6. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2465"}], "title": "3.1.8. Theora encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2466"}], "title": "3.1.9. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2467"}], "title": "3.1.10. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2468"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u24ea"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2460"}], "title": "3.1.13. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2461"}], "title": "3.1.14. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2462"}], "title": "3.1.15. ProRes encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2463"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2464"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2465"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2466"}], "title": "3.1.19. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2467"}], "title": "3.1.20. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2468"}, {"id": "ref-for-stream-data-packets-packet_data\u2461\u24ea"}], "title": "3.1.21. JPEG-2000 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2460"}], "title": "3.1.22. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2461"}], "title": "3.1.23. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2462"}], "title": "3.1.24. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2463"}], "title": "3.1.25. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2464"}], "title": "3.1.27. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2465"}], "title": "3.2.1. UDP"}], "external": false};
 window.dfnpanelData['enumdef-frametype'] = {"dfnID": "enumdef-frametype", "url": "#enumdef-frametype", "dfnText": "FrameType", "refSections": [{"refs": [{"id": "ref-for-enumdef-frametype"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-frametype\u2460"}], "title": "2.7. Extended stream data"}], "external": false};
 window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2463"}], "title": "2.14. Font data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2464"}], "title": "2.18. User data"}], "external": false};
