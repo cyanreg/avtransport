@@ -1473,6 +1473,49 @@ Any undefined values are hereby reserved and must not be present in a compliant
 AVTransport stream with this version.
 
 
+### Stream data segmentation ### {#stream-data-segment-packets}
+
+Packets can be split up into separate chunks that may be received out of order
+and assembled. This allows transmission over switched networks with a limited MTU,
+or prevents very large packets from one stream interfering with another stream.
+The packet structure used for segments is the [[#generic-data-segment-packets]] from
+[[#generic-data-packets]], with the following descriptors:
+
+<figure id="table-StreamDataSegmentation" class="table">
+    <table class="complex data longlastcol" dfn-for="#stream-data-segment-packets">
+        <tr>
+            <th>Descriptor value</th>
+            <th>Name</th>
+            <th>Structure</th>
+            <th>Description</th>
+        </tr>
+        <tr id="0x00FF+0">
+            <td>''0x00FF''</td>
+            <td><dfn noexport>stream_data_segment_descriptor</dfn></td>
+            <td>[[#generic-data-segment-packets]]</td>
+            <td>Non-final segment for segmented codec configuration.</td>
+        </tr>
+    </table>
+</figure>
+
+The size of the final assembled packet is the sum of all [=seg_length=] fields,
+plus the [=data_length=] field from the [[#stream-data-packets]].
+
+Data segments and packets may arrive out of order and be duplicated.
+Implementations must reorder them, deduplicate them and assemble them into
+complete packets.
+
+Implementations may try to decode incomplete data packets with missing segments
+due to latency concerns.
+
+Senders may send duplicate segments to compensate for packet loss,
+but should use [[#fec-grouping-packets]] or [[#stream-data-parity-packets]] instead.
+
+Implementations should discard any packets and segments that arrive after their
+presentation time. Implementations should drop any packets and segments
+that arrive with unrealistically far away presentation times.
+
+
 ## Extended stream data ## {#extended-stream-data-packets}
 
 Depending upon the codec, using an extended stream data header may be required.
@@ -1562,54 +1605,48 @@ It is laid out in the following way:
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
         <tr id="0x0200+12">
-            <td><code>[=data_length=]*b(8)</code></td>
-            <td>[=packet_data=]</td>
-            <td>payload</td>
-            <td>The packet data itself.</td>
-        </tr>
-        <tr id="0x0200+13">
             <td><code>i(64)</code></td>
             <td>[=duration=]</td>
             <td></td>
             <td>The duration of this packet in stream timebase unis.</td>
         </tr>
-        <tr id="0x0200+14">
+        <tr id="0x0200+13">
             <td><code>u(32)</code></td>
             <td><dfn noexport>total_data_length</dfn></td>
             <td></td>
             <td>The total size of all data needed to receive the payload correctly. Must be either 0 if unknown, or the total size of the payload across all segments.</td>
         </tr>
-        <tr id="0x0200+15">
+        <tr id="0x0200+14">
             <td><code>u(32)</code></td>
             <td><dfn noexport>side_data_length</dfn></td>
             <td></td>
             <td>Length of the side data, if any.</td>
         </tr>
-        <tr id="0x0200+16">
+        <tr id="0x0200+15">
             <td><code>u(32)</code></td>
             <td><dfn noexport>side_data_offset</dfn></td>
             <td></td>
             <td>The offset within the packet where the side data is located at.</td>
         </tr>
-        <tr id="0x0200+17">
+        <tr id="0x0200+16">
             <td><code>u(8)</code></td>
             <td><dfn noexport>side_data_type</dfn></td>
             <td></td>
             <td>The size of the data in this packet.</td>
         </tr>
-        <tr id="0x0200+18">
+        <tr id="0x0200+17">
             <td><code>b(48)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be ''0x0''.</td>
         </tr>
-        <tr id="0x0200+19">
+        <tr id="0x0200+18">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0200+20">
+        <tr id="0x0200+19">
             <td><code>[=data_length=]*b(8)</code></td>
             <td>[=packet_data=]</td>
             <td>payload</td>
@@ -1621,48 +1658,7 @@ It is laid out in the following way:
 Extended stream data packets should only be used if there's a need to use them.
 Regular stream data packets have a much lower overhead.
 
-
-### Stream data segmentation ### {#stream-data-segment-packets}
-
-Packets can be split up into separate chunks that may be received out of order
-and assembled. This allows transmission over switched networks with a limited MTU,
-or prevents very large packets from one stream interfering with another stream.
-The packet structure used for segments is the [[#generic-data-segment-packets]] from
-[[#generic-data-packets]], with the following descriptors:
-
-<figure id="table-StreamDataSegmentation" class="table">
-    <table class="complex data longlastcol" dfn-for="#stream-data-segment-packets">
-        <tr>
-            <th>Descriptor value</th>
-            <th>Name</th>
-            <th>Structure</th>
-            <th>Description</th>
-        </tr>
-        <tr id="0x00FF+0">
-            <td>''0x00FF''</td>
-            <td><dfn noexport>stream_data_segment_descriptor</dfn></td>
-            <td>[[#generic-data-segment-packets]]</td>
-            <td>Non-final segment for segmented codec configuration.</td>
-        </tr>
-    </table>
-</figure>
-
-The size of the final assembled packet is the sum of all [=seg_length=] fields,
-plus the [=data_length=] field from the [[#stream-data-packets]].
-
-Data segments and packets may arrive out of order and be duplicated.
-Implementations must reorder them, deduplicate them and assemble them into
-complete packets.
-
-Implementations may try to decode incomplete data packets with missing segments
-due to latency concerns.
-
-Senders may send duplicate segments to compensate for packet loss,
-but should use [[#fec-grouping-packets]] or [[#stream-data-parity-packets]] instead.
-
-Implementations should discard any packets and segments that arrive after their
-presentation time. Implementations should drop any packets and segments
-that arrive with unrealistically far away presentation times.
+[=side_data_type=] must be ignored if [=side_data_length=] is 0.
 
 
 ## FEC grouping ## {#fec-grouping-packets}
