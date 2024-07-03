@@ -1437,6 +1437,42 @@ For information on the layout of the specific codec-specific packet data, consul
 the [[#codec-encapsulation]] addenda.
 
 
+### Frame Type Enumeration (enum <dfn enum>FrameType</dfn>) ### {#enum-FrameType}
+
+<div dfn-type="enum-value" dfn-for="#enum-FrameType" id="FrameType">
+    : <dfn noexport>FRAME_TYPE_KEY</dfn> = <i>0x0</i>
+      :: Packet data contains a keyframe, able to be decoded standalone.
+    : <dfn noexport>FRAME_TYPE_S</dfn> = <i>0x1</i>
+      :: Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.
+    : <dfn noexport>FRAME_TYPE_P</dfn> = <i>0x2</i>
+      :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
+</div>
+
+
+### Data Compression Enumeration (enum <dfn enum>DataCompression</dfn>) ### {#enum-DataCompression}
+
+<div dfn-type="enum-value" dfn-for="#enum-DataCompression" id="DataCompression">
+    : <dfn noexport>DATA_COMPRESSION_NONE</dfn> = <i>0x0</i>
+      :: Packet data is uncompressed
+    : <dfn noexport>DATA_COMPRESSION_ZSTD</dfn> = <i>0x1</i>
+      :: Packet data is compressed with Zstandard, defined in IETF [[RFC8878]].
+
+          Note: Zstandard is a general purpose format, suitable for images,
+                audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
+                Therefore, it should be the preferred format for such payloads.
+
+    : <dfn noexport>DATA_COMPRESSION_BROTLI</dfn> = <i>0x2</i>
+      :: Packet data is compressed with Zstandard, defined in IETF [[RFC7932]].
+
+          Note: Brotli is more optimized for <b>text</b> rather than generic data,
+                and should be the preferred format for subtitles. Presently, it is
+                also more supported on the web.
+</div>
+
+Any undefined values are hereby reserved and must not be present in a compliant
+AVTransport stream with this version.
+
+
 ## Extended stream data ## {#extended-stream-data-packets}
 
 Depending upon the codec, using an extended stream data header may be required.
@@ -1584,42 +1620,6 @@ It is laid out in the following way:
 
 Extended stream data packets should only be used if there's a need to use them.
 Regular stream data packets have a much lower overhead.
-
-
-### Frame Type Enumeration (enum <dfn enum>FrameType</dfn>) ### {#enum-FrameType}
-
-<div dfn-type="enum-value" dfn-for="#enum-FrameType" id="FrameType">
-    : <dfn noexport>FRAME_TYPE_KEY</dfn> = <i>0x0</i>
-      :: Packet data contains a keyframe, able to be decoded standalone.
-    : <dfn noexport>FRAME_TYPE_S</dfn> = <i>0x1</i>
-      :: Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.
-    : <dfn noexport>FRAME_TYPE_P</dfn> = <i>0x2</i>
-      :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
-</div>
-
-
-### Data Compression Enumeration (enum <dfn enum>DataCompression</dfn>) ### {#enum-DataCompression}
-
-<div dfn-type="enum-value" dfn-for="#enum-DataCompression" id="DataCompression">
-    : <dfn noexport>DATA_COMPRESSION_NONE</dfn> = <i>0x0</i>
-      :: Packet data is uncompressed
-    : <dfn noexport>DATA_COMPRESSION_ZSTD</dfn> = <i>0x1</i>
-      :: Packet data is compressed with Zstandard, defined in IETF [[RFC8878]].
-
-          Note: Zstandard is a general purpose format, suitable for images,
-                audio, and binary data such as TTF, OTF, ICC, or CUBE packets.
-                Therefore, it should be the preferred format for such payloads.
-
-    : <dfn noexport>DATA_COMPRESSION_BROTLI</dfn> = <i>0x2</i>
-      :: Packet data is compressed with Zstandard, defined in IETF [[RFC7932]].
-
-          Note: Brotli is more optimized for <b>text</b> rather than generic data,
-                and should be the preferred format for subtitles. Presently, it is
-                also more supported on the web.
-</div>
-
-Any undefined values are hereby reserved and must not be present in a compliant
-AVTransport stream with this version.
 
 
 ### Stream data segmentation ### {#stream-data-segment-packets}
