@@ -115,21 +115,22 @@ streamid_padded_structs = [ ]
 streamid_field_exceptions = [ "stream_id", "group_id", "user_field", "session_version" ]
 codec_tags = { }
 
+# This is able to add arbitrary extra values to any structure during parsing
 extra_values = {
-    "AVTStreamData": [
-        "dts", {
-            "fixed": None,
-            "ldpc": None,
-            "enum": None,
-            "size_bits": 64,
-            "bytestream": 8,
-            "datatype": "int64_t",
-            "struct": None,
-            "array_len": 0,
-            "string": False,
-            "payload": False,
-        }
-    ],
+#    "AVTStreamData": [
+#        "dts", {
+#            "fixed": None,
+#            "ldpc": None,
+#            "enum": None,
+#            "size_bits": 64,
+#            "bytestream": 8,
+#            "datatype": "int64_t",
+#            "struct": None,
+#            "array_len": 0,
+#            "string": False,
+#            "payload": False,
+#        }
+#    ],
 }
 
 def iter_enum_fields(target_id):

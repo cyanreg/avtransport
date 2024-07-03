@@ -267,6 +267,10 @@ Below is a table of how they're allocated:
             <td>[[#stream-data-packets]]</td>
         </tr>
         <tr>
+            <td>[''0x0200'':''0x02FF'']</td>
+            <td>[[#extended-stream-data-packets]]</td>
+        </tr>
+        <tr>
             <td>''0x0300''</td>
             <td>[[#time-synchronization-packets]]</td>
         </tr>
@@ -1338,7 +1342,7 @@ The data packets indicate the start of a stream packet, which may be fragmented 
 more [[#stream-data-segment-packets]]. It is laid out as follows:
 
 <figure id="table-StreamData" class="table">
-    <table class="complex data longlastcol" dfn-for="#stream-data-packet">
+    <table class="complex data longlastcol" dfn-for="#stream-data-packets">
         <tr>
             <th>Type</th>
             <th>Name</th>
@@ -1433,6 +1437,155 @@ For information on the layout of the specific codec-specific packet data, consul
 the [[#codec-encapsulation]] addenda.
 
 
+## Extended stream data ## {#extended-stream-data-packets}
+
+Depending upon the codec, using an extended stream data header may be required.
+It is laid out in the following way:
+
+<figure id="table-ExtendedStreamData" class="table">
+    <table class="complex data longlastcol" dfn-for="#extended-stream-data-packet">
+        <tr>
+            <th>Type</th>
+            <th>Name</th>
+            <th>Data</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td><code>b(16)</code></td>
+            <td><dfn noexport>extended_stream_data_descriptor_structure</dfn></td>
+            <td></td>
+            <td>
+                <table>
+                    <tr id="0x0200+0">
+                        <td><code>b(8)</code></td>
+                        <td><dfn noexport>extended_stream_data_descriptor</dfn></td>
+                        <td>0x02</td>
+                    </tr>
+                    <tr id="0x0200+1">
+                        <td><code>b(3)</code></td>
+                        <td>[=frame_type=]</td>
+                        <td>enum {{FrameType}}</td>
+                    </tr>
+                    <tr id="0x0200+2">
+                        <td><code>b(1)</code></td>
+                        <td><dfn noexport>ext_pkt_reserved</dfn></td>
+                        <td>Reserved field. Must be set to 0.</td>
+                    </tr>
+                    <tr id="0x0200+3">
+                        <td><code>b(1)</code></td>
+                        <td>[=pkt_in_fec_group=]</td>
+                        <td>Packet is part of an FEC group and must be retained.</td>
+                    </tr>
+                    <tr id="0x0200+4">
+                        <td><code>b(1)</code></td>
+                        <td>[=field_id=]</td>
+                        <td>As defined in enum {{Interlacing}}.</td>
+                    </tr>
+                    <tr id="0x0200+5">
+                        <td><code>b(2)</code></td>
+                        <td>[=pkt_compression=]</td>
+                        <td>enum {{DataCompression}}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr id="0x0200+6">
+            <td><code>b(16)</code></td>
+            <td>[=stream_id=]</td>
+            <td></td>
+            <td>Indicates the stream ID for which this packet is applicable.</td>
+        </tr>
+        <tr id="0x0200+7">
+            <td><code>u(32)</code></td>
+            <td>[=global_seq=]</td>
+            <td></td>
+            <td>Monotonically incrementing per-packet global sequence number.</td>
+        </tr>
+        <tr id="0x0200+8">
+            <td><code>i(64)</code></td>
+            <td>[=pts=]</td>
+            <td></td>
+            <td>Indicates the presentation timestamp for when this frame should be presented at. To interpret the value, read the [[#timestamps]] section.</td>
+        </tr>
+        <tr id="0x0200+9">
+            <td><code>i(64)</code></td>
+            <td>[=dts=]</td>
+            <td></td>
+            <td>Indicates the timestamp for when to input this frame should be input into the decoder. To interpret the value, read the [[#timestamps]] section.</td>
+        </tr>
+        <tr id="0x0200+10">
+            <td><code>u(32)</code></td>
+            <td>[=data_length=]</td>
+            <td></td>
+            <td>The size of the data in this packet.</td>
+        </tr>
+        <tr id="0x0200+11">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr id="0x0200+12">
+            <td><code>[=data_length=]*b(8)</code></td>
+            <td>[=packet_data=]</td>
+            <td>payload</td>
+            <td>The packet data itself.</td>
+        </tr>
+        <tr id="0x0200+13">
+            <td><code>i(64)</code></td>
+            <td>[=duration=]</td>
+            <td></td>
+            <td>The duration of this packet in stream timebase unis.</td>
+        </tr>
+        <tr id="0x0200+14">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>total_data_length</dfn></td>
+            <td></td>
+            <td>The total size of all data needed to receive the payload correctly. Must be either 0 if unknown, or the total size of the payload across all segments.</td>
+        </tr>
+        <tr id="0x0200+15">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>side_data_length</dfn></td>
+            <td></td>
+            <td>Length of the side data, if any.</td>
+        </tr>
+        <tr id="0x0200+16">
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>side_data_offset</dfn></td>
+            <td></td>
+            <td>The offset within the packet where the side data is located at.</td>
+        </tr>
+        <tr id="0x0200+17">
+            <td><code>u(8)</code></td>
+            <td><dfn noexport>side_data_type</dfn></td>
+            <td></td>
+            <td>The size of the data in this packet.</td>
+        </tr>
+        <tr id="0x0200+18">
+            <td><code>b(48)</code></td>
+            <td>[=padding=]</td>
+            <td></td>
+            <td>Padding, reserved for future use. MUST be ''0x0''.</td>
+        </tr>
+        <tr id="0x0200+19">
+            <td><code>b(64)</code></td>
+            <td>[=ldpc_288_224=]</td>
+            <td>[=LDPC(288, 224)=]</td>
+            <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
+        </tr>
+        <tr id="0x0200+20">
+            <td><code>[=data_length=]*b(8)</code></td>
+            <td>[=packet_data=]</td>
+            <td>payload</td>
+            <td>The packet data itself.</td>
+        </tr>
+    </table>
+</figure>
+
+Extended stream data packets should only be used if there's a need to use them.
+Regular stream data packets have a much lower overhead.
+
+
 ### Frame Type Enumeration (enum <dfn enum>FrameType</dfn>) ### {#enum-FrameType}
 
 <div dfn-type="enum-value" dfn-for="#enum-FrameType" id="FrameType">
@@ -1442,16 +1595,6 @@ the [[#codec-encapsulation]] addenda.
       :: Packet data contains a scalable/switch frame, able to be decoded standalone, with acceptable degradation.
     : <dfn noexport>FRAME_TYPE_P</dfn> = <i>0x2</i>
       :: Packet data contains an <b>inter</b> frame, requiring additional reference frames in order to be validly decoded.
-    : <dfn noexport>FRAME_TYPE_C1</dfn> = <i>0x3</i>
-      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
-    : <dfn noexport>FRAME_TYPE_C2</dfn> = <i>0x4</i>
-      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
-    : <dfn noexport>FRAME_TYPE_C3</dfn> = <i>0x5</i>
-      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
-    : <dfn noexport>FRAME_TYPE_C4</dfn> = <i>0x6</i>
-      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
-    : <dfn noexport>FRAME_TYPE_C5</dfn> = <i>0x7</i>
-      :: Packet data contains a frame with a type defined in [[#codec-encapsulation]].
 </div>
 
 
@@ -3865,9 +4008,10 @@ For H264 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x48323634'' (''H264'').
 
-The [=packet_data=] must contain the following elements, in order:
- - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
- - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
+[[#extended-stream-data-packets]] must be used, as H264 requires a [=dts=].
+
+The [=packet_data=] must contain ''Annex-B'' formatted NAL units,
+with startcode emulation bits included.
 
 A [[#stream-configuration-packets]] packet may be sent, to speed up stream initialization.
 If they are present, they must contain an ''AVCDecoderConfigurationRecord'' structure,
@@ -3888,9 +4032,10 @@ For H265 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 must be ''0x48323635'' (''H265'').
 
-The [=packet_data=] must contain the following elements, in order:
- - A single <code>b(64)</code> element with the [=dts=], the time, which indicates when a frame should be input into a synchronous 1-in-1-out decoder.
- - ''Annex-B'' formatted NAL units, with startcode emulation bits included.
+[[#extended-stream-data-packets]] must be used, as H265 requires a [=dts=].
+
+The [=packet_data=] must contain ''Annex-B'' formatted NAL units,
+with startcode emulation bits included.
 
 ''Annex-B'' formatted packets must be used, with startcode emulation bits included.
 
@@ -3904,6 +4049,8 @@ speed up stream initialization. If they are present, they must contain an
 For Dirac or VC-2 encapsulation, the [=codec_id=] in
 [[#stream-registration-packets]]
 MUST be ''0x42424344'' (''BBCD'').
+
+[[#extended-stream-data-packets]] must be used, as Dirac packets require a [=dts=].
 
 Dirac streams require no [[#stream-configuration-packets]] packets.
 
