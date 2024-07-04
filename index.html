@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="52ce1591f6d189491b1a9dab6270d2a074a45d92" name="document-revision">
+  <meta content="7148badbc67e7cf19df91f117f8e10257991bd1b" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-03">3 July 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-04">4 July 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 3 July 2024,
+In addition, as of 4 July 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -3594,31 +3594,36 @@ It is laid out in the following way:</p>
        <td>
        <td>The total size of all data needed to receive the payload correctly. Must be either 0 if unknown, or the total size of the payload across all segments.
       <tr id="0x0200+14">
-       <td><code>u(32)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_length">side_data_length</dfn>
+       <td><code>u(16)</code>
+       <td><dfn class="dfn-paneled" data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_desc_1">side_data_desc_1</dfn>
        <td>
-       <td>Length of the side data, if any.
+       <td>If not equal to <span class="css">0xFFFF</span>, it means this packet depends on another packet with the given descriptor for correct decoding or presentation.
       <tr id="0x0200+15">
        <td><code>u(32)</code>
-       <td><dfn data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_offset">side_data_offset<a class="self-link" href="#extended-stream-data-packet-side_data_offset"></a></dfn>
+       <td><dfn data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_seq_1">side_data_seq_1<a class="self-link" href="#extended-stream-data-packet-side_data_seq_1"></a></dfn>
        <td>
-       <td>The offset within the packet where the side data is located at.
+       <td>If <a data-link-type="dfn" href="#extended-stream-data-packet-side_data_desc_1" id="ref-for-extended-stream-data-packet-side_data_desc_1">side_data_desc_1</a> is non-<span class="css">0xFFFF</span>, a valid sequence ID for the side data packet.
       <tr id="0x0200+16">
-       <td><code>u(8)</code>
-       <td><dfn class="dfn-paneled" data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_type">side_data_type</dfn>
+       <td><code>u(16)</code>
+       <td><dfn class="dfn-paneled" data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_desc_2">side_data_desc_2</dfn>
        <td>
-       <td>The size of the data in this packet.
+       <td>If not equal to <span class="css">0xFFFF</span>, it means this packet depends on another packet with the given descriptor for correct decoding or presentation.
       <tr id="0x0200+17">
-       <td><code>b(48)</code>
+       <td><code>u(32)</code>
+       <td><dfn data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-side_data_seq_2">side_data_seq_2<a class="self-link" href="#extended-stream-data-packet-side_data_seq_2"></a></dfn>
+       <td>
+       <td>If <a data-link-type="dfn" href="#extended-stream-data-packet-side_data_desc_2" id="ref-for-extended-stream-data-packet-side_data_desc_2">side_data_desc_2</a> is non-<span class="css">0xFFFF</span>, a valid sequence ID for the side data packet.
+      <tr id="0x0200+18">
+       <td><code>b(32)</code>
        <td><a data-link-type="dfn" href="#padding" id="ref-for-padding③">padding</a>
        <td>
        <td>Padding, reserved for future use. MUST be <span class="css">0x0</span>.
-      <tr id="0x0200+18">
+      <tr id="0x0200+19">
        <td><code>b(64)</code>
        <td><a data-link-type="dfn" href="#ldpc_288_224" id="ref-for-ldpc_288_224①⓪">ldpc_288_224</a>
        <td><a data-link-type="dfn" href="#ldpc-288-224" id="ref-for-ldpc-288-224①①">LDPC(288, 224)</a>
        <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.
-      <tr id="0x0200+19">
+      <tr id="0x0200+20">
        <td><code><a data-link-type="dfn" href="#stream-data-packets-data_length" id="ref-for-stream-data-packets-data_length③">data_length</a>*b(8)</code>
        <td><a data-link-type="dfn" href="#stream-data-packets-packet_data" id="ref-for-stream-data-packets-packet_data">packet_data</a>
        <td>payload
@@ -3627,7 +3632,6 @@ It is laid out in the following way:</p>
    </figure>
    <p>Extended stream data packets should only be used if there’s a need to use them.
 Regular stream data packets have a much lower overhead.</p>
-   <p><a data-link-type="dfn" href="#extended-stream-data-packet-side_data_type" id="ref-for-extended-stream-data-packet-side_data_type">side_data_type</a> must be ignored if <a data-link-type="dfn" href="#extended-stream-data-packet-side_data_length" id="ref-for-extended-stream-data-packet-side_data_length">side_data_length</a> is 0.</p>
    <h3 class="heading settled" data-level="2.8" id="fec-grouping-packets"><span class="secno">2.8. </span><span class="content">FEC grouping</span><a class="self-link" href="#fec-grouping-packets"></a></h3>
    <p>Whilst it’s possible to send uncontextualized FEC data backing individual
 packets, for most applications, this is only feasible for very high bitrate
@@ -6940,9 +6944,10 @@ This is the format that the reference function above expects.</p>
    <li><a href="#session-start-packets-session_start_descriptor">session_start_descriptor</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_uuid">session_uuid</a><span>, in § 2.1</span>
    <li><a href="#session-start-packets-session_version">session_version</a><span>, in § 2.1</span>
-   <li><a href="#extended-stream-data-packet-side_data_length">side_data_length</a><span>, in § 2.7</span>
-   <li><a href="#extended-stream-data-packet-side_data_offset">side_data_offset</a><span>, in § 2.7</span>
-   <li><a href="#extended-stream-data-packet-side_data_type">side_data_type</a><span>, in § 2.7</span>
+   <li><a href="#extended-stream-data-packet-side_data_desc_1">side_data_desc_1</a><span>, in § 2.7</span>
+   <li><a href="#extended-stream-data-packet-side_data_desc_2">side_data_desc_2</a><span>, in § 2.7</span>
+   <li><a href="#extended-stream-data-packet-side_data_seq_1">side_data_seq_1</a><span>, in § 2.7</span>
+   <li><a href="#extended-stream-data-packet-side_data_seq_2">side_data_seq_2</a><span>, in § 2.7</span>
    <li><a href="#video-information-packets-signal_aspect">signal_aspect</a><span>, in § 2.15</span>
    <li><a href="#stream-registration-packets-skip_preroll">skip_preroll</a><span>, in § 2.3</span>
    <li><a href="#stereo-video-packets-stereo_video_descriptor">stereo_video_descriptor</a><span>, in § 2.17</span>
@@ -7542,8 +7547,8 @@ window.dfnpanelData['stream-data-packets-data_length'] = {"dfnID": "stream-data-
 window.dfnpanelData['stream-data-packets-packet_data'] = {"dfnID": "stream-data-packets-packet_data", "url": "#stream-data-packets-packet_data", "dfnText": "packet_data", "refSections": [{"refs": [{"id": "ref-for-stream-data-packets-packet_data"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460"}], "title": "3.1.1. Opus encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461"}], "title": "3.1.2. AAC encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2462"}], "title": "3.1.5. ATRAC-9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2463"}], "title": "3.1.6. TAK encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2464"}], "title": "3.1.8. Theora encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2465"}], "title": "3.1.9. VP9 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2466"}], "title": "3.1.10. AV1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2467"}], "title": "3.1.11. H264 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2468"}], "title": "3.1.12. H265 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u24ea"}], "title": "3.1.13. Dirac/VC-2 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2460"}], "title": "3.1.14. FFv1 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2461"}], "title": "3.1.15. ProRes encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2462"}], "title": "3.1.16. ASS encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2463"}], "title": "3.1.17. SubRip encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2464"}], "title": "3.1.18. WebVTT encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2465"}], "title": "3.1.19. DNG/TIFF encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2466"}], "title": "3.1.20. JPEG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2460\u2467"}, {"id": "ref-for-stream-data-packets-packet_data\u2460\u2468"}], "title": "3.1.21. JPEG-2000 encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u24ea"}], "title": "3.1.22. PNG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2460"}], "title": "3.1.23. SVG encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2461"}], "title": "3.1.24. Raw audio encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2462"}], "title": "3.1.25. Raw video encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2463"}], "title": "3.1.27. Custom codec encapsulation"}, {"refs": [{"id": "ref-for-stream-data-packets-packet_data\u2461\u2464"}], "title": "3.2.1. UDP"}], "external": false};
 window.dfnpanelData['enumdef-frametype'] = {"dfnID": "enumdef-frametype", "url": "#enumdef-frametype", "dfnText": "FrameType", "refSections": [{"refs": [{"id": "ref-for-enumdef-frametype"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-frametype\u2460"}], "title": "2.7. Extended stream data"}], "external": false};
 window.dfnpanelData['enumdef-datacompression'] = {"dfnID": "enumdef-datacompression", "url": "#enumdef-datacompression", "dfnText": "DataCompression", "refSections": [{"refs": [{"id": "ref-for-enumdef-datacompression"}], "title": "2.4. Generic data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2460"}], "title": "2.6. Stream Data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2461"}], "title": "2.7. Extended stream data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2462"}], "title": "2.13. LUT/ICC profile"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2463"}], "title": "2.14. Font data"}, {"refs": [{"id": "ref-for-enumdef-datacompression\u2464"}], "title": "2.18. User data"}], "external": false};
-window.dfnpanelData['extended-stream-data-packet-side_data_length'] = {"dfnID": "extended-stream-data-packet-side_data_length", "url": "#extended-stream-data-packet-side_data_length", "dfnText": "side_data_length", "refSections": [{"refs": [{"id": "ref-for-extended-stream-data-packet-side_data_length"}], "title": "2.7. Extended stream data"}], "external": false};
-window.dfnpanelData['extended-stream-data-packet-side_data_type'] = {"dfnID": "extended-stream-data-packet-side_data_type", "url": "#extended-stream-data-packet-side_data_type", "dfnText": "side_data_type", "refSections": [{"refs": [{"id": "ref-for-extended-stream-data-packet-side_data_type"}], "title": "2.7. Extended stream data"}], "external": false};
+window.dfnpanelData['extended-stream-data-packet-side_data_desc_1'] = {"dfnID": "extended-stream-data-packet-side_data_desc_1", "url": "#extended-stream-data-packet-side_data_desc_1", "dfnText": "side_data_desc_1", "refSections": [{"refs": [{"id": "ref-for-extended-stream-data-packet-side_data_desc_1"}], "title": "2.7. Extended stream data"}], "external": false};
+window.dfnpanelData['extended-stream-data-packet-side_data_desc_2'] = {"dfnID": "extended-stream-data-packet-side_data_desc_2", "url": "#extended-stream-data-packet-side_data_desc_2", "dfnText": "side_data_desc_2", "refSections": [{"refs": [{"id": "ref-for-extended-stream-data-packet-side_data_desc_2"}], "title": "2.7. Extended stream data"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-group_id'] = {"dfnID": "fec-grouping-packets-group_id", "url": "#fec-grouping-packets-group_id", "dfnText": "group_id", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-group_id"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_scheme_oti'] = {"dfnID": "fec-grouping-packets-fec_scheme_oti", "url": "#fec-grouping-packets-fec_scheme_oti", "dfnText": "fec_scheme_oti", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_scheme_oti"}], "title": "2.8. FEC grouping"}], "external": false};
 window.dfnpanelData['fec-grouping-packets-fec_data_length'] = {"dfnID": "fec-grouping-packets-fec_data_length", "url": "#fec-grouping-packets-fec_data_length", "dfnText": "fec_data_length", "refSections": [{"refs": [{"id": "ref-for-fec-grouping-packets-fec_data_length"}], "title": "2.8. FEC grouping"}], "external": false};
