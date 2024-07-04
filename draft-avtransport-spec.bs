@@ -1617,36 +1617,42 @@ It is laid out in the following way:
             <td>The total size of all data needed to receive the payload correctly. Must be either 0 if unknown, or the total size of the payload across all segments.</td>
         </tr>
         <tr id="0x0200+14">
-            <td><code>u(32)</code></td>
-            <td><dfn noexport>side_data_length</dfn></td>
+            <td><code>u(16)</code></td>
+            <td><dfn noexport>side_data_desc_1</dfn></td>
             <td></td>
-            <td>Length of the side data, if any.</td>
+            <td>If not equal to ''0xFFFF'', it means this packet depends on another packet with the given descriptor for correct decoding or presentation.</td>
         </tr>
         <tr id="0x0200+15">
             <td><code>u(32)</code></td>
-            <td><dfn noexport>side_data_offset</dfn></td>
+            <td><dfn noexport>side_data_seq_1</dfn></td>
             <td></td>
-            <td>The offset within the packet where the side data is located at.</td>
+            <td>If [=side_data_desc_1=] is non-''0xFFFF'', a valid sequence ID for the side data packet.</td>
         </tr>
         <tr id="0x0200+16">
-            <td><code>u(8)</code></td>
-            <td><dfn noexport>side_data_type</dfn></td>
+            <td><code>u(16)</code></td>
+            <td><dfn noexport>side_data_desc_2</dfn></td>
             <td></td>
-            <td>The size of the data in this packet.</td>
+            <td>If not equal to ''0xFFFF'', it means this packet depends on another packet with the given descriptor for correct decoding or presentation.</td>
         </tr>
         <tr id="0x0200+17">
-            <td><code>b(48)</code></td>
+            <td><code>u(32)</code></td>
+            <td><dfn noexport>side_data_seq_2</dfn></td>
+            <td></td>
+            <td>If [=side_data_desc_2=] is non-''0xFFFF'', a valid sequence ID for the side data packet.</td>
+        </tr>
+        <tr id="0x0200+18">
+            <td><code>b(32)</code></td>
             <td>[=padding=]</td>
             <td></td>
             <td>Padding, reserved for future use. MUST be ''0x0''.</td>
         </tr>
-        <tr id="0x0200+18">
+        <tr id="0x0200+19">
             <td><code>b(64)</code></td>
             <td>[=ldpc_288_224=]</td>
             <td>[=LDPC(288, 224)=]</td>
             <td>64-bits of LDPC parity data to correct the previous 224 bits of the packet.</td>
         </tr>
-        <tr id="0x0200+19">
+        <tr id="0x0200+20">
             <td><code>[=data_length=]*b(8)</code></td>
             <td>[=packet_data=]</td>
             <td>payload</td>
@@ -1657,8 +1663,6 @@ It is laid out in the following way:
 
 Extended stream data packets should only be used if there's a need to use them.
 Regular stream data packets have a much lower overhead.
-
-[=side_data_type=] must be ignored if [=side_data_length=] is 0.
 
 
 ## FEC grouping ## {#fec-grouping-packets}
