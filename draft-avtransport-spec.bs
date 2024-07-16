@@ -333,7 +333,7 @@ interval <code>[-1.0, 1.0]</code>.
 Padding may be present in some packets (<dfn noexport>padding</dfn>). Unless otherwise indicated,
 the data in padding must be ''0x0''.
 
-Note: this document is machine-parseable. Each symbol of a packet or enum has an assigned ID of
+Note: This document is machine-parseable. Each symbol of a packet or enum has an assigned ID of
 the form ''descriptor in hex''+''index'', where index is a number starting from 0,
 incremented for each element in a structure.
 
@@ -1017,6 +1017,9 @@ in the following manner:
 
     : <dfn noexport>STREAM_BINAURAL</dfn> = <i>0x10000</i>
       :: Stream contains binaural audio. If set, pre-processing for headphones should be disabled.
+
+    : <dfn noexport>STREAM_MULTILAYER</dfn> = <i>0x20000</i>
+      :: Stream contains multiple layers in the codec bitstream. For example, alternative views.
 </div>
 
 Several streams can be <b>chained</b> with the {{STREAM_LOW_QUALITY}} bit set to indicate
