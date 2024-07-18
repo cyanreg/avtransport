@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="5dfd24133820fc91b1af498a75a7ad213fb0c748" name="document-revision">
+  <meta content="fa5f85f9de13d5679021afc3d226412640cfe7ce" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-16">16 July 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-18">18 July 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 16 July 2024,
+In addition, as of 18 July 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -4679,7 +4679,7 @@ the setting used, if the codec supports this.</p>
     </dl>
    </div>
    <p class="note" role="note"><span class="marker">Note:</span> This list may not be up to date in this version of the AVTransport specifications.
-Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a> for up-to-date values and how to interpret them.</p>
+Users should consult the latest <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a> spec for up-to-date values and how to interpret them.</p>
    <h4 class="heading settled" data-level="2.15.7" id="enum-Transfer"><span class="secno">2.15.7. </span><span class="content">Transfer Function Enumeration (enum <dfn class="dfn-paneled idl-code" data-dfn-type="enum" data-export id="enumdef-transfer"><code>Transfer</code></dfn>)</span><a class="self-link" href="#enum-Transfer"></a></h4>
    <p>These values are copied verbatim from <a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>. The same note applies.</p>
    <div id="Transfer">
@@ -4783,6 +4783,15 @@ Users should consult <a data-link-type="biblio" href="#biblio-h273" title="Codin
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Matrix" data-dfn-type="enum-value" data-noexport id="dom-enum-matrix-matrix_st2100"><code>MATRIX_ST2100</code><a class="self-link" href="#dom-enum-matrix-matrix_st2100"></a></dfn> = <i>0xE</i>
      <dd data-md>
       <p>Rec. ITU-R BT.2100-2 ICTCP</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Matrix" data-dfn-type="enum-value" data-noexport id="dom-enum-matrix-matrix_ipt_c2"><code>MATRIX_IPT_C2</code><a class="self-link" href="#dom-enum-matrix-matrix_ipt_c2"></a></dfn> = <i>0xF</i>
+     <dd data-md>
+      <p>SMPTE ST 2128 (202x), equations 85 to 87</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Matrix" data-dfn-type="enum-value" data-noexport id="dom-enum-matrix-matrix_ycgco_re"><code>MATRIX_YCGCO_RE</code><a class="self-link" href="#dom-enum-matrix-matrix_ycgco_re"></a></dfn> = <i>0x10</i>
+     <dd data-md>
+      <p><a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, equations 58 to 65</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-Matrix" data-dfn-type="enum-value" data-noexport id="dom-enum-matrix-matrix_ycgco_ro"><code>MATRIX_YCGCO_RO</code><a class="self-link" href="#dom-enum-matrix-matrix_ycgco_ro"></a></dfn> = <i>0x11</i>
+     <dd data-md>
+      <p><a data-link-type="biblio" href="#biblio-h273" title="Coding-independent code points for video signal type identification">[H.273]</a>, equations 58 to 65</p>
     </dl>
    </div>
    <h3 class="heading settled" data-level="2.16" id="video-orientation-packets"><span class="secno">2.16. </span><span class="content">Video orientation</span><a class="self-link" href="#video-orientation-packets"></a></h3>
@@ -6844,12 +6853,15 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-matrix-matrix_bt709">MATRIX_BT709</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_fcc">MATRIX_FCC</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_ident">MATRIX_IDENT</a><span>, in § 2.15.8</span>
+   <li><a href="#dom-enum-matrix-matrix_ipt_c2">MATRIX_IPT_C2</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_reserved_3">MATRIX_RESERVED_3</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_st2085">MATRIX_ST2085</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_st2100">MATRIX_ST2100</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_st240">MATRIX_ST240</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_unspec">MATRIX_UNSPEC</a><span>, in § 2.15.8</span>
    <li><a href="#dom-enum-matrix-matrix_ycgco">MATRIX_YCGCO</a><span>, in § 2.15.8</span>
+   <li><a href="#dom-enum-matrix-matrix_ycgco_re">MATRIX_YCGCO_RE</a><span>, in § 2.15.8</span>
+   <li><a href="#dom-enum-matrix-matrix_ycgco_ro">MATRIX_YCGCO_RO</a><span>, in § 2.15.8</span>
    <li><a href="#video-information-packets-max_luminance">max_luminance</a><span>, in § 2.15</span>
    <li><a href="#dom-enum-commonmetadatakeys-mcn">mcn</a><span>, in § 4.1</span>
    <li><a href="#dom-enum-commonmetadatakeys-media_type">media_type</a><span>, in § 4.1</span>
