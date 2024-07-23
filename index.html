@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="fa5f85f9de13d5679021afc3d226412640cfe7ce" name="document-revision">
+  <meta content="9e01c9caed781e11af2f670252a83144851dc80f" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-18">18 July 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-07-23">23 July 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 18 July 2024,
+In addition, as of 23 July 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -6371,6 +6371,9 @@ buffering, and reordering.</p>
      <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-replaygain_reference_loudness"><code>REPLAYGAIN_REFERENCE_LOUDNESS</code><a class="self-link" href="#dom-enum-commonmetadatakeys-replaygain_reference_loudness"></a></dfn> — <span class="css">floating point number</span>
      <dd data-md>
       <p>ReplayGain 2.0 reference loudness, in <span class="css">LUFS</span>.</p>
+     <dt data-md><dfn class="idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-encoder"><code>encoder</code><a class="self-link" href="#dom-enum-commonmetadatakeys-encoder"></a></dfn> — <span class="css">list of properties</span>
+     <dd data-md>
+      <p>A list of settings used for encoding.</p>
     </dl>
    </div>
    <p>The <code class="idl"><a data-link-type="idl" href="#dom-enum-commonmetadatakeys-language" id="ref-for-dom-enum-commonmetadatakeys-language">language</a></code> field must be formatted as a <b>subtag</b>, according to the <a data-link-type="biblio" href="#biblio-bcp47" title="Tags for Identifying Languages">[bcp47]</a>.</p>
@@ -6735,6 +6738,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#feedback-packets-dropped_packets">dropped_packets</a><span>, in § 3.3.3</span>
    <li><a href="#dts">dts</a><span>, in § 1.7</span>
    <li><a href="#duration">duration</a><span>, in § 1.7</span>
+   <li><a href="#dom-enum-commonmetadatakeys-encoder">encoder</a><span>, in § 4.1</span>
    <li><a href="#epoch">epoch</a><span>, in § 1.8.3</span>
    <li><a href="#feedback-packets-epoch_offset">epoch_offset</a><span>, in § 3.3.3</span>
    <li><a href="#session-control-data-packets-error">error</a><span>, in § 3.3.1</span>
