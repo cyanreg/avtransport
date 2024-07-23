@@ -5057,6 +5057,8 @@ The following string 'key's should be used, instead of any others:
       :: ReplayGain 2.0 track peak, in ''dB''.
     : <dfn noexport>REPLAYGAIN_REFERENCE_LOUDNESS</dfn> — ''floating point number''
       :: ReplayGain 2.0 reference loudness, in ''LUFS''.
+    : <dfn noexport>encoder</dfn> — ''list of properties''
+      :: A list of settings used for encoding.
 </div>
 
 The {{language}} field must be formatted as a <b>subtag</b>, according to the [[bcp47]].
