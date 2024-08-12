@@ -590,6 +590,15 @@ Alternatively, for image-only files, <b>.ati</b> is recommended, and for subtitl
 the recommendation is <b>.avs</b>.
 
 
+### MIME type ### {#mime-type}
+
+AVTransport shall use the following MIME types:
+
+ - video/avt for video-only AVTransport files
+ - audio/avt for audio-only AVTransport files
+ - application/avt for all other AVTransport files
+
+
 # Packet structure # {#packet-structure}
 
 This section lists the syntax of each individual packet type and specifies its purpose,
