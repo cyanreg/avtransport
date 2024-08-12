@@ -354,14 +354,14 @@ This makes AVTransport suitable for not only switched networks, but also raw
 radio frequency links, optical links, or plain serial links.
 Details for each are available in the [[#streaming]] section.
 
-Their theory of operation and specifications are detailed in [[#annex-g-ldpc]].
+Their theory of operation and specifications are detailed in [[#annex-w-ldpc]].
 
 To simplify implementations, two different lengths are used:
  - <dfn noexport>ldpc_288_224</dfn>: specified in [=LDPC(288, 224)=]
  - <dfn noexport>ldpc_2784_2016</dfn>: specified in [=LDPC(2784, 2016)=]
 
 Note: Applying LDPC error correction is optional for receiver implementations.</br>
-Senders must implement it. This document provides example routines in [[#annex-g-ldpc]].
+Senders must implement it. This document provides example routines in [[#annex-w-ldpc]].
 
 
 ## Global sequence ## {#global-sequence}
@@ -2194,7 +2194,7 @@ as a ''key'' and ''value'' pair.
 
 Implementations are free to use any ''key'' or ''value'' names. But, to maintain
 interoperability, implementations are <b>required</b> to either follow the
-tags given by [[#annex-d-metadata-tags]], or use custom tags if the format
+tags given by [[#annex-a-metadata-tags]], or use custom tags if the format
 of the values differ.
 
 Each key may be present multiple times. Implementations must
@@ -4601,82 +4601,7 @@ on the same connection it received the session start packet.
 
 In the fourth case (Multicast), the server binds to a multicast UDP address and begins to send data.
 
-In general, implementations should emit the following packet types
-at the given frequencies.
-
-<figure id="table-Streaming" class="table">
-    <table class="complex data longlastcol" dfn-for="#streaming">
-        <tr>
-            <th>Packet type</th>
-            <th>Suggested frequency</th>
-            <th>Description</th>
-        </tr>
-        <tr>
-            <td>[[#session-start-packets]]</td>
-            <td>Target startup delay</td>
-            <td>To identify a stream as AVTransport without ambiguity.</td>
-        </tr>
-        <tr>
-            <td>[[#time-synchronization-packets]]</td>
-            <td>Target startup delay</td>
-            <td>Optional time synchronization field to establish an epoch and do timestamp jitter compensation.</td>
-        </tr>
-        <tr>
-            <td>[[#stream-registration-packets]]</td>
-            <td>Target startup delay</td>
-            <td>Register streams to permit packet processing.</td>
-        </tr>
-        <tr>
-            <td>[[#stream-configuration-packets]]</td>
-            <td>Target startup delay</td>
-            <td>To initialize decoding of stream packets.</td>
-        </tr>
-        <tr>
-            <td>[[#video-information-packets]]</td>
-            <td>Target startup delay</td>
-            <td>To correctly present any video packets.</td>
-        </tr>
-        <tr>
-            <td>[[#lut-icc-profile-packets]]</td>
-            <td>Target startup delay</td>
-            <td>Optional LUT/ICC profile for correct video presentation.</td>
-        </tr>
-        <tr>
-            <td>[[#video-orientation-packets]]</td>
-            <td>Target startup delay</td>
-            <td>Video orientation packets, when needed.</td>
-        </tr>
-        <tr>
-            <td>[[#metadata-packets]]</td>
-            <td>Target startup delay</td>
-            <td>Session metadata.</td>
-        </tr>
-        <tr>
-            <td>[[#stream-data-packets]]</td>
-            <td>Always</td>
-            <td>Stream data packets.</td>
-        </tr>
-        <tr>
-            <td>[[#fec-grouping-packets]]</td>
-            <td>Appropriate for the packet loss</td>
-            <td>Optional FEC data.</td>
-        </tr>
-        <tr>
-            <td>[[#user-data-packets]]</td>
-            <td>As often as necessary</td>
-            <td>Optional user data packets.</td>
-        </tr>
-        <tr>
-            <td>[[#end-of-stream-packets]]</td>
-            <td>Once</td>
-            <td>Finalizes a stream or session.</td>
-        </tr>
-    </table>
-</figure>
-
-In particular, [[#time-synchronization-packets]] packets should
-be sent as often as necessary if timestamp jitter avoidance is a requirement.
-
+Users are strongly recommended to follow the recommendations given in [[#streaming-recommendations]].
 
 ### UDP ### {#udp-streaming}
 
@@ -5047,7 +4972,7 @@ buffering, and reordering.
 
 Additional data or recommendations for the AVTransport specification is listed here.
 
-## Annex D: Metadata tags ## {#annex-d-metadata-tags}
+## Annex A: Metadata tags ## {#annex-a-metadata-tags}
 
 The following string 'key's should be used, instead of any others:
 
@@ -5106,7 +5031,100 @@ If the value type differs, or is formatted in a different way outside of these s
 then the metadata field is considered invalid.
 
 
-## Annex G: LDPC ## {#annex-g-ldpc}
+## Annex B: Recommended practices ## {#annex-b-recommended-practices}
+
+This section covers recommended practices for AVTransport streams in common circumstances.
+
+### Archival recommendations ### {#archival-recommendations}
+
+For archival, it is recommended to limit the packet size to the maximum packet size that
+the storage medium natively operates at. This ensures that the native error correction
+capabilities work to enhance the capabilities of AVTransport.
+
+It is recommended to use FEC groups encapsulating every stream, with a [=fec_nb_packets=]
+of sufficient length to eliminate any remaining packet errors that slip by.
+
+
+### Streaming recommendations ### {#streaming-recommendations}
+
+In general, implementations should emit the following packet types
+at the given frequencies.
+
+<figure id="table-StreamingRecommendations" class="table">
+    <table class="complex data longlastcol" dfn-for="#streaming-recommendations">
+        <tr>
+            <th>Packet type</th>
+            <th>Suggested frequency</th>
+            <th>Description</th>
+        </tr>
+        <tr>
+            <td>[[#session-start-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To identify a stream as AVTransport without ambiguity.</td>
+        </tr>
+        <tr>
+            <td>[[#time-synchronization-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Optional time synchronization field to establish an epoch and do timestamp jitter compensation.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-registration-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Register streams to permit packet processing.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-configuration-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To initialize decoding of stream packets.</td>
+        </tr>
+        <tr>
+            <td>[[#video-information-packets]]</td>
+            <td>Target startup delay</td>
+            <td>To correctly present any video packets.</td>
+        </tr>
+        <tr>
+            <td>[[#lut-icc-profile-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Optional LUT/ICC profile for correct video presentation.</td>
+        </tr>
+        <tr>
+            <td>[[#video-orientation-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Video orientation packets, when needed.</td>
+        </tr>
+        <tr>
+            <td>[[#metadata-packets]]</td>
+            <td>Target startup delay</td>
+            <td>Session metadata.</td>
+        </tr>
+        <tr>
+            <td>[[#stream-data-packets]]</td>
+            <td>Always</td>
+            <td>Stream data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#fec-grouping-packets]]</td>
+            <td>Appropriate for the packet loss</td>
+            <td>Optional FEC data.</td>
+        </tr>
+        <tr>
+            <td>[[#user-data-packets]]</td>
+            <td>As often as necessary</td>
+            <td>Optional user data packets.</td>
+        </tr>
+        <tr>
+            <td>[[#end-of-stream-packets]]</td>
+            <td>Once</td>
+            <td>Finalizes a stream or session.</td>
+        </tr>
+    </table>
+</figure>
+
+In particular, [[#time-synchronization-packets]] packets should
+be sent as often as necessary if timestamp jitter avoidance is a requirement.
+
+
+## Annex W: LDPC ## {#annex-w-ldpc}
 
 This normative annex shall cover the usage and operation of [[LDPC]] within AVTransport.
 
