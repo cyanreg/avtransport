@@ -266,12 +266,15 @@ typedef struct AVTConnectionInfo {
 } AVTConnectionInfo;
 
 /**
- * Initialize a connection. If this function returns 0 or greater,
- * the connection set in *conn will be initialized to a connection context,
- * which may be passed onto other functions.
+ * Initialize a connection. Returns 0 or greater on success, otherwise
+ * returns an error code.
+ *
+ * NOTE: May be called with a non-zero *conn context.
+ * The context will be reinitialized with the new parameters given.
+ * If this fails, the context given will remain untouched and valid.
  */
-AVT_API int avt_connection_create(AVTContext *ctx, AVTConnection **conn,
-                                  AVTConnectionInfo *info);
+AVT_API int avt_connection_init(AVTContext *ctx, AVTConnection **conn,
+                                AVTConnectionInfo *info);
 
 /**
  * Processes received packets and transmits scheduled packets.

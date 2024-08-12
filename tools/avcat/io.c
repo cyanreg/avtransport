@@ -122,7 +122,7 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
             .type = io->type,
             .output_opts.bandwidth = 80 * 1000 * 1000,
         };
-        err = avt_connection_create(avt, &io->conn, &conn_info);
+        err = avt_connection_init(avt, &io->conn, &conn_info);
         if (err < 0) {
             avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path,
                     err);

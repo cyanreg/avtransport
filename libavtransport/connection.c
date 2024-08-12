@@ -105,8 +105,8 @@ static int send_session_start_pkt(AVTConnection *conn)
     return 0;
 }
 
-int avt_connection_create(AVTContext *ctx, AVTConnection **_conn,
-                          AVTConnectionInfo *info)
+int avt_connection_init(AVTContext *ctx, AVTConnection **_conn,
+                        AVTConnectionInfo *info)
 {
     int ret;
     AVTConnection *conn = calloc(1, sizeof(*conn));
