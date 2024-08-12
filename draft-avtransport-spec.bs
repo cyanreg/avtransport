@@ -3663,6 +3663,12 @@ definitions. Below, a mapping between [=codec_id=] and encapsulation is listed:
             <td><dfn noexport>CODEC_ID_WEBVTT</dfn></td>
             <td>[[#webvtt-encapsulation]]</td>
         </tr>
+        <tr id="codec_id_map+33">
+            <td>''0x56433031''</td>
+            <td>''VC01''</td>
+            <td><dfn noexport>CODEC_ID_VC1</dfn></td>
+            <td>[[#vc1-encapsulation]]</td>
+        </tr>
     </table>
 </figure>
 
@@ -4051,6 +4057,24 @@ with startcode emulation bits included.
 A [[#stream-configuration-packets]] packet may be sent, to
 speed up stream initialization. If they are present, they must contain an
 ''HEVCDecoderConfigurationRecord'' structure, as defined in [[ISO23008]].
+
+
+### VC1 encapsulation ### {#vc1-encapsulation}
+
+For VC-1 encapsulation, the [=codec_id=] in
+[[#stream-registration-packets]]
+must be ''0x56433031'' (''VC01'').
+
+This codec ID covers the following profiles of VC-1: (''WMVA'', ''WVC1'').
+
+Users may use the sequence layer data to determine the correct profile of
+the stream.
+
+[[#extended-stream-data-packets]] must be used, as VC-1 requires a [=dts=].
+
+A [[#stream-configuration-packets]] packet may be sent, to
+speed up stream initialization. If they are present, they must contain a
+Setup Data/Sequence Layer structure.
 
 
 ### Dirac/VC-2 encapsulation ### {#dirac-vc-2-encapsulation}
