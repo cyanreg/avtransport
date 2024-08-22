@@ -1490,7 +1490,7 @@ Possible extra rowspan handling
 </style>
   <meta content="Bikeshed version 82ce88815, updated Thu Sep 7 16:33:55 2023 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="867bd8933e9373c15ff193f25e84eedb5a2ec183" name="document-revision">
+  <meta content="115836f3e9f7bc76c2ce8105d2081a20e6906979" name="document-revision">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
     color: var(--a-normal-text);
@@ -2165,7 +2165,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-08-12">12 August 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-08-22">22 August 2024</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2179,7 +2179,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 12 August 2024,
+In addition, as of 22 August 2024,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -3562,8 +3562,8 @@ It is laid out in the following way:</p>
            <td>enum <code class="idl"><a data-link-type="idl" href="#enumdef-frametype" id="ref-for-enumdef-frametype①">FrameType</a></code>
           <tr id="0x0200+2">
            <td><code>b(1)</code>
-           <td><dfn data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-ext_pkt_reserved">ext_pkt_reserved<a class="self-link" href="#extended-stream-data-packet-ext_pkt_reserved"></a></dfn>
-           <td>Reserved field. Must be set to 0.
+           <td><dfn data-dfn-for="#extended-stream-data-packet" data-dfn-type="dfn" data-noexport id="extended-stream-data-packet-discard">discard<a class="self-link" href="#extended-stream-data-packet-discard"></a></dfn>
+           <td>Flag, indicating to decode the frame, but not present it.
           <tr id="0x0200+3">
            <td><code>b(1)</code>
            <td><a data-link-type="dfn" href="#stream-data-packets-pkt_in_fec_group" id="ref-for-stream-data-packets-pkt_in_fec_group">pkt_in_fec_group</a>
@@ -9857,6 +9857,7 @@ This is the format that the reference function above expects.</p>
    <li><a href="#stream-registration-packets-derived_stream_id">derived_stream_id</a><span>, in § 2.3</span>
    <li><a href="#descriptor">descriptor</a><span>, in § 1.2</span>
    <li><a href="#dom-enum-commonmetadatakeys-disc">disc</a><span>, in § 4.1</span>
+   <li><a href="#extended-stream-data-packet-discard">discard</a><span>, in § 2.7</span>
    <li><a href="#dom-enum-commonmetadatakeys-discs">discs</a><span>, in § 4.1</span>
    <li><a href="#feedback-packets-dropped_packets">dropped_packets</a><span>, in § 3.3.3</span>
    <li><a href="#dts">dts</a><span>, in § 1.7</span>
@@ -9870,7 +9871,6 @@ This is the format that the reference function above expects.</p>
    <li><a href="#dom-enum-errorcode-error_code_unsupported">ERROR_CODE_UNSUPPORTED</a><span>, in § 3.3.2</span>
    <li><a href="#extended-stream-data-packet-extended_stream_data_descriptor">extended_stream_data_descriptor</a><span>, in § 2.7</span>
    <li><a href="#extended-stream-data-packet-extended_stream_data_descriptor_structure">extended_stream_data_descriptor_structure</a><span>, in § 2.7</span>
-   <li><a href="#extended-stream-data-packet-ext_pkt_reserved">ext_pkt_reserved</a><span>, in § 2.7</span>
    <li><a href="#fec-grouping-packets-fec_common_oti">fec_common_oti</a><span>, in § 2.8</span>
    <li><a href="#feedback-packets-fec_corrections">fec_corrections</a><span>, in § 3.3.3</span>
    <li><a href="#fec-grouping-packets-fec_data">fec_data</a><span>, in § 2.8</span>
