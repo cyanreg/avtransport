@@ -1559,8 +1559,8 @@ It is laid out in the following way:
                     </tr>
                     <tr id="0x0200+2">
                         <td><code>b(1)</code></td>
-                        <td><dfn noexport>ext_pkt_reserved</dfn></td>
-                        <td>Reserved field. Must be set to 0.</td>
+                        <td><dfn noexport>discard</dfn></td>
+                        <td>Flag, indicating to decode the frame, but not present it.</td>
                     </tr>
                     <tr id="0x0200+3">
                         <td><code>b(1)</code></td>
