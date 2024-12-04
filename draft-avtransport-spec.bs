@@ -306,8 +306,9 @@ Note: Range ''0x8000'' to ''0x80FF'' is reserved for [[#reverse-signalling]].
 Note: The 16-bit descriptor may be split into two sections, a constant upper 8-bits
 and variable bottom 8-bits, hence some descriptors are considered a range.
 
-Anything not specified in the table is reserved and must not be used. Future additions
-will require a version bump of the protocol.
+Anything not specified in the table is reserved and must not be used. Demuxers must ignore
+unknown packets. Future additions will require a version bump of the protocol, but are
+expected to be backwards compatible.
 
 
 ## Specification conventions ## {#specification-conventions}
