@@ -8,7 +8,6 @@ Repository: https://github.com/cyanreg/avtransport
 Inline Github Issues: no
 Date: now
 Status: LD
-Group: avt
 Boilerplate: issues-index no
 Markup Shorthands: http no, markup no
 Abstract: AVTransport is a new mechanism for multimedia transmission and storage. It covers use cases from sub-frame latency streaming of video and audio over raw wireless links, to long-term archival. Its key design goals are robustness and reliability, and it achieves this through extensive error correction, and state-minimal design. Learning from the limitations of other similar protocols and containers, it has built-in future-proofing and allows extensibility.
