@@ -172,7 +172,7 @@ static int alpn_select_cb(SSL *ssl, const unsigned char **out,
 }
 
 static COLD int quic_proto_init(AVTContext *ctx, AVTProtocolCtx **_p, AVTAddress *addr,
-                                const AVTIO *io, AVTIOCtx *io_ctx)
+                                const AVTIO *io, AVTIOCtx *io_ctx, AVTProtocolOpts *opts)
 {
     int ret;
     unsigned long sslerr;
@@ -282,23 +282,16 @@ static int quic_proto_send_seq(AVTProtocolCtx *p, AVTPacketFifo *seq,
     return p->io->write_vec(p->io_ctx, seq->data, seq->nb, timeout);
 }
 
-static int quic_proto_receive_packet(AVTProtocolCtx *p,
-                                     union AVTPacketData *pkt, AVTBuffer **pl,
-                                     int64_t timeout)
+static int quic_proto_receive(AVTProtocolCtx *p, AVTPacketFifo *fifo,
+                              int64_t timeout)
 {
-    AVTBuffer *buf;
-    int64_t err = p->io->read_input(p->io_ctx, &buf, 0, timeout);
-    if (err < 0)
-        return err;
 
-    size_t buf_len;
-    uint8_t *data = avt_buffer_get_data(buf, &buf_len);
-//    BIO_write(p->bio, data, buf_len);
+    //    BIO_write(p->bio, data, buf_len);
 
-    return err;
+    return 0;
 }
 
-static int64_t quic_proto_max_pkt_len(AVTProtocolCtx *p, size_t *mtu)
+static int quic_proto_max_pkt_len(AVTProtocolCtx *p, size_t *mtu)
 {
     size_t tmp;
     const size_t udp_hdr_size = 8;
@@ -330,7 +323,7 @@ const AVTProtocol avt_protocol_quic = {
     .send_packet = quic_proto_send_packet,
     .send_seq = quic_proto_send_seq,
     .update_packet = NULL,
-    .receive_packet = quic_proto_receive_packet,
+    .receive = quic_proto_receive,
     .seek = NULL,
     .flush = quic_proto_flush,
     .close = quic_proto_close,
