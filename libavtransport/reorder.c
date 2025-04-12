@@ -28,24 +28,62 @@
 
 #include "reorder.h"
 
-int avt_reorder_init(AVTContext *ctx, AVTReorderBuffer *rb,
-                     size_t max_size)
+int avt_reorder_init(AVTContext *ctx, AVTReorder *r, size_t max_size)
 {
     return 0;
 }
 
-int avt_reorder_push(AVTContext *ctx, AVTReorderBuffer *rb,
-                     union AVTPacketData pkt, AVTBuffer *pl)
+int avt_reorder_push(AVTReorder *r, AVTPacketFifo *in)
+{
+    int ret;
+
+    for (auto i = 0; i < in->nb; i++) {
+        AVTPktd *p = &in->data[i];
+        AVTReorderStream *rs = &r->st[p->pkt.stream_id];
+        if (!rs->nb_groups) {
+            ret = avt_pkt_merge_seg(r->ctx, &rs->m[0], p);
+            if (ret == AVT_ERROR(EAGAIN)) {
+                rs->nb_groups++;
+                continue;
+            } else if (ret < 0) {
+                return ret;
+            }
+
+            /* ret == 0 -> standalone packet */
+            ret = avt_pkt_fifo_push(r->staging, p);
+            if (ret < 0)
+                return ret;
+        }
+
+        for (auto j = 0; j < rs->nb_groups; j++) {
+            ret = avt_pkt_merge_seg(r->ctx, &rs->m[j], p);
+            /* Need more packets */
+            if (ret == AVT_ERROR(EAGAIN))
+                goto next;
+            else if (ret == AVT_ERROR(EBUSY))
+                continue;
+            else if (ret < 0)
+                return ret;
+
+            /* ret == 1 -> done */
+        }
+    next:
+    }
+
+    return 0;
+}
+
+int avt_reorder_pop(AVTReorder *r, AVTPacketFifo *out)
 {
     return 0;
 }
 
-int avt_reorder_pop(AVTContext *ctx, AVTReorderChain **chain)
+int avt_reorder_done(AVTPacketFifo *out)
 {
     return 0;
 }
 
-void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb)
+int avt_reorder_free(AVTReorder *r)
 {
-
+    return 0;
 }

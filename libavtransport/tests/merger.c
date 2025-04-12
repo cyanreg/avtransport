@@ -37,6 +37,7 @@ int main(void)
     AVTPktd hdr = { };
     AVTPktd seg = { };
     uint8_t *hdr_data;
+    AVTPktd out;
 
     {
         fprintf(stderr, "Testing noop merge...\n");
@@ -59,15 +60,22 @@ int main(void)
 
         /* One full packet in, one full packet out */
         ret = avt_pkt_merge_seg(NULL, &s, &hdr);
+        /* Make sure the code tells us early it can output something */
+        if (ret < 0)
+            goto end;
+
+        /* Output the packet */
+        ret = avt_pkt_merge_out(NULL, &s, &out, 0);
         if (ret < 0)
             goto end;
 
         /* Output generated, have to free it */
-        avt_buffer_quick_unref(&hdr.pl);
+        avt_buffer_quick_unref(&out.pl);
+        ret = 0;
     }
 
     {
-        fprintf(stderr, "Testing packet + segment merger...\n");
+        fprintf(stderr, "Testing packet(0) + segment(1) merger...\n");
         hdr = (AVTPktd) {
             .pkt = AVT_STREAM_DATA_HDR(
                 .frame_type = AVT_FRAME_TYPE_KEY,
@@ -80,32 +88,35 @@ int main(void)
             ),
         };
 
+        /* Start packet */
         hdr_data = avt_buffer_quick_alloc(&hdr.pl, 64);
         if (!hdr_data)
             return ENOMEM;
         avt_packet_change_size(&hdr, 0, 64, 128);
-
         ret = avt_pkt_merge_seg(NULL, &s, &hdr);
         if (ret != AVT_ERROR(EAGAIN))
             goto end;
 
-        /* No output yet */
-
+        /* Segment */
         seg.pkt = avt_packet_create_segment(&hdr, 1, 64, 64, 128);
         hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
         if (!hdr_data)
             return ENOMEM;
-
         ret = avt_pkt_merge_seg(NULL, &s, &seg);
         avt_buffer_quick_unref(&seg.pl);
         if (ret < 0)
             goto end;
 
+        /* Output the packet */
+        ret = avt_pkt_merge_out(NULL, &s, &out, 0);
+        if (ret != 128)
+            goto end;
+        avt_buffer_quick_unref(&out.pl);
         ret = 0;
     }
 
     {
-        fprintf(stderr, "Testing packet + segment + segment merger...\n");
+        fprintf(stderr, "Testing packet(0) + segment(2) + segment(1) merger...\n");
         hdr = (AVTPktd) {
             .pkt = AVT_STREAM_DATA_HDR(
                 .frame_type = AVT_FRAME_TYPE_KEY,
@@ -118,41 +129,44 @@ int main(void)
             ),
         };
 
+        /* Start packet */
         hdr_data = avt_buffer_quick_alloc(&hdr.pl, 64);
         if (!hdr_data)
             return ENOMEM;
         avt_packet_change_size(&hdr, 0, 64, 192);
-
         ret = avt_pkt_merge_seg(NULL, &s, &hdr);
         if (ret != AVT_ERROR(EAGAIN))
             goto end;
 
-        /* No output yet */
-        seg.pkt = avt_packet_create_segment(&hdr, 1, 64, 64, 192);
-        hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
-        if (!hdr_data)
-            return ENOMEM;
-
-        ret = avt_pkt_merge_seg(NULL, &s, &seg);
-        if (ret != AVT_ERROR(EAGAIN))
-            goto end;
-
-        /* Output */
+        /* Segment */
         seg.pkt = avt_packet_create_segment(&hdr, 2, 128, 64, 192);
         hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
         if (!hdr_data)
             return ENOMEM;
+        ret = avt_pkt_merge_seg(NULL, &s, &seg);
+        if (ret != AVT_ERROR(EAGAIN))
+            goto end;
 
+        /* Segment */
+        seg.pkt = avt_packet_create_segment(&hdr, 1, 64, 64, 192);
+        hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
+        if (!hdr_data)
+            return ENOMEM;
         ret = avt_pkt_merge_seg(NULL, &s, &seg);
         avt_buffer_quick_unref(&seg.pl);
-        if (ret < 0)
+        if (ret != 0)
             goto end;
 
+        /* Output the packet */
+        ret = avt_pkt_merge_out(NULL, &s, &out, 0);
+        if (ret != 192)
+            goto end;
+        avt_buffer_quick_unref(&out.pl);
         ret = 0;
     }
 
     {
-        fprintf(stderr, "Testing packet + segment + segment merger + reorder...\n");
+        fprintf(stderr, "Testing segment(2) + segment(1) + packet(0) merger...\n");
         hdr = (AVTPktd) {
             .pkt = AVT_STREAM_DATA_HDR(
                 .frame_type = AVT_FRAME_TYPE_KEY,
@@ -165,40 +179,44 @@ int main(void)
             ),
         };
 
-        hdr_data = avt_buffer_quick_alloc(&hdr.pl, 64);
-        if (!hdr_data)
-            return ENOMEM;
-        avt_packet_change_size(&hdr, 0, 64, 192);
-
-        ret = avt_pkt_merge_seg(NULL, &s, &hdr);
-        if (ret != AVT_ERROR(EAGAIN))
-            goto end;
-
-        /* No output yet */
-        seg.pkt = avt_packet_create_segment(&hdr, 1, 128, 64, 192);
+        /* Segment */
+        seg.pkt = avt_packet_create_segment(&hdr, 2, 128, 64, 192);
         hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
         if (!hdr_data)
             return ENOMEM;
-
         ret = avt_pkt_merge_seg(NULL, &s, &seg);
         if (ret != AVT_ERROR(EAGAIN))
             goto end;
 
-        /* Output */
-        seg.pkt = avt_packet_create_segment(&hdr, 2, 64, 64, 192);
+        /* Segment */
+        seg.pkt = avt_packet_create_segment(&hdr, 1, 64, 64, 192);
         hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
         if (!hdr_data)
             return ENOMEM;
-
-        ret = avt_pkt_merge_seg(NULL, &s, &seg);        avt_buffer_quick_unref(&seg.pl);
-        if (ret < 0)
+        ret = avt_pkt_merge_seg(NULL, &s, &seg);
+        avt_buffer_quick_unref(&seg.pl);
+        if (ret != AVT_ERROR(EAGAIN))
             goto end;
 
+        /* Start packet */
+        hdr_data = avt_buffer_quick_alloc(&hdr.pl, 64);
+        if (!hdr_data)
+            return ENOMEM;
+        avt_packet_change_size(&hdr, 0, 64, 192);
+        ret = avt_pkt_merge_seg(NULL, &s, &hdr);
+        if (ret != 0)
+            goto end;
+
+        /* Output the packet */
+        ret = avt_pkt_merge_out(NULL, &s, &out, 0);
+        if (ret != 192)
+            goto end;
+        avt_buffer_quick_unref(&out.pl);
         ret = 0;
     }
 
     {
-        fprintf(stderr, "Testing packet + segment + segment merger + reorder + reorder...\n");
+        fprintf(stderr, "Testing segment(6/5/4/3/2/1/0) partial recovery...\n");
         hdr = (AVTPktd) {
             .pkt = AVT_STREAM_DATA_HDR(
                 .frame_type = AVT_FRAME_TYPE_KEY,
@@ -210,39 +228,26 @@ int main(void)
                 .duration = 1,
             ),
         };
+        avt_packet_encode_header(&hdr);
 
-        hdr_data = avt_buffer_quick_alloc(&hdr.pl, 64);
-        if (!hdr_data)
-            return ENOMEM;
-        avt_packet_change_size(&hdr, 0, 64, 192);
+        /* Segment */
+        for (int i = 6; i >= 0; i--) {
+            seg.pkt = avt_packet_create_segment(&hdr, i + 1, 512 - (i + 1)*64, 64, 512);
+            hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
+            if (!hdr_data)
+                return ENOMEM;
+            ret = avt_pkt_merge_seg(NULL, &s, &seg);
+            if (ret != AVT_ERROR(EAGAIN))
+                goto end;
+        }
 
-        /* No output yet */
-        seg.pkt = avt_packet_create_segment(&hdr, 1, 128, 64, 192);
-        hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
-        if (!hdr_data)
-            return ENOMEM;
-
-        ret = avt_pkt_merge_seg(NULL, &s, &seg);
-        if (ret != AVT_ERROR(EAGAIN))
+        /* Output the packet */
+        ret = avt_pkt_merge_out(NULL, &s, &out, 1);
+        if (ret != 192)
             goto end;
-
-        ret = avt_pkt_merge_seg(NULL, &s, &hdr);
-        if (ret != AVT_ERROR(EAGAIN))
-            goto end;
-
-        /* Output */
-        seg.pkt = avt_packet_create_segment(&hdr, 2, 64, 64, 192);
-        hdr_data = avt_buffer_quick_alloc(&seg.pl, 64);
-        if (!hdr_data)
-            return ENOMEM;
-
-        ret = avt_pkt_merge_seg(NULL, &s, &seg);        avt_buffer_quick_unref(&seg.pl);
-        if (ret < 0)
-            goto end;
-
+        avt_buffer_quick_unref(&out.pl);
         ret = 0;
     }
-
 
 end:
     avt_pkt_merge_free(&s);

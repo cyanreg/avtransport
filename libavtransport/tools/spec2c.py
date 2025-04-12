@@ -76,7 +76,7 @@ with open(f_input) as text:
 desc_list_tab = soup.find(id="descriptors_list")
 desc_pairs = desc_list_tab.find_all('tr')
 
-MAX_BITFIELD_LEN = 32
+MAX_BITFIELD_LEN = 8
 
 # Struct/function prefix
 data_prefix = "AVT"
@@ -649,20 +649,24 @@ if f_packet_encode != None:
 
             # Name or length
             if sym == bsw["buf"]:
+                file_encode.write(", ")
                 if field["array_len"]:
-                    file_encode.write(", p." + str(field["array_len"]))
+                    file_encode.write("p." + str(field["array_len"]))
                 else:
-                    file_encode.write(", " + str(field["bytestream"]))
+                    file_encode.write(str(field["bytestream"]))
             elif sym != bsw["pad"] and sym != bsw["ldpc"]:
+                file_encode.write(", ")
+                if name.endswith("descriptor"):
+                    file_encode.write("(")
                 if field["struct"] != None:
-                    file_encode.write(", p." + name)
+                    file_encode.write("p." + name)
                 else:
-                    file_encode.write(", p." + name)
+                    file_encode.write("p." + name)
 
             if name == "global_seq" or name == "target_seq":
                 file_encode.write(" & UINT32_MAX")
             elif name.endswith("descriptor"):
-                file_encode.write(" & UINT16_MAX")
+                file_encode.write(" & UINT16_MAX)")
                 if field["size_bits"] < 16:
                     file_encode.write(" >> 8")
 

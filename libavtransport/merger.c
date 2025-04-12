@@ -133,6 +133,7 @@ static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
                                       AVTPktd *p, bool is_parity)
 {
     int hdr_part = p->pkt.seq % 7;
+
     if (!is_parity)
         memcpy(&m->p.hdr[4*hdr_part], p->pkt.generic_segment.header_7, 4);
     else
@@ -145,6 +146,7 @@ static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
         return 0;
 
     uint16_t tgt_desc = AVT_RB16(&m->p.hdr[0]);
+
     if ((tgt_desc == (AVT_PKT_TIME_SYNC & 0xFF00)) ||
         (tgt_desc == (AVT_PKT_STREAM_DATA & 0xFF00)))
         tgt_desc &= 0xFF00;
@@ -187,7 +189,7 @@ static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
     return 0;
 }
 
-static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int srs,
+static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int series,
                            uint32_t seg_off, uint32_t seg_size,
                            uint32_t tot_size, bool is_parity)
 {
@@ -196,7 +198,7 @@ static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int srs,
         return AVT_ERROR(EINVAL);
 
     /* Check for segmentation issues */
-    if (srs == 0 && m->target == p->pkt.seq) {
+    if (series == 0 && m->target == p->pkt.seq) {
         avt_log(log_ctx, AVT_LOG_DEBUG, "Header packet for %" PRIu64 " indicates "
                                         "no segmentation, but segments received",
                 p->pkt.seq);
@@ -248,13 +250,14 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
 
     bool is_parity;
     uint32_t seg_off, seg_size, tot_size;
-    int srs = avt_packet_series(p, &is_parity, &seg_off, &seg_size, &tot_size);
+    int series = avt_packet_series(p, &is_parity, &seg_off, &seg_size, &tot_size);
 
     /* Packet needs nothing else */
-    if (!srs) {
-#if 0 /* should have enabled LDPC checking if you wanted resilience, luser! */
-        /* ERROR RESILIENCE:
-         * If we have received two or more segments, and we
+    if (!series) {
+
+#if 0
+        /* error resilience wip:
+         * If we have received two or more segments, and yet we
          * get the main data packet claiming it isn't segmented, consider
          * a corrupt bit happened and accept it. If it overlaps, it'll get
          * rejected during validate_packet(). */
@@ -268,15 +271,22 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
                     hdr_match++;
             }
 
-            if (hdr_match) {
-                srs = 1;
-            }else {
+            if (!hdr_match) {
                 avt_pkt_merge_done(m);
                 return 0;
             }
-        } else {
-            /* Clean up context, even if there was something else in it */
-            avt_pkt_merge_done(m);
+
+            series = 1;
+        } else
+
+#endif
+
+        {
+            /* Direct output - just copy the input */
+            memcpy(&m->p, p, sizeof(*p));
+            m->hdr_mask = 0x7F;
+            m->active = 1;
+            m->p_avail = 1;
             return 0;
         }
     }
@@ -292,7 +302,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
 
     if (m->active) {
         uint32_t target;
-        if (srs == 1)
+        if (series == 1)
             target = p->pkt.seq;
         else if (is_parity)
             target = p->pkt.generic_parity.target_seq;
@@ -311,7 +321,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         m->p_avail = false;
         m->last = p->pkt.seq;
 
-        if (srs > 0) {
+        if (series > 0) {
             /* Starting with a segment, not the actual start */
             m->p = *p;
             m->p_avail = true;
@@ -321,7 +331,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
             /* Starting with a segment */
             const uint32_t hdr_part = p->pkt.seq % 7;
             memcpy(&m->p.hdr[4*hdr_part], p->pkt.generic_segment.header_7, 4);
-            m->hdr_mask |= 1 << (6 - hdr_part);
+            m->hdr_mask = 1 << (6 - hdr_part);
             m->target = p->pkt.generic_segment.target_seq;
         } else {
             /* Starting with a parity segment */
@@ -398,20 +408,22 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
     }
 
     /* More sanity checking */
-    ret = validate_packet(log_ctx, m, p, srs,
+    ret = validate_packet(log_ctx, m, p, series,
                           seg_off, seg_size, tot_size, is_parity);
     if (ret < 0)
         return ret;
 
     /* Packet header state */
-    if (!m->p_avail && (srs < -1)) {
+    if (!m->p_avail && (series < 0)) {
+        /* Recover header */
         ret = fill_phantom_header(log_ctx, m, p, is_parity);
         if (ret < 0)
             return ret;
-    } else if (srs == 1) {
+    } else if (series == 1) {
         /* We got a real header packet which we didn't have */
         m->p.pkt = p->pkt;
         memcpy(m->p.hdr, p->hdr, sizeof(p->hdr));
+        m->hdr_mask = 0x7F;
         m->p_avail = true;
     }
 
@@ -447,28 +459,16 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
     if (m->last < p->pkt.seq)
         m->last = p->pkt.seq;
 
+    /* Unref source packet */
     avt_buffer_quick_unref(&p->pl);
 
-    if (m->pkt_parity_len_track == m->parity_tot_len) {
-        // TODO: do something with the parity data here
-    }
-
-    /* We can output something */
-    if (m->pkt_len_track == m->target_tot_len) {
-        /* As each packet with a payload is required to have a non-zero amount
-         * of payload, this should be impossible, as reconstructed headers don't
-         * contain any payload. */
-        avt_assert1(m->p_avail);
-        *p = m->p;
-        m->p = (AVTPktd){ };
-        m->active = false;
-        return m->pkt_len_track;
-    }
+    if (m->pkt_len_track == m->target_tot_len)
+        return 0;
 
     return AVT_ERROR(EAGAIN);
 }
 
-int avt_pkt_merge_force(void *log_ctx, AVTMerger *m, AVTPktd *p)
+int avt_pkt_merge_out(void *log_ctx, AVTMerger *m, AVTPktd *p, int force)
 {
     /* If inactive, we don't have anything */
     if (!m->active)
@@ -479,10 +479,21 @@ int avt_pkt_merge_force(void *log_ctx, AVTMerger *m, AVTPktd *p)
     if (!(m->hdr_mask == 0x7F))
         return AVT_ERROR(EAGAIN);
 
-    *p = m->p;
-    m->p = (AVTPktd){ };
+    /* We can output something */
+    if (!force && m->pkt_len_track < m->target_tot_len)
+        return AVT_ERROR(EAGAIN);
 
-    return m->pkt_len_track;
+    /* As each packet with a payload is required to have a non-zero amount
+     * of payload, this should be impossible, as reconstructed headers don't
+     * contain any payload. */
+    avt_assert1(m->p_avail);
+    *p = m->p;
+
+    /* Deactivate context */
+    m->p = (AVTPktd){ };
+    m->active = false;
+
+    return force ? m->target_tot_len : m->pkt_len_track;
 }
 
 void avt_pkt_merge_done(AVTMerger *m)

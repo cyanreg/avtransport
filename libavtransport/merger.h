@@ -64,7 +64,7 @@ typedef struct AVTMerger {
     uint32_t parity_ranges_allocated;
 } AVTMerger;
 
-/* Basic merger function. Input and output is 'p'.
+/* Basic merger function.
  * Returns the payload size once an output is possible.
  * Returns AVT_ERROR(EAGAIN) if more segments are needed.
  * Returns AVT_ERROR(EBUSY) if a packet belonging to a different target is
@@ -72,8 +72,8 @@ typedef struct AVTMerger {
  * Returns an error code in all other circumstances. */
 int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p);
 
-/* Force whatever output is possible out. p will be overwritten. */
-int avt_pkt_merge_force(void *log_ctx, AVTMerger *m, AVTPktd *p);
+/* Output, if possible. */
+int avt_pkt_merge_out(void *log_ctx, AVTMerger *m, AVTPktd *p, int force);
 
 /* avt_pkt_merge_seg() will reject any packet part of another group.
  * If there's a packet which cannot be output, call this to reset the context. */

@@ -42,12 +42,12 @@ ldpc_encode_test = executable('ldpc_encode',
 )
 test('LDPC encoding', ldpc_encode_test)
 
-## Misc tests
-## ==========
+## Merger tests
+## ============
 merger_test = executable('merger',
     sources : [ 'merger.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ 'merger.c', 'buffer.c' ]) ],
+    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c', 'merger.c', 'buffer.c' ]) ],
     dependencies : [ avtransport_dep ],
 )
 test('Packet merging', merger_test)

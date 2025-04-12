@@ -27,8 +27,71 @@
 #ifndef AVTRANSPORT_REORDER_H
 #define AVTRANSPORT_REORDER_H
 
-#include "common.h"
-#include "buffer.h"
+#include "merger.h"
+#include "utils_internal.h"
+
+/* Maximum number of rejections for a single stream ID */
+#define AVT_REORDER_GROUP_NB 8
+
+typedef struct AVTReorderStream {
+    AVTMerger m[AVT_REORDER_GROUP_NB];
+    int nb_groups;
+} AVTReorderStream;
+
+typedef struct AVTReorder {
+    AVTContext *ctx;
+
+    /* One context per stream */
+    AVTReorderStream st[UINT16_MAX];
+
+    /* One context per FEC group */
+    AVTReorderStream fg[UINT16_MAX];
+
+    AVTPacketFifo *staging; /* Staging bucket, next for output */
+
+    /* If a stream has no outstanding packets, it is considered inactive.
+     * State is managed by an upper layer */
+    uint16_t active_stream_indices[UINT16_MAX];
+    uint16_t nb_active_stream_indices;
+
+    /* Available output buckets */
+    AVTPacketFifo **avail_buckets;
+    int nb_avail_buckets;
+    int nb_alloc_avail_buckets;
+
+    /* All allocated buckets */
+    AVTPacketFifo **buckets;
+    int nb_buckets;
+} AVTReorder;
+
+/* Initialize a reorder buffer with a given max_size which
+ * is the approximate bound of all packets and their payloads
+ * contained within. */
+int avt_reorder_init(AVTContext *ctx, AVTReorder *r, size_t max_size);
+
+/* Push data to the reorder */
+int avt_reorder_push(AVTReorder *r, AVTPacketFifo *in);
+
+/* Pop data from the reorder */
+int avt_reorder_pop(AVTReorder *r, AVTPacketFifo *out);
+
+/* Mark a bucket as being available to use again */
+int avt_reorder_done(AVTPacketFifo *out);
+
+/* Free all data. All buckets become invalid */
+int avt_reorder_free(AVTReorder *r);
+
+
+
+
+
+
+
+
+
+
+
+#if 0
 
 typedef struct AVTReorderPkt {
     union AVTPacketData pkt;
@@ -167,5 +230,7 @@ int avt_reorder_done(AVTContext *ctx, AVTReorderChain *chain);
 
 /* Free everything in all chains */
 void avt_reorder_free(AVTContext *ctx, AVTReorderBuffer *rb);
+
+#endif
 
 #endif /* AVTRANSPORT_REORDER_H */
