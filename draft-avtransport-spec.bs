@@ -360,7 +360,7 @@ To simplify implementations, two different lengths are used:
  - <dfn noexport>ldpc_288_224</dfn>: specified in [=LDPC(288, 224)=]
  - <dfn noexport>ldpc_2784_2016</dfn>: specified in [=LDPC(2784, 2016)=]
 
-Note: Applying LDPC error correction is optional for receiver implementations.</br>
+Note: Applying LDPC error correction is optional for receiver implementations.<br>
 Senders must implement it. This document provides example routines in [[#annex-w-ldpc]].
 
 
@@ -481,14 +481,14 @@ The time <code>t</code> of a [=pts=] may be negative. Packets with a negative ti
 must be decoded, but not presented.
 
 For audio packets, this corresponds to the internal algorithmic delay between
-the first output sample and the correct sample being available.</br>
+the first output sample and the correct sample being available.<br>
 For audio, the time between <code>t</code> and <code>0</code> may not be a multiple of the
 audio data's [=duration=] of a packet. Implementations must nevertheless remove any
 decoded samples with a negative time.
 
 Negative [=pts=] values are allowed, and implementations must decode such frames,
 however must not present any such frames unless <code>[=pts=] + [=duration=]</code>
-is greater than 0, in which case they must present the data required for that duration.<br/>
+is greater than 0, in which case they must present the data required for that duration.
 This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
 all dependencies (other frames) required for their presentation.
@@ -886,7 +886,7 @@ The layout of the data is as follows:
             <td>Indicates the codec ID for the data packets in this stream.</td>
         </tr>
         <tr id="0x0002+9">
-            <td>R(64)</code></td>
+            <td><code>R(64)</code></td>
             <td><dfn noexport>timebase</dfn></td>
             <td></td>
             <td>Signals the timebase of the timestamps present in the [[#stream-data-packets]] packets.</td>
@@ -1344,7 +1344,7 @@ However, in general, the data follows the same layout as what
 
 An implementation may error out in case it cannot handle the data in the payload.
 If so, when reading a file, it must stop, otherwise in a live scenario,
-it must send an '''unsupported'' [[#session-control-data-packets]] packet, if such a
+it must send an ''unsupported'' [[#session-control-data-packets]] packet, if such a
 connection is open.
 
 
@@ -1708,8 +1708,7 @@ FEC grouped streams must be registered first via a special packet:
             <td><dfn noexport>group_id</dfn></td>
             <td></td>
             <td>
-                Indicates the ID for this FEC grouping.</br>
-
+                Indicates the ID for this FEC grouping.<br>
                 Note: Must not overlap with [=stream_id=].
             </td>
         </tr>
@@ -2391,8 +2390,7 @@ The following structure MUST be followed:
             <td>[=stream_id=]</td>
             <td></td>
             <td>
-                The stream ID for which to make the font available.
-
+                The stream ID for which to make the font available.<br>
                 Note: May be set to ''0xffff'' to make the font available for all streams.
             </td>
         </tr>
@@ -4570,7 +4568,7 @@ used if the codec being contained already has a formal definition in this spec.
 For custom encapsulation, the [=codec_id=] in [[#stream-registration-packets]] must be
 ''0x433f****'' (''C?**''), where the bottom 2 bytes can be any value between
 ''0x30'' to ''0x39'' (<code>0</code> to <code>9</code> in ASCII) and
-''0x61'' to ''0x7a'' (<code>a</codE> to <code>z</code> in ASCII).
+''0x61'' to ''0x7a'' (<code>a</code> to <code>z</code> in ASCII).
 
 The [[#stream-configuration-packets]] payload can be any length
 and contain any sequence of data.
