@@ -33,9 +33,11 @@ if get_option('ffmpeg').auto()
 endif
 
 # Generate local configure file
+conf_tools = conf
+
 configure_file(
     output: 'config.h',
-    configuration: conf,
+    configuration: conf_tools,
 )
 
 # avcat

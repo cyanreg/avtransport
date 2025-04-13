@@ -1,14 +1,15 @@
-conf.set10('ARCH_X86', host_machine.cpu_family().startswith('x86'))
-conf.set10('ARCH_X86_64', host_machine.cpu_family() == 'x86_64')
-conf.set10('ARCH_X86_32', host_machine.cpu_family() == 'x86')
-conf.set('private_prefix', 'avt')
+conf_x86 = conf
+conf_x86.set10('ARCH_X86', host_machine.cpu_family().startswith('x86'))
+conf_x86.set10('ARCH_X86_64', host_machine.cpu_family() == 'x86_64')
+conf_x86.set10('ARCH_X86_32', host_machine.cpu_family() == 'x86')
+conf_x86.set('private_prefix', 'avt')
 
 # Convert SSE asm into (128-bit) AVX when compiler flags are set to use AVX instructions
-conf.set10('FORCE_VEX_ENCODING', cc.get_define('__AVX__').strip() != '')
+conf_x86.set10('FORCE_VEX_ENCODING', cc.get_define('__AVX__').strip() != '')
 
 nasm_config = configure_file(
     output: 'config.asm',
-    configuration: conf,
+    configuration: conf_x86,
     output_format: 'nasm',
 )
 

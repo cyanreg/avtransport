@@ -104,10 +104,13 @@ endif
 
 avtransport_inc = include_directories('./include')
 
+# Check for headers
+conf_libavt = conf
+
 # Generate local configure file
 configure_file(
     output: 'config.h',
-    configuration: conf,
+    configuration: conf_libavt,
 )
 
 # Deps

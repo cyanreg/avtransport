@@ -314,8 +314,8 @@ COLD int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 
     int domain = addr->type == AVT_ADDRESS_UNIX ? AF_UNIX : AF_INET6;
     int type   = addr->type == AVT_ADDRESS_UNIX ? SOCK_STREAM : SOCK_DGRAM;
-    int proto  = addr->proto == AVT_PROTOCOL_UDP_LITE ? IPPROTO_UDPLITE :
-                 addr->proto == AVT_PROTOCOL_UDP      ? IPPROTO_UDP :
+    int proto  = addr->proto == AVT_PROTOCOL_UDP      ? IPPROTO_UDP :
+                 addr->proto == AVT_PROTOCOL_UDP_LITE ? IPPROTO_UDPLITE :
                                                         0;
 
     if ((sc->socket = socket(domain, type, proto)) < 0) {
