@@ -1488,9 +1488,9 @@ Possible extra rowspan handling
 		}
 	}
 </style>
-  <meta content="Bikeshed version 742f3d674, updated Mon Nov 4 14:56:54 2024 -0800" name="generator">
+  <meta content="Bikeshed version b25686b9f, updated Fri Mar 14 14:15:20 2025 -0700" name="generator">
   <link href="https://cyanreg.github.io/avtransport/" rel="canonical">
-  <meta content="ab78229cf50438d4a63e6d87189e29671a9f8480" name="revision">
+  <meta content="937082bf77711bbfc8fabae44398d51e070c36f8" name="revision">
   <meta content="dark light" name="color-scheme">
 <style>/* Boilerplate: style-autolinks */
 .css.css, .property.property, .descriptor.descriptor {
@@ -2211,7 +2211,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
   <div class="head">
    <p data-fill-with="logo"></p>
    <h1 class="p-name no-ref" id="title">AVTransport</h1>
-   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2024-12-05">5 December 2024</time></span></h2>
+   <h2 class="no-num no-toc no-ref heading settled" id="profile-and-date"><span class="content">Living Document, <time class="dt-updated" datetime="2025-04-13">13 April 2025</time></span></h2>
    <div data-fill-with="spec-metadata">
     <dl>
      <dt>This version:
@@ -2225,7 +2225,7 @@ c-[il] { color: #000000 } /* Literal.Number.Integer.Long */
    <div data-fill-with="warning"></div>
    <p class="copyright" data-fill-with="copyright"><a href="http://creativecommons.org/publicdomain/zero/1.0/" rel="license"><img alt="CC0" height="15" src="https://licensebuttons.net/p/zero/1.0/80x15.png" width="80"></a> To the extent possible under law, the editors have waived all copyright
 and related or neighboring rights to this work.
-In addition, as of 5 December 2024,
+In addition, as of 13 April 2025,
 the editors have made this specification available under the <a href="https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0" rel="license">Open Web Foundation Agreement Version 1.0</a>,
 which is available at https://www.openwebfoundation.org/the-agreements/the-owf-1-0-agreements-granted-claims/owfa-1-0.
 Parts of this work may be from another specification document.  If so, those parts are instead covered by the license of that specification document. </p>
@@ -2715,7 +2715,8 @@ the first output sample and the correct sample being available.<br> For audio, t
 audio data’s <a data-link-type="dfn" href="#duration" id="ref-for-duration⑦">duration</a> of a packet. Implementations must nevertheless remove any
 decoded samples with a negative time.</p>
    <p>Negative <a data-link-type="dfn" href="#pts" id="ref-for-pts⑥">pts</a> values are allowed, and implementations must decode such frames,
-however must not present any such frames unless <code><a data-link-type="dfn" href="#pts" id="ref-for-pts⑦">pts</a> + <a data-link-type="dfn" href="#duration" id="ref-for-duration⑧">duration</a></code> is greater than 0, in which case they must present the data required for that duration.<br> This enables removal of extra samples added during audio compression, as well
+however must not present any such frames unless <code><a data-link-type="dfn" href="#pts" id="ref-for-pts⑦">pts</a> + <a data-link-type="dfn" href="#duration" id="ref-for-duration⑧">duration</a></code> is greater than 0, in which case they must present the data required for that duration.
+This enables removal of extra samples added during audio compression, as well
 as permitting video segments taken out of context from a stream to bundle
 all dependencies (other frames) required for their presentation.</p>
    <h4 class="heading settled" data-level="1.8.3" id="epoch-definition"><span class="secno">1.8.3. </span><span class="content">Epoch definition</span><a class="self-link" href="#epoch-definition"></a></h4>
@@ -3055,7 +3056,7 @@ all streams, in nanoseconds since 00:00:00 UTC on 1 January 1970 (<a data-link-t
        <td>
        <td>Indicates the codec ID for the data packets in this stream.
       <tr id="0x0002+9">
-       <td>R(64)
+       <td><code>R(64)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#stream-registration-packets" data-dfn-type="dfn" data-noexport id="stream-registration-packets-timebase">timebase</dfn>
        <td>
        <td>Signals the timebase of the timestamps present in the <a href="#stream-data-packets">§ 2.6 Stream Data</a> packets.
@@ -3426,10 +3427,10 @@ with the following descriptors:</p>
     </table>
    </figure>
    <p>For more information on the layout of the specific data, consult the <a href="#codec-encapsulation">§ 3.1 Codec encapsulation</a> addendum.</p>
-   <p>However, in general, the data follows the same layout as what <a data-link-type="biblio" href="#biblio-ffmpeg" title="FFmpeg">[FFmpeg]</a>'s <span class="css">libavcodec</span> produces and requires.</p>
+   <p>However, in general, the data follows the same layout as what <a data-link-type="biblio" href="#biblio-ffmpeg" title="FFmpeg">[FFmpeg]</a>’s <span class="css">libavcodec</span> produces and requires.</p>
    <p>An implementation may error out in case it cannot handle the data in the payload.
 If so, when reading a file, it must stop, otherwise in a live scenario,
-it must send an <span class="css">'unsupported</span> <a href="#session-control-data-packets">§ 3.3.1 Session control data</a> packet, if such a
+it must send an <span class="css">unsupported</span> <a href="#session-control-data-packets">§ 3.3.1 Session control data</a> packet, if such a
 connection is open.</p>
    <h3 class="heading settled" data-level="2.6" id="stream-data-packets"><span class="secno">2.6. </span><span class="content">Stream Data</span><a class="self-link" href="#stream-data-packets"></a></h3>
    <p>The data packets indicate the start of a stream packet, which may be fragmented into
@@ -3728,9 +3729,7 @@ streams to be FEC corrected in order to ensure no stream is starved of data.</p>
        <td><code>b(16)</code>
        <td><dfn class="dfn-paneled" data-dfn-for="#fec-grouping-packets" data-dfn-type="dfn" data-noexport id="fec-grouping-packets-group_id">group_id</dfn>
        <td>
-       <td>
-         Indicates the ID for this FEC grouping.<br> 
-        <p class="note" role="note"><span class="marker">Note:</span> Must not overlap with <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①②">stream_id</a>.</p>
+       <td> Indicates the ID for this FEC grouping.<br> Note: Must not overlap with <a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①②">stream_id</a>. 
       <tr id="0x0030+2">
        <td><code>u(32)</code>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①①">global_seq</a>
@@ -4271,9 +4270,7 @@ these fonts must be made available for the ASS stream.</p>
        <td><code>b(16)</code>
        <td><a data-link-type="dfn" href="#stream_id" id="ref-for-stream_id①⑨">stream_id</a>
        <td>
-       <td>
-         The stream ID for which to make the font available. 
-        <p class="note" role="note"><span class="marker">Note:</span> May be set to <span class="css">0xffff</span> to make the font available for all streams.</p>
+       <td> The stream ID for which to make the font available.<br> Note: May be set to <span class="css">0xffff</span> to make the font available for all streams. 
       <tr id="0x0020+2">
        <td><code>u(32)</code>
        <td><a data-link-type="dfn" href="#global_seq" id="ref-for-global_seq①⑦">global_seq</a>
@@ -6333,7 +6330,7 @@ buffering, and reordering.</p>
    <h2 class="heading settled" data-level="4" id="annex"><span class="secno">4. </span><span class="content">Annex</span><a class="self-link" href="#annex"></a></h2>
    <p>Additional data or recommendations for the AVTransport specification is listed here.</p>
    <h3 class="heading settled" data-level="4.1" id="annex-a-metadata-tags"><span class="secno">4.1. </span><span class="content">Annex A: Metadata tags</span><a class="self-link" href="#annex-a-metadata-tags"></a></h3>
-   <p>The following string 'key’s should be used, instead of any others:</p>
+   <p>The following string <a class="property css" data-link-type="property">key</a>s should be used, instead of any others:</p>
    <div>
     <dl>
      <dt data-md><dfn class="dfn-paneled idl-code" data-dfn-for="#enum-CommonMetadataKeys" data-dfn-type="enum-value" data-noexport id="dom-enum-commonmetadatakeys-title"><code>title</code></dfn> — <span class="css">text string</span>
@@ -10308,7 +10305,7 @@ This is the format that the reference function above expects.</p>
    <dt id="biblio-h273">[H.273]
    <dd><a href="https://www.itu.int/rec/T-REC-H.273/en"><cite>Coding-independent code points for video signal type identification</cite></a>. September 2023. URL: <a href="https://www.itu.int/rec/T-REC-H.273/en">https://www.itu.int/rec/T-REC-H.273/en</a>
    <dt id="biblio-ieee-754">[IEEE-754]
-   <dd><a href="http://ieeexplore.ieee.org/servlet/opac?punumber=4610933"><cite>IEEE Standard for Floating-Point Arithmetic</cite></a>. 29 August 2008. URL: <a href="http://ieeexplore.ieee.org/servlet/opac?punumber=4610933">http://ieeexplore.ieee.org/servlet/opac?punumber=4610933</a>
+   <dd><a href="https://ieeexplore.ieee.org/document/8766229"><cite>IEEE Standard for Floating-Point Arithmetic</cite></a>. 22 July 2019. URL: <a href="https://ieeexplore.ieee.org/document/8766229">https://ieeexplore.ieee.org/document/8766229</a>
    <dt id="biblio-iso14496-15">[ISO14496-15]
    <dd><a href="https://www.iso.org/standard/83336.html"><cite>Information technology — Coding of audio-visual objectsPart 15: Carriage of network abstraction layer (NAL) unit structured video in the ISO base media file format</cite></a>. October 2022. URL: <a href="https://www.iso.org/standard/83336.html">https://www.iso.org/standard/83336.html</a>
    <dt id="biblio-iso15444">[ISO15444]
@@ -11652,7 +11649,12 @@ function hideRefHint(refHint) {
 function showRefHint(link) {
     if(link.classList.contains("dfn-link")) return;
     const url = link.getAttribute("href");
-    const ref = refsData[url];
+    const refHintKey = link.getAttribute("data-refhint-key");
+    let key = url;
+    if(refHintKey) {
+        key = refHintKey + "_" + url;
+    }
+    const ref = refsData[key];
     if(!ref) return;
 
     hideAllRefHints(); // Only display one at this time.
