@@ -39,7 +39,18 @@ int avt_reorder_push(AVTReorder *r, AVTPacketFifo *in)
 
     for (auto i = 0; i < in->nb; i++) {
         AVTPktd *p = &in->data[i];
+        uint32_t pkt_target = 0;
         AVTReorderStream *rs = &r->st[p->pkt.stream_id];
+
+        int group_idx = 0;
+        do {
+            AVTMerger *m = &rs->m[group_idx];
+            if (m->active && (pkt_target != m->target))
+                continue;
+
+            ret = avt_pkt_merge_seg(r->ctx, &rs->m[0], p);
+        } while (group_idx++ < AVT_REORDER_GROUP_NB);
+
         if (!rs->nb_groups) {
             ret = avt_pkt_merge_seg(r->ctx, &rs->m[0], p);
             if (ret == AVT_ERROR(EAGAIN)) {

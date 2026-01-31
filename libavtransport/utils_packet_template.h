@@ -84,6 +84,15 @@ static inline void RENAME(avt_packet_set_compression)(TYPE p,
     }
 }
 
+static inline int RENAME(avt_packet_get_target)(const TYPE p, uint64_t tgt)
+{
+    switch (GET(desc)) {
+    default:
+
+        return 0;
+    }
+}
+
 static inline int RENAME(avt_packet_series)(const TYPE p, bool *is_parity,
                                             uint32_t *off,
                                             uint32_t *cur,
