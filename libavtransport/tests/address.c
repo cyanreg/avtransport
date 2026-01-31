@@ -148,38 +148,6 @@ int main(void)
         avt_addr_free(&addr);
     }
 
-    /* udplite + IPv6 + port */
-    {
-        if ((ret = avt_addr_from_url(NULL, &addr, true, "avt://udplite@[2001:db8::2]:9999")) < 0)
-            goto end;
-
-        if (addr.port != 9999 || addr.mode != AVT_MODE_DEFAULT ||
-            addr.type != AVT_ADDRESS_URL || addr.proto != AVT_PROTOCOL_UDP_LITE)
-            FAIL(EINVAL);
-
-        static const uint8_t ip_test_4[16] = { 0x20, 0x1, 0xd, 0xb8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x2 };
-        if (memcmp(addr.ip, ip_test_4, 16))
-            FAIL(EINVAL);
-
-        avt_addr_free(&addr);
-    }
-
-    /* udplite + mode + IPv6 + port */
-    {
-        if ((ret = avt_addr_from_url(NULL, &addr, false, "avt://udplite:passive@[2001:db8::3]:9999")) < 0)
-            goto end;
-
-        if (addr.port != 9999 || addr.mode != AVT_MODE_PASSIVE ||
-            addr.type != AVT_ADDRESS_URL || addr.proto != AVT_PROTOCOL_UDP_LITE)
-            FAIL(EINVAL);
-
-        static const uint8_t ip_test_5[16] = { 0x20, 0x1, 0xd, 0xb8, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x3 };
-        if (memcmp(addr.ip, ip_test_5, 16))
-            FAIL(EINVAL);
-
-        avt_addr_free(&addr);
-    }
-
     /* quic + mode + IPv6 + port + device */
     {
         if ((ret = avt_addr_from_url(NULL, &addr, true, "avt://quic:active@[2001:db8::4%lo]:9999")) < 0)

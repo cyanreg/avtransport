@@ -42,13 +42,13 @@ enum AVTConnectionType {
      *
      * <scheme>://[<transport>[:<mode>]@]<address>[:<port>][/[<uuid>][#<param1>=<val1>[&<param2>=<val2>]]]
      *
-     * - <scheme> may be "avt", "udp", "udplite", "quic", "socket", "file".
+     * - <scheme> may be "avt", "udp", "quic", "socket", "file".
      *   <transport> and <mode> may only be present for "avt".
-     *   <uuid>, <param1> are only for "avt", "udp", "udplite", "quic", "socket".
+     *   <uuid>, <param1> are only for "avt", "udp", "quic", "socket".
      *   Using "avt" is strongly recommended.
      *
      * - <transport> may be either missing (default: UDP),
-     *   or: "udp", "udplite", "quic", or "file".
+     *   or: "udp", "quic", or "file".
      *
      * - <mode> is an optional setting which has different meanings for
      *   senders and receivers, and transports.
@@ -111,7 +111,6 @@ enum AVTConnectionType {
 
 enum AVTProtocolType {
     AVT_PROTOCOL_UDP = 1,
-    AVT_PROTOCOL_UDP_LITE,
     AVT_PROTOCOL_QUIC,
 };
 

@@ -35,7 +35,6 @@ static enum IOMode path_id(const char *path,
     if (!strncmp(path, "avt://", strlen("avt://")) ||
         !strncmp(path, "quic://", strlen("quic://")) ||
         !strncmp(path, "udp://", strlen("udp://")) ||
-        !strncmp(path, "udplite://", strlen("udplite://")) ||
         !strncmp(path, "socket://", strlen("socket://")) ||
         !strncmp(path, "file://", strlen("file://"))) {
         if (!strncmp(path, "udp://", strlen("udp://")))

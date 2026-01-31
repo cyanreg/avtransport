@@ -106,14 +106,6 @@ io_udp_test = executable('io_udp',
 )
 test('UDP I/O', io_udp_test)
 
-io_udp_lite_test = executable('io_udp_lite',
-    sources : [ 'net_io_common.c', 'io_udp_lite.c' ],
-    include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ 'address.c', 'io_udp.c', 'io_socket_common.c', 'buffer.c']) ],
-    dependencies : [ avtransport_dep ],
-)
-test('UDP-Lite I/O', io_udp_lite_test)
-
 ## Protocol tests
 ## ==============
 if openssl_dep.found()

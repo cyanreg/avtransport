@@ -279,17 +279,3 @@ const AVTIO avt_io_udp = {
     .flush = NULL,
     .close = udp_close,
 };
-
-const AVTIO avt_io_udp_lite = {
-    .name = "udp_lite",
-    .type = AVT_IO_UDP_LITE,
-    .init = udp_init,
-    .get_max_pkt_len = udp_max_pkt_len,
-    .read_input = udp_read_input,
-    .write_vec = udp_write_vec,
-    .write_pkt = udp_write_pkt,
-    .rewrite = NULL,
-    .seek = NULL,
-    .flush = NULL,
-    .close = udp_close,
-};

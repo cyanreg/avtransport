@@ -40,7 +40,6 @@ extern const AVTIO avt_io_mmap_path;
 #endif
 
 extern const AVTIO avt_io_udp;
-extern const AVTIO avt_io_udp_lite;
 
 extern const AVTIO avt_io_unix;
 
@@ -73,9 +72,6 @@ static const AVTIO *avt_io_list[AVT_IO_INVALID][MAX_NB_BACKENDS + 1] = {
     [AVT_IO_UNIX] = {
         &avt_io_unix,
     },
-    [AVT_IO_UDP_LITE] = {
-        &avt_io_udp_lite,
-    },
 };
 
 static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
@@ -96,8 +92,6 @@ static inline enum AVTIOType map_addr_to_io(AVTAddress *addr)
     case AVT_ADDRESS_SOCKET:
         if (addr->proto == AVT_PROTOCOL_UDP || addr->proto == AVT_PROTOCOL_QUIC)
             return AVT_IO_UDP;
-        else if (addr->proto == AVT_PROTOCOL_UDP_LITE)
-            return AVT_IO_UDP_LITE;
         [[fallthrough]];
     default:
         return AVT_IO_INVALID;

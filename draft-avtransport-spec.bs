@@ -564,7 +564,6 @@ The recommended URI scheme is:
 
  - &lt;transport&gt; may be either missing (default: ''udp'') or:
      * ''udp'': for [[#udp-streaming]] streams
-     * ''udplite'': for [[#udp-lite-streaming]] streams
      * ''quic'': for [[#quic-streaming]] streams
      * ''file'': for <b>local</b> files
  - &lt;mode&gt; is an optional setting which has different meanings for senders and receivers:
@@ -575,7 +574,7 @@ The recommended URI scheme is:
          - ''passive'': the default value. means to listen on the given address for any packets received without attempting to connect and requesting for data.
          - ''active'':means that receivers will actively connect and try to request a stream from the target address.
  - &lt;address&gt; of the remote host, or local host, multicast group, or local file.
- - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', ''udplite'' and ''quic'' protocols. If not specified, port <b>8212</b> shall be the default port.
+ - &lt;port&gt; on which to listen on/transmit to. Only valid for ''udp'', and ''quic'' protocols. If not specified, port <b>8212</b> shall be the default port.
  - &lt;sender_uuid&gt; is an optional, <b>unique</b>, <b>pre-shared</b> 128-bit UUID ([[RFC9562]]) value.
  - &lt;params&gt; are a &lt;key&gt;=&lt;value&gt; pair of settings for the connection, separated by an <code>&</code> sign:
      * default=&lt;stream_id1&gt;,&lt;stream_id2&gt;: Specifies streams to assign as being the default
@@ -4630,22 +4629,6 @@ as the 16-bit UDP datagram CRC may be inadequate to detect errors.
 
 If [[#reverse-signalling]] is used, the receiver must send packets over to the
 sender using the same port number that the receiver is listening on.
-
-
-### UDP-Lite ### {#udp-lite-streaming}
-
-UDP-Lite ([[RFC3828]]) should be preferred to [[RFC768|UDP]], if support for it is
-available throughout the network.<br/>
-When using UDP-Lite, the same considerations and notes as UDP apply.
-
-As UDP-Lite allows for variable checksum coverage, the <b>minimum</b> checksum
-coverage must be used, where only the UDP-Lite header (8 bytes) is checksummed.
-
-Implementations should insert adequate FEC information, and receivers should
-correct data with it, as packet integrity guarantees are off.
-
-If [[#reverse-signalling]] is used, same port number an method must
-be used for reverse signalling as the sender's.
 
 
 ### QUIC ### {#quic-streaming}

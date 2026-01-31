@@ -36,21 +36,6 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
-/* Fallback */
-#if __has_include(<net/udplite.h>)
-#include <net/udplite.h>
-#else
-#ifndef IPPROTO_UDPLITE
-#define IPPROTO_UDPLITE     136
-#endif
-#ifndef UDPLITE_SEND_CSCOV
-#define UDPLITE_SEND_CSCOV  10
-#endif
-#ifndef UDPLITE_RECV_CSCOV
-#define UDPLITE_RECV_CSCOV  11
-#endif
-#endif
-
 #if __has_include(<linux/net_tstamp.h>)
 #include <linux/net_tstamp.h>
 #endif
@@ -192,15 +177,6 @@ static int setup_ip_socket(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr,
     SET_SOCKET_OPT(log_ctx, sc->socket, proto, UDP_GRO, (int)0);
 #endif
 
-    /* Adjust UDP-Lite checksum coverage */
-    if (proto == IPPROTO_UDPLITE) {
-        /* Minimum valid transmit value */
-        SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_UDPLITE, UDPLITE_SEND_CSCOV, (int)8);
-
-        /* Setup receive coverage too */
-        SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_UDPLITE, UDPLITE_RECV_CSCOV, (int)8);
-    }
-
     /* Disable IPv6 only */
     SET_SOCKET_OPT(log_ctx, sc->socket, IPPROTO_IPV6, IPV6_V6ONLY, (int)0);
 
@@ -315,7 +291,6 @@ COLD int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
     int domain = addr->type == AVT_ADDRESS_UNIX ? AF_UNIX : AF_INET6;
     int type   = addr->type == AVT_ADDRESS_UNIX ? SOCK_STREAM : SOCK_DGRAM;
     int proto  = addr->proto == AVT_PROTOCOL_UDP      ? IPPROTO_UDP :
-                 addr->proto == AVT_PROTOCOL_UDP_LITE ? IPPROTO_UDPLITE :
                                                         0;
 
     if ((sc->socket = socket(domain, type, proto)) < 0) {

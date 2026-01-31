@@ -39,7 +39,6 @@ enum AVTIOType {
     AVT_IO_FD,         /* Takes an integer handle fd */
     AVT_IO_UNIX,       /* Takes a Unix-domain integer handle  */
     AVT_IO_UDP,        /* UDP network connection */
-    AVT_IO_UDP_LITE,   /* UDP-Lite network connection */
     AVT_IO_CALLBACK,   /* Data-level callback */
     AVT_IO_INVALID,    /* Invalid */
 };

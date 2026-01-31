@@ -40,7 +40,6 @@ extern const AVTProtocol avt_protocol_quic;
 static const AVTProtocol *avt_protocol_list[AVT_PROTOCOL_MAX] = {
     [AVT_PROTOCOL_DATAGRAM]     = &avt_protocol_datagram,
     [AVT_PROTOCOL_UDP]          = &avt_protocol_datagram,
-    [AVT_PROTOCOL_UDP_LITE]     = &avt_protocol_datagram,
     [AVT_PROTOCOL_STREAM]       = &avt_protocol_stream,
     [AVT_PROTOCOL_FILE]         = &avt_protocol_stream,
 #ifdef CONFIG_HAVE_OPENSSL

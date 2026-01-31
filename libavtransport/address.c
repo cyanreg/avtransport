@@ -161,8 +161,7 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
             struct addrinfo hints = { 0 }, *res;
             hints.ai_socktype = SOCK_DGRAM;
             hints.ai_family   = AF_INET6;
-            hints.ai_protocol = (addr->proto == AVT_PROTOCOL_UDP_LITE) ?
-                                IPPROTO_UDP : IPPROTO_UDPLITE;
+            hints.ai_protocol = IPPROTO_UDP;
             hints.ai_flags    = AI_V4MAPPED |
                                 AI_ADDRCONFIG |
                                 (listen ? AI_PASSIVE : 0x0);
@@ -391,10 +390,6 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         /* Unofficial and conflicting, but let's accept it */
         addr->proto = AVT_PROTOCOL_UDP;
         next += strlen("udp://");
-    } else if (!strncmp(next, "udplite://", strlen("udplite://"))) {
-        /* Unofficial, but let's accept it */
-        addr->proto = AVT_PROTOCOL_UDP_LITE;
-        next += strlen("udplite://");
     } else if (!strncmp(next, "quic://", strlen("quic://"))) {
         /* Unofficial, but let's accept it */
         addr->proto = AVT_PROTOCOL_QUIC;
@@ -434,8 +429,6 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             addr->proto = CONFIG_DEFAULT_TYPE;
         } else if (!strcmp(transport, "udp")) {
             addr->proto = AVT_PROTOCOL_UDP;
-        } else if (!strcmp(transport, "udplite")) {
-            addr->proto = AVT_PROTOCOL_UDP_LITE;
         } else if (!strcmp(transport, "quic")) {
             addr->proto = AVT_PROTOCOL_QUIC;
         } else if (!strcmp(transport, "file")) {
@@ -559,7 +552,6 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
             addr->port,
             addr->interface ? addr->interface : "default",
             addr->proto == AVT_PROTOCOL_QUIC     ? "quic" :
-            addr->proto == AVT_PROTOCOL_UDP_LITE ? "udplite" :
             addr->proto == AVT_PROTOCOL_UDP      ? "udp" :
                                                    "unknown",
             addr->mode == AVT_MODE_DEFAULT ? "default" :
