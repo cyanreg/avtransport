@@ -42,7 +42,6 @@ sources = [
     'rational.c',
 
     'ldpc.c',
-    'raptor.c',
 
     'address.c',
     'connection.c',
