@@ -49,6 +49,9 @@ typedef struct IOContext {
     AVTConnection *conn;
     AVTStream *st;
 
+    /* For raw inputs: codec ID inferred from the file extension. */
+    enum AVTCodecID codec_id;
+
     AVTSender *out;
 
 #ifdef HAVE_FFMPEG

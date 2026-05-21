@@ -85,6 +85,13 @@ COLD int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
                            const AVTIO *io, AVTIOCtx *io_ctx,
                            AVTProtocolOpts *opts);
 
+/* Decode an AVT packet's header (already read and LDPC-corrected into
+ * p->hdr) into p->pkt, reporting the trailing payload size in pl_bytes.
+ * desc must be the descriptor with the reception flag bits masked off.
+ * Returns 0 on success, 1 if the packet is a stream index whose payload the
+ * caller should parse, or AVT_ERROR(ENOTSUP) for an unknown descriptor. */
+int avt_packet_decode(AVTPktd *p, uint16_t desc, size_t *pl_bytes);
+
 typedef struct AVTIndexContext {
     AVTIndexEntry *index;
     int nb_index;

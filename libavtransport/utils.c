@@ -70,8 +70,14 @@ static int fifo_resize(AVTPacketFifo *fifo, unsigned int alloc_new)
                                           sizeof(*fifo->data));
     if (!alloc_pkt)
         return AVT_ERROR(ENOMEM);
-    fifo->data = alloc_pkt;
 
+    /* Zero new slots so quick_ref into an uninitialized pl doesn't try to
+     * unref a garbage refcnt pointer. */
+    if (alloc_new > fifo->alloc)
+        memset(&alloc_pkt[fifo->alloc], 0,
+               (alloc_new - fifo->alloc) * sizeof(*fifo->data));
+
+    fifo->data = alloc_pkt;
     fifo->alloc = alloc_new;
 
     return 0;

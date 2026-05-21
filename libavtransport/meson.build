@@ -68,6 +68,7 @@ sources = [
     'reorder.c',
     'merger.c',
     'ldpc_decode.c',
+    'receive.c',
 
     avtransport_spec_pkt_headers,
 

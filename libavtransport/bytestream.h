@@ -284,8 +284,8 @@ static inline void avt_bsw_rt##n(AVTBytestream *bs, const AVTRational r) \
     union { int32_t _val; uint32_t val; } ATTR_ALIAS t[2];               \
     t[0]._val = r.num;                                                   \
     t[1]._val = r.den;                                                   \
-    en##32(bs->ptr, t[0].val);                                           \
-    en##32(bs->ptr, t[1].val);                                           \
+    en##32(bs->ptr + 0, t[0].val);                                       \
+    en##32(bs->ptr + 4, t[1].val);                                       \
     bs->ptr += 8;                                                        \
 }
 

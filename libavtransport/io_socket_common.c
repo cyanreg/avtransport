@@ -290,8 +290,10 @@ COLD int avt_socket_open(void *log_ctx, AVTSocketCommon *sc, AVTAddress *addr)
 
     int domain = addr->type == AVT_ADDRESS_UNIX ? AF_UNIX : AF_INET6;
     int type   = addr->type == AVT_ADDRESS_UNIX ? SOCK_STREAM : SOCK_DGRAM;
-    int proto  = addr->proto == AVT_PROTOCOL_UDP      ? IPPROTO_UDP :
-                                                        0;
+    /* QUIC runs over UDP, so its socket and socket options use IPPROTO_UDP. */
+    int proto  = addr->proto == AVT_PROTOCOL_UDP ||
+                 addr->proto == AVT_PROTOCOL_QUIC ? IPPROTO_UDP :
+                                                    0;
 
     if ((sc->socket = socket(domain, type, proto)) < 0) {
         ret = avt_handle_errno(log_ctx, "Failed to open socket: %i %s\n");

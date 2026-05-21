@@ -117,7 +117,7 @@ uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
 openssl_dep = dependency('openssl', required: false, version : '>3.4.0')
 brotlienc_dep = dependency('libbrotlienc', required: false)
-brotlidec_dep = dependency('libbrotlienc', required: false)
+brotlidec_dep = dependency('libbrotlidec', required: false)
 
 # External dep fallback
 #======================

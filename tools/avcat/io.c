@@ -26,6 +26,37 @@
 
 #include "io.h"
 
+/* Best-effort codec ID for raw elementary-stream inputs, by file extension.
+ * Defaults to raw video for generic or unknown payloads. */
+static enum AVTCodecID codec_from_path(const char *path)
+{
+    static const struct {
+        const char *ext;
+        enum AVTCodecID id;
+    } map[] = {
+        { ".h264", AVT_CODEC_ID_H264 },
+        { ".h265", AVT_CODEC_ID_H265 },
+        { ".hevc", AVT_CODEC_ID_H265 },
+        { ".obu",  AVT_CODEC_ID_AV1  },
+        { ".aac",  AVT_CODEC_ID_AAC  },
+        { ".ac3",  AVT_CODEC_ID_AC3  },
+        { ".tiff", AVT_CODEC_ID_TIFF },
+        { ".dng",  AVT_CODEC_ID_TIFF },
+        { ".jpeg", AVT_CODEC_ID_JPEG },
+        { ".jpg",  AVT_CODEC_ID_JPEG },
+        { ".png",  AVT_CODEC_ID_PNG  },
+        { ".svg",  AVT_CODEC_ID_SVG  },
+    };
+
+    size_t len = strlen(path);
+    for (size_t i = 0; i < sizeof(map) / sizeof(map[0]); i++) {
+        size_t elen = strlen(map[i].ext);
+        if (len >= elen && !strcmp(&path[len - elen], map[i].ext))
+            return map[i].id;
+    }
+    return AVT_CODEC_ID_RAW_VIDEO;
+}
+
 static enum IOMode path_id(const char *path,
                            enum AVTConnectionType *conn_type,
                            int is_out)
@@ -48,24 +79,21 @@ static enum IOMode path_id(const char *path,
                !strcmp(&path[len - 3], ".ats")) { /* Subtitles */
         *conn_type = AVT_CONNECTION_FILE;
         return IO_AVT;
-    } else if (is_out && /* For output, anything that can be concat'd payload */
-               (!strcmp(&path[len - 5], ".h264") ||
-                !strcmp(&path[len - 5], ".h265") ||
-                !strcmp(&path[len - 5], ".hevc") ||
-                !strcmp(&path[len - 4], ".aac")  ||
-                !strcmp(&path[len - 4], ".ac3")  ||
-                !strcmp(&path[len - 4], ".nal")  || /* Raw MPEG NALUs */
-                !strcmp(&path[len - 4], ".obu")  || /* Raw AV1 OBUs */
-                !strcmp(&path[len - 4], ".raw"))) { /* Generic raw data */
-        return IO_RAW;
-    } else if (!is_out && /* Individual files do not need any framing */
-               (!strcmp(&path[len - 5], ".tiff") ||
-                !strcmp(&path[len - 5], ".jpeg") ||
-                !strcmp(&path[len - 4], ".dng")  ||
-                !strcmp(&path[len - 4], ".png")  ||
-                !strcmp(&path[len - 4], ".jpg")  ||
-                !strcmp(&path[len - 4], ".cbor") ||
-                !strcmp(&path[len - 4], ".svg"))) {
+    } else if ((len >= 5 && (!strcmp(&path[len - 5], ".h264") ||
+                             !strcmp(&path[len - 5], ".h265") ||
+                             !strcmp(&path[len - 5], ".hevc") ||
+                             !strcmp(&path[len - 5], ".tiff") ||
+                             !strcmp(&path[len - 5], ".jpeg"))) ||
+               (len >= 4 && (!strcmp(&path[len - 4], ".aac")  ||
+                             !strcmp(&path[len - 4], ".ac3")  ||
+                             !strcmp(&path[len - 4], ".nal")  || /* Raw MPEG NALUs */
+                             !strcmp(&path[len - 4], ".obu")  || /* Raw AV1 OBUs */
+                             !strcmp(&path[len - 4], ".raw") || /* Generic raw data */
+                             !strcmp(&path[len - 4], ".dng")  ||
+                             !strcmp(&path[len - 4], ".png")  ||
+                             !strcmp(&path[len - 4], ".jpg")  ||
+                             !strcmp(&path[len - 4], ".cbor") ||
+                             !strcmp(&path[len - 4], ".svg")))) {
         return IO_RAW;
     } else {
         return IO_LAVF;
@@ -78,17 +106,24 @@ int io_close(IOContext *io, int is_out)
 {
     switch (io->mode) {
     case IO_AVT: {
-        avt_send_close(&io->out);
-        avt_connection_flush(io->conn, INT64_MAX);
-        avt_connection_destroy(&io->conn);
+        if (io->out)
+            avt_send_close(&io->out);
+        if (io->conn) {
+            if (is_out)
+                avt_connection_flush(io->conn, INT64_MAX);
+            avt_connection_destroy(&io->conn);
+        }
         break;
     }
     case IO_RAW: {
-        fclose(io->raw);
+        if (io->raw)
+            fclose(io->raw);
         break;
     }
     case IO_LAVF: {
 #ifdef HAVE_FFMPEG
+        if (!io->avf)
+            break;
         if (is_out) {
             av_write_trailer(io->avf);
             avformat_flush(io->avf);
@@ -113,14 +148,23 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
     int err;
 
     io->mode = path_id(path, &io->type, is_out);
+    io->codec_id = AVT_CODEC_ID_RAW_VIDEO;
 
     switch (io->mode) {
     case IO_AVT: {
         AVTConnectionInfo conn_info = {
-            .path = path,
             .type = io->type,
-            .output_opts.bandwidth = 80 * 1000 * 1000,
+            .listen = !is_out,
+            .output_opts.bandwidth = is_out ? 80 * 1000 * 1000 : 0,
         };
+        /* URL connections carry the listen flag inside the url sub-struct;
+         * file-like ones use the top-level field. */
+        if (io->type == AVT_CONNECTION_URL) {
+            conn_info.url.url = path;
+            conn_info.url.listen = !is_out;
+        } else {
+            conn_info.path = path;
+        }
         err = avt_connection_init(avt, &io->conn, &conn_info);
         if (err < 0) {
             avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path,
@@ -139,12 +183,8 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
                 return err;
             }
 
-            io->st = avt_send_stream_add(io->out, 0);
-            io->st->timebase = (AVTRational) { 1, 1000 * 1000 * 1000 };
-
-            avt_send_stream_update(io->st);
-        } else {
-
+            /* Streams are added later, once the input parameters are
+             * known (see avcat.c). */
         }
         break;
     }
@@ -154,6 +194,7 @@ int io_open(IOContext *io, AVTContext *avt, const char *path, int is_out)
             avt_log(NULL, AVT_LOG_ERROR, "Could not open %s: %i!\n", path, errno);
             return AVT_ERROR(errno);
         }
+        io->codec_id = codec_from_path(path);
         break;
     }
     case IO_LAVF: {

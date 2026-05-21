@@ -30,9 +30,33 @@
 #include <avtransport/connection.h>
 #include <avtransport/send.h>
 #include "packet_common.h"
+#include "utils_internal.h"
 
 int avt_connection_register_sender(AVTConnection *conn, AVTSender *s);
 
 int avt_connection_send(AVTConnection *conn, AVTPktd *p);
+
+/* Receive one or more assembled packets. Returns 0 with *out populated
+ * when packets are ready, AVT_ERROR(EAGAIN) when not yet, or another
+ * negative error code. */
+int avt_connection_receive(AVTConnection *conn, AVTPacketFifo **out,
+                           int64_t timeout);
+
+/* Release a fifo obtained from avt_connection_receive(). */
+int avt_connection_receive_done(AVTConnection *conn, AVTPacketFifo *out);
+
+/* Receive one packet at a time (used by the receive dispatcher).
+ * Returns 0 on success with pkt/buf populated, AVT_ERROR(EAGAIN) if
+ * nothing is ready, AVT_ERROR(ENODATA) on EOF. The caller owns *buf
+ * and must call avt_buffer_unref() on it. */
+int avt_connection_receive_packet(AVTConnection *conn,
+                                  union AVTPacketData *pkt,
+                                  AVTBuffer **buf,
+                                  int64_t timeout);
+
+/* Drain available input for any receiver attached to this connection.
+ * Returns 0 if work was done, AVT_ERROR(EAGAIN) if nothing to do,
+ * AVT_ERROR(ENODATA) on EOF. */
+int avt_receiver_drive(AVTContext *ctx, AVTConnection *conn, int64_t timeout);
 
 #endif /* AVTRANSPORT_CONNECTION_INTERNAL_H */

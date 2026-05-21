@@ -56,7 +56,9 @@ struct AVTIOCtx {
     avt_pos rpos;
     avt_pos wpos;
 
-    bool file_grew;
+    /* Set when opened for writing; the file is truncated to the number
+     * of bytes actually written on close. */
+    bool writable;
 };
 
 static void mmap_buffer_free(void *opaque, void *base_data, size_t size)
@@ -69,7 +71,7 @@ static COLD int mmap_close(AVTIOCtx **_io)
 {
     AVTIOCtx *io = *_io;
     avt_buffer_quick_unref(&io->map);
-    if (io->file_grew)
+    if (io->writable)
         ftruncate(io->fd, io->wpos);
     close(io->fd);
     free(io);
@@ -109,13 +111,15 @@ static COLD int mmap_init_common(AVTContext *ctx, AVTIOCtx *io)
 {
     int ret;
 
-    size_t len = lseek(io->fd, SEEK_END, 0);
+    off_t fsize = lseek(io->fd, 0, SEEK_END);
+    if (fsize < 0)
+        return avt_handle_errno(io, "Error in lseek(): %i %s\n");
+    size_t len = (size_t)fsize;
     if (!len) {
         len = MIN_ALLOC;
         ret = fd_fallocate(io, len);
         if (ret < 0)
             return ret;
-        io->file_grew = 1;
     }
 
     int fd_dup = dup(io->fd);
@@ -160,6 +164,7 @@ static COLD int mmap_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
         free(io);
         return ret;
     }
+    io->writable = !addr->listen;
 
     ret = mmap_init_common(ctx, io);
     if (ret < 0) {
@@ -180,12 +185,19 @@ static COLD int mmap_init_path(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-    io->fd = open(addr->path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
+    /* Truncate when opening for writing so a pre-existing larger file
+     * does not leave stale trailing data. */
+    int flags = O_CREAT | O_RDWR | O_CLOEXEC;
+    if (!addr->listen)
+        flags |= O_TRUNC;
+
+    io->fd = open(addr->path, flags, 0666);
     if (io->fd < 0) {
         ret = avt_handle_errno(io, "Error opening: %i %s\n");
         free(io);
         return ret;
     }
+    io->writable = !addr->listen;
 
     ret = mmap_init_common(ctx, io);
     if (ret < 0) {
@@ -213,9 +225,6 @@ static int mmap_grow(AVTIOCtx *io, size_t amount)
     ret = fd_fallocate(io, new_map_size);
     if (ret < 0)
         return ret;
-
-    /* Trim the file at the end, stripping it of padding, if it was grown */
-    io->file_grew = true;
 
 #if CONFIG_HAVE_MREMAP
     /* First, attempt to remap the old mapping, and retaining its address.
@@ -366,11 +375,15 @@ static inline int64_t mmap_read(AVTIOCtx *io, AVTBuffer *dst,
     uint8_t *map_data = avt_buffer_get_data(&io->map, &map_size);
 
     /* TODO: cap map_size at wpos? */
+    if (io->rpos >= map_size)
+        return AVT_ERROR(ENODATA);
     len = AVT_MIN(map_size - io->rpos, len);
 
     if (flags & AVT_IO_READ_MUTABLE) {
-        dst = avt_buffer_get_data(dst, NULL);
-        memcpy(dst, &map_data[io->rpos], len);
+        /* Caller-supplied buffer: write into dst->data directly.
+         * avt_buffer_get_data() would refuse a stack-local AVTBuffer
+         * that has no refcnt set. */
+        memcpy(dst->data, &map_data[io->rpos], len);
     } else {
         avt_buffer_quick_unref(dst);
         avt_buffer_quick_ref(dst, &io->map, io->rpos, len);

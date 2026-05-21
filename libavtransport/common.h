@@ -39,8 +39,15 @@ typedef struct AVTStreamPriv {
     struct AVTSender *out;
 } AVTStreamPriv;
 
+/* Defined in receive.c */
+typedef struct AVTReceiver AVTReceiver;
+
 struct AVTContext {
     AVTContextOptions opts;
+
+    /* Optional: attached by avt_receive_open(), driven by
+     * avt_connection_process(). */
+    AVTReceiver *recv;
 };
 
 #endif /* AVTRANSPORT_COMMON */

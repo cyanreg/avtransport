@@ -177,7 +177,10 @@ static int parse_host_addr(void *log_ctx, AVTAddress *addr, char *host,
             strncpy(addr->host, host, sizeof(addr->host) - 1);
             addr->host[255] = '\0';
 
-            memcpy(addr->ip, res[0].ai_addr, 16);
+            /* ai_addr is a sockaddr_in6; the 16-byte address lives in
+             * sin6_addr, not at the start of the structure. */
+            memcpy(addr->ip,
+                   &((struct sockaddr_in6 *)res[0].ai_addr)->sin6_addr, 16);
             freeaddrinfo(res);
         } else {
             *pure_ipv6 = true;
@@ -521,9 +524,11 @@ int avt_addr_from_url(void *log_ctx, AVTAddress *addr,
         goto end;
     }
 
-    /* Separate out the host from settings */
+    /* Separate out the host from settings. Only the first '/' is a
+     * delimiter; the settings string itself may contain '/' (e.g. an
+     * absolute certfile path), so take the whole remainder. */
     char *host = strtok_r(next, "/", &tmp);
-    next = strtok_r(NULL, "/", &tmp);
+    next = tmp;
 
     /* Parse host IP, address, and potentially a device */
     ret = parse_host_addr(log_ctx, addr, host, listen, &pure_ipv6);
@@ -607,6 +612,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         addr->path = strdup(info->path);
         if (!addr->path)
             return AVT_ERROR(ENOMEM);
+        addr->listen = info->listen;
         break;
     case AVT_CONNECTION_SOCKET:
         addr->type = AVT_ADDRESS_SOCKET;
@@ -620,6 +626,7 @@ int avt_addr_from_info(void *log_ctx, AVTAddress *addr, AVTConnectionInfo *info)
         addr->type = AVT_ADDRESS_FILE;
         addr->proto = AVT_PROTOCOL_FILE;
         addr->fd = info->fd;
+        addr->listen = info->listen;
         break;
     case AVT_CONNECTION_UNIX:
         addr->type = AVT_ADDRESS_UNIX;

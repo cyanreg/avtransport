@@ -76,6 +76,11 @@ typedef struct AVTIO {
     /* Get maximum packet size, excluding any headers */
     int (*get_max_pkt_len)(AVTIOCtx *io, size_t *mtu);
 
+    /* Return the underlying socket file descriptor, or a negative value if
+     * the backend has none. Used by transport protocols (QUIC) that drive
+     * the socket directly. NULL if unsupported. */
+    int (*get_fd)(AVTIOCtx *io);
+
     /* Attempt to add a secondary destination, NULL if unsupported */
     int (*add_dst)(AVTIOCtx *io, AVTAddress *addr);
 

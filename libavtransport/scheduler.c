@@ -119,7 +119,7 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
         return AVT_ERROR(ENOMEM);
 
     /* Modify packet */
-    avt_packet_change_size(state->p.pkt, 0, seg_pl_size, pl_size);
+    avt_packet_change_size(&state->p, 0, seg_pl_size, pl_size);
     state->p.pkt.seq = get_seq(s);
 
     /* Encode packet */

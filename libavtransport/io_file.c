@@ -69,7 +69,14 @@ static COLD int file_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
     if (!io)
         return AVT_ERROR(ENOMEM);
 
-    io->f = fopen(addr->path, "w+");
+    /* If listen is set, open existing file for read-only. Otherwise open
+     * read/write, preferring not to truncate. If the file doesn't exist,
+     * fall back to creating it. */
+    const char *mode = addr->listen ? "rb" : "rb+";
+    io->f = fopen(addr->path, mode);
+    if (!io->f && !addr->listen) {
+        io->f = fopen(addr->path, "wb+");
+    }
     if (!io->f) {
         ret = file_handle_error(io, "Error opening: %s\n");
         free(io);

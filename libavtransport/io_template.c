@@ -59,17 +59,22 @@ static avt_pos RENAME(read_input)(AVTIOCtx *io, AVTBuffer *buf, size_t len,
         io->is_write = false;
     }
 
-    /* Read data */
-    size_t buf_len;
-    uint8_t *data = avt_buffer_get_data(buf, &buf_len);
+    /* Read data into the caller-supplied buffer.
+     * Use buf->data directly so stack-local AVTBuffers (no refcnt) work. */
+    uint8_t *data = buf->data;
 
     ret = RENAME(read)(io, data, len, timeout);
     if (ret < 0)
         return avt_handle_errno(io, "Error reading: %i %s\n");
 
-    /* Adjust new size in case of underreads */
-    [[maybe_unused]] int tmp = avt_buffer_resize(buf, ret);
-    avt_assert2(tmp >= 0);
+    /* Adjust new size in case of underreads, but only if buf has a refcnt
+     * (avt_buffer_resize hits asserts on stack-local buffers). */
+    if (buf->refcnt) {
+        [[maybe_unused]] int tmp = avt_buffer_resize(buf, ret);
+        avt_assert2(tmp >= 0);
+    } else {
+        buf->len = ret;
+    }
 
     ret = io->rpos + ret;
     AVT_SWAP(io->rpos, ret);

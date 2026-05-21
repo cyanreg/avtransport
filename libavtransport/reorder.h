@@ -30,7 +30,7 @@
 #include "merger.h"
 #include "utils_internal.h"
 
-/* Maximum number of rejections for a single stream ID */
+/* Maximum number of concurrent in-flight series per stream */
 #define AVT_REORDER_GROUP_NB 8
 
 typedef struct AVTReorderStream {
@@ -40,6 +40,9 @@ typedef struct AVTReorderStream {
 
 typedef struct AVTReorder {
     AVTContext *ctx;
+
+    /* Approximate ceiling on the total memory used by all buffered packets. */
+    size_t max_size;
 
     /* One context per stream */
     AVTReorderStream st[UINT16_MAX];
@@ -69,14 +72,16 @@ typedef struct AVTReorder {
  * contained within. */
 int avt_reorder_init(AVTContext *ctx, AVTReorder *r, size_t max_size);
 
-/* Push data to the reorder */
+/* Push data to the reorder. The input fifo is consumed (cleared on success). */
 int avt_reorder_push(AVTReorder *r, AVTPacketFifo *in);
 
-/* Pop data from the reorder */
-int avt_reorder_pop(AVTReorder *r, AVTPacketFifo *out);
+/* Pop a sequence of fully assembled packets from the reorder.
+ * Returns AVT_ERROR(EAGAIN) if nothing is ready. */
+int avt_reorder_pop(AVTReorder *r, AVTPacketFifo **out);
 
-/* Mark a bucket as being available to use again */
-int avt_reorder_done(AVTPacketFifo *out);
+/* Mark a bucket as being available to use again. The bucket's contents
+ * are cleared and references unrefed. */
+int avt_reorder_done(AVTReorder *r, AVTPacketFifo *out);
 
 /* Free all data. All buckets become invalid */
 int avt_reorder_free(AVTReorder *r);

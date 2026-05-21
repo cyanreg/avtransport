@@ -35,7 +35,7 @@
 
 int avt_init(AVTContext **ctx, AVTContextOptions *opts)
 {
-    AVTContext *tmp = malloc(sizeof(*tmp));
+    AVTContext *tmp = calloc(1, sizeof(*tmp));
     if (!tmp)
         return AVT_ERROR(ENOMEM);
 

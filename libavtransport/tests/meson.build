@@ -52,6 +52,16 @@ merger_test = executable('merger',
 )
 test('Packet merging', merger_test)
 
+## Reorder tests
+## =============
+reorder_test = executable('reorder',
+    sources : [ 'reorder.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c', 'merger.c', 'reorder.c', 'buffer.c', 'utils.c', 'rational.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('Packet reordering', reorder_test)
+
 ## Packet encode/decode primitives tests
 ## =====================================
 packet_encode_decode_test = executable('packet_encode_decode',
@@ -112,8 +122,15 @@ if openssl_dep.found()
     protocol_quic_test = executable('protocol_quic',
         sources : [ 'proto_quic.c' ],
         include_directories : [ '../' ],
-        objects : [ avtransport_lib.extract_objects([ 'protocol_quic.c', 'io_dcb.c',
-                                                      'address.c', 'buffer.c' ]) ],
+        objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers,
+                                                      'protocol_quic.c',
+                                                      'protocol_common.c',
+                                                      'protocol_stream.c',
+                                                      'protocol_datagram.c',
+                                                      'io_udp.c', 'io_socket_common.c',
+                                                      'address.c', 'buffer.c',
+                                                      'utils.c', 'rational.c',
+                                                      'ldpc_encode.c', 'ldpc_decode.c' ]) ],
         dependencies : [ avtransport_dep, openssl_dep ],
     )
     test('QUIC protocol', protocol_quic_test)

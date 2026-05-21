@@ -125,17 +125,19 @@ static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
 
     uint16_t desc = AVT_RB16(&buf.data[0]);
 
-    /* For identification purposes, zero out any bitmask bits */
-    if ((desc == (AVT_PKT_TIME_SYNC & 0xFF00)) ||
-        (desc == (AVT_PKT_STREAM_DATA & 0xFF00)))
+    /* For identification purposes, zero out any bitmask bits.
+     * Stream data and time sync descriptors carry low-byte flag fields. */
+    if (((desc & 0xFF00) == (AVT_PKT_TIME_SYNC & 0xFF00)) ||
+        ((desc & 0xFF00) == (AVT_PKT_STREAM_DATA & 0xFF00)))
         desc &= 0xFF00;
 
-    /* Get the rest of the header */
+    /* Advance past the minimum header */
+    buf.data += AVT_MIN_HEADER_LEN;
+    buf.len -= AVT_MIN_HEADER_LEN;
+
+    /* Get the rest of the header, if any */
     const int left_size = avt_pkt_hdr_size(desc) - AVT_MIN_HEADER_LEN;
     if (left_size > 0) {
-        buf.data += AVT_MIN_HEADER_LEN;
-        buf.len -= AVT_MIN_HEADER_LEN;
-
         err = s->io->read_input(s->io_ctx, &buf, left_size,
                                 timeout, AVT_IO_READ_MUTABLE);
         if (err < 0)
@@ -151,58 +153,37 @@ static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
             break;
         }
 
-        buf.data += AVT_MIN_HEADER_LEN;
-        buf.len -= AVT_MIN_HEADER_LEN;
+        buf.data += left_size;
+        buf.len -= left_size;
     }
 
     p->hdr_len = buf.data - buf.base_data;
 
     size_t pl_bytes = 0;
-    AVTBytestream bs = avt_bs_init(p->hdr, sizeof(p->hdr));
+    int dret = avt_packet_decode(p, desc, &pl_bytes);
+    if (dret < 0) {
+        if (dret == AVT_ERROR(ENOTSUP))
+            avt_log(p, AVT_LOG_ERROR, "Unknown descriptor 0x%x received\n", desc);
+        return dret;
+    }
 
-    switch (desc) {
-    case AVT_PKT_SESSION_START:
-        avt_decode_session_start(&bs, &p->pkt.session_start);
-        return 0;
-    case AVT_PKT_TIME_SYNC & ~(AVT_PKT_FLAG_LSB_BITMASK):
-        avt_decode_time_sync(&bs, &p->pkt.time_sync);
-        return 0;
-    case AVT_PKT_VIDEO_INFO:
-        avt_decode_video_info(&bs, &p->pkt.video_info);
-        return 0;
-    case AVT_PKT_VIDEO_ORIENTATION:
-        avt_decode_video_orientation(&bs, &p->pkt.video_orientation);
-        return 0;
-    case AVT_PKT_STREAM_REGISTRATION:
-        avt_decode_stream_registration(&bs, &p->pkt.stream_registration);
-        return 0;
-    case AVT_PKT_STEREO_VIDEO:
-        avt_decode_stereo_video(&bs, &p->pkt.stereo_video);
-        return 0;
-    case AVT_PKT_STREAM_END:
-        avt_decode_stream_end(&bs, &p->pkt.stream_end);
-        return 0;
-    case AVT_PKT_STREAM_INDEX:
-        avt_decode_stream_index(&bs, &p->pkt.stream_index);
-        pl_bytes = p->pkt.stream_index.nb_indices * AVT_PKT_INDEX_ENTRY_SIZE;
-
+    if (dret == 1) {
+        /* Stream index: read and parse the index entries. */
         // TODO: store buffer in state
         AVTBuffer *tmp = avt_buffer_alloc(pl_bytes);
         if (!tmp)
             return AVT_ERROR(ENOMEM);
 
-        /* Read index entries */
-        err = s->io->read_input(s->io_ctx, tmp, pl_bytes,
-                                timeout, 0x0);
-        if (err < 0)
+        err = s->io->read_input(s->io_ctx, tmp, pl_bytes, timeout, 0x0);
+        if (err < 0) {
+            avt_buffer_unref(&tmp);
             return err;
+        }
 
         size_t index_size;
         uint8_t *index_data = avt_buffer_get_data(tmp, &index_size);
+        AVTBytestream bs = avt_bs_init(index_data, index_size);
 
-        bs = avt_bs_init(index_data, index_size);
-
-        /* Parse */
         err = avt_index_list_parse(&s->ic, &bs, &p->pkt.stream_index);
         avt_buffer_unref(&tmp);
         if (err < 0)
@@ -210,50 +191,10 @@ static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
 
         /* Bypass reordering */
         return AVT_ERROR(EAGAIN);
-    case AVT_PKT_STREAM_DATA & ~(AVT_PKT_FLAG_LSB_BITMASK):
-        avt_decode_stream_data(&bs, &p->pkt.stream_data);
-        pl_bytes = p->pkt.stream_data.data_length;
-        break;
-    case AVT_PKT_FEC_GROUPING:
-        avt_decode_fec_grouping(&bs, &p->pkt.fec_grouping);
-        break;
-    case AVT_PKT_FEC_GROUP_DATA:
-        avt_decode_fec_group_data(&bs, &p->pkt.fec_group_data);
-        pl_bytes = p->pkt.fec_group_data.fec_data_length;
-        break;
-    case AVT_PKT_LUT_ICC:
-        avt_decode_lut_icc(&bs, &p->pkt.lut_icc);
-    case AVT_PKT_FONT_DATA:
-        avt_decode_font_data(&bs, &p->pkt.font_data);
-    case AVT_PKT_USER_DATA:
-        avt_decode_user_data(&bs, &p->pkt.user_data);
-    case AVT_PKT_STREAM_CONFIG: [[fallthrough]];
-    case AVT_PKT_METADATA:
-        avt_decode_generic_data(&bs, &p->pkt.generic_data);
-        pl_bytes = p->pkt.generic_data.payload_length;
-        break;
-    case AVT_PKT_LUT_ICC_SEGMENT:       [[fallthrough]];
-    case AVT_PKT_FONT_DATA_SEGMENT:     [[fallthrough]];
-    case AVT_PKT_METADATA_SEGMENT:      [[fallthrough]];
-    case AVT_PKT_USER_DATA_SEGMENT:     [[fallthrough]];
-    case AVT_PKT_STREAM_DATA_SEGMENT:   [[fallthrough]];
-    case AVT_PKT_STREAM_CONFIG_SEGMENT:
-        avt_decode_generic_segment(&bs, &p->pkt.generic_segment);
-        pl_bytes = p->pkt.generic_segment.seg_length;
-        break;
-    case AVT_PKT_LUT_ICC_PARITY:       [[fallthrough]];
-    case AVT_PKT_FONT_DATA_PARITY:     [[fallthrough]];
-    case AVT_PKT_METADATA_PARITY:      [[fallthrough]];
-    case AVT_PKT_USER_DATA_PARITY:     [[fallthrough]];
-    case AVT_PKT_STREAM_DATA_PARITY:   [[fallthrough]];
-    case AVT_PKT_STREAM_CONFIG_PARITY:
-        avt_decode_generic_parity(&bs, &p->pkt.generic_parity);
-        pl_bytes = p->pkt.generic_parity.parity_data_length;
-        break;
-    default:
-        avt_log(p, AVT_LOG_ERROR, "Unknown descriptor 0x%x received\n", desc);
-        return AVT_ERROR(ENOTSUP);
-    };
+    }
+
+    if (!pl_bytes)
+        return 0;
 
     // TODO: pool buffer
     if (!avt_buffer_quick_alloc(&p->pl, pl_bytes))

@@ -119,10 +119,16 @@ static inline void avt_buffer_quick_ref(AVTBuffer *dst, AVTBuffer *buf,
     avt_assert0(buf->base_data + offset < buf->end_data);
 
     atomic_fetch_add_explicit(buf->refcnt, 1, memory_order_relaxed);
+    /* Snapshot the source view's length before overwriting dst */
+    size_t src_view_len = buf->len;
     memcpy(dst, buf, sizeof(*dst));
 
     dst->data += offset;
-    dst->len = (len == AVT_BUFFER_REF_ALL) ? (dst->end_data - dst->data) : len;
+    /* REF_ALL means inherit the source view's length (minus offset) */
+    if (len == AVT_BUFFER_REF_ALL)
+        dst->len = src_view_len > (size_t)offset ? src_view_len - offset : 0;
+    else
+        dst->len = len;
 }
 
 int avt_buffer_offset(AVTBuffer *buf, ptrdiff_t offset);

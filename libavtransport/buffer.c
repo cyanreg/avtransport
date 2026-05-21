@@ -112,10 +112,12 @@ AVTBuffer *avt_buffer_ref(AVTBuffer *buf, ptrdiff_t offset, size_t len)
     if (!buf || !buf->refcnt)
         return NULL;
 
-    if (!len)
-        len = buf->end_data - (buf->data + offset);
-    if (len < 0)
-        return NULL;
+    /* len == AVT_BUFFER_REF_ALL (0) means inherit the source view length. */
+    if (!len) {
+        if ((size_t)offset > buf->len)
+            return NULL;
+        len = buf->len - offset;
+    }
     if (buf->base_data + offset > buf->end_data)
         return NULL;
 
@@ -128,7 +130,7 @@ AVTBuffer *avt_buffer_ref(AVTBuffer *buf, ptrdiff_t offset, size_t len)
     memcpy(ret, buf, sizeof(*ret));
 
     ret->data += offset;
-    ret->len = !len ? ret->end_data - ret->data : len;
+    ret->len = len;
 
     return ret;
 }

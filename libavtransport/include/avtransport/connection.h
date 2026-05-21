@@ -124,6 +124,11 @@ typedef struct AVTConnectionInfo {
     /* Connection type */
     enum AVTConnectionType type;
 
+    /* For file-like connections (FILE, FD), if true, opens the file for
+     * reading without truncation; if false, opens for writing. Has no
+     * effect on stream/socket connections (those use url.listen). */
+    bool listen;
+
     /* Connection interface */
     union {
         /* AVT_CONNECTION_FILE: file path */
@@ -284,6 +289,11 @@ AVT_API int avt_connection_init(AVTContext *ctx, AVTConnection **conn,
  * Recommended operation is to always use a timeout of 0 and check
  * the return value. Errors may be delayed, but the function will
  * not block for I/O.
+ *
+ * If a receiver has been registered with avt_receive_open(), this
+ * also drains any available input and dispatches callbacks.
+ *
+ * Returns AVT_ERROR(ENODATA) when the input has reached EOF.
  */
 AVT_API int avt_connection_process(AVTConnection *conn, int64_t timeout);
 

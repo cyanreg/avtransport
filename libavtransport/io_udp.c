@@ -102,6 +102,11 @@ static int udp_max_pkt_len(AVTIOCtx *io, size_t *mtu)
     return avt_socket_get_mtu(io, &io->sc, mtu);
 }
 
+static int udp_get_fd(AVTIOCtx *io)
+{
+    return io->sc.socket;
+}
+
 static avt_pos udp_write_pkt(AVTIOCtx *io, AVTPktd *p, int64_t timeout)
 {
     int64_t ret;
@@ -271,6 +276,7 @@ const AVTIO avt_io_udp = {
     .type = AVT_IO_UDP,
     .init = udp_init,
     .get_max_pkt_len = udp_max_pkt_len,
+    .get_fd = udp_get_fd,
     .read_input = udp_read_input,
     .write_vec = udp_write_vec,
     .write_pkt = udp_write_pkt,
