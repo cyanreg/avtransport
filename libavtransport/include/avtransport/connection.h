@@ -257,8 +257,13 @@ typedef struct AVTConnectionInfo {
          */
         unsigned int session_start_freq;
 
+        /* Amount of RaptorQ forward-error-correction parity to generate for
+         * stream data packets, as a percentage of each packet's RaptorQ
+         * source-symbol count. Zero (the default) disables FEC. */
+        unsigned int fec_parity_pct;
+
         /* Padding to allow for future options. Must always be set to 0. */
-        uint8_t padding[1024 - 0*1 - 0*2 - 1*4 - 2*8];
+        uint8_t padding[1024 - 0*1 - 0*2 - 2*4 - 2*8];
     } output_opts;
 
     /* When greater than 0, enables asynchronous mode.

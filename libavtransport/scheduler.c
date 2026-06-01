@@ -32,16 +32,20 @@
 #include "mem.h"
 #include "utils_internal.h"
 #include "utils_packet.h"
+#include "fec.h"
+#include "fec_group.h"
 
 FN_CREATING(avt_scheduler, AVTScheduler, AVTPacketFifo,
             bucket, buckets, nb_buckets)
 
 int avt_scheduler_init(AVTScheduler *s,
-                       size_t max_pkt_size, int64_t bandwidth)
+                       size_t max_pkt_size, int64_t bandwidth,
+                       int fec_parity_pct)
 {
     s->seq = 0;
     s->bandwidth = bandwidth;
     s->avail = bandwidth;
+    s->fec_parity_pct = fec_parity_pct;
 
     /* AVTransport packets simply don't support bigger sizes */
     s->max_pkt_size = AVT_MIN(max_pkt_size, UINT32_MAX);
@@ -70,6 +74,64 @@ static inline void update_sw(AVTScheduler *s, size_t size)
             size, s->time, duration, sum, s->avail);
 
     s->time += duration;
+}
+
+/* Generate and enqueue RaptorQ stream-data-parity packets protecting the
+ * stream data packet just encoded into `state->p`. The parity covers the
+ * whole payload regardless of how the data is later segmented.
+ *
+ * Best-effort: parity is supplementary, so allocation failures stop parity
+ * emission rather than failing the send. Returns the bytes emitted. */
+static size_t scheduler_emit_parity(AVTScheduler *s,
+                                    AVTSchedulerPacketContext *state,
+                                    AVTPacketFifo *dst)
+{
+    if (s->fec_parity_pct <= 0 || state->p.pkt.desc != AVT_PKT_STREAM_DATA)
+        return 0;
+
+    AVTBuffer *parity = avt_fec_gen_parity(s, &state->p.pl, s->fec_parity_pct);
+    if (!parity)
+        return 0;
+
+    const uint64_t target_seq = state->p.pkt.seq;
+    const uint16_t stream_id  = state->p.pkt.stream_id;
+    const uint32_t hdr_size   = avt_pkt_hdr_size(AVT_PKT_STREAM_DATA_PARITY);
+    const uint32_t total      = avt_buffer_get_data_len(parity);
+    const uint32_t seg_lim    = s->max_pkt_size > hdr_size ?
+                                s->max_pkt_size - hdr_size : total;
+    size_t out_acc = 0;
+
+    for (uint32_t offset = 0; offset < total; ) {
+        const uint32_t chunk = AVT_MIN(seg_lim, total - offset);
+        const uint64_t pseq  = get_seq(s);
+
+        /* header_7: a seventh of the protected packet's header, the part
+         * selected by the parity packet's own sequence number. */
+        const uint8_t *os = &state->p.hdr[state->p.hdr_off + (pseq % 7)*4];
+
+        AVTPktd *pp = avt_pkt_fifo_push_new(dst, parity, offset, chunk);
+        if (!pp)
+            break; /* best-effort: parity is supplementary */
+
+        pp->pkt = AVT_GENERIC_PARITY_HDR(AVT_PKT_STREAM_DATA_PARITY,
+            .global_seq         = pseq,
+            .stream_id          = stream_id,
+            .target_seq         = target_seq,
+            .parity_data_offset = offset,
+            .parity_data_length = chunk,
+            .parity_total       = total,
+            .header_7           = { os[0], os[1], os[2], os[3] },
+        );
+        avt_packet_encode_header(pp);
+
+        const uint32_t acc = hdr_size + chunk;
+        out_acc += acc;
+        update_sw(s, acc);
+        offset  += chunk;
+    }
+
+    avt_buffer_unref(&parity);
+    return out_acc;
 }
 
 static inline int64_t scheduler_push_internal(AVTScheduler *s,
@@ -134,6 +196,9 @@ static inline int64_t scheduler_push_internal(AVTScheduler *s,
     p->pkt = state->p.pkt;
     p->hdr_len = state->p.hdr_len;
     memcpy(p->hdr, state->p.hdr, state->p.hdr_len);
+
+    /* Emit FEC parity for this stream data packet, if enabled */
+    out_acc += scheduler_emit_parity(s, state, dst);
 
     /* Setup segmentation context */
     state->seg_offset = seg_pl_size;
@@ -523,6 +588,95 @@ int avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq)
     }
 
     return 0;
+}
+
+int avt_scheduler_emit_fec_group(AVTScheduler *s, AVTPacketFifo *dst,
+                                 AVTPktd *const *sources, uint16_t nb_sources,
+                                 uint16_t group_id, uint16_t repair_per_block,
+                                 uint32_t max_data_pkt_payload)
+{
+    if (!s || !dst || !sources || nb_sources < 1 || !max_data_pkt_payload)
+        return AVT_ERROR(EINVAL);
+
+    /* Concatenate each source packet's hdr + pl into a heap buffer and
+     * point the AVTFecGroupSource at it. We free everything before
+     * returning regardless of success or failure. */
+    AVTFecGroupSource *gs = calloc(nb_sources, sizeof(*gs));
+    uint8_t **bufs = calloc(nb_sources, sizeof(*bufs));
+    if (!gs || !bufs) {
+        free(gs);
+        free(bufs);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    int ret = 0;
+    for (uint16_t i = 0; i < nb_sources; i++) {
+        AVTPktd *sp = sources[i];
+        if (!sp || !sp->hdr_len) { ret = AVT_ERROR(EINVAL); goto cleanup; }
+        size_t pls = 0;
+        const uint8_t *pld = avt_buffer_get_data(&sp->pl, &pls);
+        const uint32_t total = sp->hdr_len + (uint32_t)pls;
+        bufs[i] = malloc(total);
+        if (!bufs[i]) { ret = AVT_ERROR(ENOMEM); goto cleanup; }
+        memcpy(bufs[i], sp->hdr, sp->hdr_len);
+        if (pls)
+            memcpy(bufs[i] + sp->hdr_len, pld, pls);
+        /* All data-bearing descriptors (stream_data, *_segment, *_data,
+         * generic_parity) share the layout {descriptor, global_seq,
+         * stream_id} at the top of their struct, so reading via the
+         * stream_data alias is portable across this set. Non-data
+         * packets (session_start, etc.) lack a stream_id and must not
+         * be passed in. */
+        gs[i] = (AVTFecGroupSource){
+            .seq       = sp->pkt.stream_data.global_seq,
+            .stream_id = sp->pkt.stream_data.stream_id,
+            .bytes     = bufs[i],
+            .size      = total,
+        };
+    }
+
+    AVTFecGroupBuild build = { 0 };
+    ret = avt_fec_group_sender_build(s, gs, nb_sources, group_id,
+                                     repair_per_block,
+                                     max_data_pkt_payload, &build);
+    if (ret < 0)
+        goto cleanup;
+
+    /* 0x0030 grouping packet — header-only, no payload. */
+    AVTPktd *gp = avt_pkt_fifo_push_new(dst, NULL, 0, 0);
+    if (!gp) { ret = AVT_ERROR(ENOMEM); goto cleanup_build; }
+    gp->pkt.fec_grouping = build.grouping;
+    gp->pkt.fec_grouping.global_seq = get_seq(s);
+    avt_packet_encode_header(gp);
+
+    /* 0x0031 data packets — each carries a slice of the parity blob. */
+    for (uint32_t i = 0; i < build.nb_data; i++) {
+        AVTBuffer slice = { };
+        if (build.data[i].fec_data_length) {
+            uint8_t *bp = avt_buffer_quick_alloc(&slice,
+                                                 build.data[i].fec_data_length);
+            if (!bp) { ret = AVT_ERROR(ENOMEM); goto cleanup_build; }
+            memcpy(bp, build.parity + build.data[i].fec_data_offset,
+                   build.data[i].fec_data_length);
+        }
+
+        AVTPktd *dp = avt_pkt_fifo_push_new(dst, &slice, 0, AVT_BUFFER_REF_ALL);
+        avt_buffer_quick_unref(&slice);
+        if (!dp) { ret = AVT_ERROR(ENOMEM); goto cleanup_build; }
+        dp->pkt.fec_group_data = build.data[i];
+        dp->pkt.fec_group_data.global_seq = get_seq(s);
+        avt_packet_encode_header(dp);
+    }
+
+cleanup_build:
+    avt_fec_group_sender_free(&build);
+
+cleanup:
+    for (uint16_t i = 0; i < nb_sources; i++)
+        free(bufs[i]);
+    free(bufs);
+    free(gs);
+    return ret;
 }
 
 void avt_scheduler_free(AVTScheduler *s)

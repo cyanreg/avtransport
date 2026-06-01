@@ -168,7 +168,8 @@ int avt_connection_init(AVTContext *ctx, AVTConnection **_conn,
     int64_t bw = info->output_opts.bandwidth;
     if (bw <= 0)
         bw = INT64_MAX;
-    ret = avt_scheduler_init(&conn->out_scheduler, max_pkt_size, bw);
+    ret = avt_scheduler_init(&conn->out_scheduler, max_pkt_size, bw,
+                             info->output_opts.fec_parity_pct);
     if (ret < 0)
         goto fail;
 

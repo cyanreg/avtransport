@@ -86,6 +86,7 @@ static inline enum AVTDataCompression compress_method(AVTPktd *p,
         case AVT_CODEC_ID_PRORES_4444_XQ: [[fallthrough]];
         case AVT_CODEC_ID_PRORES_RAW_HQ: [[fallthrough]];
         case AVT_CODEC_ID_PRORES_RAW_SD: [[fallthrough]];
+        case AVT_CODEC_ID_APV: [[fallthrough]];
         case AVT_CODEC_ID_JPEG: [[fallthrough]];
         case AVT_CODEC_ID_JPEG2000: [[fallthrough]];
         case AVT_CODEC_ID_JPEG2000_HT: [[fallthrough]];

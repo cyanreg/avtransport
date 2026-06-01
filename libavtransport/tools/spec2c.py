@@ -35,8 +35,6 @@ f_packet_enums = None
 f_packet_data = None
 f_packet_encode = None
 f_packet_decode = None
-f_ldpc_tables_h = None
-f_ldpc_tables_c = None
 
 # Convert '/', '$' and '.' to '_',
 # or if this is stdin just use "stdin" as the name.
@@ -60,10 +58,6 @@ for i,  m in enumerate(mode):
         f_packet_encode = sys.argv[3 + i]
     elif m == "packet_decode":
         f_packet_decode = sys.argv[3 + i]
-    elif m == "ldpc_tables_h":
-        f_ldpc_tables_h = sys.argv[3 + i]
-    elif m == "ldpc_tables_c":
-        f_ldpc_tables_c = sys.argv[3 + i]
     else:
         print("Invalid list: expected 'packet_enums', 'packet_data', 'packet_encode', 'packet_decode'")
         exit(22)
@@ -890,52 +884,3 @@ if f_packet_decode != None:
         file_decode.write("}\n")
     file_decode.write("\n#endif /* AVTRANSPORT_DECODE_H */\n")
     file_decode.close()
-
-
-ldpc_tables_list = {
-    "ldpc_h_matrix_288_224": [ 288, 224 ],
-    "ldpc_h_matrix_2784_2016": [ 2784, 2016 ],
-}
-
-if f_ldpc_tables_h != None:
-    file_ldpc_tables_h = open(f_ldpc_tables_h, "w+")
-    file_ldpc_tables_h.write(copyright_header + "\n")
-    file_ldpc_tables_h.write(autogenerate_note + "\n")
-    file_ldpc_tables_h.write("#ifndef AVTRANSPORT_LDPC_TABLES_H\n")
-    file_ldpc_tables_h.write("#define AVTRANSPORT_LDPC_TABLES_H\n\n")
-    file_ldpc_tables_h.write("#include <stdint.h>\n")
-    file_ldpc_tables_h.write("#include <stdalign.h>\n")
-
-    for tab, len in ldpc_tables_list.items():
-        file_ldpc_tables_h.write("\nextern const uint64_t " + tab + "[" + str(((len[0] - len[1]) >> 6) * len[0]) + "];\n")
-
-    encode_fn = soup.find(id="ldpc_encode_fn")
-    if encode_fn == None:
-        print("Unknown ID:", "ldpc_encode_fn")
-        exit(22)
-    file_ldpc_tables_h.write("\nstatic inline" + encode_fn.get_text() + "\n")
-
-    file_ldpc_tables_h.write("#endif /* AVTRANSPORT_LDPC_TABLES_H */\n")
-    file_ldpc_tables_h.close()
-
-if f_ldpc_tables_c != None:
-    file_ldpc_tables_c = open(f_ldpc_tables_c, "w+")
-    file_ldpc_tables_c.write(copyright_header + "\n")
-    file_ldpc_tables_c.write(autogenerate_note + "\n")
-    file_ldpc_tables_c.write("#include \"ldpc_tables.h\"\n\n")
-
-    table_1 = soup.find(id="ldpc_h_matrix_288_224")
-    if table_1 == None:
-        print("Unknown table:", "ldpc_h_matrix_288_224")
-        exit(22)
-
-    file_ldpc_tables_c.write("alignas(64)" + table_1.get_text() + "\n")
-
-    table_2 = soup.find(id="ldpc_h_matrix_2784_2016")
-    if table_2 == None:
-        print("Unknown table:", "ldpc_h_matrix_2784_2016")
-        exit(22)
-
-    file_ldpc_tables_c.write("alignas(64)" + table_2.get_text())
-
-    file_ldpc_tables_c.close()

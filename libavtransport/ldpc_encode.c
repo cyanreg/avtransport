@@ -30,10 +30,10 @@
 
 void avt_ldpc_encode_288_224(uint8_t *src)
 {
-    ldpc_encode(src, ldpc_h_matrix_288_224, 224, 64);
+    ldpc_encode(src, ldpc_w_matrix_288_224, 224, 64);
 }
 
 void avt_ldpc_encode_2784_2016(uint8_t *src)
 {
-    ldpc_encode(src, ldpc_h_matrix_2784_2016, 2016, 768);
+    ldpc_encode(src, ldpc_w_matrix_2784_2016, 2016, 768);
 }

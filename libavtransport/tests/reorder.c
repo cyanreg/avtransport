@@ -25,11 +25,14 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "reorder.h"
 #include "buffer.h"
 #include "utils_packet.h"
+#include "fec_group.h"
+#include "scheduler.h"
 
 /* Sequence numbers used for testing. The merger uses uint32_t for target,
  * so we keep them small (< 2^32) and use stride > AVT_REORDER_GROUP_NB. */
@@ -321,6 +324,234 @@ int main(void)
         /* No additional buckets allocated across cycles */
         CHECK(r->nb_buckets == nb_buckets_before + 1 || r->nb_buckets == nb_buckets_before,
               "bucket pool grew unexpectedly");
+    }
+
+    /* Test 8: cross-stream FEC group recovery via reorder.
+     * Build N standalone stream-data packets, manufacture their 0x0030 +
+     * 0x0031 wire packets via the FEC sender, push everything *except*
+     * one source packet through the reorder, and verify the dropped
+     * source packet reappears in the output via FEC recovery. */
+    {
+        fprintf(stderr, "Test 8: FEC group recovery via reorder...\n");
+#define FEC_N 8
+        const uint16_t N = FEC_N;
+        const uint16_t dropped = 3;       /* index of the source packet to drop */
+        AVTPktd src[FEC_N];
+        memset(src, 0, sizeof(src));
+
+        AVTFecGroupSource group_src[FEC_N];
+        uint8_t *src_bytes_buf[FEC_N] = { 0 };
+        uint32_t src_byte_sizes[FEC_N];
+        uint8_t  src_pattern[FEC_N];      /* first payload byte, for verify */
+        uint64_t src_seq[FEC_N];          /* original seqs, for verify */
+
+        /* Build N small stream-data packets and serialize each. */
+        for (uint16_t i = 0; i < N; i++) {
+            const uint32_t pl_size = 80 + (i * 31) % 64;
+            ret = build_header(&src[i], 2000 + i, pl_size, pl_size);
+            if (ret < 0) goto end;
+            src[i].pkt.stream_id = (i & 1) ? 7 : 5;
+            avt_packet_encode_header(&src[i]);
+
+            size_t pls;
+            const uint8_t *pld = avt_buffer_get_data(&src[i].pl, &pls);
+            src_byte_sizes[i] = src[i].hdr_len + (uint32_t)pls;
+            src_bytes_buf[i]  = malloc(src_byte_sizes[i]);
+            CHECK(src_bytes_buf[i], "src bytes alloc");
+            memcpy(src_bytes_buf[i], src[i].hdr, src[i].hdr_len);
+            if (pls)
+                memcpy(src_bytes_buf[i] + src[i].hdr_len, pld, pls);
+            src_pattern[i] = pls ? pld[0] : 0;
+            src_seq[i] = src[i].pkt.seq;
+
+            group_src[i] = (AVTFecGroupSource){
+                .seq       = src[i].pkt.seq,
+                .stream_id = src[i].pkt.stream_id,
+                .bytes     = src_bytes_buf[i],
+                .size      = src_byte_sizes[i],
+            };
+        }
+
+        /* Run the FEC sender to produce the wire 0x0030 + 0x0031 packets. */
+        AVTFecGroupBuild build = { 0 };
+        int rc = avt_fec_group_sender_build(NULL, group_src, N,
+                                            /*group_id=*/0x1234,
+                                            /*repair=*/4,
+                                            /*max_data_payload=*/1024, &build);
+        CHECK(rc == 0, "FEC group sender build");
+
+        /* Materialize the 0x0030 grouping packet as an AVTPktd. */
+        AVTPktd grouping = { 0 };
+        grouping.pkt.fec_grouping = build.grouping;
+        avt_packet_encode_header(&grouping);
+
+        /* Materialize each 0x0031 data packet, allocating a payload that
+         * is a copy of the matching slice of the parity blob. */
+        AVTPktd *dpkts = calloc(build.nb_data, sizeof(*dpkts));
+        CHECK(dpkts, "dpkts alloc");
+        for (uint32_t i = 0; i < build.nb_data; i++) {
+            dpkts[i].pkt.fec_group_data = build.data[i];
+            avt_packet_encode_header(&dpkts[i]);
+            if (build.data[i].fec_data_length) {
+                uint8_t *dst = avt_buffer_quick_alloc(&dpkts[i].pl,
+                                                      build.data[i].fec_data_length);
+                CHECK(dst, "0x0031 pl alloc");
+                memcpy(dst, build.parity + build.data[i].fec_data_offset,
+                       build.data[i].fec_data_length);
+            }
+        }
+
+        /* Push: 0x0030 first, then all 0x0031s, then sources EXCEPT dropped. */
+        ret = avt_pkt_fifo_push(&in, &grouping);
+        if (ret < 0) goto end;
+        for (uint32_t i = 0; i < build.nb_data; i++) {
+            ret = avt_pkt_fifo_push(&in, &dpkts[i]);
+            if (ret < 0) goto end;
+        }
+        for (uint16_t i = 0; i < N; i++) {
+            if (i == dropped)
+                continue;
+            ret = avt_pkt_fifo_push(&in, &src[i]);
+            if (ret < 0) goto end;
+        }
+
+        /* Release local refs — the fifo now holds its own. */
+        for (uint32_t i = 0; i < build.nb_data; i++)
+            avt_buffer_quick_unref(&dpkts[i].pl);
+        for (uint16_t i = 0; i < N; i++)
+            avt_buffer_quick_unref(&src[i].pl);
+
+        ret = avt_reorder_push(r, &in);
+        if (ret < 0) goto end;
+        CHECK(in.nb == 0, "input fifo not cleared");
+
+        ret = avt_reorder_pop(r, &out);
+        CHECK(ret == 0, "FEC test pop should succeed");
+        /* Expect every source packet: N-1 directly + 1 recovered. */
+        CHECK(out && out->nb == N, "should have N packets out");
+
+        /* Verify each output packet matches one of the original source
+         * packets — including the dropped one which must have been
+         * reconstructed via FEC. */
+        bool seen[FEC_N] = { false };
+        for (unsigned int i = 0; i < out->nb; i++) {
+            const uint64_t s = out->data[i].pkt.seq;
+            uint16_t idx;
+            for (idx = 0; idx < N; idx++)
+                if (src_seq[idx] == s)
+                    break;
+            CHECK(idx < N, "output seq matches one of the source packets");
+            CHECK(!seen[idx], "output seq duplicated");
+            seen[idx] = true;
+            size_t l;
+            const uint8_t *d = avt_buffer_get_data(&out->data[i].pl, &l);
+            CHECK(d && l > 0, "output payload present");
+            CHECK(d[0] == src_pattern[idx], "output payload pattern matches");
+        }
+        for (uint16_t i = 0; i < N; i++)
+            CHECK(seen[i], "every source packet present in output");
+
+        ret = avt_reorder_done(r, out);
+        CHECK(ret == 0, "FEC test done failed");
+        out = NULL;
+
+        /* Cleanup */
+        free(dpkts);
+        for (uint16_t i = 0; i < N; i++)
+            free(src_bytes_buf[i]);
+        avt_fec_group_sender_free(&build);
+    }
+
+    /* Test 9: sender → receiver round trip through the scheduler's
+     * avt_scheduler_emit_fec_group helper. Mirrors Test 8 but uses the
+     * production-side wrapper instead of calling the fec_group sender
+     * builder directly. */
+    {
+        fprintf(stderr, "Test 9: FEC group round trip via scheduler hook...\n");
+#define FEC2_N 8
+        const uint16_t N = FEC2_N;
+        const uint16_t dropped = 5;
+        AVTPktd src[FEC2_N];
+        AVTPktd *src_refs[FEC2_N];
+        memset(src, 0, sizeof(src));
+        uint8_t src_pat[FEC2_N];
+        uint64_t src_seqv[FEC2_N];
+
+        for (uint16_t i = 0; i < N; i++) {
+            const uint32_t pl_size = 96 + (i * 19) % 48;
+            ret = build_header(&src[i], 3000 + i, pl_size, pl_size);
+            if (ret < 0) goto end;
+            src[i].pkt.stream_id = (i & 1) ? 9 : 11;
+            avt_packet_encode_header(&src[i]);
+            size_t pls;
+            const uint8_t *pld = avt_buffer_get_data(&src[i].pl, &pls);
+            src_pat[i] = pls ? pld[0] : 0;
+            src_seqv[i] = src[i].pkt.seq;
+            src_refs[i] = &src[i];
+        }
+
+        AVTScheduler *sched = calloc(1, sizeof(*sched));
+        CHECK(sched, "scheduler alloc");
+        ret = avt_scheduler_init(sched, /*max_pkt_size=*/4096,
+                                 /*bandwidth=*/INT64_MAX,
+                                 /*fec_parity_pct=*/0);
+        CHECK(ret == 0, "scheduler init");
+
+        AVTPacketFifo wire = { 0 };
+        ret = avt_scheduler_emit_fec_group(sched, &wire, src_refs, N,
+                                           /*group_id=*/0xBEEF,
+                                           /*repair=*/4,
+                                           /*max_data_pkt_payload=*/1024);
+        CHECK(ret == 0, "scheduler_emit_fec_group");
+        CHECK(wire.nb >= 2, "FEC group must produce at least 2 wire packets");
+
+        /* Push the wire FEC packets first, then sources except dropped,
+         * into the reorder. */
+        for (unsigned int i = 0; i < wire.nb; i++) {
+            ret = avt_pkt_fifo_push(&in, &wire.data[i]);
+            if (ret < 0) goto end;
+        }
+        for (uint16_t i = 0; i < N; i++) {
+            if (i == dropped)
+                continue;
+            ret = avt_pkt_fifo_push(&in, &src[i]);
+            if (ret < 0) goto end;
+        }
+        for (uint16_t i = 0; i < N; i++)
+            avt_buffer_quick_unref(&src[i].pl);
+        avt_pkt_fifo_free(&wire);
+
+        ret = avt_reorder_push(r, &in);
+        if (ret < 0) goto end;
+
+        ret = avt_reorder_pop(r, &out);
+        CHECK(ret == 0, "FEC scheduler-emit pop");
+        CHECK(out && out->nb == N, "scheduler-emit FEC: N packets out");
+
+        bool seen2[FEC2_N] = { false };
+        for (unsigned int i = 0; i < out->nb; i++) {
+            const uint64_t s = out->data[i].pkt.seq;
+            uint16_t idx;
+            for (idx = 0; idx < N; idx++)
+                if (src_seqv[idx] == s)
+                    break;
+            CHECK(idx < N, "scheduler-emit FEC: output seq match");
+            CHECK(!seen2[idx], "scheduler-emit FEC: duplicate");
+            seen2[idx] = true;
+            size_t l;
+            const uint8_t *d = avt_buffer_get_data(&out->data[i].pl, &l);
+            CHECK(d && l > 0, "scheduler-emit FEC: payload present");
+            CHECK(d[0] == src_pat[idx], "scheduler-emit FEC: pattern matches");
+        }
+        for (uint16_t i = 0; i < N; i++)
+            CHECK(seen2[i], "scheduler-emit FEC: every src delivered");
+
+        ret = avt_reorder_done(r, out);
+        CHECK(ret == 0, "scheduler-emit FEC: done");
+        out = NULL;
+
+        avt_scheduler_free(sched);
+        free(sched);
     }
 
     fprintf(stderr, "All reorder tests passed.\n");

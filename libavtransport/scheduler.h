@@ -65,6 +65,7 @@ typedef struct AVTScheduler {
     size_t max_pkt_size;
     int64_t bandwidth;
     int64_t protocol_header;
+    int fec_parity_pct;     /* RaptorQ stream-data parity, % of K; 0 disables */
 
     /* Scheduling state */
     uint64_t seq;           /* Next packet seq */
@@ -95,7 +96,8 @@ typedef struct AVTScheduler {
 /* Initialization function. If max_pkt_size changes, everything must
  * be torn down and recreated. */
 int avt_scheduler_init(AVTScheduler *s,
-                       size_t max_pkt_size, int64_t bandwidth);
+                       size_t max_pkt_size, int64_t bandwidth,
+                       int fec_parity_pct);
 
 int avt_scheduler_push(AVTScheduler *s, AVTPktd *p);
 
@@ -104,6 +106,25 @@ int avt_scheduler_pop(AVTScheduler *s, AVTPacketFifo **seq);
 int avt_scheduler_flush(AVTScheduler *s, AVTPacketFifo **seq);
 
 int avt_scheduler_done(AVTScheduler *s, AVTPacketFifo *seq);
+
+/* Build a cross-stream FEC group covering the given list of already-
+ * serialized source packets and append the 0x0030 grouping packet plus
+ * the slice of 0x0031 data packets to `dst`. `sources` must point at
+ * AVTPktd entries whose `hdr`/`hdr_len`/`pl` describe the full wire
+ * bytes the receiver would parse — i.e. exactly what was previously
+ * pushed to the wire.
+ *
+ * `repair_per_block` is the RaptorQ repair-symbol count per source
+ * block; higher = more redundancy. `max_data_pkt_payload` caps the
+ * parity-slice payload size of each emitted 0x0031 packet (typically
+ * the protocol MTU minus header overhead).
+ *
+ * Returns 0 on success or a negative AVT_ERROR(); on error, nothing
+ * is appended to `dst`. */
+int avt_scheduler_emit_fec_group(AVTScheduler *s, AVTPacketFifo *dst,
+                                 AVTPktd *const *sources, uint16_t nb_sources,
+                                 uint16_t group_id, uint16_t repair_per_block,
+                                 uint32_t max_data_pkt_payload);
 
 void avt_scheduler_free(AVTScheduler *s);
 

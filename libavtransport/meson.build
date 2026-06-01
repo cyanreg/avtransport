@@ -27,8 +27,8 @@ spec2c = files('./tools/spec2c.py')
 avtransport_spec_pkt_headers = custom_target(
     'packet_encode_decode',
     input: spec_file,
-    output: ['packet_encode.h', 'packet_decode.h', 'ldpc_tables.h', 'ldpc_tables.c'],
-    command: [python_exe, spec2c, 'packet_encode,packet_decode,ldpc_tables_h,ldpc_tables_c', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@', '@OUTPUT2@', '@OUTPUT3@']
+    output: ['packet_encode.h', 'packet_decode.h'],
+    command: [python_exe, spec2c, 'packet_encode,packet_decode', '@INPUT@', '@OUTPUT0@', '@OUTPUT1@']
 )
 
 # Generate additional headers from spec and install them
@@ -41,12 +41,13 @@ sources = [
     'utils.c',
     'rational.c',
 
-    'ldpc.c',
+    'ldpc_tables.c',
 
     'address.c',
     'connection.c',
 
     'protocol_common.c',
+    'packet_decode_common.c',
     'protocol_stream.c',
     'protocol_datagram.c',
 
@@ -66,6 +67,7 @@ sources = [
 
     'reorder.c',
     'merger.c',
+    'fec_group.c',
     'ldpc_decode.c',
     'receive.c',
 
@@ -124,6 +126,19 @@ avtransport_deps_list = [
     brotlidec_dep,
 ]
 
+# fec.c is built into its own static library. nanorq's public headers sit
+# in a flat directory alongside internal headers with generic names
+# (sched.h, io.h, ...) that would shadow system headers if that directory
+# were placed on libavtransport's global include path. Isolating fec.c
+# keeps the nanorq include path scoped to the only file that needs it.
+avt_fec_lib = static_library('avt_fec',
+    'fec.c',
+    avtransport_spec_pub_headers,
+    include_directories: avtransport_inc,
+    dependencies: [ nanorq_dep ],
+    pic: true,
+)
+
 avtransport_lib = library('avtransport',
     sources,
     install: true,
@@ -131,6 +146,7 @@ avtransport_lib = library('avtransport',
     sources: avtransport_spec_pub_headers,
     include_directories: avtransport_inc,
     dependencies: avtransport_deps_list,
+    link_whole: avt_fec_lib,
     version: meson.project_version(),
     soversion: avtransport_soversion,
 )
@@ -165,4 +181,5 @@ summary({
     'zstd': zstd_dep.found(),
     'brotli (enc)':  brotlienc_dep.found(),
     'brotli (dec)':  brotlidec_dep.found(),
+    'raptorq fec':   true,
 }, section: 'libavtransport', bool_yn: true)

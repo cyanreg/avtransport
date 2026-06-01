@@ -28,6 +28,7 @@
 #define AVTRANSPORT_REORDER_H
 
 #include "merger.h"
+#include "fec_group.h"
 #include "utils_internal.h"
 
 /* Maximum number of concurrent in-flight series per stream */
@@ -47,8 +48,15 @@ typedef struct AVTReorder {
     /* One context per stream */
     AVTReorderStream st[UINT16_MAX];
 
-    /* One context per FEC group */
-    AVTReorderStream fg[UINT16_MAX];
+    /* One FEC group state per group_id, lazily initialised when a
+     * 0x0030 packet arrives. */
+    AVTFecGroupRx fg[UINT16_MAX];
+
+    /* List of group_ids whose fg[] entry is currently active, so source
+     * packets only have to be broadcast to live groups instead of all
+     * 64K slots. */
+    uint16_t active_fec_groups[UINT16_MAX];
+    uint16_t nb_active_fec_groups;
 
     AVTPacketFifo *staging; /* Staging bucket, next for output */
 

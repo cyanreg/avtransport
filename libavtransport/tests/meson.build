@@ -37,18 +37,27 @@ test('Address parsing', address_test)
 ldpc_encode_test = executable('ldpc_encode',
     sources : [ 'ldpc_encode.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers ]) ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c' ]) ],
     dependencies : [ avtransport_dep ],
 )
 test('LDPC encoding', ldpc_encode_test)
+
+ldpc_decode_test = executable('ldpc_decode',
+    sources : [ 'ldpc_decode.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_decode.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('LDPC decoding', ldpc_decode_test)
 
 ## Merger tests
 ## ============
 merger_test = executable('merger',
     sources : [ 'merger.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c', 'merger.c', 'buffer.c' ]) ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_encode.c', 'merger.c', 'buffer.c' ]) ],
     dependencies : [ avtransport_dep ],
+    link_with : [ avt_fec_lib ],
 )
 test('Packet merging', merger_test)
 
@@ -57,8 +66,9 @@ test('Packet merging', merger_test)
 reorder_test = executable('reorder',
     sources : [ 'reorder.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c', 'merger.c', 'reorder.c', 'buffer.c', 'utils.c', 'rational.c' ]) ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_encode.c', 'ldpc_decode.c', 'merger.c', 'reorder.c', 'fec_group.c', 'scheduler.c', 'buffer.c', 'utils.c', 'rational.c', 'packet_decode_common.c' ]) ],
     dependencies : [ avtransport_dep ],
+    link_with : [ avt_fec_lib ],
 )
 test('Packet reordering', reorder_test)
 
@@ -67,7 +77,7 @@ test('Packet reordering', reorder_test)
 packet_encode_decode_test = executable('packet_encode_decode',
     sources : [ 'packet_encode_decode.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers, 'ldpc_encode.c' ]) ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_encode.c' ]) ],
     dependencies : [ avtransport_dep ],
 )
 test('Packet encode/decode', packet_encode_decode_test)
@@ -122,9 +132,10 @@ if openssl_dep.found()
     protocol_quic_test = executable('protocol_quic',
         sources : [ 'proto_quic.c' ],
         include_directories : [ '../' ],
-        objects : [ avtransport_lib.extract_objects([ avtransport_spec_pkt_headers,
+        objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c',
                                                       'protocol_quic.c',
                                                       'protocol_common.c',
+                                                      'packet_decode_common.c',
                                                       'protocol_stream.c',
                                                       'protocol_datagram.c',
                                                       'io_udp.c', 'io_socket_common.c',
@@ -135,3 +146,18 @@ if openssl_dep.found()
     )
     test('QUIC protocol', protocol_quic_test)
 endif
+
+## FEC tests
+## =========
+fec_test = executable('fec',
+    sources : [ 'fec.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'buffer.c',
+                                                  'utils.c', 'rational.c',
+                                                  'fec_group.c',
+                                                  'ldpc_tables.c',
+                                                  'ldpc_encode.c' ]) ],
+    dependencies : [ avtransport_dep ],
+    link_with : [ avt_fec_lib ],
+)
+test('FEC encode/decode', fec_test)

@@ -24,11 +24,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
 #include <avtransport/avtransport.h>
 
 #include "merger.h"
+#include "fec.h"
 
 #include "packet_decode.h"
 #include "bytestream.h"
@@ -36,97 +38,127 @@
 #include "utils_packet.h"
 #include "mem.h"
 
+/* Insert a received byte range [seg_off, seg_off + seg_size) into a merger's
+ * sorted, disjoint, non-adjacent range list, coalescing it with any ranges it
+ * now touches. validate_packet() guarantees segments never partially overlap.
+ *
+ * The same routine maintains the payload ranges and, with is_parity set, the
+ * stream-data-parity ranges. */
 static inline int fill_ranges(AVTMerger *m, bool is_parity,
                               uint32_t seg_off, uint32_t seg_size)
 {
-    AVTMergerRange *ranges;
-    uint32_t nb_ranges;
+    AVTMergerRange **ranges_dst;
     uint32_t *nb_ranges_dst;
-    uint32_t ranges_allocated;
+    uint32_t *ranges_allocated_dst;
 
     if (!is_parity) {
-        ranges = m->ranges;
-        nb_ranges = m->nb_ranges;
+        ranges_dst = &m->ranges;
         nb_ranges_dst = &m->nb_ranges;
-        ranges_allocated = m->ranges_allocated;
+        ranges_allocated_dst = &m->ranges_allocated;
     } else {
-        ranges = m->parity_ranges;
-        nb_ranges = m->nb_parity_ranges;
+        ranges_dst = &m->parity_ranges;
         nb_ranges_dst = &m->nb_parity_ranges;
-        ranges_allocated = m->parity_ranges_allocated;
+        ranges_allocated_dst = &m->parity_ranges_allocated;
     }
 
-    int dst_idx = 0;
-    int consolidate_idx = -1;
+    AVTMergerRange *ranges = *ranges_dst;
+    uint32_t nb_ranges = *nb_ranges_dst;
+    const uint32_t seg_end = seg_off + seg_size;
 
-    /* Attempt to work the range into the existing ranges */
-    for (auto i = 0; i < nb_ranges; i++) {
-        AVTMergerRange *r = &ranges[i];
-        /* Overlaps dealt with in validate_packet */
-        if ((seg_off + seg_size) == r->offset) {
-            /* Potential new segment's end reaches another segment exactly */
+    uint32_t new_start = seg_off;
+    uint32_t new_end = seg_end;
 
-            /* Prepend to existing range */
-            r->offset = seg_off;
-            r->size += seg_size;
-
-            /* If the previous range is not completed with this one, exit */
-            if (!i || ((ranges[i - 1].offset + ranges[i - 1].size) < r->offset))
-                return 0;
-
-            consolidate_idx = i - 1;
-            break;
-        } else if ((r->offset + r->size) == seg_off) {
-            /* Potential new segment's start reaches another segment's start exactly */
-
-            /* Extend exisint range */
-            r->size += seg_size;
-
-            if ((i == (nb_ranges - 1)) || ((r->offset + r->size) < ranges[i + 1].offset))
-                return 0;
-
-            consolidate_idx = i;
-            break;
-        } else if (seg_off > (r->offset + r->size)) {
-            /* New segment. Pick its index here for ordering. */
-            dst_idx = i;
-        }
+    /* Find the contiguous span of existing ranges the new one touches or
+     * adjoins, growing the merged extent to cover them all. */
+    uint32_t first = nb_ranges, last = 0;
+    for (uint32_t i = 0; i < nb_ranges; i++) {
+        const uint32_t r_start = ranges[i].offset;
+        const uint32_t r_end = r_start + ranges[i].size;
+        if (r_end < seg_off || r_start > seg_end)
+            continue;
+        if (i < first)
+            first = i;
+        last = i + 1;
+        if (r_start < new_start)
+            new_start = r_start;
+        if (r_end > new_end)
+            new_end = r_end;
     }
 
-    /* Add a range */
-    if (consolidate_idx < 0) {
-        if ((nb_ranges + 1) > ranges_allocated) {
-            AVTMergerRange *tmp = avt_reallocarray(ranges,
-                                                   (nb_ranges + 1) << 1,
-                                                   sizeof(*tmp));
+    if (first >= last) {
+        /* Disjoint from every existing range: a plain sorted insertion. */
+        uint32_t pos = 0;
+        while (pos < nb_ranges && ranges[pos].offset < new_start)
+            pos++;
+
+        if ((nb_ranges + 1) > *ranges_allocated_dst) {
+            uint32_t na = (nb_ranges + 1) << 1;
+            AVTMergerRange *tmp = avt_reallocarray(ranges, na, sizeof(*tmp));
             if (!tmp)
                 return AVT_ERROR(ENOMEM);
-
             ranges = tmp;
-            ranges_allocated = (m->nb_ranges + 1) << 1;
-            if (!is_parity) {
-                m->ranges = ranges;
-                m->ranges_allocated = ranges_allocated;
-            } else {
-                m->parity_ranges = ranges;
-                m->parity_ranges_allocated = ranges_allocated;
-            }
+            *ranges_dst = ranges;
+            *ranges_allocated_dst = na;
         }
 
-        memmove(&ranges[dst_idx + 1], &ranges[dst_idx],
-                (nb_ranges - dst_idx - 1)*sizeof(AVTMerger));
+        memmove(&ranges[pos + 1], &ranges[pos],
+                (nb_ranges - pos) * sizeof(*ranges));
+        ranges[pos] = (AVTMergerRange){ new_start, new_end - new_start };
         nb_ranges++;
-        *nb_ranges_dst = nb_ranges;
-        return 0;
+    } else {
+        /* Replace the touched span [first, last) with one merged range. */
+        ranges[first] = (AVTMergerRange){ new_start, new_end - new_start };
+        memmove(&ranges[first + 1], &ranges[last],
+                (nb_ranges - last) * sizeof(*ranges));
+        nb_ranges -= (last - first) - 1;
     }
 
-    ranges[consolidate_idx].size = ranges[consolidate_idx + 1].size;
-    memmove(&ranges[consolidate_idx + 1], &ranges[consolidate_idx + 2],
-            nb_ranges - consolidate_idx - 2);
-    nb_ranges--;
     *nb_ranges_dst = nb_ranges;
-
     return 0;
+}
+
+/* Attempt RaptorQ recovery of a merger's missing payload bytes from the
+ * stream-data-parity collected so far. On success the recovered payload is
+ * left in m->p.pl and 0 is returned; otherwise a negative AVT_ERROR(). */
+static int merger_fec_recover(void *log_ctx, AVTMerger *m)
+{
+    const size_t ndata = (m->target_tot_len + AVT_FEC_SYMBOL_SIZE - 1) /
+                         AVT_FEC_SYMBOL_SIZE;
+    const size_t nrep = m->parity_tot_len / AVT_FEC_SYMBOL_SIZE;
+
+    uint8_t *data_present = calloc(1, ndata ? ndata : 1);
+    uint8_t *parity_present = calloc(1, nrep ? nrep : 1);
+    if (!data_present || !parity_present) {
+        free(data_present);
+        free(parity_present);
+        return AVT_ERROR(ENOMEM);
+    }
+
+    /* A symbol counts as present when a received byte range fully covers it. */
+    for (uint32_t i = 0; i < m->nb_ranges; i++) {
+        const uint32_t s = m->ranges[i].offset;
+        const uint32_t e = s + m->ranges[i].size;
+        for (uint32_t y = (s + AVT_FEC_SYMBOL_SIZE - 1) / AVT_FEC_SYMBOL_SIZE;
+             y < ndata && (y + 1) * AVT_FEC_SYMBOL_SIZE <= e; y++)
+            data_present[y] = 1;
+    }
+    for (uint32_t i = 0; i < m->nb_parity_ranges; i++) {
+        const uint32_t s = m->parity_ranges[i].offset;
+        const uint32_t e = s + m->parity_ranges[i].size;
+        for (uint32_t y = (s + AVT_FEC_SYMBOL_SIZE - 1) / AVT_FEC_SYMBOL_SIZE;
+             y < nrep && (y + 1) * AVT_FEC_SYMBOL_SIZE <= e; y++)
+            parity_present[y] = 1;
+    }
+
+    uint8_t *data = avt_buffer_get_data(&m->p.pl, NULL);
+    uint8_t *parity = avt_buffer_get_data(&m->parity, NULL);
+
+    int ret = avt_fec_recover(log_ctx, data, m->target_tot_len, data_present,
+                              parity, m->parity_tot_len, parity_present);
+
+    free(data_present);
+    free(parity_present);
+    return ret;
 }
 
 static inline int fill_phantom_header(void *log_ctx, AVTMerger *m,
@@ -193,8 +225,11 @@ static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int series,
                            uint32_t seg_off, uint32_t seg_size,
                            uint32_t tot_size, bool is_parity)
 {
-    /* Check for length mismatch */
-    if (m->target_tot_len && tot_size && (tot_size != m->target_tot_len))
+    /* Check for length mismatch, comparing against the payload total for
+     * data packets and the parity total for parity packets. */
+    const uint32_t expect_tot = is_parity ? m->parity_tot_len
+                                          : m->target_tot_len;
+    if (expect_tot && tot_size && (tot_size != expect_tot))
         return AVT_ERROR(EINVAL);
 
     /* Check for segmentation issues */
@@ -205,12 +240,16 @@ static int validate_packet(void *log_ctx, AVTMerger *m, AVTPktd *p, int series,
         return AVT_ERROR(EINVAL);
     }
 
-    /* Check for phantom header mismatch */;
+    /* Check for phantom header mismatch. Only segment and parity packets
+     * (series < 0) carry a header_7 slice; a series == 1 packet is the
+     * real header itself and has no such field to validate. */
     const uint32_t hdr_part = p->pkt.seq % 7;
-    if (m->hdr_mask & (1 << (6 - hdr_part))) {
+    if (series < 0 && (m->hdr_mask & (1 << (6 - hdr_part)))) {
         const uint8_t *hdr_part_data = &m->p.hdr[4*hdr_part];
+        const uint8_t *pkt_hdr_7 = is_parity ? p->pkt.generic_parity.header_7
+                                             : p->pkt.generic_segment.header_7;
         for (auto i = 0; i < 4; i++)
-            if (hdr_part_data[i] != p->pkt.generic_segment.header_7[i])
+            if (hdr_part_data[i] != pkt_hdr_7[i])
                 return AVT_ERROR(EINVAL);
     }
 
@@ -316,10 +355,15 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         m->nb_ranges = 0;
         m->nb_parity_ranges = 0;
         m->pkt_len_track = 0;
-        m->target_tot_len = tot_size;
+        m->pkt_parity_len_track = 0;
+        /* A parity packet's signalled total describes the parity data, not
+         * the payload; only a data packet establishes target_tot_len. */
+        m->target_tot_len = is_parity ? 0 : tot_size;
+        m->parity_tot_len = is_parity ? tot_size : 0;
         m->nb_tgt_packets = !!tot_size;
         m->p_avail = false;
         m->last = p->pkt.seq;
+        avt_buffer_quick_unref(&m->parity);
 
         if (series > 0) {
             /* Starting with a segment, not the actual start */
@@ -427,8 +471,7 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
         m->p_avail = true;
     }
 
-    /* If total packet size was unknown, populate it and reallocate.
-     * Parity packets always have a total length */
+    /* If total packet size was unknown, populate it and reallocate. */
     if (!is_parity && !m->target_tot_len) {
         avt_assert1(tot_size);
 
@@ -437,6 +480,15 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
             return ret;
 
         m->target_tot_len = tot_size;
+    }
+
+    /* The parity buffer is allocated lazily: a merger may start with data
+     * segments and only later receive its first parity segment. */
+    if (is_parity && !m->parity_tot_len) {
+        avt_assert1(tot_size);
+        if (!avt_buffer_quick_alloc(&m->parity, tot_size))
+            return AVT_ERROR(ENOMEM);
+        m->parity_tot_len = tot_size;
     }
 
     /* Track ranges */
@@ -462,8 +514,21 @@ int avt_pkt_merge_seg(void *log_ctx, AVTMerger *m, AVTPktd *p)
     /* Unref source packet */
     avt_buffer_quick_unref(&p->pl);
 
-    if (m->pkt_len_track == m->target_tot_len)
+    if (m->target_tot_len && m->pkt_len_track >= m->target_tot_len)
         return 0;
+
+    /* The payload is incomplete. If stream-data-parity is available and
+     * there are plausibly enough symbols across the data and the parity,
+     * attempt RaptorQ recovery of the missing payload bytes. */
+    if (m->parity_tot_len && m->target_tot_len &&
+        ((size_t)m->pkt_len_track + m->pkt_parity_len_track) >=
+            m->target_tot_len) {
+        ret = merger_fec_recover(log_ctx, m);
+        if (ret == 0) {
+            m->pkt_len_track = m->target_tot_len;
+            return 0;
+        }
+    }
 
     return AVT_ERROR(EAGAIN);
 }

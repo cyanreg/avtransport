@@ -131,10 +131,15 @@ static inline int RENAME(avt_packet_series)(const TYPE p, bool *is_parity,
         *is_parity = false;
         return GET(font_data).font_pl_length != GET(font_data).font_data_length;
     case AVT_PKT_FEC_GROUP_DATA:
+        /* FEC group data carries a slice of the cross-stream parity blob,
+         * not a segment of any single stream packet, so the per-packet
+         * merger never sees it. The receive path picks these up directly
+         * by descriptor and reassembles them inside the FEC group state. */
         *cur = GET(fec_group_data).fec_data_length;
         *tot = GET(fec_group_data).fec_total_data_length;
         *off = GET(fec_group_data).fec_data_offset;
-        return GET(fec_group_data).fec_data_length != GET(fec_group_data).fec_total_data_length;
+        *is_parity = false;
+        return 0;
     case AVT_PKT_METADATA_SEGMENT:    [[fallthrough]];
     case AVT_PKT_USER_DATA_SEGMENT:   [[fallthrough]];
     case AVT_PKT_LUT_ICC_SEGMENT:     [[fallthrough]];

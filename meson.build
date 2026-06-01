@@ -118,6 +118,8 @@ zstd_dep = dependency('libzstd', required: false)
 openssl_dep = dependency('openssl', required: false, version : '>3.4.0')
 brotlienc_dep = dependency('libbrotlienc', required: false)
 brotlidec_dep = dependency('libbrotlidec', required: false)
+# nanorq RaptorQ FEC library, vendored under subprojects/nanorq.
+nanorq_dep = subproject('nanorq').get_variable('nanorq_dep')
 
 # External dep fallback
 #======================

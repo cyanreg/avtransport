@@ -356,6 +356,7 @@ static enum AVTCodecID codec_id_from_lavf(enum AVCodecID id)
     case AV_CODEC_ID_DIRAC:     return AVT_CODEC_ID_DIRAC;
     case AV_CODEC_ID_FFV1:      return AVT_CODEC_ID_FFV1;
     case AV_CODEC_ID_VC1:       return AVT_CODEC_ID_VC1;
+    case AV_CODEC_ID_APV:       return AVT_CODEC_ID_APV;
     case AV_CODEC_ID_MJPEG:     return AVT_CODEC_ID_JPEG;
     case AV_CODEC_ID_JPEG2000:  return AVT_CODEC_ID_JPEG2000;
     case AV_CODEC_ID_PNG:       return AVT_CODEC_ID_PNG;

@@ -91,6 +91,15 @@ static inline void avt_packet_encode_header(AVTPktd *p)
     case AVT_PKT_USER_DATA_SEGMENT:
         avt_encode_generic_segment(&bs, p->pkt.generic_segment);
         break;
+    case AVT_PKT_STREAM_DATA_PARITY:
+        avt_encode_generic_parity(&bs, p->pkt.generic_parity);
+        break;
+    case AVT_PKT_FEC_GROUPING:
+        avt_encode_fec_grouping(&bs, p->pkt.fec_grouping);
+        break;
+    case AVT_PKT_FEC_GROUP_DATA:
+        avt_encode_fec_group_data(&bs, p->pkt.fec_group_data);
+        break;
     default:
         avt_assert1(0);
         unreachable();

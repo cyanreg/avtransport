@@ -38,6 +38,7 @@ static enum AVTCodecID codec_from_path(const char *path)
         { ".h265", AVT_CODEC_ID_H265 },
         { ".hevc", AVT_CODEC_ID_H265 },
         { ".obu",  AVT_CODEC_ID_AV1  },
+        { ".apv",  AVT_CODEC_ID_APV  },
         { ".aac",  AVT_CODEC_ID_AAC  },
         { ".ac3",  AVT_CODEC_ID_AC3  },
         { ".tiff", AVT_CODEC_ID_TIFF },

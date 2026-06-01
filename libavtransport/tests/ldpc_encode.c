@@ -26,52 +26,68 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "ldpc_tables.h"
 
-#define DATA_LEN 1024
-#define PARITY_LEN 1024
-
-int main(void)
+/* Number of nonzero 64-bit words of the syndrome H * c^T for the n-bit
+ * codeword in pkt. H is column-major: n columns of (parity_bits / 64) words
+ * each. A return of 0 means c is a valid codeword of the code. */
+static int syndrome_weight(const uint8_t *pkt, const uint64_t *H,
+                           int n, int parity_bits)
 {
-    uint8_t data[DATA_LEN + PARITY_LEN];
+    int words = parity_bits / 64;
+    uint64_t synd[768 / 64] = { 0 };
 
-    /* Get random data */
-    srand(time(NULL));
-    for (int i = 0; i < DATA_LEN; i++)
-        data[i] = rand() & 0xFF;
-
-    /* Make a matrix filled with 1s.
-     * Encoding with this is equivalent to summing all bits in GF(2). */
-    uint64_t *parity_matrix = malloc(((DATA_LEN + PARITY_LEN) * PARITY_LEN) * 8);
-    for (int i = 0; i < ((DATA_LEN + PARITY_LEN) * PARITY_LEN); i++)
-        parity_matrix[i] = UINT64_MAX;
-
-    uint8_t parity = 0;
-    for (int i = 0; i < DATA_LEN; i++) {
-        uint8_t p = data[i];
-
-        parity ^= (p >> 7) & 1;
-        parity ^= (p >> 6) & 1;
-        parity ^= (p >> 5) & 1;
-        parity ^= (p >> 4) & 1;
-        parity ^= (p >> 3) & 1;
-        parity ^= (p >> 2) & 1;
-        parity ^= (p >> 1) & 1;
-        parity ^= (p >> 0) & 1;
+    for (int c = 0; c < n; c++) {
+        if ((pkt[c >> 3] >> (7 - (c & 7))) & 1)
+            for (int w = 0; w < words; w++)
+                synd[w] ^= H[c * words + w];
     }
-    parity *= 0xFF;
 
-    ldpc_encode(data, parity_matrix, DATA_LEN * 8, PARITY_LEN * 8);
-    free(parity_matrix);
+    int nz = 0;
+    for (int w = 0; w < words; w++)
+        nz += synd[w] != 0;
+    return nz;
+}
 
-    for (int i = 0; i < PARITY_LEN; i++) {
-        if (data[DATA_LEN + i] != parity) {
-            printf("Mismatch, 0x%x vs 0x%x\n", data[DATA_LEN + i], parity);
+/* Encode random messages with the systematic generator W and confirm every
+ * resulting codeword satisfies H * c^T = 0 — i.e. W and H agree. */
+static int test_code(const char *name, const uint64_t *H, const uint64_t *W,
+                      int n, int message_bits, int parity_bits)
+{
+    uint8_t pkt[2784 / 8];
+    const int trials = 10000;
+
+    for (int t = 0; t < trials; t++) {
+        for (int i = 0; i < message_bits / 8; i++)
+            pkt[i] = rand() & 0xFF;
+        memset(pkt + message_bits / 8, 0, parity_bits / 8);
+
+        ldpc_encode(pkt, W, message_bits, parity_bits);
+
+        if (syndrome_weight(pkt, H, n, parity_bits)) {
+            printf("%s: codeword %d failed H * c^T = 0\n", name, t);
             return 1;
         }
     }
+
+    printf("%s: %d encoded codewords verified\n", name, trials);
+    return 0;
+}
+
+int main(void)
+{
+    srand(time(NULL));
+
+    if (test_code("LDPC(288,224)", ldpc_h_matrix_288_224,
+                   ldpc_w_matrix_288_224, 288, 224, 64))
+        return 1;
+
+    if (test_code("LDPC(2784,2016)", ldpc_h_matrix_2784_2016,
+                   ldpc_w_matrix_2784_2016, 2784, 2016, 768))
+        return 1;
 
     return 0;
 }
