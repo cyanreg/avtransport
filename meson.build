@@ -116,6 +116,8 @@ xxh_dep = dependency('libxxhash', required: false)
 uring_dep = dependency('liburing', required: false)
 zstd_dep = dependency('libzstd', required: false)
 openssl_dep = dependency('openssl', required: false, version : '>3.4.0')
+ngtcp2_dep = dependency('libngtcp2', required: false, version: '>=1.0.0')
+ngtcp2_crypto_ossl_dep = dependency('libngtcp2_crypto_ossl', required: false)
 brotlienc_dep = dependency('libbrotlienc', required: false)
 brotlidec_dep = dependency('libbrotlidec', required: false)
 # nanorq RaptorQ FEC library, vendored under subprojects/nanorq.
@@ -162,6 +164,8 @@ conf.set('CONFIG_HAVE_LIBBROTLIDEC', brotlidec_dep.found())
 conf.set('CONFIG_HAVE_LIBURING', uring_dep.found())
 conf.set('CONFIG_HAVE_LIBZSTD', zstd_dep.found())
 conf.set('CONFIG_HAVE_OPENSSL', openssl_dep.found())
+conf.set('CONFIG_HAVE_NGTCP2',
+         ngtcp2_dep.found() and ngtcp2_crypto_ossl_dep.found() and openssl_dep.found())
 conf.set('CONFIG_HAVE_LIBXXH', xxh_dep.found())
 
 if get_option('assert') > -1

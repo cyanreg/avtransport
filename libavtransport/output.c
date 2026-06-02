@@ -44,6 +44,7 @@ int avt_send_close(AVTSender **_s)
 #endif
 
     XXH3_freeState(s->xxh_state);
+    avt_pool_drain(&s->scratch_pool);
 
     free(s);
 

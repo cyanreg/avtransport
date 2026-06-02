@@ -48,6 +48,7 @@ sources = [
 
     'protocol_common.c',
     'packet_decode_common.c',
+    'index_common.c',
     'protocol_stream.c',
     'protocol_datagram.c',
 
@@ -59,6 +60,7 @@ sources = [
 
     'io_udp.c',
     'io_socket_common.c',
+    'stun.c',
 
     'output.c',
     'output_packet.c',
@@ -79,7 +81,8 @@ sources = [
                       fallback: 'release')
 ]
 
-if openssl_dep.found()
+have_quic = openssl_dep.found() and ngtcp2_dep.found() and ngtcp2_crypto_ossl_dep.found()
+if have_quic
    sources += 'protocol_quic.c'
 endif
 
@@ -120,6 +123,8 @@ avtransport_deps_list = [
     xxh_dep,
     cbor_dep,
     openssl_dep,
+    ngtcp2_dep,
+    ngtcp2_crypto_ossl_dep,
     uring_dep,
     zstd_dep,
     brotlienc_dep,
@@ -177,6 +182,9 @@ summary({
     'xxhash': xxh_dep.found(),
     'cbor': cbor_dep.found(),
     'openssl': openssl_dep.found(),
+    'ngtcp2': ngtcp2_dep.found(),
+    'ngtcp2 crypto (ossl)': ngtcp2_crypto_ossl_dep.found(),
+    'quic transport': have_quic,
     'uring': uring_dep.found(),
     'zstd': zstd_dep.found(),
     'brotli (enc)':  brotlienc_dep.found(),

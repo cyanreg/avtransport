@@ -287,9 +287,20 @@ static inline void update_stream_ctx(AVTScheduler *s, AVTSchedulerStream *pctx)
 
     static const AVTRational target_tb = (AVTRational){ 1, 1000000000 };
 
-    /* TODO: take into account index packets having larger length */
+    /* Stream-index entries trail the wire header as nb_indices *
+     * AVT_PKT_INDEX_ENTRY_SIZE bytes, but the AVTBuffer payload is often
+     * still empty at the point the scheduler sees the packet (the entries
+     * may be serialized later, in the IO write path). Account for whichever
+     * source is larger so the bandwidth/duration estimate is never under. */
+    size_t pl_byte_size = avt_buffer_get_data_len(&pctx->cur.p.pl);
+    if (pctx->cur.p.pkt.desc == AVT_PKT_STREAM_INDEX) {
+        size_t need = (size_t)pctx->cur.p.pkt.stream_index.nb_indices *
+                      AVT_PKT_INDEX_ENTRY_SIZE;
+        if (need > pl_byte_size)
+            pl_byte_size = need;
+    }
     const size_t size = (avt_pkt_hdr_size(pctx->cur.p.pkt.desc) +
-                         avt_buffer_get_data_len(&pctx->cur.p.pl)) * 8;
+                         pl_byte_size) * 8;
 
     int64_t duration = avt_packet_get_duration(&pctx->cur.p.pkt);
     if (duration == INT64_MIN) {

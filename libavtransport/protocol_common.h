@@ -100,6 +100,11 @@ typedef struct AVTIndexContext {
     uint64_t nb_index_max;
 } AVTIndexContext;
 
+/* Default ring-buffer cap for a parsed stream index, in entries. Bounds the
+ * memory a long-running stream's periodic index packets can occupy; the most
+ * recent AVT_INDEX_LIST_DEFAULT_MAX entries are retained. */
+#define AVT_INDEX_LIST_DEFAULT_MAX 8192
+
 int avt_index_list_config(AVTIndexContext *ic, uint64_t nb_index_max);
 int avt_index_list_parse(AVTIndexContext *ic, AVTBytestream *bs,
                          AVTStreamIndex *pkt);

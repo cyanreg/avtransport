@@ -66,11 +66,28 @@ test('Packet merging', merger_test)
 reorder_test = executable('reorder',
     sources : [ 'reorder.c' ],
     include_directories : [ '../' ],
-    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_encode.c', 'ldpc_decode.c', 'merger.c', 'reorder.c', 'fec_group.c', 'scheduler.c', 'buffer.c', 'utils.c', 'rational.c', 'packet_decode_common.c' ]) ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c', 'ldpc_encode.c', 'ldpc_decode.c', 'merger.c', 'reorder.c', 'fec_group.c', 'scheduler.c', 'buffer.c', 'utils.c', 'rational.c', 'packet_decode_common.c', 'index_common.c' ]) ],
     dependencies : [ avtransport_dep ],
     link_with : [ avt_fec_lib ],
 )
 test('Packet reordering', reorder_test)
+
+## Stream seek tests
+## =================
+seek_test = executable('seek',
+    sources : [ 'seek.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'ldpc_tables.c',
+                                                  'ldpc_encode.c', 'ldpc_decode.c',
+                                                  'protocol_stream.c',
+                                                  'index_common.c',
+                                                  'packet_decode_common.c',
+                                                  'io_file.c', 'buffer.c',
+                                                  'utils.c', 'rational.c',
+                                                  'address.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('Stream seek', seek_test)
 
 ## Packet encode/decode primitives tests
 ## =====================================
@@ -126,9 +143,20 @@ io_udp_test = executable('io_udp',
 )
 test('UDP I/O', io_udp_test)
 
+## STUN tests
+## ==========
+# Skipped unless AVT_STUN_SERVER is set (needs a reachable STUN server).
+stun_test = executable('stun',
+    sources : [ 'stun.c' ],
+    include_directories : [ '../' ],
+    objects : [ avtransport_lib.extract_objects([ 'stun.c' ]) ],
+    dependencies : [ avtransport_dep ],
+)
+test('STUN binding', stun_test)
+
 ## Protocol tests
 ## ==============
-if openssl_dep.found()
+if have_quic
     protocol_quic_test = executable('protocol_quic',
         sources : [ 'proto_quic.c' ],
         include_directories : [ '../' ],
@@ -136,13 +164,15 @@ if openssl_dep.found()
                                                       'protocol_quic.c',
                                                       'protocol_common.c',
                                                       'packet_decode_common.c',
+                                                      'index_common.c',
                                                       'protocol_stream.c',
                                                       'protocol_datagram.c',
                                                       'io_udp.c', 'io_socket_common.c',
                                                       'address.c', 'buffer.c',
                                                       'utils.c', 'rational.c',
                                                       'ldpc_encode.c', 'ldpc_decode.c' ]) ],
-        dependencies : [ avtransport_dep, openssl_dep ],
+        dependencies : [ avtransport_dep, openssl_dep, ngtcp2_dep,
+                         ngtcp2_crypto_ossl_dep ],
     )
     test('QUIC protocol', protocol_quic_test)
 endif

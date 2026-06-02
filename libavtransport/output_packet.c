@@ -172,67 +172,74 @@ static int payload_process(AVTSender *s, AVTStream *st,
         avt_buffer_quick_ref(&p->pl, pl, 0, AVT_BUFFER_REF_ALL);
         break;
 #ifdef CONFIG_HAVE_LIBZSTD
-    case AVT_DATA_COMPRESSION_ZSTD:
-        dst_size = ZSTD_compressBound(src_len);
+    case AVT_DATA_COMPRESSION_ZSTD: {
+        size_t want = ZSTD_compressBound(src_len);
+        size_t dst_cap = 0;
 
-        /* TODO: use a buffer pool */
-        dst = malloc(dst_size);
+        dst = avt_pool_acquire(&s->scratch_pool, want, &dst_cap);
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
-        dst_len = ZSTD_compressCCtx(s->zstd_ctx, dst, dst_size, src, src_len, lvl);
+        dst_len = ZSTD_compressCCtx(s->zstd_ctx, dst, dst_cap, src, src_len, lvl);
         if (!dst_len) {
             avt_log(s, AVT_LOG_ERROR, "Error while compressing with ZSTD!\n");
+            avt_pool_release(s->scratch_pool, dst, dst_cap);
             err = AVT_ERROR(EINVAL);
-            free(dst);
             break;
         }
 
-        zbuf = avt_buffer_create(dst, dst_len, NULL, avt_buffer_default_free);
+        /* Create the buffer at the full allocation size so the pool sees the
+         * real capacity when free_cb fires, then resize the view down to the
+         * actual compressed length the rest of the stack will read. The buffer
+         * holds a pool reference (taken by avt_pool_acquire), so it points at
+         * the pool itself rather than the sender, which may be freed first. */
+        zbuf = avt_buffer_create(dst, dst_cap, s->scratch_pool, avt_pool_release);
         if (!zbuf) {
-            free(dst);
+            avt_pool_release(s->scratch_pool, dst, dst_cap);
             err = AVT_ERROR(ENOMEM);
             break;
         }
+        avt_buffer_resize(zbuf, dst_len);
 
         avt_buffer_quick_ref(&p->pl, zbuf, 0, AVT_BUFFER_REF_ALL);
-
-        // TODO: removeme when there's pooling
         avt_buffer_unref(&zbuf);
         break;
+    }
 #endif
 #ifdef CONFIG_HAVE_LIBBROTLIENC
-    case AVT_DATA_COMPRESSION_BROTLI:
-        dst_size = BrotliEncoderMaxCompressedSize(src_len);
+    case AVT_DATA_COMPRESSION_BROTLI: {
+        size_t want = BrotliEncoderMaxCompressedSize(src_len);
+        size_t dst_cap = 0;
 
-        /* TODO: use a buffer pool */
-        dst = malloc(dst_size);
+        dst = avt_pool_acquire(&s->scratch_pool, want, &dst_cap);
         if (!dst)
             return AVT_ERROR(ENOMEM);
 
-        /* Brotli has a braindead advanced API that
-         * makes it really hard to use pooling. Since Brotli is mostly
-         * used by text, meh, good enough for now. */
+        /* Brotli's encoder hands the dest size back via the same pointer it
+         * was passed; capture the actual output length and resize the
+         * AVTBuffer view to match while leaving end_data at the full
+         * allocation for the pool to recycle. */
+        size_t br_len = dst_cap;
         if (!BrotliEncoderCompress(lvl, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE,
-                                   src_len, src, &dst_size, dst)) {
+                                   src_len, src, &br_len, dst)) {
             avt_log(s, AVT_LOG_ERROR, "Error while compressing with Brotli!\n");
+            avt_pool_release(s->scratch_pool, dst, dst_cap);
             err = AVT_ERROR(EINVAL);
-            free(dst);
             break;
         }
 
-        zbuf = avt_buffer_create(dst, dst_size, NULL, avt_buffer_default_free);
+        zbuf = avt_buffer_create(dst, dst_cap, s->scratch_pool, avt_pool_release);
         if (!zbuf) {
-            free(dst);
+            avt_pool_release(s->scratch_pool, dst, dst_cap);
             err = AVT_ERROR(ENOMEM);
             break;
         }
+        avt_buffer_resize(zbuf, br_len);
 
         avt_buffer_quick_ref(&p->pl, zbuf, 0, AVT_BUFFER_REF_ALL);
-
-        // TODO: removeme when there's pooling
         avt_buffer_unref(&zbuf);
         break;
+    }
 #endif
     default:
         avt_log(s, AVT_LOG_ERROR, "Unknown compression method: %i\n", method);

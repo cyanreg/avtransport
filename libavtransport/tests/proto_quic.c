@@ -26,6 +26,7 @@
 
 #define _POSIX_C_SOURCE 200809L
 
+#include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 
@@ -117,10 +118,33 @@ static int test_roundtrip(AVTContext *avt, const AVTProtocol *p,
     return ret;
 }
 
-/* Send a payload larger than the QUIC flow-control window with a
- * non-blocking (zero timeout) send: the part that cannot be written
- * immediately must be buffered rather than fail or be resent, and the whole
- * payload must arrive intact. */
+/* Drive both ends until the server's receive fifo contains nb_expected
+ * packets, or we time out. Each iteration drives flush on the client and
+ * receive on the server, so flow-control credit flows back and forth. */
+static int pump_until(const AVTProtocol *p, AVTProtocolCtx *client,
+                      AVTProtocolCtx *server, AVTPacketFifo *fifo,
+                      uint32_t nb_expected, int max_iter)
+{
+    int ret = 0;
+    for (int i = 0; i < max_iter && fifo->nb < nb_expected; i++) {
+        p->flush(client, 0);
+        int rr = p->receive(server, fifo, 0);
+        if (rr < 0 && rr != AVT_ERROR(EAGAIN))
+            return rr;
+        if (fifo->nb >= nb_expected)
+            break;
+        nanosleep(&(struct timespec){ .tv_nsec = 100 * 1000 }, NULL);
+    }
+    if (fifo->nb < nb_expected)
+        return AVT_ERROR(EAGAIN);
+    return ret;
+}
+
+/* Send a large FONT_DATA payload over a reliable QUIC stream. Per the spec,
+ * non-data descriptors travel on reliable streams; the test exercises the
+ * stream's flow-control + buffered-send path (a non-blocking call with a
+ * payload much larger than the initial flow-control window must buffer the
+ * remainder and let later calls drain it). */
 static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
                               AVTProtocolCtx *client, AVTProtocolCtx *server)
 {
@@ -135,13 +159,15 @@ static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
 
     AVTPktd sent = { };
     AVTBytestream bs = avt_bs_init(sent.hdr, sizeof(sent.hdr));
-    avt_encode_stream_data(&bs, (AVTStreamData) {
-        .stream_data_descriptor = AVT_PKT_STREAM_DATA,
-        .stream_id   = 0x22,
-        .global_seq  = 0x41,
-        .frame_type  = AVT_FRAME_TYPE_KEY,
-        .pts         = 0x5678,
-        .data_length = pl_len,
+    avt_encode_font_data(&bs, (AVTFontData) {
+        .font_data_descriptor = AVT_PKT_FONT_DATA,
+        .stream_id            = 0x30,
+        .global_seq           = 0x41,
+        .font_type            = AVT_FONT_TYPE_TTF,
+        .font_compression     = AVT_DATA_COMPRESSION_NONE,
+        .font_data_length     = pl_len,
+        .font_pl_length       = pl_len,
+        .font_name            = "test.ttf",
     });
     sent.hdr_len = bs.ptr - sent.hdr;
 
@@ -152,8 +178,9 @@ static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
     }
     memcpy(plbuf, payload, pl_len);
 
-    /* Non-blocking send: most of the payload cannot be written immediately,
-     * so it must be buffered; the call still has to succeed. */
+    /* Non-blocking send: the QUIC stream's initial flow-control window is
+     * smaller than 2 MB, so most of the payload must be buffered; the call
+     * still has to succeed. */
     ret = p->send_packet(client, &sent, 0);
     avt_buffer_quick_unref(&sent.pl);
     if (ret < 0) {
@@ -162,17 +189,8 @@ static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
         return ret;
     }
 
-    /* Drive both ends: the client drains its buffer non-blocking, the server
-     * reads and acknowledges, which reopens the client's flow-control
-     * window. */
     AVTPacketFifo fifo = { };
-    ret = AVT_ERROR(EAGAIN);
-    for (int i = 0; i < 20000 && ret == AVT_ERROR(EAGAIN); i++) {
-        p->flush(client, 0);
-        ret = p->receive(server, &fifo, 0);
-        if (ret == AVT_ERROR(EAGAIN))
-            nanosleep(&(struct timespec){ .tv_nsec = 100 * 1000 }, NULL);
-    }
+    ret = pump_until(p, client, server, &fifo, 1, 20000);
     if (ret < 0) {
         avt_log(avt, AVT_LOG_ERROR, "Buffered receive failed: %d\n", ret);
         free(payload);
@@ -187,7 +205,7 @@ static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
         AVTPktd *r = &fifo.data[0];
         size_t rpl_len;
         uint8_t *rpl = avt_buffer_get_data(&r->pl, &rpl_len);
-        if (r->pkt.stream_data.data_length != pl_len ||
+        if (r->pkt.font_data.font_pl_length != pl_len ||
             !rpl || rpl_len != pl_len || memcmp(rpl, payload, pl_len)) {
             avt_log(avt, AVT_LOG_ERROR, "Buffered payload does not match\n");
         } else {
@@ -200,6 +218,155 @@ static int test_buffered_send(AVTContext *avt, const AVTProtocol *p,
     free(payload);
     avt_pkt_fifo_free(&fifo);
     return ret;
+}
+
+/* The spec requires each AVT stream to map to a *different* QUIC stream.
+ * Send a reliable per-stream packet on two distinct AVT stream_ids and check
+ * both arrive intact on the server. The protocol layer must not collapse
+ * them onto the same QUIC stream (which would byte-stream-interleave their
+ * headers and corrupt reassembly). */
+static int test_multi_stream(AVTContext *avt, const AVTProtocol *p,
+                             AVTProtocolCtx *client, AVTProtocolCtx *server)
+{
+    static const struct {
+        uint16_t sid;
+        uint64_t bw;
+    } items[] = {
+        { 0x50, 0xAAAA0001 },
+        { 0x51, 0xBBBB0002 },
+        { 0x52, 0xCCCC0003 },
+    };
+    const int N = sizeof(items) / sizeof(items[0]);
+    int ret;
+
+    for (int i = 0; i < N; i++) {
+        AVTPktd sent = { };
+        AVTBytestream bs = avt_bs_init(sent.hdr, sizeof(sent.hdr));
+        avt_encode_stream_registration(&bs, (AVTStreamRegistration) {
+            .stream_registration_descriptor = AVT_PKT_STREAM_REGISTRATION,
+            .stream_id   = items[i].sid,
+            .global_seq  = 0x100 + i,
+            .bandwidth   = items[i].bw,
+            .codec_id    = AVT_CODEC_ID_RAW_VIDEO,
+        });
+        sent.hdr_len = bs.ptr - sent.hdr;
+        ret = p->send_packet(client, &sent, 0);
+        if (ret < 0) {
+            avt_log(avt, AVT_LOG_ERROR, "multi-stream send %d failed: %d\n", i, ret);
+            return ret;
+        }
+    }
+
+    AVTPacketFifo fifo = { };
+    ret = pump_until(p, client, server, &fifo, N, 20000);
+    if (ret < 0) {
+        avt_log(avt, AVT_LOG_ERROR, "multi-stream receive failed: %d\n", ret);
+        avt_pkt_fifo_free(&fifo);
+        return ret;
+    }
+
+    if (fifo.nb != (uint32_t)N) {
+        avt_log(avt, AVT_LOG_ERROR, "multi-stream: expected %d, got %u\n",
+                N, fifo.nb);
+        avt_pkt_fifo_free(&fifo);
+        return AVT_ERROR(EINVAL);
+    }
+
+    /* Each AVT stream_id should appear exactly once with its bandwidth. */
+    bool seen[3] = { 0 };
+    for (uint32_t i = 0; i < fifo.nb; i++) {
+        for (int k = 0; k < N; k++) {
+            if (fifo.data[i].pkt.stream_registration.stream_id == items[k].sid &&
+                fifo.data[i].pkt.stream_registration.bandwidth == items[k].bw) {
+                seen[k] = true;
+                break;
+            }
+        }
+    }
+    for (int k = 0; k < N; k++) {
+        if (!seen[k]) {
+            avt_log(avt, AVT_LOG_ERROR,
+                    "multi-stream: registration for sid 0x%x missing\n",
+                    items[k].sid);
+            avt_pkt_fifo_free(&fifo);
+            return AVT_ERROR(EINVAL);
+        }
+    }
+    avt_log(avt, AVT_LOG_INFO,
+            "QUIC multi-stream isolation OK (%d streams)\n", N);
+    avt_pkt_fifo_free(&fifo);
+    return 0;
+}
+
+/* Send several small STREAM_DATA packets and verify they all arrive. These
+ * descriptors (0x01**) are routed onto RFC 9221 unreliable datagrams; small
+ * payloads sent on a quiet loopback should not be lost. */
+static int test_datagrams(AVTContext *avt, const AVTProtocol *p,
+                          AVTProtocolCtx *client, AVTProtocolCtx *server)
+{
+    const int N = 16;
+    int ret;
+
+    for (int i = 0; i < N; i++) {
+        AVTPktd sent = { };
+        AVTBytestream bs = avt_bs_init(sent.hdr, sizeof(sent.hdr));
+        avt_encode_stream_data(&bs, (AVTStreamData) {
+            .stream_data_descriptor = AVT_PKT_STREAM_DATA,
+            .stream_id   = 0x60,
+            .global_seq  = 0x200 + i,
+            .frame_type  = AVT_FRAME_TYPE_KEY,
+            .pts         = i,
+            .duration    = 1,
+            .data_length = 16,
+        });
+        sent.hdr_len = bs.ptr - sent.hdr;
+        uint8_t *plbuf = avt_buffer_quick_alloc(&sent.pl, 16);
+        if (!plbuf)
+            return AVT_ERROR(ENOMEM);
+        for (int j = 0; j < 16; j++)
+            plbuf[j] = (uint8_t)(i * 16 + j);
+
+        ret = p->send_packet(client, &sent, 0);
+        avt_buffer_quick_unref(&sent.pl);
+        if (ret < 0) {
+            avt_log(avt, AVT_LOG_ERROR, "datagram send %d failed: %d\n", i, ret);
+            return ret;
+        }
+    }
+
+    AVTPacketFifo fifo = { };
+    /* Datagrams are unreliable - accept best-effort delivery here, then
+     * verify whatever did arrive is intact. The quiet loopback case
+     * normally delivers all of them. */
+    ret = pump_until(p, client, server, &fifo, N, 5000);
+    if (ret < 0 && fifo.nb == 0) {
+        avt_log(avt, AVT_LOG_ERROR, "datagram: no packets arrived\n");
+        avt_pkt_fifo_free(&fifo);
+        return AVT_ERROR(EINVAL);
+    }
+
+    /* Verify every arrived packet has the correct content for its pts. */
+    int bad = 0;
+    for (uint32_t i = 0; i < fifo.nb; i++) {
+        AVTPktd *r = &fifo.data[i];
+        int idx = (int)r->pkt.stream_data.pts;
+        size_t rpl_len;
+        uint8_t *rpl = avt_buffer_get_data(&r->pl, &rpl_len);
+        if (idx < 0 || idx >= N || rpl_len != 16) { bad++; continue; }
+        for (int j = 0; j < 16; j++) {
+            if (rpl[j] != (uint8_t)(idx * 16 + j)) { bad++; break; }
+        }
+    }
+    if (bad) {
+        avt_log(avt, AVT_LOG_ERROR,
+                "datagram: %d malformed packets out of %u\n", bad, fifo.nb);
+        avt_pkt_fifo_free(&fifo);
+        return AVT_ERROR(EINVAL);
+    }
+    avt_log(avt, AVT_LOG_INFO,
+            "QUIC datagram round-trip OK (%u/%d delivered)\n", fifo.nb, N);
+    avt_pkt_fifo_free(&fifo);
+    return 0;
 }
 
 /* Loopback address and port shared by the test's client and server. */
@@ -361,6 +528,14 @@ int main(void)
     if (ret < 0)
         goto end;
 
+    ret = test_datagrams(avt, p, p_client_ctx, p_server_ctx);
+    if (ret < 0)
+        goto end;
+
+    ret = test_multi_stream(avt, p, p_client_ctx, p_server_ctx);
+    if (ret < 0)
+        goto end;
+
     ret = test_buffered_send(avt, p, p_client_ctx, p_server_ctx);
     if (ret < 0)
         goto end;
@@ -381,6 +556,11 @@ end:
     avt_addr_free(&addr_client);
     avt_addr_free(&addr_server);
     avt_close(&avt);
+
+    /* The generated test certificate/key are throwaway; don't leave them
+     * behind in the working directory. */
+    remove("test_cert.pem");
+    remove("test_key.pem");
 
     return ret < 0 ? 1 : 0;
 }

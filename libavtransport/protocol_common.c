@@ -67,28 +67,5 @@ int avt_protocol_init(AVTContext *ctx, const AVTProtocol **_p,
     return err;
 }
 
-int avt_index_list_parse(AVTIndexContext *ic, AVTBytestream *bs,
-                         AVTStreamIndex *pkt)
-{
-    for (auto i = 0; i < pkt->nb_indices; i++) {
-        auto dst = ic->nb_index;
-        if (ic->nb_index >= ic->nb_index_max) {
-            dst = ic->nb_index_total % ic->nb_index_max;
-        } else if ((ic->nb_index + 1) > ic->nb_alloc_index) {
-            AVTIndexEntry *tmp = avt_reallocarray(ic->index,
-                                                  ic->nb_alloc_index + 1,
-                                                  sizeof(*tmp));
-            if (!tmp)
-                return AVT_ERROR(ENOMEM);
-
-            ic->index = tmp;
-            ic->nb_index++;
-            ic->nb_alloc_index++;
-        }
-
-        avt_decode_index_entry(bs, &ic->index[dst]);
-        ic->nb_index_total++;
-    }
-
-    return 0;
-}
+/* avt_index_list_parse lives in index_common.c so the stream protocol and
+ * its tests can link it without dragging in the protocol selector list. */

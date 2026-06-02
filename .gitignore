@@ -1,9 +1,11 @@
 build
+build-*
 subprojects
 *.log
 *.av
 *.avt
 *.avts
 *.html
+*.pem
 .github/_build
 .github/_install

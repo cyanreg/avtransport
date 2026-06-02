@@ -27,6 +27,7 @@
 #define _GNU_SOURCE // ipv6_mtuinfo
 #define _XOPEN_SOURCE 700 // pwrite, IOV_MAX
 
+#include <stdatomic.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -60,6 +61,12 @@ struct AVTIOCtx {
 
     avt_pos wpos;
     avt_pos rpos;
+
+    /* Last MTU the kernel reported via IPV6_PATHMTU cmsg, or 0 if the
+     * cached value is stale (e.g. after a MSG_TRUNC). Read in
+     * udp_max_pkt_len; written from the recv path, so the access is
+     * atomic-relaxed to keep both sides cheap. */
+    atomic_uint observed_mtu;
 };
 
 static COLD int udp_close(AVTIOCtx **_io)
@@ -99,6 +106,17 @@ static COLD int udp_init(AVTContext *ctx, AVTIOCtx **_io, AVTAddress *addr)
 
 static int udp_max_pkt_len(AVTIOCtx *io, size_t *mtu)
 {
+    /* If a recent recvmsg picked up a kernel-reported path MTU via
+     * IPV6_PATHMTU, prefer it over the cached getsockopt value - the cmsg
+     * arrives as soon as the kernel discovers an MTU drop, which is
+     * normally faster than IPV6_PATHMTU's polling. A cached value of 0
+     * means we never saw a cmsg, or a MSG_TRUNC invalidated it. */
+    unsigned int cached = atomic_load_explicit(&io->observed_mtu,
+                                               memory_order_relaxed);
+    if (cached) {
+        *mtu = cached;
+        return 0;
+    }
     return avt_socket_get_mtu(io, &io->sc, mtu);
 }
 
@@ -231,7 +249,7 @@ static avt_pos udp_read_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 #ifdef SO_RXQ_OVFL
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SO_RXQ_OVFL) {
-                const uint32_t *t = (uint32_t *)CMSG_DATA(cmsg);
+                [[maybe_unused]] const uint32_t *t = (uint32_t *)CMSG_DATA(cmsg);
 //                avt_log(io, AVT_LOG_VERBOSE, "New ts = %li %li\n", t->ts[0].tv_sec, t->ts[0].tv_nsec);
             }
 #endif
@@ -240,6 +258,8 @@ static avt_pos udp_read_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
                 cmsg->cmsg_len == CMSG_LEN(sizeof(struct ip6_mtuinfo))) {
                 const struct ip6_mtuinfo *mtu = (struct ip6_mtuinfo *)CMSG_DATA(cmsg);
                 avt_log(io, AVT_LOG_VERBOSE, "MTU changed to %i\n", mtu->ip6m_mtu);
+                atomic_store_explicit(&io->observed_mtu, mtu->ip6m_mtu,
+                                      memory_order_relaxed);
             }
 #endif
         }
@@ -250,7 +270,7 @@ static avt_pos udp_read_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
 #ifdef SCM_TIMESTAMPING
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMPING) {
-                const struct scm_timestamping *t = (struct scm_timestamping *)CMSG_DATA(cmsg);
+                [[maybe_unused]] const struct scm_timestamping *t = (struct scm_timestamping *)CMSG_DATA(cmsg);
 //                avt_log(io, AVT_LOG_VERBOSE, "New ts = %li %li\n", t->ts[0].tv_sec, t->ts[0].tv_nsec);
             }
 #endif
@@ -259,7 +279,9 @@ static avt_pos udp_read_input(AVTIOCtx *io, AVTBuffer *buf, size_t len,
 
     if (msg.msg_flags & MSG_TRUNC) {
         avt_log(io, AVT_LOG_ERROR, "Packet truncated! MTU changed?\n");
-        // TODO: signal to the protocol layer to update the MTU
+        /* Invalidate the cached MTU so the next get_max_pkt_len re-queries
+         * the kernel; subsequent IPV6_PATHMTU cmsgs will repopulate it. */
+        atomic_store_explicit(&io->observed_mtu, 0, memory_order_relaxed);
     }
 
     /* Adjust new size in case of underreads */

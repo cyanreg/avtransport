@@ -34,6 +34,8 @@
 #include "io_common.h"
 #include "bytestream.h"
 #include "ldpc_decode.h"
+#include "buffer.h"
+#include "buffer_pool.h"
 
 struct AVTProtocolCtx {
     const AVTIO *io;
@@ -41,11 +43,20 @@ struct AVTProtocolCtx {
     AVTProtocolOpts opts;
 
     AVTIndexContext ic;
+
+    /* Recycles per-packet payload buffers so the receive hot path doesn't
+     * thrash malloc/free for every stream_data packet. Released back to
+     * the pool when the consumer drops its AVTBuffer ref. Reference counted
+     * and heap allocated so a payload the consumer still holds survives this
+     * context being closed. */
+    AVTBufPool *rx_pool;
 };
 
 static COLD int stream_proto_close(AVTProtocolCtx **_p)
 {
     AVTProtocolCtx *p = *_p;
+    avt_pool_drain(&p->rx_pool);
+    free(p->ic.index);
     free(p);
     *_p = NULL;
     return 0;
@@ -54,13 +65,14 @@ static COLD int stream_proto_close(AVTProtocolCtx **_p)
 static COLD int stream_init(AVTContext *ctx, AVTProtocolCtx **_p, AVTAddress *addr,
                             const AVTIO *io, AVTIOCtx *io_ctx, AVTProtocolOpts *opts)
 {
-    AVTProtocolCtx *p = malloc(sizeof(*p));
+    AVTProtocolCtx *p = calloc(1, sizeof(*p));
     if (!p)
         return AVT_ERROR(ENOMEM);
 
     p->io = io;
     p->io_ctx = io_ctx;
     p->opts = *opts;
+    avt_index_list_config(&p->ic, AVT_INDEX_LIST_DEFAULT_MAX);
 
     *_p = p;
 
@@ -196,9 +208,22 @@ static int stream_receive(AVTProtocolCtx *s, AVTPacketFifo *fifo,
     if (!pl_bytes)
         return 0;
 
-    // TODO: pool buffer
-    if (!avt_buffer_quick_alloc(&p->pl, pl_bytes))
+    /* Borrow from the per-protocol payload pool; the buffer's free_cb
+     * returns the underlying allocation when the consumer drops the ref. */
+    size_t pl_cap = 0;
+    uint8_t *pl_buf = avt_pool_acquire(&s->rx_pool, pl_bytes, &pl_cap);
+    if (!pl_buf)
         return AVT_ERROR(ENOMEM);
+
+    int qcerr = avt_buffer_quick_create(&p->pl, pl_buf, pl_cap,
+                                        s->rx_pool, avt_pool_release, 0);
+    if (qcerr < 0) {
+        avt_pool_release(s->rx_pool, pl_buf, pl_cap);
+        return qcerr;
+    }
+    /* Shrink the view to the actual incoming payload length; the underlying
+     * allocation still has pl_cap bytes for the pool to recycle. */
+    avt_buffer_resize(&p->pl, pl_bytes);
 
     err = s->io->read_input(s->io_ctx, &p->pl, pl_bytes, timeout, 0x0);
     if (err < 0)
@@ -215,18 +240,97 @@ static int stream_proto_max_pkt_len(AVTProtocolCtx *p, size_t *mtu)
     return p->io->get_max_pkt_len(p->io_ctx, mtu);
 }
 
+/* Read AVT_MIN_HEADER_LEN bytes from the current position and ensure they
+ * decode to a known packet descriptor. After the probe the read position is
+ * restored to `back_off`, so successful seeks leave the stream pointed at
+ * the start of a fresh packet for the subsequent receive. */
+static int stream_seek_probe(AVTProtocolCtx *p, int64_t back_off)
+{
+    uint8_t probe[AVT_MIN_HEADER_LEN];
+    AVTBuffer buf = {
+        .base_data = probe,
+        .data = probe,
+        .end_data = &probe[sizeof(probe)],
+        .len = sizeof(probe),
+    };
+    int64_t rr = p->io->read_input(p->io_ctx, &buf, AVT_MIN_HEADER_LEN,
+                                   INT64_MAX, AVT_IO_READ_MUTABLE);
+    if (rr < 0)
+        return (int)rr;
+    if (buf.len < AVT_MIN_HEADER_LEN)
+        return AVT_ERROR(EINVAL);
+
+    avt_ldpc_decode_288_224(probe, p->opts.ldpc_iterations);
+
+    uint16_t desc = AVT_RB16(&probe[0]);
+    /* Stream-data / time-sync carry low-byte flags; mask them off for the
+     * size lookup. */
+    if (((desc & 0xFF00) == (AVT_PKT_TIME_SYNC & 0xFF00)) ||
+        ((desc & 0xFF00) == (AVT_PKT_STREAM_DATA & 0xFF00)))
+        desc &= 0xFF00;
+
+    int hdr_size = avt_pkt_hdr_size(desc);
+    if (hdr_size < AVT_MIN_HEADER_LEN)
+        return AVT_ERROR(EINVAL);
+
+    /* Rewind so the caller's next receive starts at the validated packet. */
+    if (p->io->seek(p->io_ctx, back_off) < 0)
+        return AVT_ERROR(EIO);
+
+    return 0;
+}
+
 static int stream_proto_seek(AVTProtocolCtx *p,
                              int64_t off, uint32_t seq,
                              int64_t ts, bool ts_is_dts)
 {
+    (void)ts_is_dts; /* AVTIndexEntry only stores pts; dts mode is treated as pts */
+
     if (!p->io->seek)
         return AVT_ERROR(ENOTSUP);
 
-    /* TODO: verify there's a packet there, use the indices in ts/seq mode */
-    p->io->seek(p->io_ctx, off);
-    /* Patch out the index if we succeed with the returned value */
+    int64_t target = -1;
 
-    return AVT_ERROR(ENOTSUP);
+    if (ts != INT64_MIN) {
+        /* Timestamp mode: pick the latest index entry with pts <= ts so the
+         * caller resumes at-or-before the requested point. Falls back to
+         * EINVAL if no index has been parsed yet. */
+        if (!p->ic.nb_index)
+            return AVT_ERROR(EINVAL);
+        const AVTIndexEntry *best = NULL;
+        for (int i = 0; i < p->ic.nb_index; i++) {
+            const AVTIndexEntry *e = &p->ic.index[i];
+            if (e->pts <= ts && (!best || e->pts > best->pts))
+                best = e;
+        }
+        if (!best)
+            return AVT_ERROR(EINVAL);
+        target = best->pkt_offset;
+    } else if (seq) {
+        /* Sequence mode: exact match of an index entry's target_seq. */
+        if (!p->ic.nb_index)
+            return AVT_ERROR(EINVAL);
+        for (int i = 0; i < p->ic.nb_index; i++) {
+            if (p->ic.index[i].target_seq == seq) {
+                target = p->ic.index[i].pkt_offset;
+                break;
+            }
+        }
+        if (target < 0)
+            return AVT_ERROR(EINVAL);
+    } else {
+        /* Byte-offset mode: trust the caller, validate after the seek. */
+        if (off < 0)
+            return AVT_ERROR(EINVAL);
+        target = off;
+    }
+
+    if (p->io->seek(p->io_ctx, target) < 0)
+        return AVT_ERROR(EIO);
+
+    /* Verify a valid packet header lives at the target offset; restore the
+     * read position to `target` so the next receive consumes it. */
+    return stream_seek_probe(p, target);
 }
 
 static int stream_proto_flush(AVTProtocolCtx *p, int64_t timeout)

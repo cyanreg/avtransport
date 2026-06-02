@@ -31,6 +31,7 @@
 
 #include "common.h"
 #include "connection_internal.h"
+#include "buffer_pool.h"
 
 #include "config.h"
 
@@ -63,6 +64,11 @@ typedef struct AVTSender {
 #ifdef CONFIG_HAVE_LIBZSTD
     ZSTD_CCtx *zstd_ctx;
 #endif
+
+    /* Scratch buffer cache for compression dest buffers; sized once at
+     * peak compress-bound and reused. Reference counted and heap allocated so
+     * it outlives any payload buffer the scheduler still holds at close. */
+    AVTBufPool *scratch_pool;
 } AVTSender;
 
 #endif /* AVTRANSPORT_OUTPUT_INTERNAL_H */
